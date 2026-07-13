@@ -22,11 +22,11 @@ Les tokens sont exposés dans le package partagé et importés par toutes les ap
 
 ## Identité rapide
 
-- **Primary 500** — `#0B7A55` — vert émeraude TamCar, distinctif vs Yango (bleu) et Gozem (violet)
-- **Secondary 500** — `#F26A2E` — orange chaleureux, accents et marqueurs carte
-- **Neutral 900** — `#1A1815` — anthracite chaud (texte principal)
-- **Neutral 0** — `#FBFAF7` — blanc cassé (fond général)
+- **Primary 500** — `#EA5D18` — orange chaleureux TamCar, ancrage africain, distinctif vs Yango (bleu) et Gozem (violet)
+- **Neutral 0** — `#FFFAF5` — blanc orangé (fond général)
+- **Neutral 900** — `#1F1712` — anthracite chaud (texte principal)
+- **Accent 500** — `#F4C430` — miel doré (highlights subtils, optionnel)
 
 ## Logo
 
-Le SVG actuel (`logo.svg`) est un wordmark provisoire : "Tam" en primary/500, "Car" en neutral/900, un point secondary/500 comme accent. À remplacer par un logo pro en v2 (compter 200-500k FCFA chez un designer à Cotonou).
+Le SVG actuel (`logo.svg`) est un wordmark provisoire : "Tam" en primary/500 (orange), "Car" en neutral/900 (anthracite chaud), un point accent/500 (miel) en accent. À remplacer par un logo pro en v2 (compter 200-500k FCFA chez un designer à Cotonou).

@@ -1,50 +1,50 @@
 # TamCar — Palette de couleurs
 
-Choix de couleurs pensé pour se distinguer de **Yango** (bleu/jaune, taxi-générique) et **Gozem** (violet/vert froid) : **vert émeraude profond** + **orange ambre chaleureux** + **neutrals chauds tirant vers le beige**.
+Identité **orange chaleureuse** sur fond **blanc orangé** : soleil, mobilité africaine, énergie. Distinctif vs Yango (bleu-jaune, taxi-générique) et Gozem (violet-vert froid).
 
-## Primary — Vert TamCar
+## Primary — Orange TamCar
 
-Sérieux, confiance, nature. Distinctif visuellement dans l'écosystème VTC ouest-africain.
-
-| Token | HEX | Usage |
-|---|---|---|
-| `primary/50`  | `#E8F5EE` | Fond très clair, hovers subtils |
-| `primary/100` | `#C7E7D5` | Fond de badges succès |
-| `primary/300` | `#6BBF95` | Bordures interactives |
-| `primary/500` | `#0B7A55` | **Couleur principale** — boutons, liens actifs, accents |
-| `primary/700` | `#085F42` | Hover boutons primaires |
-| `primary/900` | `#043A28` | Textes sur fond clair, éléments héro |
-
-## Secondary — Orange TamCar
-
-Chaleur, dynamisme, ancrage africain. Utilisé pour highlights, CTA secondaires, marqueurs cartographiques.
+Chaleur, dynamisme, ancrage africain. Utilisé pour boutons principaux, liens actifs, marqueurs carte, éléments d'action.
 
 | Token | HEX | Usage |
 |---|---|---|
-| `secondary/100` | `#FDE4D2` | Fond léger badges promo |
-| `secondary/500` | `#F26A2E` | **Accent principal** — marqueurs carte, promos, réservation à l'avance |
-| `secondary/700` | `#C24B15` | Hover accents secondaires |
+| `primary/50`  | `#FEF3EC` | Fond très clair, hovers subtils |
+| `primary/100` | `#FDE0CC` | Fond de badges info |
+| `primary/300` | `#F8A26D` | Bordures interactives, états désactivés |
+| `primary/500` | `#EA5D18` | **Couleur principale** — boutons, CTA, marqueurs |
+| `primary/700` | `#B84812` | Hover boutons primaires |
+| `primary/900` | `#7A2E08` | Textes emphasés sur fond clair |
 
-## Neutrals
+## Neutrals — Blanc orangé à anthracite chaud
 
-Anthracite chaud + gris tirant vers le beige (évite le look "clinique" bleuté générique).
+Fond général blanc légèrement teinté orange (pas de gris froid). Toute la scale de neutrals tire vers le chaud pour créer une identité cohérente.
 
 | Token | HEX | Usage |
 |---|---|---|
-| `neutral/0`   | `#FBFAF7` | Fond général de l'app |
-| `neutral/100` | `#F0EDE7` | Fond secondaire, cards inactives |
-| `neutral/200` | `#DDD8CE` | Bordures fines |
-| `neutral/400` | `#9A968D` | Texte tertiaire, placeholders |
-| `neutral/600` | `#5D5A54` | Texte secondaire |
-| `neutral/900` | `#1A1815` | Texte principal |
+| `neutral/0`   | `#FFFAF5` | **Fond général de l'app** (blanc orangé) |
+| `neutral/100` | `#FBEFE3` | Fond secondaire, cards inactives |
+| `neutral/200` | `#F0DCC8` | Bordures fines |
+| `neutral/400` | `#A28E7D` | Texte tertiaire, placeholders |
+| `neutral/600` | `#5C4D3F` | Texte secondaire |
+| `neutral/900` | `#1F1712` | Texte principal (anthracite chaud) |
+
+## Accent — Miel
+
+Optionnel. Utilisé avec parcimonie pour highlights positifs, badges premium, moments de célébration (course terminée avec bonus, etc.). Ne pas mélanger avec primary sur le même écran sans hiérarchie claire.
+
+| Token | HEX | Usage |
+|---|---|---|
+| `accent/500` | `#F4C430` | Miel doré — highlights subtils |
 
 ## Feedback
+
+Choisis pour rester distinguables du primary orange (pas de warning orange qui se confondrait avec la primary).
 
 | Token | HEX | Usage |
 |---|---|---|
 | `success/500` | `#2E9E5C` | Confirmations, course terminée |
-| `warning/500` | `#F1B24A` | Attention, timeout imminent |
-| `error/500`   | `#DC2E44` | Erreurs, annulations |
+| `warning/500` | `#D4A017` | Attention, timeout imminent (jaune ambre, distinct du primary) |
+| `error/500`   | `#C1272D` | Erreurs, annulations (rouge terracota, s'accorde à l'orange) |
 | `info/500`    | `#2E7CDC` | Infos neutres |
 
 ## Dark mode

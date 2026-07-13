@@ -7,31 +7,29 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class TamCarColors {
-  // Primary — Vert TamCar
-  static const primary50  = Color(0xFFE8F5EE);
-  static const primary100 = Color(0xFFC7E7D5);
-  static const primary300 = Color(0xFF6BBF95);
-  static const primary500 = Color(0xFF0B7A55);
-  static const primary700 = Color(0xFF085F42);
-  static const primary900 = Color(0xFF043A28);
+  // Primary — Orange TamCar
+  static const primary50  = Color(0xFFFEF3EC);
+  static const primary100 = Color(0xFFFDE0CC);
+  static const primary300 = Color(0xFFF8A26D);
+  static const primary500 = Color(0xFFEA5D18);
+  static const primary700 = Color(0xFFB84812);
+  static const primary900 = Color(0xFF7A2E08);
 
-  // Secondary — Orange TamCar
-  static const secondary100 = Color(0xFFFDE4D2);
-  static const secondary500 = Color(0xFFF26A2E);
-  static const secondary700 = Color(0xFFC24B15);
+  // Neutrals — Blanc orangé à anthracite chaud
+  static const neutral0   = Color(0xFFFFFAF5);
+  static const neutral100 = Color(0xFFFBEFE3);
+  static const neutral200 = Color(0xFFF0DCC8);
+  static const neutral400 = Color(0xFFA28E7D);
+  static const neutral600 = Color(0xFF5C4D3F);
+  static const neutral900 = Color(0xFF1F1712);
 
-  // Neutrals
-  static const neutral0   = Color(0xFFFBFAF7);
-  static const neutral100 = Color(0xFFF0EDE7);
-  static const neutral200 = Color(0xFFDDD8CE);
-  static const neutral400 = Color(0xFF9A968D);
-  static const neutral600 = Color(0xFF5D5A54);
-  static const neutral900 = Color(0xFF1A1815);
+  // Accent — Miel
+  static const accent500 = Color(0xFFF4C430);
 
   // Feedback
   static const success500 = Color(0xFF2E9E5C);
-  static const warning500 = Color(0xFFF1B24A);
-  static const error500   = Color(0xFFDC2E44);
+  static const warning500 = Color(0xFFD4A017);
+  static const error500   = Color(0xFFC1272D);
   static const info500    = Color(0xFF2E7CDC);
 }
 
@@ -57,16 +55,16 @@ class TamCarRadius {
 
 class TamCarShadows {
   static const sm = [
-    BoxShadow(color: Color(0x0F1A1815), blurRadius: 2, offset: Offset(0, 1)),
+    BoxShadow(color: Color(0x0F1F1712), blurRadius: 2, offset: Offset(0, 1)),
   ];
   static const md = [
-    BoxShadow(color: Color(0x141A1815), blurRadius: 12, offset: Offset(0, 4)),
+    BoxShadow(color: Color(0x141F1712), blurRadius: 12, offset: Offset(0, 4)),
   ];
   static const lg = [
-    BoxShadow(color: Color(0x1F1A1815), blurRadius: 32, offset: Offset(0, 12)),
+    BoxShadow(color: Color(0x1F1F1712), blurRadius: 32, offset: Offset(0, 12)),
   ];
   static const xl = [
-    BoxShadow(color: Color(0x291A1815), blurRadius: 64, offset: Offset(0, 24)),
+    BoxShadow(color: Color(0x291F1712), blurRadius: 64, offset: Offset(0, 24)),
   ];
 }
 

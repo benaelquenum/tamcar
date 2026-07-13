@@ -5,29 +5,25 @@
 
 export const colors = {
   primary: {
-    50:  '#E8F5EE',
-    100: '#C7E7D5',
-    300: '#6BBF95',
-    500: '#0B7A55',
-    700: '#085F42',
-    900: '#043A28',
-  },
-  secondary: {
-    100: '#FDE4D2',
-    500: '#F26A2E',
-    700: '#C24B15',
+    50:  '#FEF3EC',
+    100: '#FDE0CC',
+    300: '#F8A26D',
+    500: '#EA5D18',
+    700: '#B84812',
+    900: '#7A2E08',
   },
   neutral: {
-    0:   '#FBFAF7',
-    100: '#F0EDE7',
-    200: '#DDD8CE',
-    400: '#9A968D',
-    600: '#5D5A54',
-    900: '#1A1815',
+    0:   '#FFFAF5',
+    100: '#FBEFE3',
+    200: '#F0DCC8',
+    400: '#A28E7D',
+    600: '#5C4D3F',
+    900: '#1F1712',
   },
+  accent:  { 500: '#F4C430' },
   success: { 500: '#2E9E5C' },
-  warning: { 500: '#F1B24A' },
-  error:   { 500: '#DC2E44' },
+  warning: { 500: '#D4A017' },
+  error:   { 500: '#C1272D' },
   info:    { 500: '#2E7CDC' },
 } as const;
 
@@ -52,10 +48,10 @@ export const radius = {
 } as const;
 
 export const shadow = {
-  sm: '0 1px 2px rgba(26,24,21,0.06)',
-  md: '0 4px 12px rgba(26,24,21,0.08)',
-  lg: '0 12px 32px rgba(26,24,21,0.12)',
-  xl: '0 24px 64px rgba(26,24,21,0.16)',
+  sm: '0 1px 2px rgba(31,23,18,0.06)',
+  md: '0 4px 12px rgba(31,23,18,0.08)',
+  lg: '0 12px 32px rgba(31,23,18,0.12)',
+  xl: '0 24px 64px rgba(31,23,18,0.16)',
 } as const;
 
 export const typography = {
