@@ -1,0 +1,39 @@
+-- ============================================================
+-- TamCar — Seed data (dev only)
+--
+-- Ce fichier est appliqué après les migrations lors d'un
+-- `supabase db reset`. Il alimente une base de données locale
+-- avec des utilisateurs, chauffeurs, véhicules et courses de démo.
+--
+-- ⚠️ Ne pas exécuter en production.
+-- ============================================================
+
+-- Les utilisateurs de démo doivent d'abord exister dans auth.users.
+-- En dev local, créer manuellement via l'interface Supabase Studio :
+--   1. terence@tamcar.bj       (admin, +229 90 00 00 01)
+--   2. concess1@tamcar.bj      (dealer, +229 90 00 00 02)
+--   3. chauffeur1@tamcar.bj    (driver, +229 90 00 00 03)
+--   4. kokou@example.bj        (client, +229 90 00 00 04)
+--
+-- Puis récupérer leurs UUIDs et compléter les INSERTs ci-dessous.
+
+-- Exemple (à décommenter et adapter avec les vrais UUIDs) :
+--
+-- insert into public.profiles (id, phone, full_name, role)
+-- values
+--   ('00000000-0000-0000-0000-000000000001', '+22990000001', 'Terence Beniraphael', 'admin'),
+--   ('00000000-0000-0000-0000-000000000002', '+22990000002', 'Concessionnaire Ouando SARL', 'dealer'),
+--   ('00000000-0000-0000-0000-000000000003', '+22990000003', 'Jean-Marc Chauffeur', 'driver'),
+--   ('00000000-0000-0000-0000-000000000004', '+22990000004', 'Kokou Client', 'client');
+--
+-- insert into public.dealer_partners (profile_id, company_name, rccm, dealer_share_pct, is_shareholder, shareholder_pct)
+-- values
+--   ('00000000-0000-0000-0000-000000000002', 'Ouando Motors SARL', 'RCCM/COT/2025/A/00001', 25.0, true, 15.0);
+--
+-- insert into public.vehicles (dealer_partner_id, plate_number, brand, model, year, color, seats)
+-- select id, 'RB 1234 AB', 'Toyota', 'Corolla', 2020, 'Blanc', 4
+-- from public.dealer_partners where company_name = 'Ouando Motors SARL';
+--
+-- insert into public.drivers (profile_id, status, license_number, id_card_number, kyc_status)
+-- values
+--   ('00000000-0000-0000-0000-000000000003', 'active', 'PC-BEN-2020-001', 'CNIB-2015-98765', 'approved');

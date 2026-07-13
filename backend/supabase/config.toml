@@ -1,0 +1,52 @@
+# TamCar — Supabase project configuration
+# Docs: https://supabase.com/docs/guides/cli/config
+
+project_id = "tamcar"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[db.pooler]
+enabled = false
+
+[realtime]
+enabled = true
+
+[studio]
+enabled = true
+port = 54323
+api_url = "http://localhost:54321"
+
+[inbucket]
+enabled = true
+port = 54324
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["https://tamcar.bj", "https://tamcar.app"]
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.sms]
+enable_signup = true
+enable_confirmations = false
+
+[auth.sms.twilio]
+enabled = false
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[analytics]
+enabled = false
