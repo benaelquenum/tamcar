@@ -1,6 +1,6 @@
 // TamCar — Design tokens (Flutter)
 //
-// Source de vérité : design/palette.md, design/typography.md, design/tokens.md.
+// Source de vérité : ../../design/palette.md, typography.md, tokens.md.
 // Toute modification doit également mettre à jour ces docs.
 
 import 'dart:ui';
