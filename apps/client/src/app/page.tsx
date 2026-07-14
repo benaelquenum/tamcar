@@ -1,4 +1,22 @@
 import { Logo } from '@/components/Logo';
+import {
+  ArrowRightIcon,
+  CalendarIcon,
+  CarIcon,
+  GiftIcon,
+  HistoryIcon,
+  LifeBuoyIcon,
+  PinIcon,
+  PlusIcon,
+  RouteIcon,
+  StarIcon,
+  UserIcon,
+  WalletIcon,
+  WaveIcon,
+} from '@/components/Icon';
+
+// TODO: remplacer par la session Supabase Auth quand le login OTP est en place
+const firstName = 'Terence';
 
 export default function HomePage() {
   return (
@@ -26,8 +44,8 @@ export default function HomePage() {
         {/* Greeting + hero */}
         <section className="mt-xl">
           <p className="flex items-center gap-xs text-base font-medium text-neutral-600">
-            <span className="text-lg" aria-hidden>👋</span>
-            <span>Bonjour</span>
+            <WaveIcon className="h-5 w-5 text-gold-500" />
+            <span>Bonjour {firstName}</span>
           </p>
           <h1 className="mt-xs text-4xl font-extrabold leading-[1.05] tracking-tight text-neutral-900">
             Où allez-vous
@@ -62,7 +80,7 @@ export default function HomePage() {
             <span className="flex-1 text-neutral-400 group-hover:text-neutral-600">
               Où voulez-vous aller ?
             </span>
-            <ArrowIcon />
+            <ArrowRightIcon />
           </button>
         </section>
 
@@ -72,14 +90,14 @@ export default function HomePage() {
             type="button"
             className="flex w-full items-center justify-center gap-sm rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-lg text-base font-bold text-white shadow-glow transition hover:brightness-110 active:scale-[0.98]"
           >
-            <span className="text-lg" aria-hidden>🚗</span>
+            <CarIcon className="h-5 w-5" />
             Commander maintenant
           </button>
           <button
             type="button"
             className="flex w-full items-center justify-center gap-sm rounded-xl border-2 border-primary-500 bg-white py-lg text-base font-semibold text-primary-700 transition hover:bg-primary-50"
           >
-            <span aria-hidden>📅</span>
+            <CalendarIcon className="h-5 w-5" />
             Réserver à l&apos;avance
           </button>
         </section>
@@ -87,14 +105,15 @@ export default function HomePage() {
         {/* Featured : trajet phare corridor */}
         <section className="mt-xl">
           <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-500 via-primary-700 to-violet-500 p-lg text-white shadow-glow">
-            {/* Decoration emoji flou en arrière-plan */}
-            <div className="pointer-events-none absolute -bottom-6 -right-4 select-none text-9xl opacity-15" aria-hidden>
-              🛣️
+            {/* Decoration : grande icône route en fond, opacity faible */}
+            <div className="pointer-events-none absolute -bottom-8 -right-6 text-white/15" aria-hidden>
+              <RouteIcon className="h-40 w-40" strokeWidth={1.5} />
             </div>
             <div className="relative">
               <div className="flex items-center gap-xs">
-                <span className="inline-flex items-center rounded-full bg-gold/25 px-md py-xs text-xs font-bold uppercase tracking-wider text-white ring-1 ring-gold/40">
-                  ⭐ Trajet phare
+                <span className="inline-flex items-center gap-xs rounded-full bg-gold/25 px-md py-xs text-xs font-bold uppercase tracking-wider text-white ring-1 ring-gold/40">
+                  <StarIcon className="h-3.5 w-3.5 text-gold-500" />
+                  Trajet phare
                 </span>
               </div>
               <h2 className="mt-md text-2xl font-extrabold leading-tight">
@@ -116,7 +135,7 @@ export default function HomePage() {
                 className="mt-lg inline-flex items-center gap-xs rounded-md bg-white px-lg py-sm text-sm font-bold text-primary-700 shadow-md transition hover:brightness-105"
               >
                 Réserver ce trajet
-                <ArrowIcon />
+                <ArrowRightIcon />
               </button>
             </div>
           </div>
@@ -143,16 +162,17 @@ export default function HomePage() {
               type="button"
               className="inline-flex items-center gap-xs rounded-md bg-gold px-md py-sm text-sm font-bold text-neutral-900 shadow-glow-gold transition hover:brightness-105"
             >
-              <span aria-hidden>＋</span> Recharger
+              <PlusIcon className="h-3.5 w-3.5" strokeWidth={3} />
+              Recharger
             </button>
           </div>
         </section>
 
         {/* Quick actions row */}
         <section className="mt-lg grid grid-cols-3 gap-sm">
-          <QuickAction icon="📜" label="Historique" />
-          <QuickAction icon="🎁" label="Parrainer" tag="Bientôt" />
-          <QuickAction icon="🆘" label="Aide" />
+          <QuickAction Icon={HistoryIcon} label="Historique" tint="primary" />
+          <QuickAction Icon={GiftIcon} label="Parrainer" tag="Bientôt" tint="violet" />
+          <QuickAction Icon={LifeBuoyIcon} label="Aide" tint="cyan" />
         </section>
 
         <div className="h-2xl" />
@@ -161,56 +181,41 @@ export default function HomePage() {
   );
 }
 
-function QuickAction({ icon, label, tag }: { icon: string; label: string; tag?: string }) {
+type Tint = 'primary' | 'violet' | 'cyan';
+
+const TINT_CLASSES: Record<Tint, string> = {
+  primary: 'text-primary-500 bg-primary-50',
+  violet: 'text-violet-500 bg-violet-500/10',
+  cyan: 'text-cyan-500 bg-cyan-500/10',
+};
+
+function QuickAction({
+  Icon,
+  label,
+  tag,
+  tint,
+}: {
+  Icon: (props: { className?: string }) => JSX.Element;
+  label: string;
+  tag?: string;
+  tint: Tint;
+}) {
   return (
     <button
       type="button"
       className="relative flex flex-col items-center gap-xs rounded-xl border border-neutral-200 bg-white p-md text-center shadow-sm transition hover:shadow-md"
     >
-      <span className="text-2xl" aria-hidden>{icon}</span>
+      <span
+        className={`grid h-10 w-10 place-items-center rounded-lg ${TINT_CLASSES[tint]}`}
+      >
+        <Icon className="h-5 w-5" />
+      </span>
       <span className="text-xs font-semibold text-neutral-900">{label}</span>
       {tag && (
-        <span className="absolute -top-1 -right-1 rounded-full bg-violet-500 px-xs py-0.5 text-[10px] font-bold text-white shadow-glow-violet">
+        <span className="absolute -right-1 -top-1 rounded-full bg-violet-500 px-xs py-0.5 text-[10px] font-bold text-white shadow-glow-violet">
           {tag}
         </span>
       )}
     </button>
-  );
-}
-
-function UserIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-      <circle cx="12" cy="7" r="4" />
-    </svg>
-  );
-}
-
-function PinIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-      <circle cx="12" cy="10" r="3" />
-    </svg>
-  );
-}
-
-function ArrowIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="5" y1="12" x2="19" y2="12" />
-      <polyline points="12 5 19 12 12 19" />
-    </svg>
-  );
-}
-
-function WalletIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
-      <path d="M3 5v14a2 2 0 0 0 2 2h16v-5" />
-      <path d="M18 12a2 2 0 0 0 0 4h4v-4Z" />
-    </svg>
   );
 }
