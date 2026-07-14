@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="TamCar">
   <title>TamCar</title>
-  <rect width="512" height="512" rx="96" fill="#FFFAF5"/>
-  <g font-family="Inter, system-ui, sans-serif" font-weight="800">
-    <text x="256" y="288" font-size="120" text-anchor="middle" fill="#EA5D18">Tam</text>
-    <text x="256" y="400" font-size="120" text-anchor="middle" fill="#1F1712">Car</text>
-    <circle cx="386" cy="150" r="16" fill="#F4C430"/>
+  <rect width="512" height="512" rx="96" fill="#FFFFFF"/>
+  <g font-family="Sora, system-ui, sans-serif" font-weight="800">
+    <text x="256" y="288" font-size="120" text-anchor="middle" fill="#2563EB">Tam</text>
+    <text x="256" y="400" font-size="120" text-anchor="middle" fill="#0F172A">Car</text>
+    <circle cx="386" cy="150" r="16" fill="#EAB308"/>
   </g>
 </svg>

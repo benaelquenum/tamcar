@@ -5,8 +5,8 @@
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#FFFAF5",
-  "theme_color": "#EA5D18",
+  "background_color": "#FFFFFF",
+  "theme_color": "#2563EB",
   "lang": "fr",
   "categories": ["travel", "transport", "utilities"],
   "icons": [

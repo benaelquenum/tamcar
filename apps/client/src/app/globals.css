@@ -4,14 +4,16 @@
 
 :root {
   color-scheme: light;
-  --tamcar-primary: #EA5D18;
-  --tamcar-primary-dark: #B84812;
-  --tamcar-bg: #FFFAF5;
-  --tamcar-surface: #FBEFE3;
-  --tamcar-border: #F0DCC8;
-  --tamcar-text: #1F1712;
-  --tamcar-text-secondary: #5C4D3F;
-  --tamcar-accent: #F4C430;
+  --tamcar-primary: #2563EB;
+  --tamcar-primary-dark: #1D4ED8;
+  --tamcar-bg: #FFFFFF;
+  --tamcar-surface: #F8FAFC;
+  --tamcar-border: #E2E8F0;
+  --tamcar-text: #0F172A;
+  --tamcar-text-secondary: #475569;
+  --tamcar-gold: #EAB308;
+  --tamcar-violet: #8B5CF6;
+  --tamcar-cyan: #06B6D4;
 }
 
 html,

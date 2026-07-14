@@ -1,51 +1,68 @@
 # TamCar — Palette de couleurs
 
-Identité **orange chaleureuse** sur fond **blanc orangé** : soleil, mobilité africaine, énergie. Distinctif vs Yango (bleu-jaune, taxi-générique) et Gozem (violet-vert froid).
+Identité **bleu roi vif sur fond blanc pur** + accents multiples (doré, violet, cyan) pour un rendu **jovial, moderne, brillant, engageant**. Distinctif vs Yango (orange), Gozem (violet-vert), Bolt (vert), Uber (noir).
 
-## Primary — Orange TamCar
+## Primary — Bleu roi TamCar
 
-Chaleur, dynamisme, ancrage africain. Utilisé pour boutons principaux, liens actifs, marqueurs carte, éléments d'action.
-
-| Token | HEX | Usage |
-|---|---|---|
-| `primary/50`  | `#FEF3EC` | Fond très clair, hovers subtils |
-| `primary/100` | `#FDE0CC` | Fond de badges info |
-| `primary/300` | `#F8A26D` | Bordures interactives, états désactivés |
-| `primary/500` | `#EA5D18` | **Couleur principale** — boutons, CTA, marqueurs |
-| `primary/700` | `#B84812` | Hover boutons primaires |
-| `primary/900` | `#7A2E08` | Textes emphasés sur fond clair |
-
-## Neutrals — Blanc orangé à anthracite chaud
-
-Fond général blanc légèrement teinté orange (pas de gris froid). Toute la scale de neutrals tire vers le chaud pour créer une identité cohérente.
+Moderne, tech-startup, énergique. Utilisé pour boutons principaux, liens actifs, marqueurs carte, éléments d'action.
 
 | Token | HEX | Usage |
 |---|---|---|
-| `neutral/0`   | `#FFFAF5` | **Fond général de l'app** (blanc orangé) |
-| `neutral/100` | `#FBEFE3` | Fond secondaire, cards inactives |
-| `neutral/200` | `#F0DCC8` | Bordures fines |
-| `neutral/400` | `#A28E7D` | Texte tertiaire, placeholders |
-| `neutral/600` | `#5C4D3F` | Texte secondaire |
-| `neutral/900` | `#1F1712` | Texte principal (anthracite chaud) |
+| `primary/50`  | `#EFF6FF` | Fond très clair, hovers subtils |
+| `primary/100` | `#DBEAFE` | Fond de badges info, cards secondaires |
+| `primary/300` | `#93C5FD` | Bordures interactives, états désactivés |
+| `primary/500` | `#2563EB` | **Couleur principale** — boutons, CTA, marqueurs |
+| `primary/700` | `#1D4ED8` | Hover boutons primaires, gradient end |
+| `primary/900` | `#1E3A8A` | Textes emphasés sur fond clair |
 
-## Accent — Miel
+## Neutrals — Blanc pur + slates
 
-Optionnel. Utilisé avec parcimonie pour highlights positifs, badges premium, moments de célébration (course terminée avec bonus, etc.). Ne pas mélanger avec primary sur le même écran sans hiérarchie claire.
+Fond blanc pur (#FFFFFF), échelle de slates froids qui contraste avec le bleu.
 
 | Token | HEX | Usage |
 |---|---|---|
-| `accent/500` | `#F4C430` | Miel doré — highlights subtils |
+| `neutral/0`   | `#FFFFFF` | **Fond général de l'app** (blanc pur) |
+| `neutral/100` | `#F8FAFC` | Fond secondaire, cards inactives |
+| `neutral/200` | `#E2E8F0` | Bordures fines |
+| `neutral/400` | `#94A3B8` | Texte tertiaire, placeholders |
+| `neutral/600` | `#475569` | Texte secondaire |
+| `neutral/900` | `#0F172A` | Texte principal (noir bleuté) |
+
+## Accents — Jovialité + engagement
+
+Utilisés avec parcimonie mais délibérément pour éviter l'effet "app corporate froid".
+
+| Token | HEX | Usage |
+|---|---|---|
+| `gold/500`   | `#EAB308` | Doré chaleureux — badges positifs, "Recharger", trajets phares |
+| `violet/500` | `#8B5CF6` | Violet — icônes wallet, promos, gradients variés |
+| `cyan/500`   | `#06B6D4` | Cyan — info, live status, chauffeur en approche |
 
 ## Feedback
 
-Choisis pour rester distinguables du primary orange (pas de warning orange qui se confondrait avec la primary).
-
 | Token | HEX | Usage |
 |---|---|---|
-| `success/500` | `#2E9E5C` | Confirmations, course terminée |
-| `warning/500` | `#D4A017` | Attention, timeout imminent (jaune ambre, distinct du primary) |
-| `error/500`   | `#C1272D` | Erreurs, annulations (rouge terracota, s'accorde à l'orange) |
-| `info/500`    | `#2E7CDC` | Infos neutres |
+| `success/500` | `#10B981` | Confirmations, course terminée, chauffeur disponible |
+| `warning/500` | `#F59E0B` | Attention, timeout imminent |
+| `error/500`   | `#EF4444` | Erreurs, annulations |
+| `info/500`    | `#3B82F6` | Infos neutres |
+
+## Glow shadows (nouveauté)
+
+Pour l'effet "brillant, engagement" — utilisés sur les CTAs principaux, cards phares.
+
+| Token | Value | Usage |
+|---|---|---|
+| `shadow/glow`       | `0 10px 30px -10px rgba(37, 99, 235, 0.5)`   | Bleu primary qui rayonne |
+| `shadow/glow-gold`  | `0 10px 30px -10px rgba(234, 179, 8, 0.5)`   | Doré qui rayonne |
+| `shadow/glow-violet`| `0 10px 30px -10px rgba(139, 92, 246, 0.5)`  | Violet qui rayonne |
+
+## Gradients recommandés
+
+- **CTA principal** : `bg-gradient-to-r from-primary-500 to-primary-700` + `shadow-glow`
+- **Trajet phare** : `bg-gradient-to-br from-primary-500 via-primary-700 to-violet-500`
+- **Icon wallet** : `bg-gradient-to-br from-violet-500 to-primary-500`
+- **Text hero** : `bg-gradient-to-r from-primary-500 to-primary-700 bg-clip-text text-transparent`
 
 ## Dark mode
 

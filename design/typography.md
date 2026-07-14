@@ -2,7 +2,7 @@
 
 ## Choix
 
-**Inter** partout — [Google Fonts](https://fonts.google.com/specimen/Inter). Gratuite, open-source, très lisible sur mobile, chiffres tabulaires natifs (utile pour montants FCFA).
+**Sora** partout — [Google Fonts](https://fonts.google.com/specimen/Sora). Chargée via `next/font/google` (perf optimale, zero layout shift). Gratuite, licence commerciale OK. Géométrique arrondie, chaleureuse, très lisible sur mobile.
 
 Weights utilisés : `400`, `500`, `600`, `700`, `800`.
 
@@ -22,5 +22,6 @@ Weights utilisés : `400`, `500`, `600`, `700`, `800`.
 ## Règles
 
 - Un seul poids par bloc pour éviter les mix incohérents
-- Chiffres FCFA toujours en `mono/price` (tabular figures) pour éviter les décalages d'alignement dans les listes
+- Chiffres FCFA toujours en `fontVariantNumeric: 'tabular-nums'` pour éviter les décalages d'alignement dans les listes
 - Boutons : `body/lg` en `weight 600`
+- Titres hero : `text-4xl` ou `text-5xl` en `font-extrabold` (800) pour l'impact

@@ -8,6 +8,9 @@ const config: Config = {
       colors: {
         primary: colors.primary,
         neutral: colors.neutral,
+        gold: colors.gold,
+        violet: colors.violet,
+        cyan: colors.cyan,
         accent: colors.accent,
         success: colors.success,
         warning: colors.warning,
@@ -15,7 +18,7 @@ const config: Config = {
         info: colors.info,
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-sora)', 'system-ui', 'sans-serif'],
       },
       spacing: {
         xs: `${spacing.xs}px`,
@@ -33,6 +36,7 @@ const config: Config = {
         md: `${radius.md}px`,
         lg: `${radius.lg}px`,
         xl: `${radius.xl}px`,
+        '2xl': `${radius['2xl']}px`,
         full: '999px',
       },
       boxShadow: {
@@ -40,6 +44,9 @@ const config: Config = {
         md: shadow.md,
         lg: shadow.lg,
         xl: shadow.xl,
+        glow: shadow.glow,
+        'glow-gold': shadow.glowGold,
+        'glow-violet': shadow.glowViolet,
       },
     },
   },

@@ -8,14 +8,14 @@ export function Logo({ className = '' }: { className?: string }) {
       aria-label="TamCar"
     >
       <title>TamCar</title>
-      <g fontFamily="Inter, system-ui, sans-serif" fontWeight={800}>
-        <text x={20} y={66} fontSize={52} fill="#EA5D18">
+      <g fontFamily="Sora, system-ui, sans-serif" fontWeight={800}>
+        <text x={20} y={66} fontSize={52} fill="#2563EB">
           Tam
         </text>
-        <text x={145} y={66} fontSize={52} fill="#1F1712">
+        <text x={145} y={66} fontSize={52} fill="#0F172A">
           Car
         </text>
-        <circle cx={292} cy={30} r={6} fill="#F4C430" />
+        <circle cx={292} cy={30} r={6} fill="#EAB308" />
       </g>
     </svg>
   );

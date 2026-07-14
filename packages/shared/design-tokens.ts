@@ -1,30 +1,34 @@
 // TamCar — Design tokens (TypeScript)
 //
-// Source de vérité : ../../design/palette.md, typography.md, tokens.md.
+// Source de vérité : design/palette.md, design/typography.md, design/tokens.md.
 // Toute modification doit également mettre à jour ces docs.
 
 export const colors = {
   primary: {
-    50:  '#FEF3EC',
-    100: '#FDE0CC',
-    300: '#F8A26D',
-    500: '#EA5D18',
-    700: '#B84812',
-    900: '#7A2E08',
+    50:  '#EFF6FF',
+    100: '#DBEAFE',
+    300: '#93C5FD',
+    500: '#2563EB',   // Bleu roi vif TamCar
+    700: '#1D4ED8',
+    900: '#1E3A8A',
   },
   neutral: {
-    0:   '#FFFAF5',
-    100: '#FBEFE3',
-    200: '#F0DCC8',
-    400: '#A28E7D',
-    600: '#5C4D3F',
-    900: '#1F1712',
+    0:   '#FFFFFF',   // blanc pur
+    100: '#F8FAFC',   // slate-50 (fond secondaire, cards inactives)
+    200: '#E2E8F0',   // slate-200 (bordures)
+    400: '#94A3B8',   // slate-400 (texte tertiaire)
+    600: '#475569',   // slate-600 (texte secondaire)
+    900: '#0F172A',   // slate-900 (texte principal, noir bleuté)
   },
-  accent:  { 500: '#F4C430' },
-  success: { 500: '#2E9E5C' },
-  warning: { 500: '#D4A017' },
-  error:   { 500: '#C1272D' },
-  info:    { 500: '#2E7CDC' },
+  // Accents — pour jovialité + engagement visuel
+  gold:   { 500: '#EAB308' },   // doré chaleureux — highlights positifs, badges
+  violet: { 500: '#8B5CF6' },   // violet — accents secondaires, wallet, promos
+  cyan:   { 500: '#06B6D4' },   // cyan — info, live status
+  accent: { 500: '#EAB308' },   // alias vers gold (compat apps/web)
+  success: { 500: '#10B981' },
+  warning: { 500: '#F59E0B' },
+  error:   { 500: '#EF4444' },
+  info:    { 500: '#3B82F6' },
 } as const;
 
 export const spacing = {
@@ -44,18 +48,23 @@ export const radius = {
   md:   12,
   lg:   16,
   xl:   24,
+  '2xl': 32,
   full: 999,
 } as const;
 
 export const shadow = {
-  sm: '0 1px 2px rgba(31,23,18,0.06)',
-  md: '0 4px 12px rgba(31,23,18,0.08)',
-  lg: '0 12px 32px rgba(31,23,18,0.12)',
-  xl: '0 24px 64px rgba(31,23,18,0.16)',
+  sm: '0 1px 2px rgba(15,23,42,0.06)',
+  md: '0 4px 12px rgba(15,23,42,0.08)',
+  lg: '0 12px 32px rgba(15,23,42,0.12)',
+  xl: '0 24px 64px rgba(15,23,42,0.16)',
+  // Glows colorés — pour l'effet "brillant, engagement"
+  glow:     '0 10px 30px -10px rgba(37, 99, 235, 0.5)',    // bleu primary rayonne
+  glowGold: '0 10px 30px -10px rgba(234, 179, 8, 0.5)',    // doré rayonne
+  glowViolet: '0 10px 30px -10px rgba(139, 92, 246, 0.5)', // violet rayonne
 } as const;
 
 export const typography = {
-  fontFamily: 'Inter, system-ui, sans-serif',
+  fontFamily: 'Sora, system-ui, sans-serif',
   displayXl: { fontSize: 32, lineHeight: 40, fontWeight: 800 },
   displayLg: { fontSize: 28, lineHeight: 36, fontWeight: 700 },
   headingLg: { fontSize: 22, lineHeight: 30, fontWeight: 700 },
