@@ -203,10 +203,9 @@ export function Map({
     assignedMarkerRef.current = null;
     if (assignedDriver) {
       const el = document.createElement('div');
-      el.style.cssText =
-        'width:34px;height:34px;border-radius:50%;background:#10B981;border:3px solid white;box-shadow:0 4px 12px rgba(16,185,129,.6);display:grid;place-items:center;font-size:18px;';
-      el.textContent = '🚗';
-      assignedMarkerRef.current = new mapboxgl.Marker({ element: el })
+      el.className = 'tc-driver-pin assigned';
+      el.innerHTML = CAR_SVG;
+      assignedMarkerRef.current = new mapboxgl.Marker({ element: el, anchor: 'center' })
         .setLngLat([assignedDriver.lng, assignedDriver.lat])
         .addTo(map);
     }
