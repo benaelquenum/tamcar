@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Logo } from '@/components/Logo';
-import { CarIcon, PinIcon } from '@/components/Icon';
-import { Map, type DriverPin } from '@/components/Map';
+import { CarIcon, CheckIcon, PinIcon, StarIcon } from '@/components/Icon';
+import { Map } from '@/components/Map';
+import { getRoute } from '@/lib/mapbox';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 
 type RideStatus =
@@ -33,67 +34,59 @@ export type RideForView = {
   status: RideStatus;
   payment_method: string | null;
   requested_at: string;
+  driver_full_name?: string | null;
+  driver_phone?: string | null;
+  driver_rating_avg?: number | null;
+  driver_rating_count?: number | null;
+  driver_lat?: number | null;
+  driver_lng?: number | null;
+  vehicle_plate?: string | null;
+  vehicle_brand?: string | null;
+  vehicle_model?: string | null;
+  vehicle_color?: string | null;
 };
 
-const STATUS_META: Record<
-  RideStatus,
-  { title: string; sub: string; color: string; showRebound: boolean }
-> = {
+type NearbyDriverRow = { driver_id: string; lat: number; lng: number };
+
+const STATUS_META: Record<RideStatus, { title: string; sub: string; color: string }> = {
   requested: {
     title: 'Recherche d\'un chauffeur',
     sub: 'On cherche un chauffeur près de toi…',
     color: 'bg-primary-500',
-    showRebound: false,
   },
   matched: {
     title: 'Chauffeur en route',
-    sub: 'Ton chauffeur arrive.',
+    sub: 'Ton chauffeur arrive au point de départ.',
     color: 'bg-primary-500',
-    showRebound: true,
   },
   arrived: {
     title: 'Chauffeur arrivé',
     sub: 'Rejoins-le au point de départ.',
     color: 'bg-gold',
-    showRebound: false,
   },
   in_progress: {
     title: 'Course en cours',
     sub: 'Bon voyage !',
     color: 'bg-success',
-    showRebound: false,
   },
   completed: {
     title: 'Course terminée',
     sub: 'Merci d\'avoir roulé TamCar.',
     color: 'bg-success',
-    showRebound: false,
   },
-  cancelled_by_client: {
-    title: 'Course annulée',
-    sub: 'Tu as annulé cette course.',
-    color: 'bg-neutral-600',
-    showRebound: false,
-  },
-  cancelled_by_driver: {
-    title: 'Annulée par le chauffeur',
-    sub: '',
-    color: 'bg-neutral-600',
-    showRebound: false,
-  },
-  expired: {
-    title: 'Aucun chauffeur trouvé',
-    sub: 'Réessaie dans un moment.',
-    color: 'bg-error',
-    showRebound: false,
-  },
+  cancelled_by_client: { title: 'Course annulée', sub: '', color: 'bg-neutral-600' },
+  cancelled_by_driver: { title: 'Annulée par le chauffeur', sub: '', color: 'bg-neutral-600' },
+  expired: { title: 'Aucun chauffeur trouvé', sub: 'Réessaie plus tard.', color: 'bg-error' },
 };
 
 function formatFcfa(n: number | undefined | null): string {
   if (n == null) return '—';
   return n.toLocaleString('fr-FR').replace(/,/g, ' ');
 }
-
+function formatDistance(m: number | null | undefined): string {
+  if (m == null) return '—';
+  return m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`;
+}
 function paymentLabel(method: string | null): string {
   switch (method) {
     case 'cash': return 'Espèces';
@@ -103,70 +96,22 @@ function paymentLabel(method: string | null): string {
     default: return '—';
   }
 }
+function firstNameOf(fullName: string | null | undefined): string {
+  if (!fullName) return '';
+  return fullName.trim().split(/\s+/)[0] ?? '';
+}
 
 export function RideView({ initialRide }: { initialRide: RideForView }) {
   const [ride, setRide] = useState<RideForView>(initialRide);
-  const [nearbyDrivers, setNearbyDrivers] = useState<DriverPin[]>([]);
+  const [nearbyDrivers, setNearbyDrivers] = useState<NearbyDriverRow[]>([]);
+  const [distanceToPickup, setDistanceToPickup] = useState<number | null>(null);
+  const [durationToPickup, setDurationToPickup] = useState<number | null>(null);
   const [sheetExpanded, setSheetExpanded] = useState(false);
 
   const meta = STATUS_META[ride.status];
   const isWaiting = ride.status === 'requested';
   const isActive = ['requested', 'matched', 'arrived', 'in_progress'].includes(ride.status);
-
-  // Polling des chauffeurs proches (5s) tant que ride active
-  useEffect(() => {
-    if (!isActive) return;
-
-    let cancelled = false;
-
-    async function pollDrivers() {
-      const { data, error } = await supabaseBrowser.rpc('nearby_drivers_for_map', {
-        pickup_lat: ride.pickup_lat,
-        pickup_lng: ride.pickup_lng,
-        radius_km: 5.0,
-      });
-      if (cancelled) return;
-      if (error) {
-        // eslint-disable-next-line no-console
-        console.error('nearby_drivers_for_map error:', error.message);
-        return;
-      }
-      setNearbyDrivers(
-        (data as Array<{ driver_id: string; lat: number; lng: number }> | null)?.map((d) => ({
-          driver_id: d.driver_id,
-          lat: d.lat,
-          lng: d.lng,
-        })) ?? [],
-      );
-    }
-
-    pollDrivers();
-    const interval = setInterval(pollDrivers, 5000);
-
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
-  }, [isActive, ride.pickup_lat, ride.pickup_lng]);
-
-  // Realtime : écoute changements sur la ride pour refléter matching / statut
-  useEffect(() => {
-    const channel = supabaseBrowser
-      .channel(`ride:${ride.id}`)
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'rides', filter: `id=eq.${ride.id}` },
-        (payload) => {
-          const next = payload.new as Partial<RideForView>;
-          setRide((prev) => ({ ...prev, ...next }));
-        },
-      )
-      .subscribe();
-
-    return () => {
-      supabaseBrowser.removeChannel(channel);
-    };
-  }, [ride.id]);
+  const hasDriver = ride.driver_id !== null;
 
   const pickupCoord = useMemo<[number, number]>(
     () => [ride.pickup_lng, ride.pickup_lat],
@@ -176,6 +121,81 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
     () => [ride.dropoff_lng, ride.dropoff_lat],
     [ride.dropoff_lat, ride.dropoff_lng],
   );
+  const driverCoord = useMemo<[number, number] | null>(
+    () => (ride.driver_lng != null && ride.driver_lat != null ? [ride.driver_lng, ride.driver_lat] : null),
+    [ride.driver_lat, ride.driver_lng],
+  );
+
+  // Refetch complet des détails ride+driver
+  const refetchDetails = useCallback(async () => {
+    const { data } = await supabaseBrowser.rpc('ride_with_driver_details', { ride_id: ride.id });
+    if (Array.isArray(data) && data[0]) {
+      setRide((prev) => ({ ...prev, ...(data[0] as Partial<RideForView>) }));
+    }
+  }, [ride.id]);
+
+  // Polling chauffeurs autour (seulement en requested)
+  useEffect(() => {
+    if (!isWaiting) return;
+    let cancelled = false;
+    async function poll() {
+      const { data } = await supabaseBrowser.rpc('nearby_drivers_for_map', {
+        pickup_lat: ride.pickup_lat,
+        pickup_lng: ride.pickup_lng,
+        radius_km: 5.0,
+      });
+      if (cancelled) return;
+      setNearbyDrivers((data ?? []) as NearbyDriverRow[]);
+    }
+    poll();
+    const interval = setInterval(poll, 5000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, [isWaiting, ride.pickup_lat, ride.pickup_lng]);
+
+  // Realtime : updates de la ride (statut change → refetch complet pour infos driver)
+  useEffect(() => {
+    const channel = supabaseBrowser
+      .channel(`ride:${ride.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'rides', filter: `id=eq.${ride.id}` },
+        async () => {
+          await refetchDetails();
+        },
+      )
+      .subscribe();
+    return () => { supabaseBrowser.removeChannel(channel); };
+  }, [ride.id, refetchDetails]);
+
+  // Realtime : position du chauffeur assigné (updates de public.drivers)
+  useEffect(() => {
+    if (!ride.driver_id) return;
+    const channel = supabaseBrowser
+      .channel(`driver-pos:${ride.driver_id}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'drivers', filter: `id=eq.${ride.driver_id}` },
+        () => { refetchDetails(); },
+      )
+      .subscribe();
+    return () => { supabaseBrowser.removeChannel(channel); };
+  }, [ride.driver_id, refetchDetails]);
+
+  // Recalcul route chauffeur → pickup à chaque changement de position driver
+  useEffect(() => {
+    if (!driverCoord || !isActive || ride.status === 'in_progress' || ride.status === 'completed') {
+      setDistanceToPickup(null);
+      setDurationToPickup(null);
+      return;
+    }
+    let cancelled = false;
+    getRoute(driverCoord, pickupCoord).then((r) => {
+      if (cancelled || !r) return;
+      setDistanceToPickup(r.distance_km * 1000);
+      setDurationToPickup(r.duration_min);
+    });
+    return () => { cancelled = true; };
+  }, [driverCoord, pickupCoord, isActive, ride.status]);
 
   return (
     <main className="fixed inset-0 overflow-hidden bg-white">
@@ -185,12 +205,13 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
           pickup={pickupCoord}
           dropoff={dropoffCoord}
           driversNearby={isWaiting ? nearbyDrivers : []}
+          assignedDriver={hasDriver && driverCoord ? { driver_id: ride.driver_id!, lng: driverCoord[0], lat: driverCoord[1] } : null}
           pickupPulse={isWaiting}
           className="h-full w-full"
         />
       </div>
 
-      {/* Header overlay compact */}
+      {/* Header */}
       <header className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center justify-between p-lg">
         <Link
           href="/"
@@ -207,7 +228,6 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
       {/* Bottom sheet */}
       <div className="absolute inset-x-0 bottom-0 z-10">
         <div className="mx-auto max-w-md rounded-t-2xl bg-white shadow-2xl ring-1 ring-neutral-200">
-          {/* Handle drag */}
           <button
             type="button"
             onClick={() => setSheetExpanded((v) => !v)}
@@ -243,31 +263,59 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
             </div>
           </div>
 
-          {/* Zone infos chauffeur (visible après matching) */}
-          {ride.driver_id && (
-            <div className="mx-lg mb-md flex items-center gap-md rounded-xl bg-neutral-100 p-md">
-              <div className="grid h-12 w-12 flex-none place-items-center rounded-full bg-gradient-to-br from-primary-500 to-primary-700 text-white">
-                <CarIcon className="h-6 w-6" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-bold text-neutral-900">Chauffeur assigné</p>
-                <p className="text-xs text-neutral-600">Détails à venir</p>
-              </div>
-              {meta.showRebound && (
-                <div className="text-right">
-                  <p
-                    className="text-xs font-bold text-neutral-900"
-                    style={{ fontVariantNumeric: 'tabular-nums' }}
-                  >
-                    — min
+          {/* Card chauffeur assigné */}
+          {hasDriver && (ride.driver_full_name || ride.vehicle_plate) && (
+            <div className="mx-lg mb-md rounded-xl bg-neutral-100 p-md">
+              <div className="flex items-center gap-md">
+                <div className="grid h-12 w-12 flex-none place-items-center rounded-full bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-md">
+                  <CarIcon className="h-6 w-6" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-neutral-900">
+                    {firstNameOf(ride.driver_full_name) || 'Chauffeur'}
+                    {typeof ride.driver_rating_avg === 'number' && ride.driver_rating_avg > 0 && (
+                      <span className="ml-xs inline-flex items-center gap-xs text-xs font-semibold text-neutral-600">
+                        <StarIcon className="h-3 w-3 text-gold-500" />
+                        <span style={{ fontVariantNumeric: 'tabular-nums' }}>
+                          {ride.driver_rating_avg.toFixed(1)}
+                        </span>
+                      </span>
+                    )}
                   </p>
-                  <p className="text-[10px] text-neutral-500">à l'arrivée</p>
+                  {(ride.vehicle_brand || ride.vehicle_model) && (
+                    <p className="text-xs text-neutral-600">
+                      {[ride.vehicle_color, ride.vehicle_brand, ride.vehicle_model].filter(Boolean).join(' ')}
+                      {ride.vehicle_plate && (
+                        <span className="ml-xs rounded bg-neutral-900 px-xs py-0.5 text-[10px] font-bold text-white" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                          {ride.vehicle_plate}
+                        </span>
+                      )}
+                    </p>
+                  )}
+                </div>
+                {ride.driver_phone && (
+                  <a
+                    href={`tel:${ride.driver_phone}`}
+                    className="rounded-full bg-primary-500 px-md py-xs text-xs font-bold text-white shadow-md"
+                  >
+                    Appeler
+                  </a>
+                )}
+              </div>
+              {ride.status === 'matched' && distanceToPickup != null && (
+                <div className="mt-sm flex justify-between text-xs text-neutral-600">
+                  <span style={{ fontVariantNumeric: 'tabular-nums' }}>
+                    📍 {formatDistance(distanceToPickup)} restants
+                  </span>
+                  <span style={{ fontVariantNumeric: 'tabular-nums' }}>
+                    ⏱ ~{durationToPickup ?? '—'} min
+                  </span>
                 </div>
               )}
             </div>
           )}
 
-          {/* Contenu extensible : trajet + prix */}
+          {/* Adresses + metrics */}
           <div className={`overflow-hidden transition-all ${sheetExpanded ? 'max-h-96' : 'max-h-0'}`}>
             <div className="space-y-md px-lg pb-md">
               <div className="rounded-xl bg-neutral-100 p-md">
@@ -285,7 +333,6 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                   <p className="flex-1 text-xs text-neutral-900">{ride.dropoff_address}</p>
                 </div>
               </div>
-
               <div className="grid grid-cols-3 gap-sm text-center">
                 <Mini label="Distance" value={ride.distance_km ? `${ride.distance_km.toFixed(1)} km` : '—'} />
                 <Mini label="Durée" value={ride.duration_min ? `${ride.duration_min} min` : '—'} />
@@ -297,9 +344,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
           {/* Prix + actions */}
           <div className="border-t border-neutral-100 px-lg py-md">
             <div className="mb-md flex items-baseline justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-neutral-600">
-                Total
-              </span>
+              <span className="text-xs font-bold uppercase tracking-wider text-neutral-600">Total</span>
               <span
                 className="text-2xl font-extrabold text-neutral-900"
                 style={{ fontVariantNumeric: 'tabular-nums' }}
@@ -308,7 +353,6 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                 <span className="ml-xs text-xs font-medium text-neutral-600">FCFA</span>
               </span>
             </div>
-
             {isWaiting && (
               <button
                 type="button"
@@ -316,6 +360,12 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
               >
                 Annuler la course
               </button>
+            )}
+            {ride.status === 'completed' && (
+              <div className="rounded-md bg-success/10 p-md text-center text-sm font-semibold text-success">
+                <CheckIcon className="mr-xs inline h-4 w-4" strokeWidth={3} />
+                Course terminée
+              </div>
             )}
           </div>
         </div>

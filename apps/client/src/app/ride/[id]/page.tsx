@@ -8,15 +8,14 @@ export default async function RideDetailPage({ params }: { params: { id: string 
   if (!user) redirect('/login');
 
   const supabase = createServerSupabase();
-  const { data, error } = await supabase
-    .from('rides_view')
-    .select(
-      'id, client_id, driver_id, pickup_address, pickup_lat, pickup_lng, dropoff_address, dropoff_lat, dropoff_lng, distance_km, duration_min, price_total_fcfa, status, payment_method, requested_at',
-    )
-    .eq('id', params.id)
-    .single();
 
-  if (error || !data) notFound();
+  // Utilise la RPC ride_with_driver_details pour récupérer ride + chauffeur + véhicule en 1 appel
+  const { data, error } = await supabase.rpc('ride_with_driver_details', {
+    ride_id: params.id,
+  });
 
-  return <RideView initialRide={data as RideForView} />;
+  const row = Array.isArray(data) ? data[0] : null;
+  if (error || !row) notFound();
+
+  return <RideView initialRide={row as RideForView} />;
 }
