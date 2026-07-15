@@ -16,6 +16,13 @@ export type DriverPin = {
   lng: number;
 };
 
+const CAR_SVG = `
+<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <path d="M5 17h14M5 17v-4l1.5-4A2 2 0 0 1 8.4 7.7h7.2a2 2 0 0 1 1.9 1.3L19 13v4M5 17v2a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-2M16 17v2a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-2"/>
+  <circle cx="8" cy="15" r="0.9" fill="white"/>
+  <circle cx="16" cy="15" r="0.9" fill="white"/>
+</svg>`;
+
 type Props = {
   pickup?: [number, number] | null;
   dropoff?: [number, number] | null;
@@ -31,6 +38,8 @@ type Props = {
   assignedDriver?: DriverPin | null;
   /** Ne pas ajuster fitBounds automatiquement (utile en mode suivi ride) */
   autoFit?: boolean;
+  /** Anime le pin pickup (cercles pulse) — actif pendant la recherche d'un chauffeur */
+  pickupPulse?: boolean;
 };
 
 export function Map({
@@ -43,6 +52,7 @@ export function Map({
   driversNearby,
   assignedDriver,
   autoFit = true,
+  pickupPulse = false,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -102,17 +112,30 @@ export function Map({
     }
   }, [candidate]);
 
-  // Update pickup marker
+  // Update pickup marker (mode pulse OU mode standard bleu)
   useEffect(() => {
     if (!mapRef.current) return;
     pickupMarkerRef.current?.remove();
     pickupMarkerRef.current = null;
-    if (pickup) {
+    if (!pickup) return;
+
+    if (pickupPulse) {
+      const el = document.createElement('div');
+      el.className = 'tc-pickup-searching';
+      el.innerHTML =
+        '<div class="tc-pulse"></div>' +
+        '<div class="tc-pulse delay-1"></div>' +
+        '<div class="tc-pulse delay-2"></div>' +
+        '<div class="tc-pickup-dot"></div>';
+      pickupMarkerRef.current = new mapboxgl.Marker({ element: el, anchor: 'center' })
+        .setLngLat(pickup)
+        .addTo(mapRef.current);
+    } else {
       pickupMarkerRef.current = new mapboxgl.Marker({ color: '#2563EB' })
         .setLngLat(pickup)
         .addTo(mapRef.current);
     }
-  }, [pickup]);
+  }, [pickup, pickupPulse]);
 
   // Update dropoff marker
   useEffect(() => {
@@ -154,13 +177,10 @@ export function Map({
       if (existing) {
         existing.setLngLat([drv.lng, drv.lat]);
       } else {
-        // Elément DOM custom : petit rond cyan avec voiture emoji-like
         const el = document.createElement('div');
-        el.className = 'tamcar-driver-pin';
-        el.style.cssText =
-          'width:22px;height:22px;border-radius:50%;background:#06B6D4;border:2px solid white;box-shadow:0 2px 6px rgba(6,182,212,.5);display:grid;place-items:center;color:white;font-size:11px;font-weight:800;';
-        el.textContent = '🚗';
-        const marker = new mapboxgl.Marker({ element: el })
+        el.className = 'tc-driver-pin';
+        el.innerHTML = CAR_SVG;
+        const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
           .setLngLat([drv.lng, drv.lat])
           .addTo(map);
         driverMarkersRef.current.set(drv.driver_id, marker);

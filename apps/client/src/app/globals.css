@@ -28,3 +28,59 @@ body {
   font-feature-settings: 'cv02', 'cv03', 'cv04';
   -webkit-tap-highlight-color: transparent;
 }
+
+/* ============================================================
+   Pins Mapbox custom (drivers autour, chauffeur assigné, pickup pulse)
+   ============================================================ */
+
+.tc-driver-pin {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #06B6D4, #0891B2);
+  border: 2px solid white;
+  box-shadow: 0 2px 8px rgba(6, 182, 212, 0.5);
+  display: grid;
+  place-items: center;
+  color: white;
+  cursor: pointer;
+}
+.tc-driver-pin svg { width: 14px; height: 14px; }
+
+.tc-driver-pin.assigned {
+  width: 38px;
+  height: 38px;
+  background: linear-gradient(135deg, #10B981, #059669);
+  border-width: 3px;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.6);
+}
+.tc-driver-pin.assigned svg { width: 20px; height: 20px; }
+
+/* Pickup avec pulse pendant recherche */
+.tc-pickup-searching {
+  position: relative;
+  width: 28px;
+  height: 28px;
+}
+.tc-pickup-searching .tc-pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.35);
+  animation: tc-pulse 2s ease-out infinite;
+  pointer-events: none;
+}
+.tc-pickup-searching .tc-pulse.delay-1 { animation-delay: 0.7s; }
+.tc-pickup-searching .tc-pulse.delay-2 { animation-delay: 1.4s; }
+.tc-pickup-searching .tc-pickup-dot {
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background: #2563EB;
+  border: 3px solid white;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.6);
+}
+@keyframes tc-pulse {
+  0% { transform: scale(0.9); opacity: 0.7; }
+  100% { transform: scale(3.5); opacity: 0; }
+}

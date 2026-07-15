@@ -9,7 +9,13 @@ import {
   reverseGeocode,
   type GeocodeFeature,
 } from '@/lib/mapbox';
-import { placeToFeature, searchPlaces } from '@/lib/places';
+import {
+  fetchRecentAddresses,
+  placeToFeature,
+  recentToFeature,
+  searchPlaces,
+  type RecentAddress,
+} from '@/lib/places';
 import { CheckIcon, CrosshairIcon, PinIcon } from './Icon';
 
 export type SelectedAddress = {
@@ -30,6 +36,12 @@ type Props = {
   onSuggestPlace?: (query: string) => void;
 };
 
+function truncateChip(s: string): string {
+  const noBenin = s.replace(/, Bénin$/i, '');
+  if (noBenin.length <= 28) return noBenin;
+  return noBenin.slice(0, 26) + '…';
+}
+
 export function AddressAutocomplete({
   label,
   placeholder,
@@ -48,7 +60,13 @@ export function AddressAutocomplete({
   const [loading, setLoading] = useState(false);
   const [geolocating, setGeolocating] = useState(false);
   const [geoError, setGeoError] = useState<string | null>(null);
+  const [recents, setRecents] = useState<RecentAddress[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Load derniers lieux du user (async, une fois)
+  useEffect(() => {
+    fetchRecentAddresses(6).then(setRecents);
+  }, []);
 
   useEffect(() => {
     setQuery(value?.place_name || '');
@@ -195,24 +213,47 @@ export function AddressAutocomplete({
         <p className="mt-xs text-xs text-error">{geoError}</p>
       )}
 
-      {/* Chips lieux populaires — visibles tant que pas de valeur choisie ni de suggestions ouvertes */}
+      {/* Chips raccourcis : d'abord les récents du user, sinon fallback lieux populaires */}
       {!value && !open && (
         <div className="mt-md">
-          <p className="mb-xs text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
-            Lieux populaires
-          </p>
-          <div className="flex flex-wrap gap-xs">
-            {BENIN_POPULAR_PLACES.slice(0, 10).map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => selectPlace(popularPlaceToFeature(p))}
-                className="rounded-full bg-neutral-100 px-md py-xs text-xs font-semibold text-neutral-900 transition hover:bg-primary-100 hover:text-primary-700"
-              >
-                {p.short}
-              </button>
-            ))}
-          </div>
+          {recents.length > 0 ? (
+            <>
+              <p className="mb-xs text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
+                Récents
+              </p>
+              <div className="flex flex-wrap gap-xs">
+                {recents.map((r) => (
+                  <button
+                    key={r.address}
+                    type="button"
+                    onClick={() => selectPlace(recentToFeature(r))}
+                    className="rounded-full bg-primary-50 px-md py-xs text-xs font-semibold text-primary-700 transition hover:bg-primary-100"
+                    title={r.address}
+                  >
+                    {truncateChip(r.address)}
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="mb-xs text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
+                Lieux populaires
+              </p>
+              <div className="flex flex-wrap gap-xs">
+                {BENIN_POPULAR_PLACES.slice(0, 10).map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => selectPlace(popularPlaceToFeature(p))}
+                    className="rounded-full bg-neutral-100 px-md py-xs text-xs font-semibold text-neutral-900 transition hover:bg-primary-100 hover:text-primary-700"
+                  >
+                    {p.short}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       )}
 

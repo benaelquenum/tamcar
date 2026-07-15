@@ -185,6 +185,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
           pickup={pickupCoord}
           dropoff={dropoffCoord}
           driversNearby={isWaiting ? nearbyDrivers : []}
+          pickupPulse={isWaiting}
           className="h-full w-full"
         />
       </div>
@@ -229,13 +230,15 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                 <p className="text-lg font-extrabold leading-tight">{meta.title}</p>
                 {meta.sub && <p className="text-xs text-white/90">{meta.sub}</p>}
               </div>
-              {isWaiting && (
-                <span
-                  className="text-sm font-bold"
-                  style={{ fontVariantNumeric: 'tabular-nums' }}
-                >
-                  {nearbyDrivers.length} 🚗
-                </span>
+              {isWaiting && nearbyDrivers.length > 0 && (
+                <div className="flex-none text-right">
+                  <p className="text-2xl font-extrabold leading-none" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                    {nearbyDrivers.length}
+                  </p>
+                  <p className="text-[10px] leading-tight text-white/80">
+                    {nearbyDrivers.length > 1 ? 'chauffeurs autour' : 'chauffeur autour'}
+                  </p>
+                </div>
               )}
             </div>
           </div>
