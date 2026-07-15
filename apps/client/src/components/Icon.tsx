@@ -139,3 +139,20 @@ export function WalletIcon({ className = 'h-5 w-5', strokeWidth = 2 }: IconProps
     </svg>
   );
 }
+
+export function CheckIcon({ className = 'h-4 w-4', strokeWidth = 2.5 }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={`${base} ${className}`}>
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
+export function BadgeIcon({ className = 'h-4 w-4', strokeWidth = 2 }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={`${base} ${className}`}>
+      <path d="M12 2 4 6v6c0 5.5 3.8 10.7 8 12 4.2-1.3 8-6.5 8-12V6l-8-4Z" />
+      <polyline points="9 12 11 14 15 10" />
+    </svg>
+  );
+}

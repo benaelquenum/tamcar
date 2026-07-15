@@ -1,3 +1,4 @@
+import { CategoryPricingCards } from '@/components/CategoryPricingCards';
 import { Logo } from '@/components/Logo';
 import {
   ArrowRightIcon,
@@ -8,8 +9,6 @@ import {
   LifeBuoyIcon,
   PinIcon,
   PlusIcon,
-  RouteIcon,
-  StarIcon,
   UserIcon,
   WalletIcon,
   WaveIcon,
@@ -102,44 +101,8 @@ export default function HomePage() {
           </button>
         </section>
 
-        {/* Featured : trajet phare corridor */}
-        <section className="mt-xl">
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-500 via-primary-700 to-violet-500 p-lg text-white shadow-glow">
-            {/* Decoration : grande icône route en fond, opacity faible */}
-            <div className="pointer-events-none absolute -bottom-8 -right-6 text-white/15" aria-hidden>
-              <RouteIcon className="h-40 w-40" strokeWidth={1.5} />
-            </div>
-            <div className="relative">
-              <div className="flex items-center gap-xs">
-                <span className="inline-flex items-center gap-xs rounded-full bg-gold/25 px-md py-xs text-xs font-bold uppercase tracking-wider text-white ring-1 ring-gold/40">
-                  <StarIcon className="h-3.5 w-3.5 text-gold-500" />
-                  Trajet phare
-                </span>
-              </div>
-              <h2 className="mt-md text-2xl font-extrabold leading-tight">
-                Cotonou → Porto-Novo
-              </h2>
-              <div className="mt-md flex items-baseline gap-sm">
-                <span
-                  className="text-4xl font-extrabold"
-                  style={{ fontVariantNumeric: 'tabular-nums' }}
-                >
-                  3 500
-                </span>
-                <span className="text-sm font-medium text-white/80">
-                  FCFA · 30 min · prix fixe
-                </span>
-              </div>
-              <button
-                type="button"
-                className="mt-lg inline-flex items-center gap-xs rounded-md bg-white px-lg py-sm text-sm font-bold text-primary-700 shadow-md transition hover:brightness-105"
-              >
-                Réserver ce trajet
-                <ArrowRightIcon />
-              </button>
-            </div>
-          </div>
-        </section>
+        {/* Cartes catégories — prix calculés en direct via Supabase RPC compute_price */}
+        <CategoryPricingCards />
 
         {/* Wallet — TamCar Crédit */}
         <section className="mt-xl">
