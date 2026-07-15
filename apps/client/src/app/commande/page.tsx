@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { AddressAutocomplete, type SelectedAddress } from '@/components/AddressAutocomplete';
 import { ArrowRightIcon, CarIcon, StarIcon } from '@/components/Icon';
@@ -9,6 +9,7 @@ import { Map } from '@/components/Map';
 import { SuggestPlaceModal } from '@/components/SuggestPlaceModal';
 import { getRoute, reverseGeocode, type RouteResult } from '@/lib/mapbox';
 import { computePrice, type PriceQuote, type VehicleCategory } from '@/lib/pricing';
+import { createRideAction } from './actions';
 
 type CategoryDef = {
   id: VehicleCategory;
@@ -47,6 +48,34 @@ export default function CommandePage() {
   const [suggestOpen, setSuggestOpen] = useState(false);
   const [suggestInitialName, setSuggestInitialName] = useState('');
   const [suggestCenter, setSuggestCenter] = useState<[number, number] | null>(null);
+
+  // Confirmation ride (server action + redirect)
+  const [confirming, startConfirm] = useTransition();
+  const [confirmError, setConfirmError] = useState<string | null>(null);
+
+  function handleConfirm() {
+    if (!pickup || !dropoff || !route || !prices[selectedCat]) return;
+    setConfirmError(null);
+    startConfirm(async () => {
+      try {
+        await createRideAction({
+          category: selectedCat,
+          pickup_lat: pickup.center[1],
+          pickup_lng: pickup.center[0],
+          pickup_address: pickup.place_name,
+          dropoff_lat: dropoff.center[1],
+          dropoff_lng: dropoff.center[0],
+          dropoff_address: dropoff.place_name,
+          distance_km: route.distance_km,
+          duration_min: route.duration_min,
+          is_night: false,
+          with_ac: false,
+        });
+      } catch (e) {
+        setConfirmError(e instanceof Error ? e.message : 'Erreur inconnue');
+      }
+    });
+  }
 
   useEffect(() => {
     if (!pickup || !dropoff) {
@@ -228,15 +257,23 @@ export default function CommandePage() {
             <section className="mt-lg">
               <button
                 type="button"
-                disabled={loading || !prices[selectedCat]}
+                onClick={handleConfirm}
+                disabled={loading || confirming || !prices[selectedCat]}
                 className="flex w-full items-center justify-center gap-sm rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-lg text-base font-bold text-white shadow-glow transition hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <CarIcon className="h-5 w-5" />
-                Confirmer la course · {formatFcfa(prices[selectedCat]?.price_total_fcfa)} FCFA
-                <ArrowRightIcon />
+                {confirming
+                  ? 'Envoi de la course…'
+                  : `Confirmer la course · ${formatFcfa(prices[selectedCat]?.price_total_fcfa)} FCFA`}
+                {!confirming && <ArrowRightIcon />}
               </button>
+              {confirmError && (
+                <p className="mt-md text-center text-sm font-medium text-error">
+                  {confirmError}
+                </p>
+              )}
               <p className="mt-md text-center text-[11px] text-neutral-400">
-                Prochaine étape : matching chauffeur + suivi temps réel (à venir)
+                Prochaine étape : matching chauffeur automatique (à venir)
               </p>
             </section>
           </>

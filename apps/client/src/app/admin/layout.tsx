@@ -29,6 +29,9 @@ export default async function AdminLayout({
             </span>
           </div>
           <nav className="flex items-center gap-lg">
+            <Link href="/admin/rides" className="text-sm font-semibold text-neutral-900 hover:text-primary-500">
+              Courses
+            </Link>
             <Link href="/admin/places" className="text-sm font-semibold text-neutral-900 hover:text-primary-500">
               Lieux
             </Link>
