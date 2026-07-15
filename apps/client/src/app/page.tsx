@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { CategoryPricingCards } from '@/components/CategoryPricingCards';
 import { Logo } from '@/components/Logo';
 import {
@@ -13,11 +14,13 @@ import {
   WalletIcon,
   WaveIcon,
 } from '@/components/Icon';
+import { firstNameOf, getCurrentProfile } from '@/lib/session';
 
-// TODO: remplacer par la session Supabase Auth quand le login OTP est en place
-const firstName = 'Terence';
+export default async function HomePage() {
+  const profile = await getCurrentProfile();
+  const firstName = firstNameOf(profile);
+  const isLoggedIn = profile !== null;
 
-export default function HomePage() {
   return (
     <main className="relative min-h-dvh overflow-hidden bg-white">
       {/* Blobs décoratifs en fond (subtils, flous) */}
@@ -31,20 +34,29 @@ export default function HomePage() {
         {/* Header */}
         <header className="flex items-center justify-between">
           <Logo className="h-9 w-auto" />
-          <button
-            type="button"
-            aria-label="Profil"
-            className="grid h-11 w-11 place-items-center rounded-full bg-white text-neutral-900 shadow-md ring-1 ring-neutral-200 transition hover:shadow-lg"
-          >
-            <UserIcon />
-          </button>
+          {isLoggedIn ? (
+            <button
+              type="button"
+              aria-label="Profil"
+              className="grid h-11 w-11 place-items-center rounded-full bg-white text-neutral-900 shadow-md ring-1 ring-neutral-200 transition hover:shadow-lg"
+            >
+              <UserIcon />
+            </button>
+          ) : (
+            <Link
+              href="/login"
+              className="rounded-full bg-primary-500 px-lg py-sm text-sm font-bold text-white shadow-glow transition hover:brightness-110"
+            >
+              Se connecter
+            </Link>
+          )}
         </header>
 
         {/* Greeting + hero */}
         <section className="mt-xl">
           <p className="flex items-center gap-xs text-base font-medium text-neutral-600">
             <WaveIcon className="h-5 w-5 text-gold-500" />
-            <span>Bonjour {firstName}</span>
+            <span>{firstName ? `Bonjour ${firstName}` : 'Bonjour'}</span>
           </p>
           <h1 className="mt-xs text-4xl font-extrabold leading-[1.05] tracking-tight text-neutral-900">
             Où allez-vous
