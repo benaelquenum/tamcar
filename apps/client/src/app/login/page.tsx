@@ -1,14 +1,12 @@
 import Link from 'next/link';
 import { Logo } from '@/components/Logo';
-import { CheckIcon } from '@/components/Icon';
 import { login } from './actions';
 
 export default function LoginPage({
   searchParams,
 }: {
-  searchParams: { sent?: string; error?: string };
+  searchParams: { error?: string };
 }) {
-  const sent = searchParams.sent;
   const error = searchParams.error;
 
   return (
@@ -35,75 +33,58 @@ export default function LoginPage({
             </span>
           </h1>
           <p className="mt-md text-base text-neutral-600">
-            Reçois un lien de connexion instantané dans ta boîte mail. Pas de mot
-            de passe à retenir.
+            Entre ton numéro de téléphone. On t&apos;envoie un code par SMS pour te connecter.
           </p>
         </div>
 
-        {sent ? (
-          <div className="mt-xl rounded-xl border border-success/30 bg-success/5 p-lg">
-            <div className="flex items-start gap-md">
-              <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-success text-white">
-                <CheckIcon className="h-4 w-4" strokeWidth={3} />
+        <form action={login} className="mt-xl space-y-md">
+          <div>
+            <label
+              htmlFor="phone"
+              className="mb-xs block text-sm font-semibold text-neutral-900"
+            >
+              Ton numéro
+            </label>
+            <div className="flex items-center overflow-hidden rounded-xl bg-neutral-100 shadow-sm ring-1 ring-neutral-200 transition focus-within:bg-white focus-within:ring-2 focus-within:ring-primary-500">
+              <span className="border-r border-neutral-200 bg-neutral-100 px-md py-lg text-base font-semibold text-neutral-600">
+                +229
               </span>
-              <div className="flex-1">
-                <p className="font-bold text-neutral-900">Lien envoyé !</p>
-                <p className="mt-xs text-sm text-neutral-600">
-                  Ouvre ta boîte mail (<strong>{sent}</strong>) et clique sur le lien pour te connecter.
-                  Pense à vérifier les spams si tu ne le vois pas dans 2 min.
-                </p>
-              </div>
-            </div>
-            <form action={login} className="mt-md">
-              <input type="hidden" name="email" value={sent} />
-              <button
-                type="submit"
-                className="text-sm font-semibold text-primary-500 underline"
-              >
-                Renvoyer le lien
-              </button>
-            </form>
-          </div>
-        ) : (
-          <form action={login} className="mt-xl space-y-md">
-            <div>
-              <label
-                htmlFor="email"
-                className="mb-xs block text-sm font-semibold text-neutral-900"
-              >
-                Ton email
-              </label>
               <input
-                id="email"
-                type="email"
-                name="email"
+                id="phone"
+                type="tel"
+                name="phone"
                 required
-                autoComplete="email"
+                autoComplete="tel-national"
                 autoFocus
-                placeholder="ton.email@exemple.bj"
-                className="w-full rounded-xl bg-neutral-100 px-lg py-lg text-base text-neutral-900 shadow-sm ring-1 ring-neutral-200 transition placeholder:text-neutral-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                inputMode="numeric"
+                placeholder="01 67 59 18 17"
+                className="flex-1 bg-transparent px-md py-lg text-base text-neutral-900 outline-none placeholder:text-neutral-400"
+                style={{ fontVariantNumeric: 'tabular-nums' }}
               />
             </div>
+            <p className="mt-xs text-xs text-neutral-500">
+              Ton numéro Bénin (mobile ou fixe qui reçoit les SMS).
+            </p>
+          </div>
 
-            {error && (
-              <div className="rounded-md bg-error/10 p-md text-sm font-medium text-error">
-                {error}
-              </div>
-            )}
+          {error && (
+            <div className="rounded-md bg-error/10 p-md text-sm font-medium text-error">
+              {error}
+            </div>
+          )}
 
-            <button
-              type="submit"
-              className="w-full rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-lg text-base font-bold text-white shadow-glow transition hover:brightness-110 active:scale-[0.98]"
-            >
-              Envoyer le lien magique
-            </button>
-          </form>
-        )}
+          <button
+            type="submit"
+            className="w-full rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-lg text-base font-bold text-white shadow-glow transition hover:brightness-110 active:scale-[0.98]"
+          >
+            Recevoir mon code
+          </button>
+        </form>
 
         <p className="mt-xl text-center text-xs text-neutral-400">
           En te connectant, tu acceptes les CGU TamCar.
           <br />
-          Numéro de téléphone bientôt disponible.
+          Un SMS peut coûter 0 FCFA côté toi (envoyé par TamCar).
         </p>
 
         <div className="flex-1" />
