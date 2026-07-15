@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/Logo';
 import { ArrowRightIcon, CheckIcon, PinIcon } from '@/components/Icon';
 import { Map } from '@/components/Map';
+import { RatingModal } from '@/components/RatingModal';
 import { getRoute } from '@/lib/mapbox';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { completeRideAction, markArrivedAction, startRideAction } from './actions';
@@ -54,6 +55,8 @@ export function DriverRideView({ initialRide }: { initialRide: DriverRideForView
   const [durationToTarget, setDurationToTarget] = useState<number | null>(null);
   const [pending, startTransition] = useTransition();
   const [err, setErr] = useState<string | null>(null);
+  const [hasRated, setHasRated] = useState<boolean | null>(null);
+  const [ratingOpen, setRatingOpen] = useState(false);
   const router = useRouter();
 
   const target = useMemo<[number, number]>(() => {
@@ -99,6 +102,17 @@ export function DriverRideView({ initialRide }: { initialRide: DriverRideForView
       clearInterval(interval);
     };
   }, [target, getMyPos]);
+
+  // Auto-open rating modal quand completed
+  useEffect(() => {
+    if (ride.status !== 'completed') return;
+    (async () => {
+      const { data } = await supabaseBrowser.rpc('has_rated_ride', { p_ride_id: ride.id });
+      const rated = Boolean(data);
+      setHasRated(rated);
+      if (!rated) setRatingOpen(true);
+    })();
+  }, [ride.id, ride.status]);
 
   // Realtime : écoute updates ride pour rester en sync si annulée client par exemple
   useEffect(() => {

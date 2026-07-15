@@ -154,7 +154,7 @@ export default async function HomePage() {
 
         {/* Quick actions row */}
         <section className="mt-lg grid grid-cols-3 gap-sm">
-          <QuickAction Icon={HistoryIcon} label="Historique" tint="primary" />
+          <QuickActionLink href="/history" Icon={HistoryIcon} label="Historique" tint="primary" />
           <QuickAction Icon={GiftIcon} label="Parrainer" tag="Bientôt" tint="violet" />
           <QuickAction Icon={LifeBuoyIcon} label="Aide" tint="cyan" />
         </section>
@@ -189,9 +189,7 @@ function QuickAction({
       type="button"
       className="relative flex flex-col items-center gap-xs rounded-xl border border-neutral-200 bg-white p-md text-center shadow-sm transition hover:shadow-md"
     >
-      <span
-        className={`grid h-10 w-10 place-items-center rounded-lg ${TINT_CLASSES[tint]}`}
-      >
+      <span className={`grid h-10 w-10 place-items-center rounded-lg ${TINT_CLASSES[tint]}`}>
         <Icon className="h-5 w-5" />
       </span>
       <span className="text-xs font-semibold text-neutral-900">{label}</span>
@@ -201,5 +199,29 @@ function QuickAction({
         </span>
       )}
     </button>
+  );
+}
+
+function QuickActionLink({
+  href,
+  Icon,
+  label,
+  tint,
+}: {
+  href: string;
+  Icon: (props: { className?: string }) => JSX.Element;
+  label: string;
+  tint: Tint;
+}) {
+  return (
+    <Link
+      href={href}
+      className="relative flex flex-col items-center gap-xs rounded-xl border border-neutral-200 bg-white p-md text-center shadow-sm transition hover:shadow-md"
+    >
+      <span className={`grid h-10 w-10 place-items-center rounded-lg ${TINT_CLASSES[tint]}`}>
+        <Icon className="h-5 w-5" />
+      </span>
+      <span className="text-xs font-semibold text-neutral-900">{label}</span>
+    </Link>
   );
 }

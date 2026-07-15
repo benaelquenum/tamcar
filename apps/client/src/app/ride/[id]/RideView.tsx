@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Logo } from '@/components/Logo';
 import { CarIcon, CheckIcon, PinIcon, StarIcon } from '@/components/Icon';
 import { Map } from '@/components/Map';
+import { RatingModal } from '@/components/RatingModal';
 import { getRoute } from '@/lib/mapbox';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 
@@ -107,6 +108,8 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
   const [distanceToPickup, setDistanceToPickup] = useState<number | null>(null);
   const [durationToPickup, setDurationToPickup] = useState<number | null>(null);
   const [sheetExpanded, setSheetExpanded] = useState(false);
+  const [hasRated, setHasRated] = useState<boolean | null>(null);
+  const [ratingOpen, setRatingOpen] = useState(false);
 
   const meta = STATUS_META[ride.status];
   const isWaiting = ride.status === 'requested';
@@ -180,6 +183,17 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
       .subscribe();
     return () => { supabaseBrowser.removeChannel(channel); };
   }, [ride.driver_id, refetchDetails]);
+
+  // Check si le user a déjà noté cette ride (quand completed)
+  useEffect(() => {
+    if (ride.status !== 'completed') return;
+    (async () => {
+      const { data } = await supabaseBrowser.rpc('has_rated_ride', { p_ride_id: ride.id });
+      const rated = Boolean(data);
+      setHasRated(rated);
+      if (!rated) setRatingOpen(true); // auto-open
+    })();
+  }, [ride.id, ride.status]);
 
   // Recalcul route chauffeur → pickup à chaque changement de position driver
   useEffect(() => {
@@ -362,14 +376,40 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
               </button>
             )}
             {ride.status === 'completed' && (
-              <div className="rounded-md bg-success/10 p-md text-center text-sm font-semibold text-success">
-                <CheckIcon className="mr-xs inline h-4 w-4" strokeWidth={3} />
-                Course terminée
-              </div>
+              <>
+                <div className="rounded-md bg-success/10 p-md text-center text-sm font-semibold text-success">
+                  <CheckIcon className="mr-xs inline h-4 w-4" strokeWidth={3} />
+                  Course terminée
+                </div>
+                {hasRated === false && (
+                  <button
+                    type="button"
+                    onClick={() => setRatingOpen(true)}
+                    className="mt-md w-full rounded-xl bg-gold py-md text-sm font-bold text-neutral-900 shadow-glow-gold"
+                  >
+                    ⭐ Noter ce chauffeur
+                  </button>
+                )}
+                {hasRated === true && (
+                  <p className="mt-md text-center text-xs text-neutral-500">
+                    Merci pour ta note.
+                  </p>
+                )}
+              </>
             )}
           </div>
         </div>
       </div>
+
+      {ride.status === 'completed' && ride.driver_full_name && (
+        <RatingModal
+          open={ratingOpen}
+          onClose={() => setRatingOpen(false)}
+          rideId={ride.id}
+          ratedName={firstNameOf(ride.driver_full_name) || 'ton chauffeur'}
+          onSubmitted={() => setHasRated(true)}
+        />
+      )}
     </main>
   );
 }
