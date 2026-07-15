@@ -16,8 +16,13 @@ import {
   WaveIcon,
 } from '@/components/Icon';
 import { firstNameOf, getCurrentProfile } from '@/lib/session';
+import { createServerSupabase } from '@/lib/supabase-server';
 
 const DEFAULT_NAMES = new Set(['utilisateur', 'Nouveau client', 'Ami TamCar']);
+
+function formatFcfaHome(n: number): string {
+  return n.toLocaleString('fr-FR').replace(/,/g, ' ');
+}
 
 export default async function HomePage() {
   const profile = await getCurrentProfile();
@@ -29,6 +34,17 @@ export default async function HomePage() {
 
   const firstName = firstNameOf(profile);
   const isLoggedIn = profile !== null;
+
+  // Fetch balance TamCar Crédit si connecté
+  let creditBalance = 0;
+  if (isLoggedIn) {
+    const supabase = createServerSupabase();
+    const { data } = await supabase.rpc('my_wallets');
+    const credit = (data as Array<{ kind: string; balance_fcfa: number }> | null)?.find(
+      (w) => w.kind === 'tamcar_credit',
+    );
+    if (credit) creditBalance = credit.balance_fcfa;
+  }
 
   return (
     <main className="relative min-h-dvh overflow-hidden bg-white">
@@ -127,7 +143,10 @@ export default async function HomePage() {
 
         {/* Wallet — TamCar Crédit */}
         <section className="mt-xl">
-          <div className="flex items-center gap-md rounded-xl border border-neutral-200 bg-white p-lg shadow-sm">
+          <Link
+            href="/wallet"
+            className="flex items-center gap-md rounded-xl border border-neutral-200 bg-white p-lg shadow-sm transition hover:shadow-md"
+          >
             <div className="grid h-12 w-12 place-items-center rounded-lg bg-gradient-to-br from-violet-500 to-primary-500 text-white shadow-glow-violet">
               <WalletIcon />
             </div>
@@ -139,17 +158,16 @@ export default async function HomePage() {
                 className="text-xl font-extrabold text-neutral-900"
                 style={{ fontVariantNumeric: 'tabular-nums' }}
               >
-                12 500 FCFA
+                {formatFcfaHome(creditBalance)} FCFA
               </p>
             </div>
-            <button
-              type="button"
-              className="inline-flex items-center gap-xs rounded-md bg-gold px-md py-sm text-sm font-bold text-neutral-900 shadow-glow-gold transition hover:brightness-105"
+            <span
+              className="inline-flex items-center gap-xs rounded-md bg-gold px-md py-sm text-sm font-bold text-neutral-900 shadow-glow-gold"
             >
               <PlusIcon className="h-3.5 w-3.5" strokeWidth={3} />
               Recharger
-            </button>
-          </div>
+            </span>
+          </Link>
         </section>
 
         {/* Quick actions row */}
