@@ -1,8 +1,15 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { COTONOU_CENTER, geocode, type GeocodeFeature } from '@/lib/mapbox';
-import { PinIcon } from './Icon';
+import {
+  BENIN_POPULAR_PLACES,
+  COTONOU_CENTER,
+  geocode,
+  popularPlaceToFeature,
+  reverseGeocode,
+  type GeocodeFeature,
+} from '@/lib/mapbox';
+import { CrosshairIcon, PinIcon } from './Icon';
 
 export type SelectedAddress = {
   place_name: string;
@@ -15,6 +22,7 @@ type Props = {
   value: SelectedAddress | null;
   onChange: (value: SelectedAddress | null) => void;
   markerColor?: string;
+  showLocationButton?: boolean; // afficher "Ma position" (utile pour Départ)
 };
 
 export function AddressAutocomplete({
@@ -23,14 +31,16 @@ export function AddressAutocomplete({
   value,
   onChange,
   markerColor = '#2563EB',
+  showLocationButton = false,
 }: Props) {
   const [query, setQuery] = useState(value?.place_name || '');
   const [results, setResults] = useState<GeocodeFeature[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [geolocating, setGeolocating] = useState(false);
+  const [geoError, setGeoError] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Sync externe → interne
   useEffect(() => {
     setQuery(value?.place_name || '');
   }, [value]);
@@ -38,7 +48,6 @@ export function AddressAutocomplete({
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
-    // Ne pas re-geocoder si l'input correspond déjà à une sélection
     if (query === value?.place_name) {
       setResults([]);
       return;
@@ -61,11 +70,65 @@ export function AddressAutocomplete({
     };
   }, [query, value]);
 
+  async function useMyLocation() {
+    if (!('geolocation' in navigator)) {
+      setGeoError('Géolocalisation non supportée par ce navigateur');
+      return;
+    }
+    setGeolocating(true);
+    setGeoError(null);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { longitude, latitude } = pos.coords;
+        const feature = await reverseGeocode(longitude, latitude);
+        const selected: SelectedAddress = feature
+          ? { place_name: feature.place_name, center: feature.center }
+          : {
+              place_name: `Ma position (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
+              center: [longitude, latitude],
+            };
+        onChange(selected);
+        setQuery(selected.place_name);
+        setResults([]);
+        setOpen(false);
+        setGeolocating(false);
+      },
+      (err) => {
+        setGeolocating(false);
+        const msg =
+          err.code === err.PERMISSION_DENIED
+            ? 'Autorise la géolocalisation dans ton navigateur pour utiliser cette fonction.'
+            : 'Impossible de récupérer ta position (GPS indisponible).';
+        setGeoError(msg);
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 },
+    );
+  }
+
+  function selectPlace(f: GeocodeFeature) {
+    onChange({ place_name: f.place_name, center: f.center });
+    setQuery(f.place_name);
+    setResults([]);
+    setOpen(false);
+  }
+
   return (
     <div className="relative">
-      <label className="mb-xs block text-sm font-semibold text-neutral-900">
-        {label}
-      </label>
+      <div className="mb-xs flex items-center justify-between">
+        <label className="text-sm font-semibold text-neutral-900">{label}</label>
+        {showLocationButton && (
+          <button
+            type="button"
+            onClick={useMyLocation}
+            disabled={geolocating}
+            className="inline-flex items-center gap-xs rounded-full bg-primary-50 px-md py-xs text-xs font-bold text-primary-700 transition hover:bg-primary-100 disabled:opacity-50"
+          >
+            <CrosshairIcon className="h-3.5 w-3.5" strokeWidth={2.5} />
+            {geolocating ? 'Localisation…' : 'Ma position'}
+          </button>
+        )}
+      </div>
+
       <div className="flex items-center overflow-hidden rounded-xl bg-neutral-100 shadow-sm ring-1 ring-neutral-200 transition focus-within:bg-white focus-within:ring-2 focus-within:ring-primary-500">
         <span
           className="grid h-11 w-11 flex-none place-items-center"
@@ -85,27 +148,49 @@ export function AddressAutocomplete({
           placeholder={placeholder}
           className="flex-1 bg-transparent px-md py-lg text-base text-neutral-900 outline-none placeholder:text-neutral-400"
         />
-        {loading && (
-          <span className="mr-md text-xs text-neutral-400">…</span>
-        )}
+        {loading && <span className="mr-md text-xs text-neutral-400">…</span>}
       </div>
 
+      {geoError && (
+        <p className="mt-xs text-xs text-error">{geoError}</p>
+      )}
+
+      {/* Chips lieux populaires — visibles tant que pas de valeur choisie ni de suggestions ouvertes */}
+      {!value && !open && (
+        <div className="mt-md">
+          <p className="mb-xs text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
+            Lieux populaires
+          </p>
+          <div className="flex flex-wrap gap-xs">
+            {BENIN_POPULAR_PLACES.slice(0, 10).map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => selectPlace(popularPlaceToFeature(p))}
+                className="rounded-full bg-neutral-100 px-md py-xs text-xs font-semibold text-neutral-900 transition hover:bg-primary-100 hover:text-primary-700"
+              >
+                {p.short}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Suggestions autocomplete Mapbox */}
       {open && results.length > 0 && (
         <ul className="absolute z-20 mt-xs w-full overflow-hidden rounded-xl bg-white shadow-lg ring-1 ring-neutral-200">
           {results.map((r) => (
             <li key={r.id}>
               <button
                 type="button"
-                onMouseDown={(e) => e.preventDefault()} /* évite le blur avant click */
-                onClick={() => {
-                  onChange({ place_name: r.place_name, center: r.center });
-                  setQuery(r.place_name);
-                  setResults([]);
-                  setOpen(false);
-                }}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => selectPlace(r)}
                 className="flex w-full items-start gap-md px-md py-md text-left text-sm text-neutral-900 hover:bg-neutral-100"
               >
-                <PinIcon className="mt-xs h-4 w-4 flex-none text-neutral-400" strokeWidth={2} />
+                <PinIcon
+                  className="mt-xs h-4 w-4 flex-none text-neutral-400"
+                  strokeWidth={2}
+                />
                 <span className="flex-1">{r.place_name}</span>
               </button>
             </li>

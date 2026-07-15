@@ -117,6 +117,7 @@ export default function CommandePage() {
             value={pickup}
             onChange={setPickup}
             markerColor="#2563EB"
+            showLocationButton
           />
           <AddressAutocomplete
             label="Destination"
