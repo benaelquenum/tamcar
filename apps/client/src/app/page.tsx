@@ -90,8 +90,8 @@ export default async function HomePage() {
 
         {/* Search field */}
         <section className="mt-lg">
-          <button
-            type="button"
+          <Link
+            href="/commande"
             className="group flex w-full items-center gap-md rounded-xl bg-white p-lg text-left shadow-md ring-1 ring-neutral-200 transition hover:shadow-lg hover:ring-primary-300"
           >
             <span className="grid h-11 w-11 place-items-center rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-glow">
@@ -101,25 +101,25 @@ export default async function HomePage() {
               Où voulez-vous aller ?
             </span>
             <ArrowRightIcon />
-          </button>
+          </Link>
         </section>
 
         {/* CTAs */}
         <section className="mt-lg space-y-md">
-          <button
-            type="button"
+          <Link
+            href="/commande"
             className="flex w-full items-center justify-center gap-sm rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-lg text-base font-bold text-white shadow-glow transition hover:brightness-110 active:scale-[0.98]"
           >
             <CarIcon className="h-5 w-5" />
             Commander maintenant
-          </button>
-          <button
-            type="button"
+          </Link>
+          <Link
+            href="/commande?scheduled=1"
             className="flex w-full items-center justify-center gap-sm rounded-xl border-2 border-primary-500 bg-white py-lg text-base font-semibold text-primary-700 transition hover:bg-primary-50"
           >
             <CalendarIcon className="h-5 w-5" />
             Réserver à l&apos;avance
-          </button>
+          </Link>
         </section>
 
         {/* Cartes catégories — prix calculés en direct via Supabase RPC compute_price */}
