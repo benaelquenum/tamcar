@@ -9,7 +9,8 @@ import {
   reverseGeocode,
   type GeocodeFeature,
 } from '@/lib/mapbox';
-import { CrosshairIcon, PinIcon } from './Icon';
+import { placeToFeature, searchPlaces } from '@/lib/places';
+import { CheckIcon, CrosshairIcon, PinIcon } from './Icon';
 
 export type SelectedAddress = {
   place_name: string;
@@ -34,7 +35,9 @@ export function AddressAutocomplete({
   showLocationButton = false,
 }: Props) {
   const [query, setQuery] = useState(value?.place_name || '');
-  const [results, setResults] = useState<GeocodeFeature[]>([]);
+  const [results, setResults] = useState<
+    Array<GeocodeFeature & { origin: 'tamcar' | 'mapbox'; verified?: boolean }>
+  >([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [geolocating, setGeolocating] = useState(false);
@@ -59,8 +62,26 @@ export function AddressAutocomplete({
 
     setLoading(true);
     debounceRef.current = setTimeout(async () => {
-      const features = await geocode(query, COTONOU_CENTER);
-      setResults(features);
+      // 1. Priorité : notre base TamCar (POI Bénin curatés + OSM enrichis)
+      const local = await searchPlaces(query, COTONOU_CENTER, 8);
+      const localFeatures = local.map((p) => ({
+        ...placeToFeature(p),
+        origin: 'tamcar' as const,
+        verified: p.verified,
+      }));
+
+      // 2. Fallback Mapbox si peu de résultats locaux
+      let combined = localFeatures;
+      if (localFeatures.length < 5) {
+        const mapbox = await geocode(query, COTONOU_CENTER);
+        const seenIds = new Set(localFeatures.map((f) => f.id));
+        const mapboxFeatures = mapbox
+          .filter((f) => !seenIds.has(f.id))
+          .map((f) => ({ ...f, origin: 'mapbox' as const, verified: false }));
+        combined = [...localFeatures, ...mapboxFeatures].slice(0, 8);
+      }
+
+      setResults(combined);
       setOpen(true);
       setLoading(false);
     }, 300);
@@ -192,6 +213,19 @@ export function AddressAutocomplete({
                   strokeWidth={2}
                 />
                 <span className="flex-1">{r.place_name}</span>
+                {r.verified && (
+                  <span
+                    className="mt-xs inline-flex items-center gap-xs rounded-full bg-primary-100 px-xs py-0.5 text-[10px] font-bold text-primary-700"
+                    title="Lieu vérifié par TamCar"
+                  >
+                    <CheckIcon className="h-2.5 w-2.5" strokeWidth={3} />
+                  </span>
+                )}
+                {r.origin === 'mapbox' && !r.verified && (
+                  <span className="mt-xs text-[10px] font-medium text-neutral-400">
+                    Mapbox
+                  </span>
+                )}
               </button>
             </li>
           ))}
