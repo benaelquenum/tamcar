@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { CategoryPricingCards } from '@/components/CategoryPricingCards';
 import { Logo } from '@/components/Logo';
 import {
@@ -16,8 +17,16 @@ import {
 } from '@/components/Icon';
 import { firstNameOf, getCurrentProfile } from '@/lib/session';
 
+const DEFAULT_NAMES = new Set(['utilisateur', 'Nouveau client', 'Ami TamCar']);
+
 export default async function HomePage() {
   const profile = await getCurrentProfile();
+
+  // Force onboarding si le profil est loggé mais pas encore complété
+  if (profile && (!profile.full_name || DEFAULT_NAMES.has(profile.full_name.trim()))) {
+    redirect('/onboarding');
+  }
+
   const firstName = firstNameOf(profile);
   const isLoggedIn = profile !== null;
 
