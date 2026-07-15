@@ -177,6 +177,25 @@ export default async function HomePage() {
           <QuickAction Icon={LifeBuoyIcon} label="Aide" tint="cyan" />
         </section>
 
+        {/* Devenir chauffeur */}
+        <section className="mt-lg">
+          <Link
+            href="/devenir-chauffeur"
+            className="flex items-center gap-md rounded-xl border border-neutral-200 bg-white p-md shadow-sm transition hover:shadow-md"
+          >
+            <div className="grid h-10 w-10 flex-none place-items-center rounded-lg bg-gradient-to-br from-gold to-warning text-neutral-900">
+              <CarIcon className="h-5 w-5" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-bold text-neutral-900">Deviens chauffeur TamCar</p>
+              <p className="text-[10px] text-neutral-600">
+                Roule + Fonds rachat 5% + Voiture à toi en 24 mois
+              </p>
+            </div>
+            <span className="text-neutral-400">→</span>
+          </Link>
+        </section>
+
         <div className="h-2xl" />
       </div>
     </main>

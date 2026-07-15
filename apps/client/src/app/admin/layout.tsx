@@ -32,6 +32,9 @@ export default async function AdminLayout({
             <Link href="/admin/rides" className="text-sm font-semibold text-neutral-900 hover:text-primary-500">
               Courses
             </Link>
+            <Link href="/admin/candidatures" className="text-sm font-semibold text-neutral-900 hover:text-primary-500">
+              Candidatures
+            </Link>
             <Link href="/admin/places" className="text-sm font-semibold text-neutral-900 hover:text-primary-500">
               Lieux
             </Link>
