@@ -15,19 +15,26 @@ type Props = {
   dropoff?: [number, number] | null;
   route?: GeoJSON.LineString | null;
   className?: string;
+  /** Si fourni, la carte devient sélectionnable : clic pose un point provisoire ambre et déclenche le callback */
+  onMapClick?: (lngLat: [number, number]) => void;
+  /** Marker candidate (ambre) pour prévisualiser un point en cours de sélection */
+  candidate?: [number, number] | null;
 };
 
-export function Map({ pickup, dropoff, route, className }: Props) {
+export function Map({ pickup, dropoff, route, className, onMapClick, candidate }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const pickupMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const dropoffMarkerRef = useRef<mapboxgl.Marker | null>(null);
+  const candidateMarkerRef = useRef<mapboxgl.Marker | null>(null);
+  const onMapClickRef = useRef(onMapClick);
+  onMapClickRef.current = onMapClick;
 
   // Init map une fois
   useEffect(() => {
     if (!containerRef.current || mapRef.current || !MAPBOX_TOKEN) return;
 
-    mapRef.current = new mapboxgl.Map({
+    const map = new mapboxgl.Map({
       container: containerRef.current,
       style: 'mapbox://styles/mapbox/streets-v12',
       center: COTONOU_CENTER,
@@ -35,11 +42,38 @@ export function Map({ pickup, dropoff, route, className }: Props) {
       attributionControl: false,
     });
 
+    map.on('click', (e) => {
+      onMapClickRef.current?.([e.lngLat.lng, e.lngLat.lat]);
+    });
+
+    mapRef.current = map;
+
     return () => {
-      mapRef.current?.remove();
+      map.remove();
       mapRef.current = null;
     };
   }, []);
+
+  // Curseur crosshair quand on est en mode sélection
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const canvas = map.getCanvas();
+    canvas.style.cursor = onMapClick ? 'crosshair' : '';
+  }, [onMapClick]);
+
+  // Marker candidate (ambre) — pin provisoire pendant sélection
+  useEffect(() => {
+    if (!mapRef.current) return;
+    candidateMarkerRef.current?.remove();
+    candidateMarkerRef.current = null;
+    if (candidate) {
+      candidateMarkerRef.current = new mapboxgl.Marker({ color: '#EAB308' })
+        .setLngLat(candidate)
+        .addTo(mapRef.current);
+      mapRef.current.flyTo({ center: candidate, zoom: 15, duration: 400 });
+    }
+  }, [candidate]);
 
   // Update pickup marker
   useEffect(() => {

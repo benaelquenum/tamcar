@@ -23,7 +23,11 @@ type Props = {
   value: SelectedAddress | null;
   onChange: (value: SelectedAddress | null) => void;
   markerColor?: string;
-  showLocationButton?: boolean; // afficher "Ma position" (utile pour Départ)
+  showLocationButton?: boolean;
+  /** Callback pour demander au parent d'entrer en mode "choisir sur la carte" ciblé sur ce champ */
+  onPickOnMap?: () => void;
+  /** Callback pour demander au parent d'ouvrir le modal "Suggérer un lieu" avec le query saisi */
+  onSuggestPlace?: (query: string) => void;
 };
 
 export function AddressAutocomplete({
@@ -33,6 +37,8 @@ export function AddressAutocomplete({
   onChange,
   markerColor = '#2563EB',
   showLocationButton = false,
+  onPickOnMap,
+  onSuggestPlace,
 }: Props) {
   const [query, setQuery] = useState(value?.place_name || '');
   const [results, setResults] = useState<
@@ -135,19 +141,32 @@ export function AddressAutocomplete({
 
   return (
     <div className="relative">
-      <div className="mb-xs flex items-center justify-between">
+      <div className="mb-xs flex items-center justify-between gap-xs">
         <label className="text-sm font-semibold text-neutral-900">{label}</label>
-        {showLocationButton && (
-          <button
-            type="button"
-            onClick={useMyLocation}
-            disabled={geolocating}
-            className="inline-flex items-center gap-xs rounded-full bg-primary-50 px-md py-xs text-xs font-bold text-primary-700 transition hover:bg-primary-100 disabled:opacity-50"
-          >
-            <CrosshairIcon className="h-3.5 w-3.5" strokeWidth={2.5} />
-            {geolocating ? 'Localisation…' : 'Ma position'}
-          </button>
-        )}
+        <div className="flex items-center gap-xs">
+          {onPickOnMap && (
+            <button
+              type="button"
+              onClick={onPickOnMap}
+              className="inline-flex items-center gap-xs rounded-full bg-neutral-100 px-md py-xs text-xs font-bold text-neutral-700 transition hover:bg-neutral-200"
+              title="Poser le point sur la carte"
+            >
+              <PinIcon className="h-3.5 w-3.5" strokeWidth={2.5} />
+              Sur carte
+            </button>
+          )}
+          {showLocationButton && (
+            <button
+              type="button"
+              onClick={useMyLocation}
+              disabled={geolocating}
+              className="inline-flex items-center gap-xs rounded-full bg-primary-50 px-md py-xs text-xs font-bold text-primary-700 transition hover:bg-primary-100 disabled:opacity-50"
+            >
+              <CrosshairIcon className="h-3.5 w-3.5" strokeWidth={2.5} />
+              {geolocating ? 'Localisation…' : 'Ma position'}
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="flex items-center overflow-hidden rounded-xl bg-neutral-100 shadow-sm ring-1 ring-neutral-200 transition focus-within:bg-white focus-within:ring-2 focus-within:ring-primary-500">
@@ -198,7 +217,7 @@ export function AddressAutocomplete({
       )}
 
       {/* Suggestions autocomplete Mapbox */}
-      {open && results.length > 0 && (
+      {open && (results.length > 0 || (query.trim().length >= 2 && onSuggestPlace)) && (
         <ul className="absolute z-20 mt-xs w-full overflow-hidden rounded-xl bg-white shadow-lg ring-1 ring-neutral-200">
           {results.map((r) => (
             <li key={r.id}>
@@ -229,6 +248,23 @@ export function AddressAutocomplete({
               </button>
             </li>
           ))}
+          {onSuggestPlace && query.trim().length >= 2 && (
+            <li className="border-t border-neutral-200 bg-neutral-100/50">
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => onSuggestPlace(query.trim())}
+                className="flex w-full items-center gap-md px-md py-md text-left text-sm font-semibold text-primary-700 hover:bg-primary-50"
+              >
+                <span className="grid h-4 w-4 place-items-center rounded-full bg-primary-500 text-white">
+                  <span className="text-[10px] leading-none">＋</span>
+                </span>
+                <span className="flex-1">
+                  Ajouter « {query.trim()} » à TamCar
+                </span>
+              </button>
+            </li>
+          )}
         </ul>
       )}
     </div>
