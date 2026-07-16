@@ -11,10 +11,10 @@ import {
   LifeBuoyIcon,
   PinIcon,
   PlusIcon,
-  UserIcon,
   WalletIcon,
   WaveIcon,
 } from '@/components/Icon';
+import { Avatar } from '@/components/Avatar';
 import { firstNameOf, getCurrentProfile } from '@/lib/session';
 import { createServerSupabase } from '@/lib/supabase-server';
 
@@ -114,23 +114,23 @@ export default async function HomePage() {
       </div>
 
       <div className="relative z-10 mx-auto max-w-md px-lg py-xl">
-        {/* Header */}
+        {/* Header : le middleware garantit que l'user est loggé sur cette page */}
         <header className="flex items-center justify-between">
           <Logo className="h-9 w-auto" />
-          {isLoggedIn ? (
+          {profile && (
             <Link
               href="/compte"
               aria-label="Mon compte"
-              className="grid h-11 w-11 place-items-center rounded-full bg-white text-neutral-900 shadow-md ring-1 ring-neutral-200 transition hover:shadow-lg"
+              className="flex items-center gap-sm rounded-full bg-white p-xs pr-md shadow-md ring-1 ring-neutral-200 transition hover:shadow-lg"
             >
-              <UserIcon />
-            </Link>
-          ) : (
-            <Link
-              href="/login"
-              className="rounded-full bg-primary-500 px-lg py-sm text-sm font-bold text-white shadow-glow transition hover:brightness-110"
-            >
-              Se connecter
+              <Avatar
+                src={profile.avatar_url}
+                name={profile.full_name}
+                size={36}
+              />
+              <span className="hidden text-sm font-bold text-neutral-900 sm:inline">
+                {firstName ?? 'Compte'}
+              </span>
             </Link>
           )}
         </header>

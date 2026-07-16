@@ -1,99 +1,145 @@
 import Link from 'next/link';
 import { Logo } from '@/components/Logo';
 import { CheckIcon } from '@/components/Icon';
-import { AUTH_METHOD } from '@/lib/auth-config';
-import { loginEmail, loginPhone } from './actions';
+import { magicLinkAction, signInAction, signUpAction } from './actions';
+
+type SearchParams = {
+  error?: string;
+  sent?: string;
+  tab?: 'signin' | 'signup' | 'magic';
+  next?: string;
+};
 
 export default function LoginPage({
   searchParams,
 }: {
-  searchParams: { error?: string; sent?: string };
+  searchParams: SearchParams;
 }) {
+  const activeTab = searchParams.tab === 'signup' ? 'signup' : 'signin';
   const error = searchParams.error;
   const sent = searchParams.sent;
+  const next = searchParams.next ?? '/';
 
   return (
     <main className="relative min-h-dvh overflow-hidden bg-white">
+      {/* Décors */}
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-0 h-96 overflow-hidden">
         <div className="absolute -right-16 -top-32 h-64 w-64 rounded-full bg-primary-100 opacity-80 blur-3xl" />
         <div className="absolute -left-16 top-10 h-48 w-48 rounded-full bg-violet-500/15 blur-3xl" />
       </div>
 
       <div className="relative z-10 mx-auto flex min-h-dvh max-w-md flex-col px-lg py-xl">
-        <header className="flex items-center justify-between">
-          <Link href="/" aria-label="Retour à l'accueil">
-            <Logo className="h-9 w-auto" />
-          </Link>
+        {/* Logo header — sert de splash minimaliste */}
+        <header className="flex flex-col items-center gap-xs">
+          <Logo className="h-12 w-auto" />
+          <p className="text-[10px] font-bold uppercase tracking-wider text-primary-700">
+            La course, sans surprise
+          </p>
         </header>
 
-        <div className="mt-3xl">
-          <h1 className="text-4xl font-extrabold leading-[1.05] tracking-tight text-neutral-900">
-            Bienvenue sur
-            <br />
-            <span className="bg-gradient-to-r from-primary-500 to-primary-700 bg-clip-text text-transparent">
-              TamCar
-            </span>
-          </h1>
-          <p className="mt-md text-base text-neutral-600">
-            {AUTH_METHOD === 'phone'
-              ? 'Entre ton numéro de téléphone. On t\'envoie un code par SMS pour te connecter.'
-              : 'Entre ton email. On t\'envoie un lien de connexion instantané.'}
-          </p>
-        </div>
-
-        {AUTH_METHOD === 'email' && sent ? (
+        {sent ? (
           <EmailSentPanel email={sent} />
-        ) : AUTH_METHOD === 'phone' ? (
-          <PhoneForm error={error} />
         ) : (
-          <EmailForm error={error} />
+          <>
+            {/* Tabs */}
+            <nav className="mt-2xl flex rounded-xl bg-neutral-100 p-xs">
+              <Link
+                href={{ pathname: '/login', query: { tab: 'signin', next } }}
+                className={`flex-1 rounded-lg py-md text-center text-sm font-bold transition ${
+                  activeTab === 'signin'
+                    ? 'bg-white text-neutral-900 shadow-sm'
+                    : 'text-neutral-500 hover:text-neutral-700'
+                }`}
+              >
+                Se connecter
+              </Link>
+              <Link
+                href={{ pathname: '/login', query: { tab: 'signup', next } }}
+                className={`flex-1 rounded-lg py-md text-center text-sm font-bold transition ${
+                  activeTab === 'signup'
+                    ? 'bg-white text-neutral-900 shadow-sm'
+                    : 'text-neutral-500 hover:text-neutral-700'
+                }`}
+              >
+                Créer un compte
+              </Link>
+            </nav>
+
+            {activeTab === 'signin' ? (
+              <SignInForm error={error} next={next} />
+            ) : (
+              <SignUpForm error={error} />
+            )}
+
+            {/* Fallback magic link */}
+            <div className="mt-xl border-t border-neutral-200 pt-lg">
+              <p className="text-center text-xs text-neutral-500">
+                Mot de passe oublié ? Reçois un lien de connexion instantané.
+              </p>
+              <form action={magicLinkAction} className="mt-md">
+                <input
+                  type="email"
+                  name="email"
+                  required
+                  placeholder="Ton email"
+                  className="w-full rounded-lg bg-neutral-100 px-lg py-md text-sm text-neutral-900 ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+                <button
+                  type="submit"
+                  className="mt-md w-full rounded-lg border-2 border-primary-500 bg-white py-md text-sm font-bold text-primary-700 hover:bg-primary-50"
+                >
+                  Recevoir un lien magique
+                </button>
+              </form>
+            </div>
+          </>
         )}
 
         <p className="mt-xl text-center text-xs text-neutral-400">
-          En te connectant, tu acceptes les CGU TamCar.
+          En continuant, tu acceptes les CGU TamCar.
         </p>
 
         <div className="flex-1" />
 
-        <Link
-          href="/"
-          className="mt-xl text-center text-sm font-medium text-neutral-600 hover:text-primary-500"
-        >
-          ← Retour à l&apos;accueil
-        </Link>
+        <p className="mt-xl text-center text-[11px] text-neutral-400">
+          Tu veux devenir chauffeur ?{' '}
+          <Link
+            href="/devenir-chauffeur"
+            className="font-semibold text-primary-500 hover:underline"
+          >
+            Prends rendez-vous
+          </Link>
+        </p>
       </div>
     </main>
   );
 }
 
-function PhoneForm({ error }: { error?: string }) {
+function SignInForm({ error, next }: { error?: string; next: string }) {
   return (
-    <form action={loginPhone} className="mt-xl space-y-md">
-      <div>
-        <label htmlFor="phone" className="mb-xs block text-sm font-semibold text-neutral-900">
-          Ton numéro
-        </label>
-        <div className="flex items-center overflow-hidden rounded-xl bg-neutral-100 shadow-sm ring-1 ring-neutral-200 transition focus-within:bg-white focus-within:ring-2 focus-within:ring-primary-500">
-          <span className="border-r border-neutral-200 bg-neutral-100 px-md py-lg text-base font-semibold text-neutral-600">
-            +229
-          </span>
-          <input
-            id="phone"
-            type="tel"
-            name="phone"
-            required
-            autoComplete="tel-national"
-            autoFocus
-            inputMode="numeric"
-            placeholder="01 67 59 18 17"
-            className="flex-1 bg-transparent px-md py-lg text-base text-neutral-900 outline-none placeholder:text-neutral-400"
-            style={{ fontVariantNumeric: 'tabular-nums' }}
-          />
-        </div>
-        <p className="mt-xs text-xs text-neutral-500">
-          Ton numéro Bénin (mobile ou fixe qui reçoit les SMS).
-        </p>
-      </div>
+    <form action={signInAction} className="mt-xl space-y-md">
+      <input type="hidden" name="next" value={next} />
+      <Field label="Email">
+        <input
+          name="email"
+          type="email"
+          required
+          autoComplete="email"
+          placeholder="tu@exemple.bj"
+          className="w-full rounded-lg bg-neutral-100 px-lg py-md text-base text-neutral-900 ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
+        />
+      </Field>
+      <Field label="Mot de passe">
+        <input
+          name="password"
+          type="password"
+          required
+          minLength={6}
+          autoComplete="current-password"
+          placeholder="Au moins 6 caractères"
+          className="w-full rounded-lg bg-neutral-100 px-lg py-md text-base text-neutral-900 ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
+        />
+      </Field>
 
       {error && (
         <div className="rounded-md bg-error/10 p-md text-sm font-medium text-error">
@@ -105,30 +151,79 @@ function PhoneForm({ error }: { error?: string }) {
         type="submit"
         className="w-full rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-lg text-base font-bold text-white shadow-glow transition hover:brightness-110 active:scale-[0.98]"
       >
-        Recevoir mon code
+        Se connecter
       </button>
     </form>
   );
 }
 
-function EmailForm({ error }: { error?: string }) {
+function SignUpForm({ error }: { error?: string }) {
   return (
-    <form action={loginEmail} className="mt-xl space-y-md">
-      <div>
-        <label htmlFor="email" className="mb-xs block text-sm font-semibold text-neutral-900">
-          Ton email
-        </label>
+    <form action={signUpAction} className="mt-xl space-y-md">
+      <div className="grid grid-cols-2 gap-sm">
+        <Field label="Prénom">
+          <input
+            name="first_name"
+            type="text"
+            required
+            minLength={2}
+            autoComplete="given-name"
+            placeholder="Jean"
+            className="w-full rounded-lg bg-neutral-100 px-md py-md text-base text-neutral-900 ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
+          />
+        </Field>
+        <Field label="Nom">
+          <input
+            name="last_name"
+            type="text"
+            required
+            minLength={2}
+            autoComplete="family-name"
+            placeholder="ADANDÉ"
+            className="w-full rounded-lg bg-neutral-100 px-md py-md text-base text-neutral-900 ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
+          />
+        </Field>
+      </div>
+
+      <Field label="Email">
         <input
-          id="email"
-          type="email"
           name="email"
+          type="email"
           required
           autoComplete="email"
-          autoFocus
-          placeholder="ton.email@exemple.bj"
-          className="w-full rounded-xl bg-neutral-100 px-lg py-lg text-base text-neutral-900 shadow-sm ring-1 ring-neutral-200 transition placeholder:text-neutral-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+          placeholder="tu@exemple.bj"
+          className="w-full rounded-lg bg-neutral-100 px-lg py-md text-base text-neutral-900 ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
         />
-      </div>
+      </Field>
+
+      <Field label="Téléphone (optionnel)">
+        <div className="flex items-center overflow-hidden rounded-lg bg-neutral-100 ring-1 ring-neutral-200 focus-within:ring-2 focus-within:ring-primary-500">
+          <span className="border-r border-neutral-200 bg-neutral-100 px-md py-md text-base font-semibold text-neutral-600">
+            +229
+          </span>
+          <input
+            name="phone"
+            type="tel"
+            autoComplete="tel-national"
+            inputMode="numeric"
+            placeholder="01 67 59 18 17"
+            className="flex-1 bg-transparent px-md py-md text-base text-neutral-900 outline-none placeholder:text-neutral-400"
+            style={{ fontVariantNumeric: 'tabular-nums' }}
+          />
+        </div>
+      </Field>
+
+      <Field label="Mot de passe">
+        <input
+          name="password"
+          type="password"
+          required
+          minLength={6}
+          autoComplete="new-password"
+          placeholder="Au moins 6 caractères"
+          className="w-full rounded-lg bg-neutral-100 px-lg py-md text-base text-neutral-900 ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
+        />
+      </Field>
 
       {error && (
         <div className="rounded-md bg-error/10 p-md text-sm font-medium text-error">
@@ -140,15 +235,26 @@ function EmailForm({ error }: { error?: string }) {
         type="submit"
         className="w-full rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-lg text-base font-bold text-white shadow-glow transition hover:brightness-110 active:scale-[0.98]"
       >
-        Envoyer le lien magique
+        Créer mon compte
       </button>
     </form>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+        {label}
+      </span>
+      <div className="mt-xs">{children}</div>
+    </label>
   );
 }
 
 function EmailSentPanel({ email }: { email: string }) {
   return (
-    <div className="mt-xl rounded-xl border border-success/30 bg-success/5 p-lg">
+    <div className="mt-2xl rounded-xl border border-success/30 bg-success/5 p-lg">
       <div className="flex items-start gap-md">
         <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-success text-white">
           <CheckIcon className="h-4 w-4" strokeWidth={3} />
@@ -156,17 +262,18 @@ function EmailSentPanel({ email }: { email: string }) {
         <div className="flex-1">
           <p className="font-bold text-neutral-900">Lien envoyé !</p>
           <p className="mt-xs text-sm text-neutral-600">
-            Ouvre ta boîte mail (<strong>{email}</strong>) et clique sur le lien pour te connecter.
-            Vérifie les spams s&apos;il ne s&apos;affiche pas au bout de 2 min.
+            Ouvre ta boîte mail (<strong>{email}</strong>) et clique sur le lien
+            pour te connecter. Vérifie les spams si tu ne le vois pas au bout
+            de 2 min.
           </p>
         </div>
       </div>
-      <form action={loginEmail} className="mt-md">
-        <input type="hidden" name="email" value={email} />
-        <button type="submit" className="text-sm font-semibold text-primary-500 underline">
-          Renvoyer le lien
-        </button>
-      </form>
+      <Link
+        href="/login"
+        className="mt-md inline-block text-sm font-semibold text-primary-500 underline"
+      >
+        Retour à la connexion
+      </Link>
     </div>
   );
 }
