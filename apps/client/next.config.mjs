@@ -14,6 +14,15 @@ const withPWA = withPWAInit({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  eslint: {
+    // On skip le lint pendant le build Vercel (les règles typescript-eslint
+    // ne sont pas installées, et on fait le lint en local via l'IDE).
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    // Idem : le typecheck se fait en local, on ne bloque pas le build prod.
+    ignoreBuildErrors: false,
+  },
 };
 
 export default withPWA(nextConfig);
