@@ -54,7 +54,18 @@ export async function loginEmail(formData: FormData) {
   });
 
   if (error) {
-    redirect('/login?error=' + encodeURIComponent(error.message));
+    // eslint-disable-next-line no-console
+    console.error('[loginEmail driver-portal] Supabase error', {
+      code: error.code,
+      status: error.status,
+      name: error.name,
+      message: error.message,
+    });
+    const msg =
+      error.message ||
+      error.name ||
+      `Erreur Supabase (status ${error.status ?? 'inconnu'})`;
+    redirect('/login?error=' + encodeURIComponent(msg));
   }
 
   redirect('/login?sent=' + encodeURIComponent(email));
