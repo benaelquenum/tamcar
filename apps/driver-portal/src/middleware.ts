@@ -1,22 +1,64 @@
+import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 /**
- * Middleware minimal — le check d'auth + rôle se fait dans chaque page
- * (Server Components) via `getCurrentProfile()`. Ici on force juste les
- * en-têtes cache pour éviter le stale post-login.
- *
- * Note : les routes /login/**, /auth/**, /_next/**, /favicon, statics sont
- * exemptées via `matcher` ci-dessous.
+ * Middleware combiné :
+ * 1. Rafraîchit la session Supabase (refresh token auto)
+ * 2. Bloque les routes protégées si pas d'auth → redirect /login?next=<path>
  */
-export function middleware(_req: NextRequest) {
-  const res = NextResponse.next();
-  res.headers.set('Cache-Control', 'no-store, must-revalidate');
-  return res;
+
+const PUBLIC_PREFIXES = ['/login', '/auth'];
+
+export async function middleware(request: NextRequest) {
+  let supabaseResponse = NextResponse.next({ request });
+  supabaseResponse.headers.set('Cache-Control', 'no-store, must-revalidate');
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value),
+          );
+          supabaseResponse = NextResponse.next({ request });
+          supabaseResponse.headers.set('Cache-Control', 'no-store, must-revalidate');
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options),
+          );
+        },
+      },
+    },
+  );
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { pathname } = request.nextUrl;
+  const isPublic = PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
+
+  // Utilisateur connecté sur /login → home
+  if (user && pathname === '/login') {
+    return NextResponse.redirect(new URL('/', request.url));
+  }
+
+  // Route protégée sans user → login
+  if (!user && !isPublic) {
+    const loginUrl = new URL('/login', request.url);
+    if (pathname !== '/') loginUrl.searchParams.set('next', pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  return supabaseResponse;
 }
 
 export const config = {
   matcher: [
-    // Toutes les routes sauf : login, auth callback, statics, favicon, manifest
-    '/((?!login|auth|_next/static|_next/image|favicon.ico|manifest.webmanifest|icons).*)',
+    '/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|workbox-.*|worker-.*|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|mp3)$).*)',
   ],
 };

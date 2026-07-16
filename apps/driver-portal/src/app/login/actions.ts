@@ -6,36 +6,66 @@ import { formatBeninPhone } from '@/lib/phone';
 import { createServerSupabase } from '@/lib/supabase-server';
 
 /**
- * Envoi OTP par SMS Twilio (prod / vrai lancement).
+ * Sign In — chauffeur existant, email + password.
+ * Refuse si le user n'a pas le rôle 'driver' ou 'admin'.
  */
-export async function loginPhone(formData: FormData) {
-  const rawPhone = String(formData.get('phone') || '');
-  const phone = formatBeninPhone(rawPhone);
+export async function signInAction(formData: FormData) {
+  const email = String(formData.get('email') || '').trim().toLowerCase();
+  const password = String(formData.get('password') || '');
+  const next = String(formData.get('next') || '/');
 
-  if (!phone) {
+  if (!email || !email.includes('@')) {
+    redirect('/login?error=' + encodeURIComponent('Email invalide'));
+  }
+  if (!password || password.length < 6) {
     redirect(
       '/login?error=' +
-        encodeURIComponent('Numéro invalide. Format attendu : +229 01 XX XX XX XX'),
+        encodeURIComponent('Mot de passe requis (min 6 caractères)'),
     );
   }
 
   const supabase = createServerSupabase();
-  const { error } = await supabase.auth.signInWithOtp({ phone });
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
 
   if (error) {
-    redirect('/login?error=' + encodeURIComponent(error.message));
+    // eslint-disable-next-line no-console
+    console.error('[driver-portal signInAction] Supabase error', error);
+    redirect(
+      '/login?error=' +
+        encodeURIComponent(error.message || 'Email ou mot de passe incorrect'),
+    );
   }
 
-  redirect('/login/verify?phone=' + encodeURIComponent(phone));
+  // Vérifie que le user a bien un profil driver ou admin
+  if (data.user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', data.user.id)
+      .single();
+
+    if (profile?.role !== 'driver' && profile?.role !== 'admin') {
+      await supabase.auth.signOut();
+      redirect(
+        '/login?error=' +
+          encodeURIComponent(
+            "Ce compte n'a pas le statut chauffeur. Prends d'abord un rendez-vous sur le site TamCar.",
+          ),
+      );
+    }
+  }
+
+  redirect(next.startsWith('/') ? next : '/');
 }
 
 /**
- * Envoi magic link par email (dev / tests, gratuit).
- * Nécessite NEXT_PUBLIC_AUTH_METHOD=email et redirect URL configurée dans Supabase.
+ * Magic link email (fallback / mot de passe oublié pour un chauffeur existant)
  */
-export async function loginEmail(formData: FormData) {
+export async function magicLinkAction(formData: FormData) {
   const email = String(formData.get('email') || '').trim().toLowerCase();
-
   if (!email || !email.includes('@')) {
     redirect('/login?error=' + encodeURIComponent('Email invalide'));
   }
@@ -55,17 +85,11 @@ export async function loginEmail(formData: FormData) {
 
   if (error) {
     // eslint-disable-next-line no-console
-    console.error('[loginEmail driver-portal] Supabase error', {
-      code: error.code,
-      status: error.status,
-      name: error.name,
-      message: error.message,
-    });
-    const msg =
-      error.message ||
-      error.name ||
-      `Erreur Supabase (status ${error.status ?? 'inconnu'})`;
-    redirect('/login?error=' + encodeURIComponent(msg));
+    console.error('[driver-portal magicLinkAction] Supabase error', error);
+    redirect(
+      '/login?error=' +
+        encodeURIComponent(error.message || 'Erreur envoi lien magique'),
+    );
   }
 
   redirect('/login?sent=' + encodeURIComponent(email));
@@ -76,3 +100,26 @@ export async function logout() {
   await supabase.auth.signOut();
   redirect('/login');
 }
+
+/**
+ * Ancien loginPhone SMS OTP — désactivé tant que Twilio pas configuré prod.
+ */
+export async function loginPhone(formData: FormData) {
+  const rawPhone = String(formData.get('phone') || '');
+  const phone = formatBeninPhone(rawPhone);
+  if (!phone) {
+    redirect(
+      '/login?error=' +
+        encodeURIComponent('Numéro invalide. Format attendu : +229 01 XX XX XX XX'),
+    );
+  }
+  const supabase = createServerSupabase();
+  const { error } = await supabase.auth.signInWithOtp({ phone });
+  if (error) redirect('/login?error=' + encodeURIComponent(error.message));
+  redirect('/login/verify?phone=' + encodeURIComponent(phone));
+}
+
+/**
+ * Alias magic link pour rétrocompat.
+ */
+export const loginEmail = magicLinkAction;
