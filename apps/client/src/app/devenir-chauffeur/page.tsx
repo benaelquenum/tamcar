@@ -4,28 +4,33 @@ import { Logo } from '@/components/Logo';
 import { CarIcon, CheckIcon, WalletIcon } from '@/components/Icon';
 import { getCurrentProfile } from '@/lib/session';
 import { createServerSupabase } from '@/lib/supabase-server';
-import type { DriverApplication } from '@/lib/driver-application';
+import {
+  APPLICATION_TYPE_META,
+  REQUIRED_DOCS,
+  TAMCAR_RDV_ADDRESS,
+  type DriverAppointment,
+} from '@/lib/appointment';
 
 export default async function DevenirChauffeurPage() {
   const profile = await getCurrentProfile();
 
-  // Si connecté, check s'il a déjà une candidature ou s'il est déjà driver
-  let existingApp: DriverApplication | null = null;
+  let existingApp: DriverAppointment | null = null;
   let alreadyDriver = false;
   if (profile) {
     const supabase = createServerSupabase();
     const [{ data: app }, { data: driver }] = await Promise.all([
-      supabase.rpc('my_driver_application'),
+      supabase.rpc('my_appointment'),
       supabase.from('drivers').select('id, status').eq('profile_id', profile.id).maybeSingle(),
     ]);
-    if (app) existingApp = app as DriverApplication;
+    if (app) existingApp = app as DriverAppointment;
     if (driver && driver.status === 'active') alreadyDriver = true;
   }
 
-  // Si déjà driver actif, redirect vers dashboard
   if (alreadyDriver) redirect('/driver');
-  // Si candidature en cours, redirect vers statut
-  if (existingApp && (existingApp.status === 'submitted' || existingApp.status === 'in_review')) {
+  if (
+    existingApp &&
+    (existingApp.status === 'scheduled' || existingApp.status === 'confirmed')
+  ) {
     redirect('/devenir-chauffeur/statut');
   }
 
@@ -56,61 +61,75 @@ export default async function DevenirChauffeurPage() {
           </span>
         </h1>
         <p className="mt-md text-base text-neutral-600">
-          Roule dans ta ville, gagne des revenus réguliers, et deviens
-          propriétaire de ta voiture au bout de 24 mois grâce au fonds
-          rachat TamCar.
+          Deux formules au choix. Toi seul décides.
         </p>
 
         <section className="mt-xl space-y-md">
-          <Perk
-            icon={<WalletIcon />}
-            title="Revenus + fonds rachat"
-            body="Tu touches 52 % du prix de chaque course en cash immédiat. 5 % en plus vont dans ton fonds rachat pour posséder ta voiture."
-          />
-          <Perk
+          <FormulaCard
+            tag="Formule A"
+            title={APPLICATION_TYPE_META.cession.label}
+            sub={APPLICATION_TYPE_META.cession.sub}
+            perks={[
+              '40 % du prix de chaque course en cash immédiat',
+              'Bonus +5 % dès ta 16e course du jour',
+              '10 % en plus dans ton fonds rachat, voiture à toi en 24 mois',
+              'Assurance et grosses réparations à la charge du concessionnaire',
+            ]}
             icon={<CarIcon />}
-            title="Voiture cédée en 24 mois"
-            body="Après 24 mois de service régulier (notation ≥ 4,5, entretiens à jour), la voiture est à toi. Zéro apport, zéro emprunt."
           />
-          <Perk
-            icon={<CheckIcon />}
-            title="Prix fixe, jamais de surge"
-            body="Le client sait ce qu'il paie à l'avance. Tu roules l'esprit tranquille, sans marchander."
+          <FormulaCard
+            tag="Formule B"
+            title={APPLICATION_TYPE_META.proprietaire.label}
+            sub={APPLICATION_TYPE_META.proprietaire.sub}
+            perks={[
+              '80 % du prix de chaque course pour toi',
+              'Bonus 10 % par course, plafonné 100 FCFA',
+              'Ta voiture, tes règles, entretien à ta charge',
+              'Aucun engagement de durée',
+            ]}
+            icon={<WalletIcon />}
           />
         </section>
 
         <div className="mt-2xl rounded-xl bg-neutral-100 p-lg">
           <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-            Ce dont tu as besoin
+            À apporter le jour du rendez-vous
           </h2>
           <ul className="mt-md space-y-xs text-sm text-neutral-900">
-            <li>• Carte nationale d&apos;identité (recto + verso)</li>
-            <li>• Permis de conduire en cours de validité</li>
-            <li>• Carte grise de ton véhicule</li>
-            <li>• Un smartphone Android ou iPhone</li>
+            {REQUIRED_DOCS.map((doc) => (
+              <li key={doc}>• {doc}</li>
+            ))}
           </ul>
+          <div className="mt-md rounded-lg border border-primary-100 bg-primary-50 p-md">
+            <p className="text-[10px] font-bold uppercase text-primary-700">
+              Adresse TamCar
+            </p>
+            <p className="mt-xs text-sm font-semibold text-neutral-900">
+              {TAMCAR_RDV_ADDRESS}
+            </p>
+          </div>
         </div>
 
-        {existingApp && existingApp.status === 'rejected' && (
+        {existingApp && existingApp.status === 'completed_rejected' && existingApp.rejection_reason && (
           <div className="mt-lg rounded-xl bg-error/10 p-lg">
             <p className="text-sm font-bold text-error">
-              Ta candidature précédente a été refusée
+              Ton précédent rendez-vous s&apos;est soldé par un refus
             </p>
             <p className="mt-xs text-xs text-neutral-600">
-              Raison : {existingApp.rejection_reason || 'non précisée'}
+              Raison : {existingApp.rejection_reason}
             </p>
             <p className="mt-md text-xs text-neutral-600">
-              Tu peux postuler à nouveau en corrigeant les points signalés.
+              Tu peux reprendre un rendez-vous en corrigeant les points signalés.
             </p>
           </div>
         )}
 
         <div className="mt-2xl">
           <Link
-            href="/devenir-chauffeur/candidature"
+            href="/devenir-chauffeur/rdv"
             className="flex w-full items-center justify-center gap-sm rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-lg text-base font-bold text-white shadow-glow"
           >
-            Postuler maintenant
+            Prendre rendez-vous
           </Link>
           {!profile && (
             <p className="mt-md text-center text-xs text-neutral-500">
@@ -125,16 +144,41 @@ export default async function DevenirChauffeurPage() {
   );
 }
 
-function Perk({ icon, title, body }: { icon: React.ReactNode; title: string; body: string }) {
+function FormulaCard({
+  tag,
+  title,
+  sub,
+  perks,
+  icon,
+}: {
+  tag: string;
+  title: string;
+  sub: string;
+  perks: string[];
+  icon: React.ReactNode;
+}) {
   return (
-    <div className="flex items-start gap-md rounded-xl border border-neutral-200 bg-white p-md shadow-sm">
-      <div className="grid h-10 w-10 flex-none place-items-center rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 text-white">
-        {icon}
+    <div className="rounded-xl border border-neutral-200 bg-white p-lg shadow-sm">
+      <div className="flex items-start gap-md">
+        <div className="grid h-11 w-11 flex-none place-items-center rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-glow">
+          {icon}
+        </div>
+        <div className="flex-1">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-primary-700">
+            {tag}
+          </p>
+          <p className="text-base font-extrabold text-neutral-900">{title}</p>
+          <p className="mt-xs text-xs text-neutral-600">{sub}</p>
+        </div>
       </div>
-      <div>
-        <p className="text-sm font-bold text-neutral-900">{title}</p>
-        <p className="mt-xs text-xs text-neutral-600">{body}</p>
-      </div>
+      <ul className="mt-md space-y-xs text-xs text-neutral-800">
+        {perks.map((p) => (
+          <li key={p} className="flex items-start gap-xs">
+            <CheckIcon className="mt-0.5 h-3.5 w-3.5 flex-none text-success" strokeWidth={3} />
+            <span>{p}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

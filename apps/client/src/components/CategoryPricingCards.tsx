@@ -4,7 +4,7 @@ import {
   type PriceQuote,
   type VehicleCategory,
 } from '@/lib/pricing';
-import { CheckIcon, StarIcon } from './Icon';
+import { CheckIcon, SnowflakeIcon, SparkleIcon, StarIcon } from './Icon';
 
 type CategoryDef = {
   id: VehicleCategory;
@@ -13,6 +13,11 @@ type CategoryDef = {
   features: string[];
   badge?: string;
   gradient: string;
+  climate: {
+    label: string;
+    detail: string;
+    badgeClass: string;
+  };
 };
 
 const CATEGORIES: CategoryDef[] = [
@@ -22,24 +27,32 @@ const CATEGORIES: CategoryDef[] = [
     tagline: 'Ta course sans surprise',
     features: [
       'Voiture propre et vérifiée',
-      'Chauffeur noté ≥ 4,2 ⭐',
-      'Climatisation en option (+200 F)',
-      'Prix fixe garanti',
+      'Chauffeur noté 4,2 étoiles minimum',
+      'Prix fixe garanti, jamais de surge',
     ],
     gradient: 'from-primary-500 to-primary-700',
+    climate: {
+      label: 'Clim en option',
+      detail: '+200 FCFA si tu la demandes',
+      badgeClass: 'bg-gold text-neutral-900',
+    },
   },
   {
     id: 'confort',
     name: 'Confort',
     tagline: 'Le voyage sans compromis',
     features: [
-      'Voiture récente moins de 5 ans',
-      'Chauffeur noté ≥ 4,6 ⭐',
-      'Climatisation incluse',
-      'Chauffeur formé qualité',
+      'Voiture récente de moins de 5 ans',
+      'Chauffeur noté 4,6 étoiles minimum + formé qualité',
+      'Prix fixe garanti, jamais de surge',
     ],
     badge: 'Best-seller',
     gradient: 'from-violet-500 via-primary-500 to-primary-700',
+    climate: {
+      label: 'Clim incluse',
+      detail: 'Fraîcheur assurée dès le départ',
+      badgeClass: 'bg-cyan-500 text-white',
+    },
   },
 ];
 
@@ -69,8 +82,30 @@ export async function CategoryPricingCards() {
         </span>
       </div>
       <p className="mt-xs text-sm text-neutral-600">
-        Compare Essentiel et Confort — deux niveaux de service, un même engagement prix fixe.
+        Deux niveaux de service, un même engagement prix fixe.
       </p>
+
+      {/* Ligne comparaison rapide — la clim est le différenciateur clé */}
+      <div className="mt-md flex items-stretch gap-sm rounded-xl bg-neutral-100 p-sm">
+        <div className="flex-1 rounded-lg bg-white p-sm text-center ring-1 ring-neutral-200">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+            Essentiel
+          </p>
+          <p className="mt-xs inline-flex items-center gap-xs text-xs font-bold text-gold-500">
+            <SnowflakeIcon className="h-3 w-3" strokeWidth={2.5} />
+            Clim +200 F
+          </p>
+        </div>
+        <div className="flex-1 rounded-lg bg-white p-sm text-center ring-1 ring-neutral-200">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+            Confort
+          </p>
+          <p className="mt-xs inline-flex items-center gap-xs text-xs font-bold text-cyan-500">
+            <SnowflakeIcon className="h-3 w-3" strokeWidth={2.5} />
+            Clim incluse
+          </p>
+        </div>
+      </div>
 
       <div className="mt-lg space-y-md">
         {CATEGORIES.map((cat) => (
@@ -115,6 +150,27 @@ function CategoryCard({
           TamCar <span className="font-black">{category.name}</span>
         </h3>
         <p className="mt-xs text-sm text-white/85">{category.tagline}</p>
+      </div>
+
+      {/* Encart climatisation — élément différenciant, mis en avant */}
+      <div className="mt-md flex items-center gap-md rounded-xl bg-white/15 p-md ring-1 ring-white/25 backdrop-blur-sm">
+        <span
+          className={`grid h-10 w-10 flex-none place-items-center rounded-lg shadow-md ${category.climate.badgeClass}`}
+        >
+          <SnowflakeIcon className="h-5 w-5" strokeWidth={2.5} />
+        </span>
+        <div className="flex-1">
+          <p className="text-sm font-extrabold leading-tight text-white">
+            {category.climate.label}
+          </p>
+          <p className="text-[11px] text-white/80">{category.climate.detail}</p>
+        </div>
+        {category.id === 'confort' && (
+          <span className="inline-flex items-center gap-xs rounded-full bg-cyan-500/40 px-sm py-xs text-[10px] font-bold uppercase text-white">
+            <SparkleIcon className="h-3 w-3" strokeWidth={2.5} />
+            Standard
+          </span>
+        )}
       </div>
 
       <ul className="mt-md space-y-xs">

@@ -11,6 +11,8 @@ type RideRow = {
   price_total_fcfa: number;
   status: string;
   requested_at: string;
+  arrival_flagged: boolean | null;
+  arrival_distance_m: number | null;
 };
 
 const STATUS_COLOR: Record<string, string> = {
@@ -32,8 +34,8 @@ export default async function AdminRidesPage() {
   const supabase = createServerSupabase();
 
   const { data: rides } = await supabase
-    .from('rides_view')
-    .select('id, client_id, pickup_address, dropoff_address, distance_km, duration_min, price_total_fcfa, status, requested_at')
+    .from('rides')
+    .select('id, client_id, pickup_address, dropoff_address, distance_km, duration_min, price_total_fcfa, status, requested_at, arrival_flagged, arrival_distance_m')
     .order('requested_at', { ascending: false })
     .limit(50);
 
@@ -46,6 +48,11 @@ export default async function AdminRidesPage() {
     .select('*', { count: 'exact', head: true })
     .eq('status', 'requested');
 
+  const { count: flaggedCount } = await supabase
+    .from('rides')
+    .select('*', { count: 'exact', head: true })
+    .eq('arrival_flagged', true);
+
   return (
     <div>
       <div className="mb-xl flex items-baseline justify-between">
@@ -57,6 +64,15 @@ export default async function AdminRidesPage() {
           <strong className="text-primary-500" style={{ fontVariantNumeric: 'tabular-nums' }}>
             {requestedCount ?? 0}
           </strong> en attente de matching
+          {(flaggedCount ?? 0) > 0 && (
+            <>
+              {' · '}
+              <strong className="text-warning" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                {flaggedCount}
+              </strong>{' '}
+              signalées
+            </>
+          )}
         </p>
       </div>
 
@@ -79,9 +95,23 @@ export default async function AdminRidesPage() {
             </thead>
             <tbody>
               {(rides as RideRow[]).map((r) => (
-                <tr key={r.id} className="border-b border-neutral-100 last:border-0">
+                <tr key={r.id} className={`border-b border-neutral-100 last:border-0 ${r.arrival_flagged ? 'bg-warning/5' : ''}`}>
                   <td className="px-md py-md">
-                    <p className="text-sm font-semibold text-neutral-900">
+                    <p className="flex items-center gap-xs text-sm font-semibold text-neutral-900">
+                      {r.arrival_flagged && (
+                        <span
+                          title={`Chauffeur a marqué "arrivé" à ${r.arrival_distance_m ?? '?'} m du point de départ`}
+                          className="inline-flex items-center gap-xs rounded-full bg-warning px-xs py-0.5 text-[9px] font-bold uppercase text-white"
+                          style={{ fontVariantNumeric: 'tabular-nums' }}
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3">
+                            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                            <line x1="12" y1="9" x2="12" y2="13" />
+                            <line x1="12" y1="17" x2="12.01" y2="17" />
+                          </svg>
+                          {r.arrival_distance_m ? `${r.arrival_distance_m} m` : 'écart'}
+                        </span>
+                      )}
                       {truncate(r.pickup_address, 40)}
                     </p>
                     <p className="text-xs text-neutral-500">→ {truncate(r.dropoff_address, 40)}</p>

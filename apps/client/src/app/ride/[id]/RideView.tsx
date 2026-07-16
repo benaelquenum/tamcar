@@ -2,12 +2,29 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/Logo';
 import { CarIcon, CheckIcon, PinIcon, StarIcon } from '@/components/Icon';
+import { Avatar } from '@/components/Avatar';
 import { Map } from '@/components/Map';
 import { RatingModal } from '@/components/RatingModal';
 import { getRoute } from '@/lib/mapbox';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+import { SUPPORT_PHONE, SUPPORT_PHONE_DISPLAY } from '@/lib/support';
+import { AddStopModal } from './AddStopModal';
+
+type RideStopRow = {
+  id: string;
+  order_idx: number;
+  address: string;
+  lat: number;
+  lng: number;
+  status: string;
+  arrived_at: string | null;
+  departed_at: string | null;
+  waiting_extra_fee_fcfa: number;
+  extra_price_fcfa: number;
+};
 
 type RideStatus =
   | 'requested'
@@ -36,7 +53,12 @@ export type RideForView = {
   payment_method: string | null;
   requested_at: string;
   driver_full_name?: string | null;
+  driver_avatar_url?: string | null;
   driver_phone?: string | null;
+  completion_requested_at?: string | null;
+  completion_recomputed_price_fcfa?: number | null;
+  completion_distance_from_dropoff_m?: number | null;
+  completion_auto_accept_at?: string | null;
   driver_rating_avg?: number | null;
   driver_rating_count?: number | null;
   driver_lat?: number | null;
@@ -103,6 +125,7 @@ function firstNameOf(fullName: string | null | undefined): string {
 }
 
 export function RideView({ initialRide }: { initialRide: RideForView }) {
+  const router = useRouter();
   const [ride, setRide] = useState<RideForView>(initialRide);
   const [nearbyDrivers, setNearbyDrivers] = useState<NearbyDriverRow[]>([]);
   const [distanceToPickup, setDistanceToPickup] = useState<number | null>(null);
@@ -110,6 +133,98 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
   const [sheetExpanded, setSheetExpanded] = useState(false);
   const [hasRated, setHasRated] = useState<boolean | null>(null);
   const [ratingOpen, setRatingOpen] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelConfirm, setCancelConfirm] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
+  const [completing, setCompleting] = useState(false);
+  const [completeError, setCompleteError] = useState<string | null>(null);
+  const [myLocation, setMyLocation] = useState<[number, number] | null>(null);
+  const [searchTimedOut, setSearchTimedOut] = useState(false);
+  const [retrying, setRetrying] = useState(false);
+  const [stops, setStops] = useState<RideStopRow[]>([]);
+  const [addStopOpen, setAddStopOpen] = useState(false);
+  const [driverOtherRide, setDriverOtherRide] = useState<{
+    other_ride_id: string;
+    other_dropoff_address: string;
+    other_status: string;
+    other_matched_at: string;
+    other_duration_min: number | null;
+    is_busy: boolean;
+  } | null>(null);
+
+  async function handleCancelRide() {
+    if (cancelling) return;
+    setCancelling(true);
+    setCancelError(null);
+    const { error } = await supabaseBrowser.rpc('cancel_ride_by_client', {
+      ride_id: ride.id,
+    });
+    if (error) {
+      setCancelError(error.message);
+      setCancelling(false);
+      return;
+    }
+    router.push('/');
+    router.refresh();
+  }
+
+  async function handleCompleteRide() {
+    if (completing) return;
+    setCompleting(true);
+    setCompleteError(null);
+
+    // Récupère la position live (ou best-effort via geolocation one-shot)
+    let lat = myLocation?.[1] ?? null;
+    let lng = myLocation?.[0] ?? null;
+    if (lat == null || lng == null) {
+      try {
+        const p = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 8000,
+          });
+        });
+        lat = p.coords.latitude;
+        lng = p.coords.longitude;
+      } catch {
+        // fallback : coord du dropoff (on assume arrivé)
+        lat = ride.dropoff_lat;
+        lng = ride.dropoff_lng;
+      }
+    }
+
+    const { error } = await supabaseBrowser.rpc('client_request_completion', {
+      ride_id: ride.id,
+      actual_lat: lat,
+      actual_lng: lng,
+    });
+    if (error) {
+      setCompleteError(error.message);
+      setCompleting(false);
+      return;
+    }
+    await refetchDetails();
+    setCompleting(false);
+    // Si status déjà 'completed' → RatingModal via useEffect status change
+    // Sinon → la modale d'attente s'affiche grâce à completion_requested_at
+  }
+
+  // Auto-accept : quand completion_auto_accept_at expire, on force la fin
+  useEffect(() => {
+    if (!ride.completion_requested_at || !ride.completion_auto_accept_at) return;
+    if (ride.status !== 'in_progress') return;
+    const deadline = new Date(ride.completion_auto_accept_at).getTime();
+    const now = Date.now();
+    const remaining = Math.max(0, deadline - now);
+    const timer = setTimeout(async () => {
+      // Si status pas encore completed, on force
+      const { data } = await supabaseBrowser.rpc('ride_with_driver_details', { ride_id: ride.id });
+      const fresh = Array.isArray(data) ? (data[0] as { status?: string } | undefined) : undefined;
+      if (fresh?.status !== 'in_progress') return;
+      await supabaseBrowser.rpc('auto_accept_completion', { ride_id: ride.id });
+    }, remaining + 500);
+    return () => clearTimeout(timer);
+  }, [ride.completion_auto_accept_at, ride.completion_requested_at, ride.status, ride.id]);
 
   const meta = STATUS_META[ride.status];
   const isWaiting = ride.status === 'requested';
@@ -129,6 +244,101 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
     [ride.driver_lat, ride.driver_lng],
   );
 
+  // Charge les stops + refresh sur realtime updates
+  const refetchStops = useCallback(async () => {
+    const { data } = await supabaseBrowser.rpc('ride_stops_of', { p_ride_id: ride.id });
+    setStops((data ?? []) as RideStopRow[]);
+  }, [ride.id]);
+
+  useEffect(() => {
+    refetchStops();
+    const channel = supabaseBrowser
+      .channel(`stops:${ride.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'ride_stops', filter: `ride_id=eq.${ride.id}` },
+        () => refetchStops(),
+      )
+      .subscribe();
+    return () => { supabaseBrowser.removeChannel(channel); };
+  }, [ride.id, refetchStops]);
+
+  // Timeout recherche : 2 minutes max en status 'requested'
+  useEffect(() => {
+    if (ride.status !== 'requested') {
+      setSearchTimedOut(false);
+      return;
+    }
+    const start = new Date(ride.requested_at).getTime();
+    const deadline = start + 120_000;
+    const remaining = Math.max(0, deadline - Date.now());
+    if (remaining === 0) {
+      setSearchTimedOut(true);
+      return;
+    }
+    const timer = setTimeout(() => setSearchTimedOut(true), remaining);
+    return () => clearTimeout(timer);
+  }, [ride.status, ride.requested_at]);
+
+  async function handleRetrySearch() {
+    if (retrying) return;
+    setRetrying(true);
+    // On reset le timer côté serveur en remettant requested_at à now()
+    await supabaseBrowser
+      .from('rides')
+      .update({ requested_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+      .eq('id', ride.id)
+      .eq('status', 'requested');
+    setSearchTimedOut(false);
+    await refetchDetails();
+    setRetrying(false);
+  }
+
+  async function handleAbortSearch() {
+    await supabaseBrowser.rpc('cancel_ride_by_client', { ride_id: ride.id });
+    router.push('/');
+    router.refresh();
+  }
+
+  // Poll : le chauffeur assigné est-il en train de finir une autre course ?
+  useEffect(() => {
+    if (!['matched', 'arrived'].includes(ride.status)) {
+      setDriverOtherRide(null);
+      return;
+    }
+    let cancelled = false;
+    async function check() {
+      const { data } = await supabaseBrowser.rpc('driver_active_ride_of', {
+        p_ride_id: ride.id,
+      });
+      if (cancelled) return;
+      const rows = (data ?? []) as Array<typeof driverOtherRide extends infer T ? T : never>;
+      setDriverOtherRide((rows[0] as typeof driverOtherRide) ?? null);
+    }
+    check();
+    const interval = setInterval(check, 15_000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ride.id, ride.status]);
+
+  // Geolocation live du client — actif pendant matched/arrived/in_progress
+  useEffect(() => {
+    if (!['matched', 'arrived', 'in_progress'].includes(ride.status)) {
+      setMyLocation(null);
+      return;
+    }
+    if (typeof navigator === 'undefined' || !navigator.geolocation) return;
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => setMyLocation([pos.coords.longitude, pos.coords.latitude]),
+      () => undefined,
+      { enableHighAccuracy: true, maximumAge: 3000, timeout: 15000 },
+    );
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [ride.status]);
+
   // Refetch complet des détails ride+driver
   const refetchDetails = useCallback(async () => {
     const { data } = await supabaseBrowser.rpc('ride_with_driver_details', { ride_id: ride.id });
@@ -136,6 +346,103 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
       setRide((prev) => ({ ...prev, ...(data[0] as Partial<RideForView>) }));
     }
   }, [ride.id]);
+
+  // Son d'événement joué à chaque transition de statut.
+  // Fichiers custom optionnels ; fallback Web Audio motif distinct par étape.
+  // Status 'arrived' : boucle toutes les 10s tant que le client n'est pas monté (obligation d'entendre).
+  useEffect(() => {
+    const soundByStatus: Record<string, { file: string; fallback: 'matched' | 'arrived' | 'started' | 'completed'; loopMs?: number }> = {
+      matched: { file: '/sounds/driver-matched.mp3', fallback: 'matched' },
+      arrived: { file: '/sounds/driver-arrived.mp3', fallback: 'arrived', loopMs: 10_000 },
+      in_progress: { file: '/sounds/ride-started.mp3', fallback: 'started' },
+      completed: { file: '/sounds/ride-completed.mp3', fallback: 'completed' },
+    };
+    const entry = soundByStatus[ride.status];
+    if (!entry) return;
+
+    let cancelled = false;
+    let ctx: AudioContext | null = null;
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+
+    const playFallback = (motif: 'matched' | 'arrived' | 'started' | 'completed') => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const AudioCtx: typeof AudioContext | undefined =
+        typeof window !== 'undefined'
+          ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (window.AudioContext || (window as any).webkitAudioContext)
+          : undefined;
+      if (!AudioCtx) return;
+      try {
+        if (!ctx) ctx = new AudioCtx();
+        if (ctx.state === 'suspended') ctx.resume();
+        const now = ctx.currentTime;
+        // Motif "arrived" enrichi : plus insistant (3 doublets + note finale) pour version bouclée
+        const motifs: Record<typeof motif, [number, number, number][]> = {
+          matched: [
+            [523, now, 0.18],
+            [659, now + 0.18, 0.18],
+            [784, now + 0.36, 0.3],
+          ],
+          arrived: [
+            [1046, now, 0.16],
+            [1046, now + 0.2, 0.16],
+            [1318, now + 0.42, 0.16],
+            [1318, now + 0.62, 0.16],
+            [1568, now + 0.84, 0.4],
+          ],
+          started: [
+            [440, now, 0.12],
+            [554, now + 0.14, 0.12],
+            [659, now + 0.28, 0.12],
+            [784, now + 0.42, 0.28],
+          ],
+          completed: [
+            [784, now, 0.15],
+            [988, now + 0.16, 0.15],
+            [1319, now + 0.32, 0.4],
+          ],
+        };
+        for (const [freq, start, dur] of motifs[motif]) {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, start);
+          gain.gain.setValueAtTime(0.0001, start);
+          gain.gain.exponentialRampToValueAtTime(motif === 'arrived' ? 0.45 : 0.25, start + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+          osc.connect(gain).connect(ctx.destination);
+          osc.start(start);
+          osc.stop(start + dur + 0.05);
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    const play = () => {
+      if (cancelled) return;
+      try {
+        const audio = new Audio(entry.file);
+        audio.volume = entry.loopMs ? 0.95 : 0.75;
+        audio.play().catch(() => {
+          if (!cancelled) playFallback(entry.fallback);
+        });
+      } catch {
+        playFallback(entry.fallback);
+      }
+    };
+
+    play();
+    if (entry.loopMs) {
+      intervalId = setInterval(play, entry.loopMs);
+    }
+
+    return () => {
+      cancelled = true;
+      if (intervalId) clearInterval(intervalId);
+      ctx?.close().catch(() => undefined);
+    };
+  }, [ride.status]);
 
   // Polling chauffeurs autour (seulement en requested)
   useEffect(() => {
@@ -145,7 +452,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
       const { data } = await supabaseBrowser.rpc('nearby_drivers_for_map', {
         pickup_lat: ride.pickup_lat,
         pickup_lng: ride.pickup_lng,
-        radius_km: 5.0,
+        radius_km: 10.0,
       });
       if (cancelled) return;
       setNearbyDrivers((data ?? []) as NearbyDriverRow[]);
@@ -220,7 +527,9 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
           dropoff={dropoffCoord}
           driversNearby={isWaiting ? nearbyDrivers : []}
           assignedDriver={hasDriver && driverCoord ? { driver_id: ride.driver_id!, lng: driverCoord[0], lat: driverCoord[1] } : null}
+          clientLocation={myLocation}
           pickupPulse={isWaiting}
+          autoFit={isWaiting}
           className="h-full w-full"
         />
       </div>
@@ -264,26 +573,59 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                 <p className="text-lg font-extrabold leading-tight">{meta.title}</p>
                 {meta.sub && <p className="text-xs text-white/90">{meta.sub}</p>}
               </div>
-              {isWaiting && nearbyDrivers.length > 0 && (
+              {isWaiting && (
                 <div className="flex-none text-right">
                   <p className="text-2xl font-extrabold leading-none" style={{ fontVariantNumeric: 'tabular-nums' }}>
                     {nearbyDrivers.length}
                   </p>
                   <p className="text-[10px] leading-tight text-white/80">
-                    {nearbyDrivers.length > 1 ? 'chauffeurs autour' : 'chauffeur autour'}
+                    {nearbyDrivers.length === 0
+                      ? 'chauffeur dans 10 km'
+                      : nearbyDrivers.length > 1
+                        ? 'chauffeurs dans 10 km'
+                        : 'chauffeur dans 10 km'}
                   </p>
                 </div>
               )}
             </div>
           </div>
 
+          {/* Bandeau "chauffeur occupé sur une autre course" — annulation gratuite */}
+          {driverOtherRide && (
+            <div className="mx-lg mb-md rounded-xl border border-warning/30 bg-warning/5 p-md">
+              <div className="flex items-start gap-md">
+                <div className="grid h-9 w-9 flex-none place-items-center rounded-full bg-warning text-white">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-neutral-900">
+                    Ton chauffeur termine une autre course
+                  </p>
+                  <p className="mt-xs text-xs text-neutral-700">
+                    Il finit son trajet actuel puis vient te chercher
+                    {driverOtherRide.other_duration_min
+                      ? ` (${driverOtherRide.other_duration_min} min max avant qu'il ne parte vers toi)`
+                      : ''}
+                    . Tu peux annuler <strong>sans frais</strong> tant qu&apos;il n&apos;est pas
+                    libre.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Card chauffeur assigné */}
           {hasDriver && (ride.driver_full_name || ride.vehicle_plate) && (
             <div className="mx-lg mb-md rounded-xl bg-neutral-100 p-md">
               <div className="flex items-center gap-md">
-                <div className="grid h-12 w-12 flex-none place-items-center rounded-full bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-md">
-                  <CarIcon className="h-6 w-6" />
-                </div>
+                <Avatar
+                  src={ride.driver_avatar_url}
+                  name={ride.driver_full_name ?? undefined}
+                  size={48}
+                />
                 <div className="flex-1">
                   <p className="text-sm font-bold text-neutral-900">
                     {firstNameOf(ride.driver_full_name) || 'Chauffeur'}
@@ -367,13 +709,117 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                 <span className="ml-xs text-xs font-medium text-neutral-600">FCFA</span>
               </span>
             </div>
-            {isWaiting && (
+            {/* Bouton "Ajouter un arrêt" — visible pendant la course, max 2 */}
+            {['matched', 'arrived', 'in_progress'].includes(ride.status) && stops.filter((s) => s.status !== 'cancelled').length < 2 && (
               <button
                 type="button"
-                className="w-full rounded-xl border-2 border-neutral-200 py-md text-sm font-bold text-neutral-600 transition hover:border-error hover:text-error"
+                onClick={() => setAddStopOpen(true)}
+                className="mb-sm flex w-full items-center justify-center gap-sm rounded-xl border-2 border-dashed border-primary-300 bg-primary-50/50 py-sm text-sm font-semibold text-primary-700 hover:border-primary-500 hover:bg-primary-50"
               >
-                Annuler la course
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                Ajouter un arrêt
               </button>
+            )}
+
+            {/* Liste des arrêts */}
+            {stops.length > 0 && (
+              <div className="mb-sm space-y-xs">
+                {stops.map((s) => (
+                  <div
+                    key={s.id}
+                    className="flex items-center gap-sm rounded-lg bg-violet-500/10 p-sm text-xs"
+                  >
+                    <span className="grid h-6 w-6 flex-none place-items-center rounded-full bg-violet-500 font-bold text-white">
+                      {s.order_idx}
+                    </span>
+                    <div className="flex-1 truncate">
+                      <p className="truncate font-semibold text-neutral-900">
+                        {s.address}
+                      </p>
+                      <p className="text-[10px] text-neutral-600">
+                        {s.status === 'pending' && 'En attente chauffeur'}
+                        {s.status === 'accepted' && 'Accepté par le chauffeur'}
+                        {s.status === 'arrived' && '↳ Arrêt en cours (attente)'}
+                        {s.status === 'departed' && `↳ Terminé · +${s.waiting_extra_fee_fcfa} F attente`}
+                      </p>
+                    </div>
+                    <span
+                      className="text-[10px] font-bold text-violet-700"
+                      style={{ fontVariantNumeric: 'tabular-nums' }}
+                    >
+                      +{s.extra_price_fcfa} F
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {ride.status === 'in_progress' && (
+              <button
+                type="button"
+                onClick={handleCompleteRide}
+                disabled={completing}
+                className="w-full rounded-xl bg-gradient-to-r from-success to-cyan-500 py-md text-sm font-bold text-white shadow-glow disabled:opacity-50"
+              >
+                {completing ? 'Fin de course…' : 'Je suis arrivé — terminer la course'}
+              </button>
+            )}
+            {completeError && (
+              <p className="mt-xs text-center text-xs text-error">{completeError}</p>
+            )}
+            {(ride.status === 'requested' ||
+              ride.status === 'matched' ||
+              ride.status === 'arrived') && (
+              <>
+                {!cancelConfirm ? (
+                  <button
+                    type="button"
+                    onClick={() => setCancelConfirm(true)}
+                    className="w-full rounded-xl border-2 border-neutral-200 py-md text-sm font-bold text-neutral-600 transition hover:border-error hover:text-error"
+                  >
+                    Annuler la course
+                  </button>
+                ) : (
+                  <div className="rounded-xl border border-error/30 bg-error/5 p-md">
+                    <p className="text-sm font-semibold text-neutral-900">
+                      Confirmer l&apos;annulation ?
+                    </p>
+                    <p className="mt-xs text-xs text-neutral-600">
+                      {ride.status === 'requested'
+                        ? 'Ta demande sera annulée gratuitement.'
+                        : driverOtherRide
+                          ? 'Le chauffeur n\'est pas encore libre — annulation gratuite.'
+                          : ride.status === 'matched'
+                            ? 'Le chauffeur sera notifié. Frais éventuels selon barème (300 F après 30 s).'
+                            : 'Le chauffeur est déjà arrivé. Frais 500 F selon barème.'}
+                    </p>
+                    <div className="mt-md flex gap-sm">
+                      <button
+                        type="button"
+                        onClick={() => setCancelConfirm(false)}
+                        disabled={cancelling}
+                        className="flex-1 rounded-lg bg-white py-sm text-sm font-semibold text-neutral-600 ring-1 ring-neutral-200"
+                      >
+                        Non, garder
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCancelRide}
+                        disabled={cancelling}
+                        className="flex-1 rounded-lg bg-error py-sm text-sm font-bold text-white disabled:opacity-40"
+                      >
+                        {cancelling ? '…' : 'Oui, annuler'}
+                      </button>
+                    </div>
+                    {cancelError && (
+                      <p className="mt-sm text-xs text-error">{cancelError}</p>
+                    )}
+                  </div>
+                )}
+              </>
             )}
             {ride.status === 'completed' && (
               <>
@@ -401,16 +847,192 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
         </div>
       </div>
 
+      {/* Modale timeout : aucun TamCar trouvé après 2 min de recherche */}
+      {searchTimedOut && ride.status === 'requested' && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-neutral-900/75 backdrop-blur-sm sm:items-center">
+          <div className="w-full max-w-md rounded-t-2xl bg-white p-lg shadow-xl sm:rounded-2xl">
+            <div className="mb-lg text-center">
+              <div className="mx-auto mb-md grid h-14 w-14 place-items-center rounded-full bg-warning/15 text-warning">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="h-7 w-7">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+              </div>
+              <h2 className="text-lg font-extrabold text-neutral-900">
+                Aucun TamCar trouvé
+              </h2>
+              <p className="mt-xs text-sm text-neutral-600">
+                On n&apos;a pas trouvé de chauffeur dans un rayon de 10 km après 2 min de
+                recherche. Tu peux réessayer maintenant ou annuler.
+              </p>
+            </div>
+            <div className="flex gap-md">
+              <button
+                type="button"
+                onClick={handleAbortSearch}
+                className="flex-1 rounded-xl border-2 border-neutral-200 py-md text-sm font-bold text-neutral-600 hover:border-error hover:text-error"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={handleRetrySearch}
+                disabled={retrying}
+                className="flex-1 rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-md text-sm font-bold text-white shadow-glow disabled:opacity-50"
+              >
+                {retrying ? '…' : 'Réessayer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal ajout arrêt */}
+      <AddStopModal
+        open={addStopOpen}
+        onClose={() => setAddStopOpen(false)}
+        rideId={ride.id}
+        pickup={pickupCoord}
+        dropoff={dropoffCoord}
+        existingStops={stops
+          .filter((s) => s.status !== 'cancelled' && s.status !== 'departed')
+          .map((s) => ({ lat: s.lat, lng: s.lng }))}
+        currentPrice={ride.price_total_fcfa}
+        onAdded={() => { void refetchStops(); void refetchDetails(); }}
+      />
+
+      {/* Modale d'attente : le client a demandé la fin, on attend le chauffeur (20 s) */}
+      {ride.status === 'in_progress' && ride.completion_requested_at && (
+        <CompletionWaitingModal
+          recomputedPrice={ride.completion_recomputed_price_fcfa}
+          originalPrice={ride.price_total_fcfa}
+          distanceFromDropoffM={ride.completion_distance_from_dropoff_m}
+          autoAcceptAt={ride.completion_auto_accept_at}
+        />
+      )}
+
       {ride.status === 'completed' && ride.driver_full_name && (
         <RatingModal
-          open={ratingOpen}
+          open={ratingOpen || hasRated === false}
           onClose={() => setRatingOpen(false)}
           rideId={ride.id}
           ratedName={firstNameOf(ride.driver_full_name) || 'ton chauffeur'}
-          onSubmitted={() => setHasRated(true)}
+          mandatory={hasRated === false}
+          onSubmitted={() => {
+            setHasRated(true);
+            // Notation obligatoire remplie → retour à l'accueil
+            setTimeout(() => {
+              router.push('/');
+              router.refresh();
+            }, 1100);
+          }}
         />
       )}
     </main>
+  );
+}
+
+function CompletionWaitingModal({
+  recomputedPrice,
+  originalPrice,
+  distanceFromDropoffM,
+  autoAcceptAt,
+}: {
+  recomputedPrice: number | null | undefined;
+  originalPrice: number;
+  distanceFromDropoffM: number | null | undefined;
+  autoAcceptAt: string | null | undefined;
+}) {
+  const [remaining, setRemaining] = useState(20);
+  useEffect(() => {
+    if (!autoAcceptAt) return;
+    const deadline = new Date(autoAcceptAt).getTime();
+    const tick = () => {
+      const s = Math.max(0, Math.round((deadline - Date.now()) / 1000));
+      setRemaining(s);
+    };
+    tick();
+    const id = setInterval(tick, 500);
+    return () => clearInterval(id);
+  }, [autoAcceptAt]);
+
+  const priceDelta =
+    typeof recomputedPrice === 'number' ? recomputedPrice - originalPrice : 0;
+  const isCheaper = priceDelta < 0;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-neutral-900/70 backdrop-blur-sm sm:items-center">
+      <div className="w-full max-w-md rounded-t-2xl bg-white p-lg shadow-xl sm:rounded-2xl">
+        <div className="mb-lg text-center">
+          <div className="mx-auto mb-md grid h-14 w-14 place-items-center rounded-full bg-primary-50 text-primary-500">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="h-7 w-7">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+          </div>
+          <h2 className="text-lg font-extrabold text-neutral-900">
+            Demande envoyée au chauffeur
+          </h2>
+          <p className="mt-xs text-sm text-neutral-600">
+            Ton chauffeur reçoit la demande de fin de course. Réponse automatique
+            dans{' '}
+            <strong style={{ fontVariantNumeric: 'tabular-nums' }}>
+              {remaining} s
+            </strong>{' '}
+            s&apos;il ne réagit pas.
+          </p>
+        </div>
+
+        {typeof recomputedPrice === 'number' && (
+          <div className="mb-md rounded-xl border border-warning/30 bg-warning/5 p-md">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-warning">
+              Fin anticipée · recalcul du prix
+            </p>
+            <p
+              className="mt-xs text-sm text-neutral-900"
+              style={{ fontVariantNumeric: 'tabular-nums' }}
+            >
+              {distanceFromDropoffM != null && (
+                <>
+                  Tu es à <strong>{distanceFromDropoffM} m</strong> de la
+                  destination.{' '}
+                </>
+              )}
+              Le prix passe de{' '}
+              <strong>
+                {originalPrice.toLocaleString('fr-FR').replace(/,/g, ' ')} F
+              </strong>{' '}
+              à{' '}
+              <strong className={isCheaper ? 'text-success' : ''}>
+                {recomputedPrice.toLocaleString('fr-FR').replace(/,/g, ' ')} F
+              </strong>{' '}
+              ({isCheaper ? '−' : '+'}
+              {Math.abs(priceDelta).toLocaleString('fr-FR').replace(/,/g, ' ')}{' '}
+              F).
+            </p>
+          </div>
+        )}
+
+        {/* Barre de progression du délai */}
+        <div className="mb-md h-2 overflow-hidden rounded-full bg-neutral-100">
+          <div
+            className="h-full bg-gradient-to-r from-primary-500 to-primary-700 transition-all"
+            style={{ width: `${((20 - remaining) / 20) * 100}%` }}
+          />
+        </div>
+
+        <a
+          href={`tel:${SUPPORT_PHONE}`}
+          className="flex w-full items-center justify-center gap-sm rounded-xl border-2 border-neutral-200 py-md text-sm font-bold text-neutral-700 hover:border-primary-500 hover:text-primary-500"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+          </svg>
+          Appeler le service client · {SUPPORT_PHONE_DISPLAY}
+        </a>
+      </div>
+    </div>
   );
 }
 

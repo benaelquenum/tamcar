@@ -36,6 +36,8 @@ type Props = {
   driversNearby?: DriverPin[];
   /** Chauffeur assigné (pin voiture plus grand, vert) */
   assignedDriver?: DriverPin | null;
+  /** Position live du client — pin cyan pulsant, mis à jour à chaque tick geolocation */
+  clientLocation?: [number, number] | null;
   /** Ne pas ajuster fitBounds automatiquement (utile en mode suivi ride) */
   autoFit?: boolean;
   /** Anime le pin pickup (cercles pulse) — actif pendant la recherche d'un chauffeur */
@@ -51,6 +53,7 @@ export function Map({
   candidate,
   driversNearby,
   assignedDriver,
+  clientLocation,
   autoFit = true,
   pickupPulse = false,
 }: Props) {
@@ -64,6 +67,7 @@ export function Map({
     new (globalThis as any).Map(),
   );
   const assignedMarkerRef = useRef<mapboxgl.Marker | null>(null);
+  const clientMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const onMapClickRef = useRef(onMapClick);
   onMapClickRef.current = onMapClick;
 
@@ -210,6 +214,30 @@ export function Map({
         .addTo(map);
     }
   }, [assignedDriver]);
+
+  // Client live location marker (pulse cyan)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (!clientLocation) {
+      clientMarkerRef.current?.remove();
+      clientMarkerRef.current = null;
+      return;
+    }
+    if (!clientMarkerRef.current) {
+      const el = document.createElement('div');
+      el.className = 'tc-client-live';
+      el.innerHTML =
+        '<div class="tc-client-pulse"></div>' +
+        '<div class="tc-client-pulse delay-1"></div>' +
+        '<div class="tc-client-dot"></div>';
+      clientMarkerRef.current = new mapboxgl.Marker({ element: el, anchor: 'center' })
+        .setLngLat(clientLocation)
+        .addTo(map);
+    } else {
+      clientMarkerRef.current.setLngLat(clientLocation);
+    }
+  }, [clientLocation]);
 
   // Draw / clear route
   useEffect(() => {

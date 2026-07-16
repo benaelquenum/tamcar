@@ -18,6 +18,34 @@ import {
 import { firstNameOf, getCurrentProfile } from '@/lib/session';
 import { createServerSupabase } from '@/lib/supabase-server';
 
+type BannerRow = {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  image_url: string | null;
+  link_url: string | null;
+  cta_text: string | null;
+  gradient: string | null;
+};
+
+type ActiveRideRow = {
+  id: string;
+  status: 'requested' | 'matched' | 'arrived' | 'in_progress';
+  pickup_address: string;
+  dropoff_address: string;
+  price_total_fcfa: number;
+  requested_at: string;
+  matched_at: string | null;
+  driver_full_name: string | null;
+};
+
+const ACTIVE_STATUS_META: Record<ActiveRideRow['status'], { label: string; tint: string; sub: string }> = {
+  requested: { label: 'Recherche d\'un chauffeur', tint: 'from-primary-500 to-primary-700', sub: 'On cherche pour toi…' },
+  matched: { label: 'Chauffeur en route', tint: 'from-primary-500 to-primary-700', sub: 'Ton chauffeur arrive.' },
+  arrived: { label: 'Chauffeur arrivé', tint: 'from-gold to-warning', sub: 'Rejoins-le au point de départ.' },
+  in_progress: { label: 'Course en cours', tint: 'from-success to-cyan-500', sub: 'Bon voyage !' },
+};
+
 const DEFAULT_NAMES = new Set(['utilisateur', 'Nouveau client', 'Ami TamCar']);
 
 function formatFcfaHome(n: number): string {
@@ -35,16 +63,46 @@ export default async function HomePage() {
   const firstName = firstNameOf(profile);
   const isLoggedIn = profile !== null;
 
-  // Fetch balance TamCar Crédit si connecté
+  // Fetch balance TamCar Crédit + course active + chauffeurs en ligne réels
   let creditBalance = 0;
+  let activeRide: ActiveRideRow | null = null;
+  let onlineDrivers: { count: number; label: string } | null = null;
+  const supabase = createServerSupabase();
+
+  // Nombre de chauffeurs actuellement online (globalement — hors géoloc précise)
+  const { count: driverCount } = await supabase
+    .from('drivers')
+    .select('*', { count: 'exact', head: true })
+    .eq('is_online', true)
+    .eq('status', 'active');
+  if ((driverCount ?? 0) > 0) {
+    onlineDrivers = {
+      count: driverCount ?? 0,
+      label: `${driverCount} chauffeur${(driverCount ?? 0) > 1 ? 's' : ''} en ligne`,
+    };
+  }
+
   if (isLoggedIn) {
-    const supabase = createServerSupabase();
-    const { data } = await supabase.rpc('my_wallets');
-    const credit = (data as Array<{ kind: string; balance_fcfa: number }> | null)?.find(
+    const [{ data: wallets }, { data: activeData }] = await Promise.all([
+      supabase.rpc('my_wallets'),
+      supabase.rpc('my_active_ride'),
+    ]);
+    const credit = (wallets as Array<{ kind: string; balance_fcfa: number }> | null)?.find(
       (w) => w.kind === 'tamcar_credit',
     );
     if (credit) creditBalance = credit.balance_fcfa;
+    const rows = (activeData ?? []) as ActiveRideRow[];
+    if (rows[0]) activeRide = rows[0];
   }
+
+  // Bannières actives
+  const { data: bannersData } = await supabase
+    .from('home_banners')
+    .select('id, title, subtitle, image_url, link_url, cta_text, gradient')
+    .eq('is_active', true)
+    .order('display_order', { ascending: true })
+    .limit(6);
+  const banners = (bannersData ?? []) as BannerRow[];
 
   return (
     <main className="relative min-h-dvh overflow-hidden bg-white">
@@ -60,13 +118,13 @@ export default async function HomePage() {
         <header className="flex items-center justify-between">
           <Logo className="h-9 w-auto" />
           {isLoggedIn ? (
-            <button
-              type="button"
-              aria-label="Profil"
+            <Link
+              href="/compte"
+              aria-label="Mon compte"
               className="grid h-11 w-11 place-items-center rounded-full bg-white text-neutral-900 shadow-md ring-1 ring-neutral-200 transition hover:shadow-lg"
             >
               <UserIcon />
-            </button>
+            </Link>
           ) : (
             <Link
               href="/login"
@@ -76,6 +134,9 @@ export default async function HomePage() {
             </Link>
           )}
         </header>
+
+        {/* Onglet notification course active */}
+        {activeRide && <ActiveRideBanner ride={activeRide} />}
 
         {/* Greeting + hero */}
         <section className="mt-xl">
@@ -92,16 +153,21 @@ export default async function HomePage() {
             &nbsp;?
           </h1>
 
-          {/* Live status */}
-          <div className="mt-md inline-flex items-center gap-sm rounded-full bg-success/10 px-md py-xs">
-            <span className="relative grid h-2 w-2 place-items-center">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success/60" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
-            </span>
-            <span className="text-xs font-semibold text-success">
-              8 chauffeurs à Porto-Novo · ~3 min
-            </span>
-          </div>
+          {/* Live status — affiché uniquement si des chauffeurs sont réellement online */}
+          {onlineDrivers && (
+            <div className="mt-md inline-flex items-center gap-sm rounded-full bg-success/10 px-md py-xs">
+              <span className="relative grid h-2 w-2 place-items-center">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success/60" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
+              </span>
+              <span
+                className="text-xs font-semibold text-success"
+                style={{ fontVariantNumeric: 'tabular-nums' }}
+              >
+                {onlineDrivers.label}
+              </span>
+            </div>
+          )}
         </section>
 
         {/* Search field */}
@@ -119,6 +185,34 @@ export default async function HomePage() {
             <ArrowRightIcon />
           </Link>
         </section>
+
+        {/* Wallet compact — remonté juste sous la barre "Où voulez-vous aller ?" */}
+        {isLoggedIn && (
+          <section className="mt-md">
+            <Link
+              href="/wallet"
+              className="flex items-center gap-sm rounded-lg border border-neutral-200 bg-white px-md py-xs shadow-sm transition hover:shadow-md"
+            >
+              <span className="grid h-7 w-7 place-items-center rounded-md bg-gradient-to-br from-violet-500 to-primary-500 text-white">
+                <WalletIcon className="h-4 w-4" />
+              </span>
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500">
+                Crédit
+              </span>
+              <span
+                className="flex-1 text-right text-sm font-extrabold text-neutral-900"
+                style={{ fontVariantNumeric: 'tabular-nums' }}
+              >
+                {formatFcfaHome(creditBalance)}
+                <span className="ml-xs text-[10px] font-medium text-neutral-500">F</span>
+              </span>
+              <span className="inline-flex items-center gap-xs rounded-md bg-gold px-sm py-xs text-[11px] font-bold text-neutral-900">
+                <PlusIcon className="h-3 w-3" strokeWidth={3} />
+                Recharger
+              </span>
+            </Link>
+          </section>
+        )}
 
         {/* CTAs */}
         <section className="mt-lg space-y-md">
@@ -138,37 +232,21 @@ export default async function HomePage() {
           </Link>
         </section>
 
+        {/* Bannières de communication */}
+        {banners.length > 0 && (
+          <section className="mt-xl">
+            <div className="-mx-lg overflow-x-auto pb-xs">
+              <div className="flex gap-md px-lg">
+                {banners.map((b) => (
+                  <BannerCard key={b.id} banner={b} />
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Cartes catégories — prix calculés en direct via Supabase RPC compute_price */}
         <CategoryPricingCards />
-
-        {/* Wallet — TamCar Crédit */}
-        <section className="mt-xl">
-          <Link
-            href="/wallet"
-            className="flex items-center gap-md rounded-xl border border-neutral-200 bg-white p-lg shadow-sm transition hover:shadow-md"
-          >
-            <div className="grid h-12 w-12 place-items-center rounded-lg bg-gradient-to-br from-violet-500 to-primary-500 text-white shadow-glow-violet">
-              <WalletIcon />
-            </div>
-            <div className="flex-1">
-              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-600">
-                TamCar Crédit
-              </p>
-              <p
-                className="text-xl font-extrabold text-neutral-900"
-                style={{ fontVariantNumeric: 'tabular-nums' }}
-              >
-                {formatFcfaHome(creditBalance)} FCFA
-              </p>
-            </div>
-            <span
-              className="inline-flex items-center gap-xs rounded-md bg-gold px-md py-sm text-sm font-bold text-neutral-900 shadow-glow-gold"
-            >
-              <PlusIcon className="h-3.5 w-3.5" strokeWidth={3} />
-              Recharger
-            </span>
-          </Link>
-        </section>
 
         {/* Quick actions row */}
         <section className="mt-lg grid grid-cols-3 gap-sm">
@@ -189,7 +267,7 @@ export default async function HomePage() {
             <div className="flex-1">
               <p className="text-sm font-bold text-neutral-900">Deviens chauffeur TamCar</p>
               <p className="text-[10px] text-neutral-600">
-                Roule + Fonds rachat 5% + Voiture à toi en 24 mois
+                2 formules · cession 24 mois ou propriétaire libre
               </p>
             </div>
             <span className="text-neutral-400">→</span>
@@ -199,6 +277,85 @@ export default async function HomePage() {
         <div className="h-2xl" />
       </div>
     </main>
+  );
+}
+
+function BannerCard({ banner }: { banner: BannerRow }) {
+  const gradient = banner.gradient || 'from-primary-500 to-primary-700';
+  const inner = (
+    <div
+      className={`relative flex min-h-32 w-72 flex-none flex-col justify-between overflow-hidden rounded-2xl bg-gradient-to-br ${gradient} p-lg text-white shadow-glow`}
+    >
+      {banner.image_url && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={banner.image_url}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover opacity-30"
+        />
+      )}
+      <div className="relative">
+        <h3 className="text-base font-extrabold leading-tight">{banner.title}</h3>
+        {banner.subtitle && (
+          <p className="mt-xs text-xs text-white/85">{banner.subtitle}</p>
+        )}
+      </div>
+      {banner.cta_text && (
+        <span className="relative mt-md inline-flex w-fit items-center gap-xs rounded-full bg-white/25 px-md py-xs text-[11px] font-bold backdrop-blur-sm">
+          {banner.cta_text}
+          <ArrowRightIcon className="h-3 w-3" />
+        </span>
+      )}
+    </div>
+  );
+  return banner.link_url ? (
+    <a href={banner.link_url} className="flex-none">
+      {inner}
+    </a>
+  ) : (
+    <div className="flex-none">{inner}</div>
+  );
+}
+
+function ActiveRideBanner({ ride }: { ride: ActiveRideRow }) {
+  const meta = ACTIVE_STATUS_META[ride.status];
+  return (
+    <Link
+      href={`/ride/${ride.id}`}
+      className={`mt-lg block overflow-hidden rounded-2xl bg-gradient-to-r ${meta.tint} text-white shadow-glow transition hover:brightness-110`}
+    >
+      <div className="flex items-center gap-md p-md">
+        <span className="relative grid h-10 w-10 flex-none place-items-center">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white/40" />
+          <span className="relative grid h-10 w-10 place-items-center rounded-full bg-white/20 backdrop-blur">
+            <CarIcon className="h-5 w-5" />
+          </span>
+        </span>
+        <div className="flex-1 min-w-0">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-white/80">
+            Course en cours
+          </p>
+          <p className="truncate text-sm font-extrabold">{meta.label}</p>
+          <p className="truncate text-[11px] text-white/90">
+            {ride.status === 'in_progress' || ride.status === 'arrived'
+              ? `Vers ${ride.dropoff_address}`
+              : ride.driver_full_name
+                ? `${ride.driver_full_name.split(' ')[0]} · ${ride.pickup_address}`
+                : ride.pickup_address}
+          </p>
+        </div>
+        <div className="text-right">
+          <p
+            className="text-lg font-extrabold leading-none"
+            style={{ fontVariantNumeric: 'tabular-nums' }}
+          >
+            {ride.price_total_fcfa.toLocaleString('fr-FR').replace(/,/g, ' ')}
+          </p>
+          <p className="text-[9px] text-white/80">FCFA</p>
+        </div>
+        <ArrowRightIcon className="h-5 w-5 flex-none opacity-90" />
+      </div>
+    </Link>
   );
 }
 

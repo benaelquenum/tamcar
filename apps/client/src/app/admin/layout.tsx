@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Logo } from '@/components/Logo';
+import { LogOutIcon } from '@/components/Icon';
 import { getCurrentProfile } from '@/lib/session';
+import { logout } from '@/app/login/actions';
 
 export default async function AdminLayout({
   children,
@@ -33,12 +35,30 @@ export default async function AdminLayout({
               Courses
             </Link>
             <Link href="/admin/candidatures" className="text-sm font-semibold text-neutral-900 hover:text-primary-500">
-              Candidatures
+              Rendez-vous
+            </Link>
+            <Link href="/admin/dealer-advances" className="text-sm font-semibold text-neutral-900 hover:text-primary-500">
+              ADR
+            </Link>
+            <Link href="/admin/banners" className="text-sm font-semibold text-neutral-900 hover:text-primary-500">
+              Bannières
             </Link>
             <Link href="/admin/places" className="text-sm font-semibold text-neutral-900 hover:text-primary-500">
               Lieux
             </Link>
-            <span className="text-sm text-neutral-600">{profile.full_name}</span>
+            <Link href="/compte" className="text-sm text-neutral-600 hover:text-primary-500">
+              {profile.full_name}
+            </Link>
+            <form action={logout}>
+              <button
+                type="submit"
+                aria-label="Se déconnecter"
+                className="inline-flex items-center gap-xs rounded-lg border border-neutral-200 bg-white px-sm py-xs text-xs font-semibold text-neutral-700 hover:border-error/30 hover:text-error"
+              >
+                <LogOutIcon className="h-3.5 w-3.5" />
+                Déconnexion
+              </button>
+            </form>
           </nav>
         </div>
       </header>

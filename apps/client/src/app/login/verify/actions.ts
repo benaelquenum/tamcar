@@ -35,6 +35,20 @@ export async function verify(formData: FormData) {
     );
   }
 
+  // Route selon le rôle
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+    if (profile?.role === 'driver') {
+      // App chauffeur dédiée sur URL séparée
+      redirect(process.env.NEXT_PUBLIC_DRIVER_URL || 'http://localhost:3002');
+    }
+    if (profile?.role === 'admin') redirect('/admin/rides');
+  }
   redirect('/');
 }
 

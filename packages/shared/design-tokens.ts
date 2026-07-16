@@ -21,14 +21,15 @@ export const colors = {
     900: '#0F172A',   // slate-900 (texte principal, noir bleuté)
   },
   // Accents — pour jovialité + engagement visuel
-  gold:   { 500: '#EAB308' },   // doré chaleureux — highlights positifs, badges
-  violet: { 500: '#8B5CF6' },   // violet — accents secondaires, wallet, promos
-  cyan:   { 500: '#06B6D4' },   // cyan — info, live status
-  accent: { 500: '#EAB308' },   // alias vers gold (compat apps/web)
-  success: { 500: '#10B981' },
-  warning: { 500: '#F59E0B' },
-  error:   { 500: '#EF4444' },
-  info:    { 500: '#3B82F6' },
+  // DEFAULT permet d'écrire bg-gold / text-success sans suffixe -500
+  gold:   { DEFAULT: '#EAB308', 500: '#EAB308' },
+  violet: { DEFAULT: '#8B5CF6', 500: '#8B5CF6' },
+  cyan:   { DEFAULT: '#06B6D4', 500: '#06B6D4' },
+  accent: { DEFAULT: '#EAB308', 500: '#EAB308' },
+  success: { DEFAULT: '#10B981', 500: '#10B981' },
+  warning: { DEFAULT: '#F59E0B', 500: '#F59E0B' },
+  error:   { DEFAULT: '#EF4444', 500: '#EF4444' },
+  info:    { DEFAULT: '#3B82F6', 500: '#3B82F6' },
 } as const;
 
 export const spacing = {

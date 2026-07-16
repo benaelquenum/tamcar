@@ -19,9 +19,10 @@ type Props = {
   wallets: Wallet[];
   transactions: WalletTransaction[];
   isDriver: boolean;
+  driverApplicationType?: 'cession' | 'proprietaire' | null;
 };
 
-export function WalletView({ wallets, transactions, isDriver }: Props) {
+export function WalletView({ wallets, transactions, isDriver, driverApplicationType }: Props) {
   const [modal, setModal] = useState<'topup' | 'withdraw' | null>(null);
 
   const creditWallet = wallets.find((w) => w.kind === 'tamcar_credit');
@@ -53,13 +54,15 @@ export function WalletView({ wallets, transactions, isDriver }: Props) {
 
         {/* Wallet cards */}
         <div className="mt-lg space-y-md">
-          {creditWallet && (
+          {/* Client : TamCar Crédit (recharge Mobile Money) */}
+          {!isDriver && creditWallet && (
             <BigWalletCard
               wallet={creditWallet}
               actionLabel="Recharger"
               onAction={() => setModal('topup')}
             />
           )}
+          {/* Chauffeur : cash reçu → retirer sur Mobile Money */}
           {isDriver && revenusWallet && (
             <BigWalletCard
               wallet={revenusWallet}
@@ -68,7 +71,8 @@ export function WalletView({ wallets, transactions, isDriver }: Props) {
               disabled={revenusWallet.balance_fcfa < 500}
             />
           )}
-          {isDriver && rachatWallet && (
+          {/* Chauffeur formule A uniquement : fonds rachat */}
+          {isDriver && driverApplicationType === 'cession' && rachatWallet && (
             <BigWalletCard wallet={rachatWallet} note="Débloqué au bout de 24 mois de service" />
           )}
         </div>

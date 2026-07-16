@@ -9,19 +9,26 @@ export default async function WalletPage() {
   if (!profile) redirect('/login');
 
   const supabase = createServerSupabase();
+  const isDriver = profile.role === 'driver';
 
-  const [{ data: wallets }, { data: transactions }] = await Promise.all([
+  const [{ data: wallets }, { data: transactions }, driverRes] = await Promise.all([
     supabase.rpc('my_wallets'),
     supabase.rpc('wallet_transactions_for_user', { limit_count: 30 }),
+    isDriver
+      ? supabase.from('drivers').select('application_type').eq('profile_id', profile.id).single()
+      : Promise.resolve({ data: null }),
   ]);
 
-  const isDriver = profile.role === 'driver' || profile.role === 'admin';
+  const applicationType =
+    (driverRes as { data: { application_type: 'cession' | 'proprietaire' } | null }).data
+      ?.application_type ?? null;
 
   return (
     <WalletView
       wallets={(wallets ?? []) as Wallet[]}
       transactions={(transactions ?? []) as WalletTransaction[]}
       isDriver={isDriver}
+      driverApplicationType={applicationType}
     />
   );
 }

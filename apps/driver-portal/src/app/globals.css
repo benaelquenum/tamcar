@@ -1,0 +1,135 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --tamcar-primary: #2563EB;
+  --tamcar-primary-dark: #1D4ED8;
+  --tamcar-bg: #FFFFFF;
+  --tamcar-surface: #F8FAFC;
+  --tamcar-border: #E2E8F0;
+  --tamcar-text: #0F172A;
+  --tamcar-text-secondary: #475569;
+  --tamcar-gold: #EAB308;
+  --tamcar-violet: #8B5CF6;
+  --tamcar-cyan: #06B6D4;
+}
+
+html,
+body {
+  min-height: 100%;
+  background-color: var(--tamcar-bg);
+  color: var(--tamcar-text);
+}
+
+body {
+  min-height: 100dvh;
+  font-feature-settings: 'cv02', 'cv03', 'cv04';
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ============================================================
+   Pins Mapbox custom (drivers autour, chauffeur assigné, pickup pulse)
+   ============================================================ */
+
+.tc-driver-pin {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #06B6D4, #0891B2);
+  border: 2px solid white;
+  box-shadow: 0 2px 8px rgba(6, 182, 212, 0.5);
+  display: grid;
+  place-items: center;
+  color: white;
+  cursor: pointer;
+}
+.tc-driver-pin svg { width: 14px; height: 14px; }
+
+.tc-driver-pin.assigned {
+  width: 38px;
+  height: 38px;
+  background: linear-gradient(135deg, #10B981, #059669);
+  border-width: 3px;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.6);
+}
+.tc-driver-pin.assigned svg { width: 20px; height: 20px; }
+
+/* Pickup avec pulse pendant recherche */
+.tc-pickup-searching {
+  position: relative;
+  width: 28px;
+  height: 28px;
+}
+.tc-pickup-searching .tc-pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.35);
+  animation: tc-pulse 2s ease-out infinite;
+  pointer-events: none;
+}
+.tc-pickup-searching .tc-pulse.delay-1 { animation-delay: 0.7s; }
+.tc-pickup-searching .tc-pulse.delay-2 { animation-delay: 1.4s; }
+.tc-pickup-searching .tc-pickup-dot {
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background: #2563EB;
+  border: 3px solid white;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.6);
+}
+@keyframes tc-pulse {
+  0% { transform: scale(0.9); opacity: 0.7; }
+  100% { transform: scale(3.5); opacity: 0; }
+}
+
+/* ============================================================
+   Pins course en attente côté chauffeur (pulse orange/rouge très visible)
+   Objectif : reconnaître au premier coup d'œil l'origine d'une demande.
+   ============================================================ */
+
+.tc-pickup-alert {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+}
+.tc-pickup-alert .tc-alert-pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.45);
+  animation: tc-alert-pulse 1.6s ease-out infinite;
+  pointer-events: none;
+}
+.tc-pickup-alert .tc-alert-pulse.delay-1 { animation-delay: 0.8s; }
+.tc-pickup-alert .tc-alert-dot {
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #F59E0B, #EF4444);
+  border: 3px solid white;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.55);
+}
+.tc-pickup-alert .tc-alert-badge {
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #0F172A;
+  color: white;
+  font-size: 11px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+}
+@keyframes tc-alert-pulse {
+  0% { transform: scale(0.85); opacity: 0.75; }
+  100% { transform: scale(3.2); opacity: 0; }
+}
