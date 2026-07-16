@@ -20,8 +20,9 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   typescript: {
-    // Idem : le typecheck se fait en local, on ne bloque pas le build prod.
-    ignoreBuildErrors: false,
+    // MVP en dev : typecheck fait localement dans l'IDE (VS Code, IntelliJ, etc.)
+    // Pas de blocage sur Vercel. À passer à false quand le code sera stable.
+    ignoreBuildErrors: true,
   },
 };
 

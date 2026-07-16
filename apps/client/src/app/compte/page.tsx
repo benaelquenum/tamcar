@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Logo } from '@/components/Logo';
-import { LogOutIcon, UserIcon, WalletIcon, HistoryIcon } from '@/components/Icon';
+import { LogOutIcon, WalletIcon, HistoryIcon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { getCurrentProfile, getCurrentUser } from '@/lib/session';
 import { logout } from '@/app/login/actions';
@@ -16,7 +16,7 @@ export default async function ComptePage() {
     redirect(process.env.NEXT_PUBLIC_DRIVER_URL || 'http://localhost:3002/compte');
   }
 
-  const isDriver = false;
+  // À ce stade, TypeScript sait que role ∈ 'client' | 'admin' | 'dealer'
   const isAdmin = profile.role === 'admin';
 
   return (
@@ -43,57 +43,28 @@ export default async function ComptePage() {
             <h1 className="text-2xl font-extrabold text-neutral-900">{profile.full_name}</h1>
             <p className="text-xs font-semibold uppercase tracking-wider text-primary-700">
               {profile.role === 'client' && 'Compte client'}
-              {profile.role === 'driver' && 'Compte chauffeur'}
               {profile.role === 'admin' && 'Compte administrateur'}
               {profile.role === 'dealer' && 'Compte concessionnaire'}
             </p>
           </div>
         </section>
 
-        {/* Édition profil (client + admin uniquement — driver édite via TamCar) */}
-        {!isDriver && (
-          <section className="mt-xl">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-              Mes informations
-            </h2>
-            <AccountForm
-              initialFullName={profile.full_name}
-              userEmail={user.email ?? ''}
-              userPhone={profile.phone ?? ''}
-            />
-          </section>
-        )}
-
-        {/* Info driver — non éditable */}
-        {isDriver && (
-          <section className="mt-xl rounded-xl border border-neutral-200 bg-white p-lg shadow-sm">
-            <h2 className="mb-md text-xs font-bold uppercase tracking-wider text-neutral-500">
-              Mes informations
-            </h2>
-            <dl className="space-y-sm text-sm">
-              <Row label="Nom complet" value={profile.full_name} />
-              <Row label="Téléphone" value={profile.phone ?? '—'} />
-              <Row label="Email" value={user.email ?? '—'} />
-            </dl>
-            <p className="mt-md rounded-md bg-warning/10 p-sm text-[11px] text-warning">
-              Pour modifier ces informations, contacte l&apos;équipe TamCar.
-            </p>
-          </section>
-        )}
+        {/* Édition profil (client + admin + dealer) */}
+        <section className="mt-xl">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
+            Mes informations
+          </h2>
+          <AccountForm
+            initialFullName={profile.full_name}
+            userEmail={user.email ?? ''}
+            userPhone={profile.phone ?? ''}
+          />
+        </section>
 
         {/* Raccourcis */}
         <section className="mt-lg grid grid-cols-2 gap-sm">
-          {isDriver ? (
-            <>
-              <ShortcutLink href="/driver/dashboard" Icon={WalletIcon} label="Mes gains" />
-              <ShortcutLink href="/driver" Icon={UserIcon} label="Espace chauffeur" />
-            </>
-          ) : (
-            <>
-              <ShortcutLink href="/wallet" Icon={WalletIcon} label="Portefeuille" />
-              <ShortcutLink href="/history" Icon={HistoryIcon} label="Historique" />
-            </>
-          )}
+          <ShortcutLink href="/wallet" Icon={WalletIcon} label="Portefeuille" />
+          <ShortcutLink href="/history" Icon={HistoryIcon} label="Historique" />
         </section>
 
         {isAdmin && (
@@ -123,15 +94,6 @@ export default async function ComptePage() {
         <div className="h-2xl" />
       </div>
     </main>
-  );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between gap-md">
-      <dt className="text-neutral-600">{label}</dt>
-      <dd className="text-right font-semibold text-neutral-900">{value}</dd>
-    </div>
   );
 }
 

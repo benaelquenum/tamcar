@@ -9,6 +9,9 @@
 *.pem
 *.key
 
+# ---------- TypeScript cache ----------
+*.tsbuildinfo
+
 # ---------- Claude Code (local) ----------
 .claude/settings.local.json
 
