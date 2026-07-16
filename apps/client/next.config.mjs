@@ -2,7 +2,11 @@ import withPWAInit from '@ducanh2912/next-pwa';
 
 const withPWA = withPWAInit({
   dest: 'public',
-  disable: process.env.NODE_ENV === 'development',
+  // PWA totalement désactivée pour l'instant — le service worker workbox
+  // intercepte les Server Actions Next.js et les casse (erreur `{}` sur
+  // les redirects post-form). On le remettra proprement après validation
+  // du flow auth, avec runtimeCaching qui exclut les Server Actions.
+  disable: true,
   register: true,
   cacheOnFrontEndNav: true,
   reloadOnOnline: true,
