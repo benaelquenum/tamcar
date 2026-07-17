@@ -92,7 +92,7 @@ function StopRow({
     <div
       className={`rounded-lg p-sm ring-1 ${
         stop.status === 'arrived'
-          ? 'bg-warning/10 ring-warning/40'
+          ? 'bg-primary-50 ring-primary-200'
           : stop.status === 'departed'
             ? 'bg-neutral-100 ring-neutral-200 opacity-70'
             : 'bg-violet-500/10 ring-violet-500/30'
@@ -111,7 +111,7 @@ function StopRow({
             {stop.status === 'accepted' && '→ Va vers l\'arrêt'}
             {stop.status === 'arrived' && (
               <span
-                className={isPaidWaiting ? 'font-bold text-warning' : ''}
+                className={isPaidWaiting ? 'font-bold text-error' : ''}
                 style={{ fontVariantNumeric: 'tabular-nums' }}
               >
                 Attente {Math.floor(waitingSec / 60)}m{(waitingSec % 60).toString().padStart(2, '0')}
@@ -145,7 +145,7 @@ function StopRow({
           type="button"
           onClick={() => onCall('driver_arrive_at_stop', stop.id)}
           disabled={pending}
-          className="mt-xs w-full rounded-md bg-gold py-xs text-[11px] font-bold text-neutral-900 disabled:opacity-50"
+          className="mt-xs w-full rounded-md bg-primary-500 py-xs text-[11px] font-bold text-white disabled:opacity-50"
         >
           Je suis arrivé à l&apos;arrêt
         </button>
@@ -155,7 +155,7 @@ function StopRow({
           type="button"
           onClick={() => onCall('driver_depart_from_stop', stop.id)}
           disabled={pending}
-          className="mt-xs w-full rounded-md bg-success py-xs text-[11px] font-bold text-white disabled:opacity-50"
+          className="mt-xs w-full rounded-md bg-primary-700 py-xs text-[11px] font-bold text-white disabled:opacity-50"
         >
           Je repars · {isPaidWaiting ? `+${fmt(runningFee)} F` : 'gratuit'}
         </button>

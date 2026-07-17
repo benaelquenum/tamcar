@@ -332,7 +332,7 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
                 <p className="text-xs font-bold uppercase tracking-wider text-neutral-500">
                   {driverName}
                 </p>
-                <p className={`mt-xs text-lg font-extrabold ${isOnline ? 'text-success' : 'text-neutral-900'}`}>
+                <p className={`mt-xs text-lg font-extrabold ${isOnline ? 'text-primary-700' : 'text-neutral-900'}`}>
                   {isOnline ? '● En ligne' : '○ Hors ligne'}
                 </p>
               </div>
@@ -343,7 +343,7 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
                 className={`rounded-full px-lg py-md text-sm font-bold shadow-md transition disabled:cursor-not-allowed disabled:opacity-50 ${
                   isOnline
                     ? 'bg-neutral-900 text-white hover:brightness-110'
-                    : 'bg-success text-white hover:brightness-110'
+                    : 'bg-primary-500 text-white hover:brightness-110'
                 }`}
               >
                 {busy ? '…' : isOnline ? 'Se déconnecter' : 'Se connecter'}
@@ -351,7 +351,7 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
             </div>
 
             {!hasVehicle && (
-              <div className="mb-md rounded-md bg-warning/10 p-md text-sm text-warning">
+              <div className="mb-md rounded-md bg-error/10 p-md text-sm text-error">
                 Aucun véhicule assigné. Contacte l&apos;équipe TamCar pour
                 associer une voiture à ton compte.
               </div>

@@ -34,7 +34,7 @@ const CATEGORIES: CategoryDef[] = [
     climate: {
       label: 'Clim en option',
       detail: '+200 FCFA si tu la demandes',
-      badgeClass: 'bg-gold text-neutral-900',
+      badgeClass: 'bg-primary-500 text-white',
     },
   },
   {
@@ -139,7 +139,7 @@ function CategoryCard({
       className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${category.gradient} p-lg text-white shadow-glow`}
     >
       {category.badge && (
-        <span className="absolute right-lg top-lg inline-flex items-center gap-xs rounded-full bg-gold px-md py-xs text-xs font-bold text-neutral-900 shadow-glow-gold">
+        <span className="absolute right-lg top-lg inline-flex items-center gap-xs rounded-full bg-white/95 px-md py-xs text-xs font-bold text-primary-700 shadow-md">
           <StarIcon className="h-3.5 w-3.5" />
           {category.badge}
         </span>

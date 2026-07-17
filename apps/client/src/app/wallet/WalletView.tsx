@@ -161,7 +161,7 @@ function TransactionRow({ tx }: { tx: WalletTransaction }) {
   const kindMeta = WALLET_KIND_META[tx.wallet_kind];
   return (
     <div className="flex items-center gap-md rounded-xl border border-neutral-200 bg-white p-md">
-      <span className={`grid h-9 w-9 flex-none place-items-center rounded-full text-lg ${credit ? 'bg-success/10' : 'bg-neutral-100'}`} aria-hidden>
+      <span className={`grid h-9 w-9 flex-none place-items-center rounded-full text-lg ${credit ? 'bg-primary-50' : 'bg-neutral-100'}`} aria-hidden>
         {credit ? '↓' : '↑'}
       </span>
       <div className="flex-1">
@@ -173,7 +173,7 @@ function TransactionRow({ tx }: { tx: WalletTransaction }) {
         </p>
       </div>
       <p
-        className={`text-sm font-bold ${credit ? 'text-success' : 'text-neutral-900'}`}
+        className={`text-sm font-bold ${credit ? 'text-primary-700' : 'text-neutral-900'}`}
         style={{ fontVariantNumeric: 'tabular-nums' }}
       >
         {credit ? '+' : '−'}{formatFcfa(tx.amount_fcfa)}

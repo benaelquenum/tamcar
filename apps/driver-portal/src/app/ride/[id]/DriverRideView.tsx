@@ -67,6 +67,11 @@ export function DriverRideView({ initialRide }: { initialRide: DriverRideForView
   const [ratingOpen, setRatingOpen] = useState(false);
   const router = useRouter();
 
+  const isTerminated =
+    ride.status === 'cancelled_by_client' ||
+    ride.status === 'cancelled_by_driver' ||
+    ride.status === 'expired';
+
   const target = useMemo<[number, number]>(() => {
     if (ride.status === 'in_progress') return [ride.dropoff_lng, ride.dropoff_lat];
     return [ride.pickup_lng, ride.pickup_lat];
@@ -233,7 +238,7 @@ export function DriverRideView({ initialRide }: { initialRide: DriverRideForView
       case 'matched':
         return {
           label: 'Je suis arrivé au point de départ',
-          color: 'bg-gold text-neutral-900',
+          color: 'bg-gradient-to-r from-primary-500 to-primary-700 text-white',
           onClick: handleArrival,
         };
       case 'arrived':
@@ -308,26 +313,56 @@ export function DriverRideView({ initialRide }: { initialRide: DriverRideForView
       <div className="absolute inset-x-0 bottom-0 z-10">
         <div className="mx-auto max-w-md rounded-t-2xl bg-white shadow-2xl ring-1 ring-neutral-200">
           <div className="p-lg">
-            {/* Statut */}
-            <div className="mb-md flex items-start justify-between gap-md">
-              <p className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-                {statusLabel}
-              </p>
-              <div className="text-right">
-                <p className="text-xs uppercase text-neutral-500">Tu gagnes</p>
-                <p
-                  className="text-2xl font-extrabold text-success"
-                  style={{ fontVariantNumeric: 'tabular-nums' }}
+            {/* Cas course annulée / expirée : bandeau + bouton retour, on masque les gains */}
+            {(ride.status === 'cancelled_by_client' ||
+              ride.status === 'cancelled_by_driver' ||
+              ride.status === 'expired') && (
+              <div className="mb-md">
+                <div className="rounded-xl bg-error/10 p-md text-center">
+                  <p className="text-xs font-bold uppercase tracking-wider text-error">
+                    {ride.status === 'cancelled_by_client' && 'Annulée par le client'}
+                    {ride.status === 'cancelled_by_driver' && 'Annulée par le chauffeur'}
+                    {ride.status === 'expired' && 'Course expirée'}
+                  </p>
+                  <p className="mt-xs text-xs text-neutral-700">
+                    Cette course ne va pas se dérouler. Retourne à l&apos;accueil pour
+                    recevoir de nouvelles courses.
+                  </p>
+                </div>
+                <Link
+                  href="/"
+                  className="mt-md flex w-full items-center justify-center gap-sm rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-md text-sm font-bold text-white shadow-glow"
                 >
-                  {formatFcfa(ride.driver_share_fcfa)}
-                </p>
-                <p className="text-[10px] text-neutral-500">
-                  +{formatFcfa(ride.driver_rachat_fcfa)} rachat
-                </p>
+                  ← Retour à l&apos;accueil
+                </Link>
               </div>
-            </div>
+            )}
+
+            {/* Statut + gains — visibles uniquement pour les états actifs */}
+            {ride.status !== 'cancelled_by_client' &&
+              ride.status !== 'cancelled_by_driver' &&
+              ride.status !== 'expired' && (
+                <div className="mb-md flex items-start justify-between gap-md">
+                  <p className="text-xs font-bold uppercase tracking-wider text-neutral-500">
+                    {statusLabel}
+                  </p>
+                  <div className="text-right">
+                    <p className="text-xs uppercase text-neutral-500">Tu gagnes</p>
+                    <p
+                      className="text-2xl font-extrabold text-primary-700"
+                      style={{ fontVariantNumeric: 'tabular-nums' }}
+                    >
+                      {formatFcfa(ride.driver_share_fcfa)}
+                    </p>
+                    <p className="text-[10px] text-neutral-500">
+                      +{formatFcfa(ride.driver_rachat_fcfa)} rachat
+                    </p>
+                  </div>
+                </div>
+              )}
 
             {/* Card client */}
+            {!isTerminated && (
             <div className="mb-md flex items-center gap-md rounded-xl bg-neutral-100 p-md">
               <Avatar
                 src={ride.client_avatar_url}
@@ -359,32 +394,37 @@ export function DriverRideView({ initialRide }: { initialRide: DriverRideForView
                 </a>
               )}
             </div>
+            )}
 
-            {/* Arrêts intermédiaires (Vague B) */}
-            <StopsPanel rideId={ride.id} />
+            {!isTerminated && (
+              <>
+                {/* Arrêts intermédiaires (Vague B) */}
+                <StopsPanel rideId={ride.id} />
 
-            {/* Cible + distance/durée */}
-            <div className="mb-md rounded-xl bg-primary-50 p-md">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-primary-700">
-                {ride.status === 'in_progress' ? 'Destination client' : 'Va chercher le client'}
-              </p>
-              <p className="mt-xs flex items-start gap-xs text-sm font-semibold text-neutral-900">
-                <PinIcon
-                  className="mt-xs h-3 w-3 flex-none"
-                  strokeWidth={3}
-                  {...({} as { style?: React.CSSProperties })}
-                />
-                {ride.status === 'in_progress' ? ride.dropoff_address : ride.pickup_address}
-              </p>
-              <div className="mt-sm flex justify-between text-xs text-neutral-600">
-                <span style={{ fontVariantNumeric: 'tabular-nums' }}>
-                  📍 {formatDistance(distanceToTarget)} restants
-                </span>
-                <span style={{ fontVariantNumeric: 'tabular-nums' }}>
-                  ⏱ ~{durationToTarget ?? '—'} min
-                </span>
-              </div>
-            </div>
+                {/* Cible + distance/durée */}
+                <div className="mb-md rounded-xl bg-primary-50 p-md">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-primary-700">
+                    {ride.status === 'in_progress' ? 'Destination client' : 'Va chercher le client'}
+                  </p>
+                  <p className="mt-xs flex items-start gap-xs text-sm font-semibold text-neutral-900">
+                    <PinIcon
+                      className="mt-xs h-3 w-3 flex-none"
+                      strokeWidth={3}
+                      {...({} as { style?: React.CSSProperties })}
+                    />
+                    {ride.status === 'in_progress' ? ride.dropoff_address : ride.pickup_address}
+                  </p>
+                  <div className="mt-sm flex justify-between text-xs text-neutral-600">
+                    <span style={{ fontVariantNumeric: 'tabular-nums' }}>
+                      📍 {formatDistance(distanceToTarget)} restants
+                    </span>
+                    <span style={{ fontVariantNumeric: 'tabular-nums' }}>
+                      ⏱ ~{durationToTarget ?? '—'} min
+                    </span>
+                  </div>
+                </div>
+              </>
+            )}
 
             {err && (
               <div className="mb-md rounded-md bg-error/10 p-md text-sm text-error">{err}</div>
@@ -426,7 +466,7 @@ export function DriverRideView({ initialRide }: { initialRide: DriverRideForView
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-lg text-center">
-              <div className="mx-auto mb-md grid h-14 w-14 place-items-center rounded-full bg-warning/15 text-warning">
+              <div className="mx-auto mb-md grid h-14 w-14 place-items-center rounded-full bg-error/15 text-error">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="h-7 w-7">
                   <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
                   <line x1="12" y1="9" x2="12" y2="13" />
@@ -448,7 +488,7 @@ export function DriverRideView({ initialRide }: { initialRide: DriverRideForView
                 </strong>{' '}
                 du point de prise en charge.
               </p>
-              <p className="mt-md rounded-md bg-warning/10 p-sm text-[11px] text-warning">
+              <p className="mt-md rounded-md bg-error/10 p-sm text-[11px] text-error">
                 Marquer &quot;arrivé&quot; maintenant sera signalé à l&apos;équipe TamCar
                 pour vérification. Confirme uniquement si tu es vraiment à côté du client.
               </p>
@@ -465,7 +505,7 @@ export function DriverRideView({ initialRide }: { initialRide: DriverRideForView
                 type="button"
                 onClick={confirmArrivalAnyway}
                 disabled={pending}
-                className="flex-1 rounded-xl bg-warning py-md text-sm font-bold text-white shadow-md disabled:opacity-50"
+                className="flex-1 rounded-xl bg-error py-md text-sm font-bold text-white shadow-md disabled:opacity-50"
               >
                 {pending ? '…' : 'Confirmer quand même'}
               </button>
@@ -513,7 +553,7 @@ function CompletionRequestModal({
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-neutral-900/75 backdrop-blur-sm sm:items-center">
       <div className="w-full max-w-md rounded-t-2xl bg-white p-lg shadow-xl sm:rounded-2xl">
         <div className="mb-lg text-center">
-          <div className="mx-auto mb-md grid h-14 w-14 place-items-center rounded-full bg-warning/15 text-warning">
+          <div className="mx-auto mb-md grid h-14 w-14 place-items-center rounded-full bg-primary-50 text-primary-700">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="h-7 w-7">
               <circle cx="12" cy="12" r="10" />
               <polyline points="12 6 12 12 16 14" />
@@ -535,7 +575,7 @@ function CompletionRequestModal({
         </div>
 
         {typeof recomputedPrice === 'number' && (
-          <div className="mb-md rounded-xl border border-warning/30 bg-warning/5 p-md">
+          <div className="mb-md rounded-xl border border-primary-200 bg-primary-50 p-md">
             <div className="flex items-baseline justify-between text-sm">
               <span className="text-neutral-600">Prix initial</span>
               <span
@@ -568,7 +608,7 @@ function CompletionRequestModal({
         <div className="mb-md flex items-center gap-sm">
           <div className="h-2 flex-1 overflow-hidden rounded-full bg-neutral-100">
             <div
-              className="h-full bg-gradient-to-r from-warning to-error transition-all"
+              className="h-full bg-gradient-to-r from-primary-500 to-error transition-all"
               style={{ width: `${((20 - remaining) / 20) * 100}%` }}
             />
           </div>
@@ -584,7 +624,7 @@ function CompletionRequestModal({
           type="button"
           onClick={onAccept}
           disabled={accepting}
-          className="mb-sm w-full rounded-xl bg-gradient-to-r from-success to-cyan-500 py-md text-sm font-bold text-white shadow-glow disabled:opacity-50"
+          className="mb-sm w-full rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-md text-sm font-bold text-white shadow-glow disabled:opacity-50"
         >
           {accepting ? 'Envoi…' : 'Accepter maintenant'}
         </button>

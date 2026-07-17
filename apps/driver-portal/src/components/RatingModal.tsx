@@ -74,8 +74,8 @@ export function RatingModal({ open, onClose, rideId, ratedName, onSubmitted, man
         </div>
 
         {success ? (
-          <div className="rounded-xl bg-success/10 p-xl text-center">
-            <span className="grid mx-auto mb-md h-12 w-12 place-items-center rounded-full bg-success text-white">
+          <div className="rounded-xl bg-primary-50 p-xl text-center">
+            <span className="grid mx-auto mb-md h-12 w-12 place-items-center rounded-full bg-primary-500 text-white">
               <CheckIcon className="h-6 w-6" strokeWidth={3} />
             </span>
             <p className="font-bold text-neutral-900">Merci !</p>

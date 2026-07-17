@@ -148,9 +148,9 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function ResetSentPanel({ email }: { email: string }) {
   return (
-    <div className="mt-2xl rounded-xl border border-success/30 bg-success/5 p-lg">
+    <div className="mt-2xl rounded-xl border border-primary-200 bg-primary-50 p-lg">
       <div className="flex items-start gap-md">
-        <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-success text-white">
+        <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-primary-500 text-white">
           <CheckIcon className="h-4 w-4" strokeWidth={3} />
         </span>
         <div className="flex-1">

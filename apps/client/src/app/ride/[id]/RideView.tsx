@@ -88,17 +88,17 @@ const STATUS_META: Record<RideStatus, { title: string; sub: string; color: strin
   arrived: {
     title: 'Chauffeur arrivé',
     sub: 'Rejoins-le au point de départ.',
-    color: 'bg-gold',
+    color: 'bg-primary-700',
   },
   in_progress: {
     title: 'Course en cours',
     sub: 'Bon voyage !',
-    color: 'bg-success',
+    color: 'bg-primary-500',
   },
   completed: {
     title: 'Course terminée',
     sub: 'Merci d\'avoir roulé TamCar.',
-    color: 'bg-success',
+    color: 'bg-primary-700',
   },
   cancelled_by_client: { title: 'Course annulée', sub: '', color: 'bg-neutral-600' },
   cancelled_by_driver: { title: 'Annulée par le chauffeur', sub: '', color: 'bg-neutral-600' },
@@ -626,9 +626,9 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
 
           {/* Bandeau "chauffeur occupé sur une autre course" — annulation gratuite */}
           {driverOtherRide && (
-            <div className="mx-lg mb-md rounded-xl border border-warning/30 bg-warning/5 p-md">
+            <div className="mx-lg mb-md rounded-xl border border-primary-200 bg-primary-50 p-md">
               <div className="flex items-start gap-md">
-                <div className="grid h-9 w-9 flex-none place-items-center rounded-full bg-warning text-white">
+                <div className="grid h-9 w-9 flex-none place-items-center rounded-full bg-primary-500 text-white">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
                     <circle cx="12" cy="12" r="10" />
                     <polyline points="12 6 12 12 16 14" />
@@ -799,7 +799,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                 type="button"
                 onClick={handleCompleteRide}
                 disabled={completing}
-                className="w-full rounded-xl bg-gradient-to-r from-success to-cyan-500 py-md text-sm font-bold text-white shadow-glow disabled:opacity-50"
+                className="w-full rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-md text-sm font-bold text-white shadow-glow disabled:opacity-50"
               >
                 {completing ? 'Fin de course…' : 'Je suis arrivé — terminer la course'}
               </button>
@@ -831,7 +831,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
               </>
             )}
             {ride.status === 'completed' && (
-              <div className="rounded-md bg-success/10 p-md text-center text-sm font-semibold text-success">
+              <div className="rounded-md bg-primary-50 p-md text-center text-sm font-semibold text-primary-700">
                 <CheckIcon className="mr-xs inline h-4 w-4" strokeWidth={3} />
                 Course terminée
               </div>
@@ -845,7 +845,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-neutral-900/75 backdrop-blur-sm sm:items-center">
           <div className="w-full max-w-md rounded-t-2xl bg-white p-lg shadow-xl sm:rounded-2xl">
             <div className="mb-lg text-center">
-              <div className="mx-auto mb-md grid h-14 w-14 place-items-center rounded-full bg-warning/15 text-warning">
+              <div className="mx-auto mb-md grid h-14 w-14 place-items-center rounded-full bg-error/15 text-error">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="h-7 w-7">
                   <circle cx="12" cy="12" r="10" />
                   <line x1="12" y1="8" x2="12" y2="12" />
@@ -971,7 +971,7 @@ function CancelConfirmPanel({
   return (
     <div
       className={`rounded-xl border p-md ${
-        isFree ? 'border-success/30 bg-success/5' : 'border-warning/40 bg-warning/10'
+        isFree ? 'border-primary-200 bg-primary-50' : 'border-error/40 bg-error/10'
       }`}
     >
       <p className="text-sm font-semibold text-neutral-900">
@@ -980,13 +980,13 @@ function CancelConfirmPanel({
       <p className="mt-xs text-xs text-neutral-700">{explanationLine}</p>
 
       {!loading && !isFree && (
-        <div className="mt-md rounded-lg bg-white p-md ring-1 ring-warning/30">
+        <div className="mt-md rounded-lg bg-white p-md ring-1 ring-error/30">
           <div className="flex items-baseline justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-neutral-500">
               Frais d&apos;annulation
             </span>
             <span
-              className="text-2xl font-extrabold text-warning"
+              className="text-2xl font-extrabold text-error"
               style={{ fontVariantNumeric: 'tabular-nums' }}
             >
               {fee.toLocaleString('fr-FR').replace(/,/g, ' ')} F
@@ -1020,7 +1020,7 @@ function CancelConfirmPanel({
           onClick={onConfirm}
           disabled={cancelling || loading}
           className={`flex-1 rounded-lg py-sm text-sm font-bold text-white disabled:opacity-40 ${
-            isFree ? 'bg-success' : 'bg-error'
+            isFree ? 'bg-primary-500' : 'bg-error'
           }`}
         >
           {cancelling
@@ -1087,8 +1087,8 @@ function CompletionWaitingModal({
         </div>
 
         {typeof recomputedPrice === 'number' && (
-          <div className="mb-md rounded-xl border border-warning/30 bg-warning/5 p-md">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-warning">
+          <div className="mb-md rounded-xl border border-primary-200 bg-primary-50 p-md">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-primary-700">
               Fin anticipée · recalcul du prix
             </p>
             <p
@@ -1106,7 +1106,7 @@ function CompletionWaitingModal({
                 {originalPrice.toLocaleString('fr-FR').replace(/,/g, ' ')} F
               </strong>{' '}
               à{' '}
-              <strong className={isCheaper ? 'text-success' : ''}>
+              <strong className={isCheaper ? 'text-primary-700' : ''}>
                 {recomputedPrice.toLocaleString('fr-FR').replace(/,/g, ' ')} F
               </strong>{' '}
               ({isCheaper ? '−' : '+'}

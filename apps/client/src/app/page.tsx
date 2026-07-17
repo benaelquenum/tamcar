@@ -42,8 +42,8 @@ type ActiveRideRow = {
 const ACTIVE_STATUS_META: Record<ActiveRideRow['status'], { label: string; tint: string; sub: string }> = {
   requested: { label: 'Recherche d\'un chauffeur', tint: 'from-primary-500 to-primary-700', sub: 'On cherche pour toi…' },
   matched: { label: 'Chauffeur en route', tint: 'from-primary-500 to-primary-700', sub: 'Ton chauffeur arrive.' },
-  arrived: { label: 'Chauffeur arrivé', tint: 'from-gold to-warning', sub: 'Rejoins-le au point de départ.' },
-  in_progress: { label: 'Course en cours', tint: 'from-success to-cyan-500', sub: 'Bon voyage !' },
+  arrived: { label: 'Chauffeur arrivé', tint: 'from-primary-700 to-cyan-500', sub: 'Rejoins-le au point de départ.' },
+  in_progress: { label: 'Course en cours', tint: 'from-primary-500 to-primary-700', sub: 'Bon voyage !' },
 };
 
 const DEFAULT_NAMES = new Set(['utilisateur', 'Nouveau client', 'Ami TamCar']);
@@ -141,7 +141,7 @@ export default async function HomePage() {
         {/* Greeting + hero */}
         <section className="mt-xl">
           <p className="flex items-center gap-xs text-base font-medium text-neutral-600">
-            <WaveIcon className="h-5 w-5 text-gold-500" />
+            <WaveIcon className="h-5 w-5 text-primary-500" />
             <span>{firstName ? `Bonjour ${firstName}` : 'Bonjour'}</span>
           </p>
           <h1 className="mt-xs text-4xl font-extrabold leading-[1.05] tracking-tight text-neutral-900">
@@ -155,13 +155,13 @@ export default async function HomePage() {
 
           {/* Live status — affiché uniquement si des chauffeurs sont réellement online */}
           {onlineDrivers && (
-            <div className="mt-md inline-flex items-center gap-sm rounded-full bg-success/10 px-md py-xs">
+            <div className="mt-md inline-flex items-center gap-sm rounded-full bg-primary-50 px-md py-xs">
               <span className="relative grid h-2 w-2 place-items-center">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success/60" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary-500/60" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-primary-500" />
               </span>
               <span
-                className="text-xs font-semibold text-success"
+                className="text-xs font-semibold text-primary-700"
                 style={{ fontVariantNumeric: 'tabular-nums' }}
               >
                 {onlineDrivers.label}
@@ -206,7 +206,7 @@ export default async function HomePage() {
                 {formatFcfaHome(creditBalance)}
                 <span className="ml-xs text-[10px] font-medium text-neutral-500">F</span>
               </span>
-              <span className="inline-flex items-center gap-xs rounded-md bg-gold px-sm py-xs text-[11px] font-bold text-neutral-900">
+              <span className="inline-flex items-center gap-xs rounded-md bg-primary-500 px-sm py-xs text-[11px] font-bold text-white">
                 <PlusIcon className="h-3 w-3" strokeWidth={3} />
                 Recharger
               </span>
@@ -261,7 +261,7 @@ export default async function HomePage() {
             href="/devenir-chauffeur"
             className="flex items-center gap-md rounded-xl border border-neutral-200 bg-white p-md shadow-sm transition hover:shadow-md"
           >
-            <div className="grid h-10 w-10 flex-none place-items-center rounded-lg bg-gradient-to-br from-gold to-warning text-neutral-900">
+            <div className="grid h-10 w-10 flex-none place-items-center rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 text-white">
               <CarIcon className="h-5 w-5" />
             </div>
             <div className="flex-1">

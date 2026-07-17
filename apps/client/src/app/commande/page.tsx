@@ -205,7 +205,7 @@ export default function CommandePage() {
         </section>
 
         {pickingMode && (
-          <div className="mt-md flex items-center justify-between gap-md rounded-xl bg-gold/20 p-md text-sm ring-1 ring-gold/40">
+          <div className="mt-md flex items-center justify-between gap-md rounded-xl bg-primary-50 p-md text-sm ring-1 ring-primary-200">
             <span className="font-semibold text-neutral-900">
               Touchez la carte pour poser votre point de{' '}
               {pickingMode === 'pickup' ? 'départ' : pickingMode === 'dropoff' ? 'destination' : 'lieu à proposer'}.
@@ -373,7 +373,7 @@ function CategoryChoice({
         <div className="flex items-center gap-xs">
           <p className="font-bold text-neutral-900">TamCar {category.name}</p>
           {category.badge && (
-            <span className="inline-flex items-center gap-xs rounded-full bg-gold px-sm py-0.5 text-[10px] font-bold text-neutral-900">
+            <span className="inline-flex items-center gap-xs rounded-full bg-primary-500 px-sm py-0.5 text-[10px] font-bold text-white">
               <StarIcon className="h-2.5 w-2.5" />
               {category.badge}
             </span>
