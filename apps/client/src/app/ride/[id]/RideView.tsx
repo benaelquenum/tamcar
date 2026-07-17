@@ -997,9 +997,6 @@ function CancelConfirmPanel({
             ton solde est insuffisant, ton compte passera en négatif — la différence sera
             prélevée automatiquement à ton prochain rechargement.
           </p>
-          <p className="mt-xs text-[11px] text-neutral-500">
-            Répartition : 50 % au chauffeur pour son déplacement, 50 % à la plateforme.
-          </p>
         </div>
       )}
 
