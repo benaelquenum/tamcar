@@ -136,6 +136,11 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
   const [cancelling, setCancelling] = useState(false);
   const [cancelConfirm, setCancelConfirm] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
+  const [cancelPreview, setCancelPreview] = useState<{
+    fee_fcfa: number;
+    reason_code: string;
+    driver_still_busy_elsewhere: boolean;
+  } | null>(null);
   const [completing, setCompleting] = useState(false);
   const [completeError, setCompleteError] = useState<string | null>(null);
   const [myLocation, setMyLocation] = useState<[number, number] | null>(null);
@@ -151,6 +156,22 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
     other_duration_min: number | null;
     is_busy: boolean;
   } | null>(null);
+
+  async function openCancelConfirm() {
+    // Charge le montant estimé pour affichage transparent
+    setCancelPreview(null);
+    setCancelConfirm(true);
+    const { data } = await supabaseBrowser.rpc('cancellation_fee_preview', {
+      p_ride_id: ride.id,
+    });
+    if (Array.isArray(data) && data[0]) {
+      setCancelPreview(data[0] as {
+        fee_fcfa: number;
+        reason_code: string;
+        driver_still_busy_elsewhere: boolean;
+      });
+    }
+  }
 
   async function handleCancelRide() {
     if (cancelling) return;
@@ -777,47 +798,19 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                 {!cancelConfirm ? (
                   <button
                     type="button"
-                    onClick={() => setCancelConfirm(true)}
+                    onClick={openCancelConfirm}
                     className="w-full rounded-xl border-2 border-neutral-200 py-md text-sm font-bold text-neutral-600 transition hover:border-error hover:text-error"
                   >
                     Annuler la course
                   </button>
                 ) : (
-                  <div className="rounded-xl border border-error/30 bg-error/5 p-md">
-                    <p className="text-sm font-semibold text-neutral-900">
-                      Confirmer l&apos;annulation ?
-                    </p>
-                    <p className="mt-xs text-xs text-neutral-600">
-                      {ride.status === 'requested'
-                        ? 'Ta demande sera annulée gratuitement.'
-                        : driverOtherRide
-                          ? 'Le chauffeur n\'est pas encore libre — annulation gratuite.'
-                          : ride.status === 'matched'
-                            ? 'Le chauffeur sera notifié. Frais éventuels selon barème (300 F après 30 s).'
-                            : 'Le chauffeur est déjà arrivé. Frais 500 F selon barème.'}
-                    </p>
-                    <div className="mt-md flex gap-sm">
-                      <button
-                        type="button"
-                        onClick={() => setCancelConfirm(false)}
-                        disabled={cancelling}
-                        className="flex-1 rounded-lg bg-white py-sm text-sm font-semibold text-neutral-600 ring-1 ring-neutral-200"
-                      >
-                        Non, garder
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleCancelRide}
-                        disabled={cancelling}
-                        className="flex-1 rounded-lg bg-error py-sm text-sm font-bold text-white disabled:opacity-40"
-                      >
-                        {cancelling ? '…' : 'Oui, annuler'}
-                      </button>
-                    </div>
-                    {cancelError && (
-                      <p className="mt-sm text-xs text-error">{cancelError}</p>
-                    )}
-                  </div>
+                  <CancelConfirmPanel
+                    preview={cancelPreview}
+                    onKeep={() => setCancelConfirm(false)}
+                    onConfirm={handleCancelRide}
+                    cancelling={cancelling}
+                    error={cancelError}
+                  />
                 )}
               </>
             )}
@@ -929,6 +922,117 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
         />
       )}
     </main>
+  );
+}
+
+function CancelConfirmPanel({
+  preview,
+  onKeep,
+  onConfirm,
+  cancelling,
+  error,
+}: {
+  preview: {
+    fee_fcfa: number;
+    reason_code: string;
+    driver_still_busy_elsewhere: boolean;
+  } | null;
+  onKeep: () => void;
+  onConfirm: () => void;
+  cancelling: boolean;
+  error: string | null;
+}) {
+  const loading = preview === null;
+  const fee = preview?.fee_fcfa ?? 0;
+  const isFree = fee === 0;
+  const reason = preview?.reason_code;
+
+  const explanationLine = (() => {
+    switch (reason) {
+      case 'free_no_match':
+        return 'Ta demande n\'a pas encore été prise. Annulation gratuite.';
+      case 'free_within_30s':
+        return 'Tu es dans la fenêtre de 30 secondes de rétractation. Annulation gratuite.';
+      case 'free_driver_busy':
+        return 'Ton chauffeur termine une autre course, il n\'a pas encore démarré vers toi. Annulation gratuite.';
+      case 'driver_on_way':
+        return 'Le chauffeur roule déjà vers toi pour te prendre en charge.';
+      case 'driver_arrived':
+        return 'Le chauffeur est arrivé au point de prise en charge et t\'attend.';
+      case 'ride_started':
+        return 'La course a démarré. L\'annulation représente 50 % du prix estimé.';
+      default:
+        return 'Vérification en cours…';
+    }
+  })();
+
+  return (
+    <div
+      className={`rounded-xl border p-md ${
+        isFree ? 'border-success/30 bg-success/5' : 'border-warning/40 bg-warning/10'
+      }`}
+    >
+      <p className="text-sm font-semibold text-neutral-900">
+        Confirmer l&apos;annulation ?
+      </p>
+      <p className="mt-xs text-xs text-neutral-700">{explanationLine}</p>
+
+      {!loading && !isFree && (
+        <div className="mt-md rounded-lg bg-white p-md ring-1 ring-warning/30">
+          <div className="flex items-baseline justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-neutral-500">
+              Frais d&apos;annulation
+            </span>
+            <span
+              className="text-2xl font-extrabold text-warning"
+              style={{ fontVariantNumeric: 'tabular-nums' }}
+            >
+              {fee.toLocaleString('fr-FR').replace(/,/g, ' ')} F
+            </span>
+          </div>
+          <p className="mt-xs text-[11px] text-neutral-600">
+            Ce montant sera débité de ton portefeuille <strong>TamCar Crédit</strong>. Si
+            ton solde est insuffisant, ton compte passera en négatif — la différence sera
+            prélevée automatiquement à ton prochain rechargement.
+          </p>
+          <p className="mt-xs text-[11px] text-neutral-500">
+            Répartition : 50 % au chauffeur pour son déplacement, 50 % à la plateforme.
+          </p>
+        </div>
+      )}
+
+      {loading && (
+        <p className="mt-md text-center text-xs text-neutral-500">
+          Calcul du montant en cours…
+        </p>
+      )}
+
+      <div className="mt-md flex gap-sm">
+        <button
+          type="button"
+          onClick={onKeep}
+          disabled={cancelling}
+          className="flex-1 rounded-lg bg-white py-sm text-sm font-semibold text-neutral-600 ring-1 ring-neutral-200"
+        >
+          Non, garder
+        </button>
+        <button
+          type="button"
+          onClick={onConfirm}
+          disabled={cancelling || loading}
+          className={`flex-1 rounded-lg py-sm text-sm font-bold text-white disabled:opacity-40 ${
+            isFree ? 'bg-success' : 'bg-error'
+          }`}
+        >
+          {cancelling
+            ? '…'
+            : isFree
+              ? 'Oui, annuler'
+              : `Oui, débiter ${fee.toLocaleString('fr-FR').replace(/,/g, ' ')} F`}
+        </button>
+      </div>
+      {error && <p className="mt-sm text-xs text-error">{error}</p>}
+    </div>
   );
 }
 
