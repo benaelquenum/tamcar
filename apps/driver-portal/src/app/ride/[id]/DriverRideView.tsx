@@ -248,15 +248,9 @@ export function DriverRideView({ initialRide }: { initialRide: DriverRideForView
           onClick: () => transition(startRideAction),
         };
       case 'in_progress':
-        // C'est le CLIENT qui termine. Si demande en attente, la modal s'affiche par ailleurs.
-        return {
-          label: ride.completion_requested_at
-            ? 'Demande de fin en cours…'
-            : 'En attente : le client termine la course à l\'arrivée',
-          color: 'bg-neutral-200 text-neutral-700 cursor-not-allowed',
-          onClick: () => undefined,
-          disabled: true,
-        };
+        // C'est le CLIENT qui termine la course. Rien à afficher côté chauffeur
+        // (la CompletionRequestModal se déclenche seule via completion_requested_at).
+        return null;
       case 'completed':
         return {
           label: 'Terminée — retour à l\'accueil',

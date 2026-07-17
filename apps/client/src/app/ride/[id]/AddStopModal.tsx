@@ -5,6 +5,8 @@ import { AddressAutocomplete, type SelectedAddress } from '@/components/AddressA
 import { getRoute } from '@/lib/mapbox';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 
+type StopMode = 'stopover' | 'new_destination';
+
 type Props = {
   open: boolean;
   onClose: () => void;
@@ -30,55 +32,60 @@ export function AddStopModal({
   currentPrice,
   onAdded,
 }: Props) {
+  const [mode, setMode] = useState<StopMode>('stopover');
   const [selected, setSelected] = useState<SelectedAddress | null>(null);
   const [computing, setComputing] = useState(false);
   const [newTotalKm, setNewTotalKm] = useState<number | null>(null);
   const [newTotalMin, setNewTotalMin] = useState<number | null>(null);
-  const [extraKm, setExtraKm] = useState<number | null>(null);
-  const [extraPrice, setExtraPrice] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSelectStop(addr: SelectedAddress | null) {
-    setSelected(addr);
-    setNewTotalKm(null);
-    setNewTotalMin(null);
-    setExtraKm(null);
-    setExtraPrice(null);
-    setError(null);
-    if (!addr) return;
-    setComputing(true);
-    // Nouvel itinéraire : pickup → stops existants → nouveau stop → dropoff
+  async function computeItinerary(addr: SelectedAddress, chosenMode: StopMode) {
+    // stopover  : pickup → stops → nouveau → dropoff
+    // new_dest  : pickup → stops → nouveau (dropoff ignoré)
     const waypoints: Array<[number, number]> = [
       pickup,
       ...existingStops.map((s) => [s.lng, s.lat] as [number, number]),
       addr.center,
-      dropoff,
     ];
+    if (chosenMode === 'stopover') waypoints.push(dropoff);
+
+    let totalKm = 0;
+    let totalMin = 0;
+    for (let i = 0; i < waypoints.length - 1; i++) {
+      const seg = await getRoute(waypoints[i], waypoints[i + 1]);
+      if (!seg) throw new Error(`Impossible de calculer le segment ${i + 1}`);
+      totalKm += seg.distance_km;
+      totalMin += seg.duration_min;
+    }
+    return { totalKm, totalMin };
+  }
+
+  async function refreshEstimate(addr: SelectedAddress | null, chosenMode: StopMode) {
+    setNewTotalKm(null);
+    setNewTotalMin(null);
+    setError(null);
+    if (!addr) return;
+    setComputing(true);
     try {
-      // Simplification : on additionne les segments (getRoute prend 2 points)
-      let totalKm = 0;
-      let totalMin = 0;
-      for (let i = 0; i < waypoints.length - 1; i++) {
-        const seg = await getRoute(waypoints[i], waypoints[i + 1]);
-        if (!seg) throw new Error(`Impossible de calculer le segment ${i + 1}`);
-        totalKm += seg.distance_km;
-        totalMin += seg.duration_min;
-      }
+      const { totalKm, totalMin } = await computeItinerary(addr, chosenMode);
       setNewTotalKm(totalKm);
       setNewTotalMin(Math.round(totalMin));
-      // Extra approx (le vrai calcul se fait côté serveur avec km_city_fcfa de la catégorie)
-      const origKm = 0; // on n'a pas la distance ride ici, mais le RPC recalcule
-      const extra = Math.max(0, totalKm - origKm);
-      setExtraKm(extra);
-      // Estimation prix additionnel côté client : 90 F/km (Essentiel par défaut)
-      // Le RPC utilisera la vraie catégorie du véhicule
-      setExtraPrice(Math.ceil(extra * 90));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erreur calcul itinéraire');
     } finally {
       setComputing(false);
     }
+  }
+
+  async function handleSelectStop(addr: SelectedAddress | null) {
+    setSelected(addr);
+    await refreshEstimate(addr, mode);
+  }
+
+  async function handleModeChange(newMode: StopMode) {
+    setMode(newMode);
+    await refreshEstimate(selected, newMode);
   }
 
   async function submit() {
@@ -92,6 +99,7 @@ export function AddStopModal({
       p_lng: selected.center[0],
       p_new_total_km: newTotalKm,
       p_new_total_min: newTotalMin,
+      p_mode: mode,
     });
     setSubmitting(false);
     if (rpcErr) {
@@ -115,20 +123,48 @@ export function AddStopModal({
       >
         <div className="mb-md text-center">
           <h2 className="text-lg font-extrabold text-neutral-900">
-            Ajouter un arrêt
+            Modifier l&apos;itinéraire
           </h2>
-          <p className="mt-xs text-xs text-neutral-600">
-            Passe par un point supplémentaire. Le prix est recalculé selon la
-            distance additionnelle. 3 min d&apos;attente gratuites, puis 40 F/min.
-          </p>
         </div>
 
+        {/* Toggle mode */}
+        <div className="mb-md grid grid-cols-2 gap-sm rounded-xl bg-neutral-100 p-xs">
+          <button
+            type="button"
+            onClick={() => void handleModeChange('stopover')}
+            className={`rounded-lg py-sm text-xs font-bold transition ${
+              mode === 'stopover'
+                ? 'bg-white text-neutral-900 shadow-sm'
+                : 'text-neutral-500'
+            }`}
+          >
+            Escale sur le trajet
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleModeChange('new_destination')}
+            className={`rounded-lg py-sm text-xs font-bold transition ${
+              mode === 'new_destination'
+                ? 'bg-white text-neutral-900 shadow-sm'
+                : 'text-neutral-500'
+            }`}
+          >
+            Nouvelle destination
+          </button>
+        </div>
+
+        <p className="mb-md text-[11px] text-neutral-600">
+          {mode === 'stopover'
+            ? 'Le chauffeur y passe puis reprend le trajet vers ta destination initiale. 3 min d\'attente gratuites, puis 40 F/min.'
+            : 'Ce lieu devient ta nouvelle destination finale. L\'ancienne destination n\'est plus desservie.'}
+        </p>
+
         <AddressAutocomplete
-          label="Où veux-tu passer ?"
+          label={mode === 'stopover' ? 'Où veux-tu passer ?' : 'Nouvelle destination'}
           placeholder="Cherche une adresse ou un lieu…"
           value={selected}
           onChange={handleSelectStop}
-          markerColor="#8B5CF6"
+          markerColor={mode === 'stopover' ? '#8B5CF6' : '#2563EB'}
         />
 
         {computing && (
@@ -137,37 +173,34 @@ export function AddStopModal({
           </p>
         )}
 
-        {extraKm != null && extraPrice != null && !computing && (
+        {newTotalKm != null && newTotalMin != null && !computing && (
           <div className="mt-md rounded-xl border border-primary-200 bg-primary-50 p-md">
             <p className="text-[10px] font-bold uppercase tracking-wider text-primary-700">
-              Estimation du recalcul
+              Nouvel itinéraire
             </p>
             <div className="mt-xs space-y-xs text-sm">
               <div className="flex justify-between">
-                <span className="text-neutral-700">Distance additionnelle</span>
+                <span className="text-neutral-700">Distance totale</span>
                 <span className="font-semibold" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                  {extraKm.toFixed(1)} km
+                  {newTotalKm.toFixed(1)} km
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-neutral-700">Coût additionnel estimé</span>
+                <span className="text-neutral-700">Durée estimée</span>
                 <span className="font-semibold" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                  +{formatFcfa(extraPrice)} F
+                  {newTotalMin} min
                 </span>
               </div>
-              <div className="mt-sm flex justify-between border-t border-primary-200 pt-sm text-base">
-                <span className="font-bold text-neutral-900">Nouveau total estimé</span>
-                <span
-                  className="font-extrabold text-neutral-900"
-                  style={{ fontVariantNumeric: 'tabular-nums' }}
-                >
-                  {formatFcfa(currentPrice + extraPrice)} F
+              <div className="flex justify-between">
+                <span className="text-neutral-700">Total actuel</span>
+                <span className="font-semibold text-neutral-500 line-through" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {formatFcfa(currentPrice)} F
                 </span>
               </div>
             </div>
             <p className="mt-md text-[10px] text-neutral-500">
-              Le prix exact sera calculé par TamCar selon la catégorie du véhicule.
-              Frais d&apos;attente : décomptés au départ de l&apos;arrêt.
+              Le nouveau prix sera calculé par TamCar selon la distance additionnelle
+              et la catégorie de ton véhicule.
             </p>
           </div>
         )}
@@ -193,7 +226,11 @@ export function AddStopModal({
             disabled={submitting || !selected || newTotalKm == null || computing}
             className="flex-1 rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-md text-sm font-bold text-white shadow-glow disabled:opacity-50"
           >
-            {submitting ? 'Envoi…' : 'Ajouter cet arrêt'}
+            {submitting
+              ? 'Envoi…'
+              : mode === 'stopover'
+                ? 'Ajouter cette escale'
+                : 'Définir comme destination'}
           </button>
         </div>
       </div>

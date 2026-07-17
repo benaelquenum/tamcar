@@ -107,7 +107,7 @@ function StopRow({
             {stop.address}
           </p>
           <p className="text-[10px] text-neutral-600">
-            {stop.status === 'pending' && 'À accepter'}
+            {stop.status === 'pending' && '→ Va vers l\'arrêt'}
             {stop.status === 'accepted' && '→ Va vers l\'arrêt'}
             {stop.status === 'arrived' && (
               <span
@@ -129,18 +129,8 @@ function StopRow({
         </span>
       </div>
 
-      {/* Actions par étape */}
-      {stop.status === 'pending' && (
-        <button
-          type="button"
-          onClick={() => onCall('driver_accept_stop', stop.id)}
-          disabled={pending}
-          className="mt-xs w-full rounded-md bg-primary-500 py-xs text-[11px] font-bold text-white disabled:opacity-50"
-        >
-          Accepter cet arrêt
-        </button>
-      )}
-      {stop.status === 'accepted' && (
+      {/* Actions par étape — pas de bouton "Accepter" : les stops sont auto-acceptés côté serveur */}
+      {(stop.status === 'pending' || stop.status === 'accepted') && (
         <button
           type="button"
           onClick={() => onCall('driver_arrive_at_stop', stop.id)}

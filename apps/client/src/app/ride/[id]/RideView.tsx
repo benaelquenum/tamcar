@@ -12,6 +12,7 @@ import { getRoute } from '@/lib/mapbox';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { SUPPORT_PHONE, SUPPORT_PHONE_DISPLAY } from '@/lib/support';
 import { AddStopModal } from './AddStopModal';
+import { StopsListClient } from './StopsListClient';
 
 type RideStopRow = {
   id: string;
@@ -758,38 +759,14 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
               </button>
             )}
 
-            {/* Liste des arrêts */}
-            {stops.length > 0 && (
-              <div className="mb-sm space-y-xs">
-                {stops.map((s) => (
-                  <div
-                    key={s.id}
-                    className="flex items-center gap-sm rounded-lg bg-violet-500/10 p-sm text-xs"
-                  >
-                    <span className="grid h-6 w-6 flex-none place-items-center rounded-full bg-violet-500 font-bold text-white">
-                      {s.order_idx}
-                    </span>
-                    <div className="flex-1 truncate">
-                      <p className="truncate font-semibold text-neutral-900">
-                        {s.address}
-                      </p>
-                      <p className="text-[10px] text-neutral-600">
-                        {s.status === 'pending' && 'En attente chauffeur'}
-                        {s.status === 'accepted' && 'Accepté par le chauffeur'}
-                        {s.status === 'arrived' && '↳ Arrêt en cours (attente)'}
-                        {s.status === 'departed' && `↳ Terminé · +${s.waiting_extra_fee_fcfa} F attente`}
-                      </p>
-                    </div>
-                    <span
-                      className="text-[10px] font-bold text-violet-700"
-                      style={{ fontVariantNumeric: 'tabular-nums' }}
-                    >
-                      +{s.extra_price_fcfa} F
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
+            {/* Liste des arrêts avec suppression + réordonnage */}
+            <StopsListClient
+              rideId={ride.id}
+              pickup={pickupCoord}
+              dropoff={dropoffCoord}
+              stops={stops}
+              onChanged={() => { void refetchStops(); void refetchDetails(); }}
+            />
 
             {/* Bouton "terminer" — visible UNIQUEMENT si la course a réellement démarré
                 (status='in_progress' ET started_at existe). Sinon le chauffeur n'a pas encore
