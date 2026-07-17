@@ -831,26 +831,10 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
               </>
             )}
             {ride.status === 'completed' && (
-              <>
-                <div className="rounded-md bg-success/10 p-md text-center text-sm font-semibold text-success">
-                  <CheckIcon className="mr-xs inline h-4 w-4" strokeWidth={3} />
-                  Course terminée
-                </div>
-                {hasRated === false && (
-                  <button
-                    type="button"
-                    onClick={() => setRatingOpen(true)}
-                    className="mt-md w-full rounded-xl bg-gold py-md text-sm font-bold text-neutral-900 shadow-glow-gold"
-                  >
-                    ⭐ Noter ce chauffeur
-                  </button>
-                )}
-                {hasRated === true && (
-                  <p className="mt-md text-center text-xs text-neutral-500">
-                    Merci pour ta note.
-                  </p>
-                )}
-              </>
+              <div className="rounded-md bg-success/10 p-md text-center text-sm font-semibold text-success">
+                <CheckIcon className="mr-xs inline h-4 w-4" strokeWidth={3} />
+                Course terminée
+              </div>
             )}
           </div>
         </div>
@@ -920,16 +904,18 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
         />
       )}
 
-      {ride.status === 'completed' && ride.driver_full_name && (
+      {/* Notation obligatoire : dès que la course est terminée, la modale
+          s'affiche automatiquement en mode mandatory (impossible à fermer).
+          Le client note → redirect automatique vers la home après 1,1 s. */}
+      {ride.status === 'completed' && ride.driver_full_name && hasRated === false && (
         <RatingModal
-          open={ratingOpen || hasRated === false}
-          onClose={() => setRatingOpen(false)}
+          open={true}
+          onClose={() => undefined}
           rideId={ride.id}
           ratedName={firstNameOf(ride.driver_full_name) || 'ton chauffeur'}
-          mandatory={hasRated === false}
+          mandatory={true}
           onSubmitted={() => {
             setHasRated(true);
-            // Notation obligatoire remplie → retour à l'accueil
             setTimeout(() => {
               router.push('/');
               router.refresh();
