@@ -12,6 +12,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 const PUBLIC_PREFIXES = [
   '/login',
   '/auth', // callback OTP + magic link
+  '/reset-password', // définit un nouveau mot de passe (session recovery)
   '/devenir-chauffeur', // funnel candidat chauffeur (public marketing)
   '/driver', // page informative "L'espace chauffeur a déménagé"
 ];

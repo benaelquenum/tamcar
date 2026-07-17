@@ -9,6 +9,7 @@ import { createServerSupabase } from '@/lib/supabase-server';
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
+  const type = searchParams.get('type'); // 'recovery' pour reset password
   const nextParam = searchParams.get('next');
 
   if (!code) {
@@ -24,6 +25,11 @@ export async function GET(request: Request) {
     return NextResponse.redirect(
       `${origin}/login?error=${encodeURIComponent(error.message)}`,
     );
+  }
+
+  // Cas reset password : redirige vers la page de définition d'un nouveau mot de passe
+  if (type === 'recovery') {
+    return NextResponse.redirect(`${origin}/reset-password`);
   }
 
   // Portail chauffeur : vérifie le rôle. Non-driver → sign out + message.

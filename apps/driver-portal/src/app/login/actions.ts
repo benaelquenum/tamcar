@@ -95,6 +95,43 @@ export async function magicLinkAction(formData: FormData) {
   redirect('/login?sent=' + encodeURIComponent(email));
 }
 
+/**
+ * Reset password : envoie un email avec lien vers /auth/callback?type=recovery
+ * qui redirige ensuite vers /reset-password où l'user définit son nouveau mot de passe.
+ */
+export async function requestPasswordResetAction(formData: FormData) {
+  const email = String(formData.get('email') || '').trim().toLowerCase();
+  if (!email || !email.includes('@')) {
+    redirect(
+      '/login?error=' +
+        encodeURIComponent('Email invalide'),
+    );
+  }
+
+  const supabase = createServerSupabase();
+  const h = headers();
+  const origin =
+    h.get('origin') ??
+    (h.get('x-forwarded-host')
+      ? `https://${h.get('x-forwarded-host')}`
+      : 'http://localhost:3002');
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${origin}/auth/callback?type=recovery`,
+  });
+
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error('[requestPasswordResetAction driver-portal] Supabase error', error);
+    redirect(
+      '/login?error=' +
+        encodeURIComponent(error.message || 'Erreur envoi email'),
+    );
+  }
+
+  redirect('/login?reset_sent=' + encodeURIComponent(email));
+}
+
 export async function logout() {
   const supabase = createServerSupabase();
   await supabase.auth.signOut();

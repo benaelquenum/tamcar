@@ -153,6 +153,40 @@ export async function magicLinkAction(formData: FormData) {
 }
 
 /**
+ * Reset password : envoie un email avec lien vers /auth/callback?type=recovery
+ * puis /reset-password où l'user définit son nouveau mot de passe.
+ */
+export async function requestPasswordResetAction(formData: FormData) {
+  const email = String(formData.get('email') || '').trim().toLowerCase();
+  if (!email || !email.includes('@')) {
+    redirect('/login?error=' + encodeURIComponent('Email invalide'));
+  }
+
+  const supabase = createServerSupabase();
+  const h = headers();
+  const origin =
+    h.get('origin') ??
+    (h.get('x-forwarded-host')
+      ? `https://${h.get('x-forwarded-host')}`
+      : 'http://localhost:3001');
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${origin}/auth/callback?type=recovery`,
+  });
+
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error('[requestPasswordResetAction client] Supabase error', error);
+    redirect(
+      '/login?error=' +
+        encodeURIComponent(error.message || 'Erreur envoi email'),
+    );
+  }
+
+  redirect('/login?reset_sent=' + encodeURIComponent(email));
+}
+
+/**
  * Logout (bouton compte)
  */
 export async function logout() {

@@ -1,11 +1,16 @@
 import Link from 'next/link';
 import { Logo } from '@/components/Logo';
 import { CheckIcon } from '@/components/Icon';
-import { magicLinkAction, signInAction, signUpAction } from './actions';
+import {
+  requestPasswordResetAction,
+  signInAction,
+  signUpAction,
+} from './actions';
 
 type SearchParams = {
   error?: string;
   sent?: string;
+  reset_sent?: string;
   tab?: 'signin' | 'signup' | 'magic';
   next?: string;
 };
@@ -18,6 +23,7 @@ export default function LoginPage({
   const activeTab = searchParams.tab === 'signup' ? 'signup' : 'signin';
   const error = searchParams.error;
   const sent = searchParams.sent;
+  const resetSent = searchParams.reset_sent;
   const next = searchParams.next ?? '/';
 
   return (
@@ -37,7 +43,9 @@ export default function LoginPage({
           </p>
         </header>
 
-        {sent ? (
+        {resetSent ? (
+          <ResetSentPanel email={resetSent} />
+        ) : sent ? (
           <EmailSentPanel email={sent} />
         ) : (
           <>
@@ -71,12 +79,12 @@ export default function LoginPage({
               <SignUpForm error={error} />
             )}
 
-            {/* Fallback magic link */}
+            {/* Mot de passe oublié — reset propre */}
             <div className="mt-xl border-t border-neutral-200 pt-lg">
               <p className="text-center text-xs text-neutral-500">
-                Mot de passe oublié ? Reçois un lien de connexion instantané.
+                Mot de passe oublié ? Reçois un lien pour en définir un nouveau.
               </p>
-              <form action={magicLinkAction} className="mt-md">
+              <form action={requestPasswordResetAction} className="mt-md">
                 <input
                   type="email"
                   name="email"
@@ -88,7 +96,7 @@ export default function LoginPage({
                   type="submit"
                   className="mt-md w-full rounded-lg border-2 border-primary-500 bg-white py-md text-sm font-bold text-primary-700 hover:bg-primary-50"
                 >
-                  Recevoir un lien magique
+                  Réinitialiser mon mot de passe
                 </button>
               </form>
             </div>
@@ -249,6 +257,32 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       </span>
       <div className="mt-xs">{children}</div>
     </label>
+  );
+}
+
+function ResetSentPanel({ email }: { email: string }) {
+  return (
+    <div className="mt-2xl rounded-xl border border-success/30 bg-success/5 p-lg">
+      <div className="flex items-start gap-md">
+        <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-success text-white">
+          <CheckIcon className="h-4 w-4" strokeWidth={3} />
+        </span>
+        <div className="flex-1">
+          <p className="font-bold text-neutral-900">Lien envoyé !</p>
+          <p className="mt-xs text-sm text-neutral-600">
+            Ouvre ta boîte mail (<strong>{email}</strong>). Clique sur le lien
+            pour définir un nouveau mot de passe. Puis reconnecte-toi avec ce
+            nouveau mot de passe.
+          </p>
+        </div>
+      </div>
+      <Link
+        href="/login"
+        className="mt-md inline-block text-sm font-semibold text-primary-500 underline"
+      >
+        Retour à la connexion
+      </Link>
+    </div>
   );
 }
 

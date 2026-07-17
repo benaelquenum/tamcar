@@ -7,7 +7,7 @@ import { NextResponse, type NextRequest } from 'next/server';
  * 2. Bloque les routes protégées si pas d'auth → redirect /login?next=<path>
  */
 
-const PUBLIC_PREFIXES = ['/login', '/auth'];
+const PUBLIC_PREFIXES = ['/login', '/auth', '/reset-password'];
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
