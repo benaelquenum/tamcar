@@ -123,6 +123,19 @@ function paymentLabel(method: string | null): string {
     default: return '—';
   }
 }
+function haversineMeters(a: [number, number], b: [number, number]): number {
+  const R = 6371000;
+  const [lng1, lat1] = a;
+  const [lng2, lat2] = b;
+  const toRad = (v: number) => (v * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const s1 = Math.sin(dLat / 2);
+  const s2 = Math.sin(dLng / 2);
+  const c = s1 * s1 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * s2 * s2;
+  return 2 * R * Math.atan2(Math.sqrt(c), Math.sqrt(1 - c));
+}
+
 function firstNameOf(fullName: string | null | undefined): string {
   if (!fullName) return '';
   return fullName.trim().split(/\s+/)[0] ?? '';
@@ -147,6 +160,11 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
   } | null>(null);
   const [completing, setCompleting] = useState(false);
   const [completeError, setCompleteError] = useState<string | null>(null);
+  const [completeConfirm, setCompleteConfirm] = useState<{
+    distanceM: number;
+    estimatedPrice: number;
+    coords: [number, number];
+  } | null>(null);
   const [myLocation, setMyLocation] = useState<[number, number] | null>(null);
   const [searchTimedOut, setSearchTimedOut] = useState(false);
   const [retrying, setRetrying] = useState(false);
@@ -228,6 +246,31 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
       }
     }
 
+    // Distance à vol d'oiseau (haversine) — même seuil que le RPC (500 m)
+    const distanceM = haversineMeters([lng, lat], [ride.dropoff_lng, ride.dropoff_lat]);
+    if (distanceM > 500) {
+      // Prix estimé au prorata (même formule que le RPC : ratio × total, plancher 30% ou 700 F)
+      const originalKm = ride.distance_km ?? 0;
+      const travelledKm = Math.max(0, originalKm - distanceM / 1000);
+      const ratio = originalKm > 0 ? travelledKm / originalKm : 0;
+      const proratedPrice = Math.floor(ride.price_total_fcfa * ratio);
+      const floorPrice = Math.max(700, Math.floor(ride.price_total_fcfa * 0.3));
+      const estimatedPrice = Math.max(floorPrice, proratedPrice);
+      setCompleteConfirm({
+        distanceM: Math.round(distanceM),
+        estimatedPrice,
+        coords: [lng, lat],
+      });
+      setCompleting(false);
+      return;
+    }
+
+    await submitCompletion(lat, lng);
+  }
+
+  async function submitCompletion(lat: number, lng: number) {
+    setCompleting(true);
+    setCompleteError(null);
     const { error } = await supabaseBrowser.rpc('client_request_completion', {
       ride_id: ride.id,
       actual_lat: lat,
@@ -240,6 +283,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
     }
     await refetchDetails();
     setCompleting(false);
+    setCompleteConfirm(null);
     // Si status déjà 'completed' → RatingModal via useEffect status change
     // Sinon → la modale d'attente s'affiche grâce à completion_requested_at
   }
@@ -812,6 +856,95 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
           </div>
         </div>
       </div>
+
+      {/* Modale d'avertissement : le client termine loin du point de dépôt */}
+      {completeConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-neutral-900/75 backdrop-blur-sm sm:items-center"
+          onClick={() => !completing && setCompleteConfirm(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-t-2xl bg-white p-lg shadow-xl sm:rounded-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-lg text-center">
+              <div className="mx-auto mb-md grid h-14 w-14 place-items-center rounded-full bg-error/15 text-error">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="h-7 w-7">
+                  <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+              </div>
+              <h2 className="text-lg font-extrabold text-neutral-900">
+                Tu n&apos;es pas encore à destination
+              </h2>
+              <p
+                className="mt-xs text-sm text-neutral-600"
+                style={{ fontVariantNumeric: 'tabular-nums' }}
+              >
+                Tu es à{' '}
+                <strong className="text-neutral-900">
+                  {completeConfirm.distanceM < 1000
+                    ? `${completeConfirm.distanceM} m`
+                    : `${(completeConfirm.distanceM / 1000).toFixed(2)} km`}
+                </strong>{' '}
+                du point de dépôt prévu.
+              </p>
+            </div>
+
+            <div className="mb-md rounded-xl border border-primary-200 bg-primary-50 p-md">
+              <div className="flex items-baseline justify-between text-sm">
+                <span className="text-neutral-600">Prix initial</span>
+                <span
+                  className="font-semibold text-neutral-500 line-through"
+                  style={{ fontVariantNumeric: 'tabular-nums' }}
+                >
+                  {formatFcfa(ride.price_total_fcfa)} F
+                </span>
+              </div>
+              <div className="mt-xs flex items-baseline justify-between">
+                <span className="text-sm font-bold text-neutral-900">
+                  Prix recalculé au prorata
+                </span>
+                <span
+                  className="text-xl font-extrabold text-neutral-900"
+                  style={{ fontVariantNumeric: 'tabular-nums' }}
+                >
+                  {formatFcfa(completeConfirm.estimatedPrice)} F
+                </span>
+              </div>
+              <p className="mt-sm text-[11px] text-neutral-600">
+                Ta demande sera envoyée au chauffeur. Il a{' '}
+                <strong>20 secondes</strong> pour l&apos;accepter — sans réponse, la
+                course est terminée automatiquement au nouveau prix.
+              </p>
+            </div>
+
+            <div className="flex gap-md">
+              <button
+                type="button"
+                onClick={() => setCompleteConfirm(null)}
+                disabled={completing}
+                className="flex-1 rounded-xl border-2 border-neutral-200 py-md text-sm font-bold text-neutral-600 hover:border-neutral-300"
+              >
+                Continuer la course
+              </button>
+              <button
+                type="button"
+                onClick={() => void submitCompletion(completeConfirm.coords[1], completeConfirm.coords[0])}
+                disabled={completing}
+                className="flex-1 rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-md text-sm font-bold text-white shadow-glow disabled:opacity-50"
+              >
+                {completing ? 'Envoi…' : 'Terminer quand même'}
+              </button>
+            </div>
+
+            {completeError && (
+              <p className="mt-md text-center text-xs text-error">{completeError}</p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Modale timeout : aucun TamCar trouvé après 2 min de recherche */}
       {searchTimedOut && ride.status === 'requested' && (
