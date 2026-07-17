@@ -860,11 +860,10 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                 </svg>
               </div>
               <h2 className="text-lg font-extrabold text-neutral-900">
-                Aucun TamCar trouvé
+                Aucun chauffeur disponible
               </h2>
               <p className="mt-xs text-sm text-neutral-600">
-                On n&apos;a pas trouvé de chauffeur dans un rayon de 10 km après 2 min de
-                recherche. Tu peux réessayer maintenant ou annuler.
+                Tu peux relancer la recherche ou annuler la course.
               </p>
             </div>
             <div className="flex gap-md">
