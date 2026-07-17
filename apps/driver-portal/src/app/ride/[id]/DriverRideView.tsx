@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState, useTransition } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/Logo';
@@ -181,18 +181,39 @@ export function DriverRideView({ initialRide }: { initialRide: DriverRideForView
   const [arrivalConfirm, setArrivalConfirm] = useState<{ distance: number } | null>(null);
   const [acceptingCompletion, setAcceptingCompletion] = useState(false);
   const [completionRemaining, setCompletionRemaining] = useState<number>(20);
+  const autoAcceptFiredRef = useRef(false);
 
-  // Countdown affiché sur la modal completion
+  // Countdown affiché sur la modal completion.
+  // Quand le délai expire côté chauffeur : on essaie d'appliquer la fin
+  // automatiquement (le RPC accepte désormais client OU chauffeur).
+  // Ça couvre le cas où le navigateur du client est fermé / en veille.
   useEffect(() => {
-    if (!ride.completion_auto_accept_at || ride.status !== 'in_progress') return;
+    if (!ride.completion_auto_accept_at || ride.status !== 'in_progress') {
+      autoAcceptFiredRef.current = false;
+      return;
+    }
     const deadline = new Date(ride.completion_auto_accept_at).getTime();
-    const tick = () => setCompletionRemaining(
-      Math.max(0, Math.round((deadline - Date.now()) / 1000)),
-    );
+    const tick = async () => {
+      const remaining = Math.max(0, Math.round((deadline - Date.now()) / 1000));
+      setCompletionRemaining(remaining);
+      if (remaining === 0 && !autoAcceptFiredRef.current) {
+        autoAcceptFiredRef.current = true;
+        const { error } = await supabaseBrowser.rpc('auto_accept_completion', {
+          ride_id: ride.id,
+        });
+        if (error) {
+          // Si un autre acteur (le client) a déjà déclenché juste avant,
+          // on ignore l'erreur "déjà completed"
+          if (!/completed|introuvable/i.test(error.message)) {
+            setErr(error.message);
+          }
+        }
+      }
+    };
     tick();
     const id = setInterval(tick, 500);
     return () => clearInterval(id);
-  }, [ride.completion_auto_accept_at, ride.status]);
+  }, [ride.completion_auto_accept_at, ride.status, ride.id]);
 
   async function handleAcceptCompletion() {
     if (acceptingCompletion) return;

@@ -244,19 +244,26 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
     // Sinon → la modale d'attente s'affiche grâce à completion_requested_at
   }
 
-  // Auto-accept : quand completion_auto_accept_at expire, on force la fin
+  // Auto-accept : quand completion_auto_accept_at expire, on force la fin.
+  // Le chauffeur fait la même chose de son côté (RPC ouvert aux deux depuis
+  // 20260717220000_auto_accept_dual_actor.sql) — le premier arrivé gagne,
+  // l'autre reçoit 'already completed' et l'ignore.
   useEffect(() => {
     if (!ride.completion_requested_at || !ride.completion_auto_accept_at) return;
     if (ride.status !== 'in_progress') return;
     const deadline = new Date(ride.completion_auto_accept_at).getTime();
-    const now = Date.now();
-    const remaining = Math.max(0, deadline - now);
+    const remaining = Math.max(0, deadline - Date.now());
+    const rideId = ride.id;
     const timer = setTimeout(async () => {
-      // Si status pas encore completed, on force
-      const { data } = await supabaseBrowser.rpc('ride_with_driver_details', { ride_id: ride.id });
+      const { data } = await supabaseBrowser.rpc('ride_with_driver_details', { ride_id: rideId });
       const fresh = Array.isArray(data) ? (data[0] as { status?: string } | undefined) : undefined;
       if (fresh?.status !== 'in_progress') return;
-      await supabaseBrowser.rpc('auto_accept_completion', { ride_id: ride.id });
+      const { error } = await supabaseBrowser.rpc('auto_accept_completion', { ride_id: rideId });
+      if (error && !/completed|introuvable/i.test(error.message)) {
+        // eslint-disable-next-line no-console
+        console.error('auto_accept_completion failed:', error.message);
+      }
+      // Realtime `ride:${id}` prendra le relai pour rafraîchir la vue.
     }, remaining + 500);
     return () => clearTimeout(timer);
   }, [ride.completion_auto_accept_at, ride.completion_requested_at, ride.status, ride.id]);
