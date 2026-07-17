@@ -52,6 +52,9 @@ export type RideForView = {
   status: RideStatus;
   payment_method: string | null;
   requested_at: string;
+  matched_at?: string | null;
+  started_at?: string | null;
+  ended_at?: string | null;
   driver_full_name?: string | null;
   driver_avatar_url?: string | null;
   driver_phone?: string | null;
@@ -193,6 +196,16 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
     if (completing) return;
     setCompleting(true);
     setCompleteError(null);
+
+    // Refetch pour éviter d'agir sur un state stale
+    await refetchDetails();
+    if (ride.status !== 'in_progress' || !ride.started_at) {
+      setCompleteError(
+        'La course n\'a pas encore été démarrée par le chauffeur. Attends qu\'il fasse monter le client à bord.',
+      );
+      setCompleting(false);
+      return;
+    }
 
     // Récupère la position live (ou best-effort via geolocation one-shot)
     let lat = myLocation?.[1] ?? null;
@@ -778,7 +791,10 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
               </div>
             )}
 
-            {ride.status === 'in_progress' && (
+            {/* Bouton "terminer" — visible UNIQUEMENT si la course a réellement démarré
+                (status='in_progress' ET started_at existe). Sinon le chauffeur n'a pas encore
+                cliqué "Client à bord — démarrer la course". */}
+            {ride.status === 'in_progress' && ride.started_at && (
               <button
                 type="button"
                 onClick={handleCompleteRide}
