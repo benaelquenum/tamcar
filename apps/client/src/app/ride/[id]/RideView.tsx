@@ -759,9 +759,10 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
               </button>
             )}
 
-            {/* Liste des arrêts avec suppression + réordonnage */}
+            {/* Liste des arrêts avec suppression + réordonnage + promotion en destination */}
             <StopsListClient
               rideId={ride.id}
+              rideStatus={ride.status}
               pickup={pickupCoord}
               dropoff={dropoffCoord}
               stops={stops}
@@ -884,7 +885,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
       {/* Notation obligatoire : dès que la course est terminée, la modale
           s'affiche automatiquement en mode mandatory (impossible à fermer).
           Le client note → redirect automatique vers la home après 1,1 s. */}
-      {ride.status === 'completed' && ride.driver_full_name && hasRated === false && (
+      {ride.status === 'completed' && ride.driver_id && hasRated === false && (
         <RatingModal
           open={true}
           onClose={() => undefined}

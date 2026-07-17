@@ -17,6 +17,7 @@ export type ClientStopRow = {
 
 type Props = {
   rideId: string;
+  rideStatus: string;
   pickup: [number, number];
   dropoff: [number, number];
   stops: ClientStopRow[];
@@ -44,7 +45,14 @@ async function totalItineraryKm(
   return { totalKm, totalMin: Math.round(totalMin) };
 }
 
-export function StopsListClient({ rideId, pickup, dropoff, stops, onChanged }: Props) {
+export function StopsListClient({
+  rideId,
+  rideStatus,
+  pickup,
+  dropoff,
+  stops,
+  onChanged,
+}: Props) {
   const [pending, startTransition] = useTransition();
   const [err, setErr] = useState<string | null>(null);
 
@@ -54,13 +62,13 @@ export function StopsListClient({ rideId, pickup, dropoff, stops, onChanged }: P
 
   if (active.length === 0) return null;
 
-  // Un stop est modifiable si le chauffeur n'y est pas encore arrivé
   const isModifiable = (s: ClientStopRow) => s.status === 'pending' || s.status === 'accepted';
   const modifiable = active.filter(isModifiable);
+  // Contrôles éditables uniquement pendant que la course peut encore bouger
+  const canEdit = ['matched', 'arrived', 'in_progress'].includes(rideStatus);
 
   async function handleRemove(stopId: string) {
     setErr(null);
-    // Recalcule l'itinéraire sans ce stop
     const remaining = active.filter((s) => s.id !== stopId).map((s) => [s.lng, s.lat] as [number, number]);
     startTransition(async () => {
       try {
@@ -85,8 +93,6 @@ export function StopsListClient({ rideId, pickup, dropoff, stops, onChanged }: P
     const reordered = [...modifiable];
     const [moved] = reordered.splice(fromIdx, 1);
     reordered.splice(toIdx, 0, moved);
-    // Fusion avec les stops non-modifiables (déjà arrived/departed) qui gardent leur place
-    // Note : dans l'ordre logique, non-modifiables viennent avant modifiables
     const nonMod = active.filter((s) => !isModifiable(s));
     const finalOrder = [...nonMod, ...reordered];
     startTransition(async () => {
@@ -110,13 +116,47 @@ export function StopsListClient({ rideId, pickup, dropoff, stops, onChanged }: P
     });
   }
 
+  async function handlePromoteToDropoff(stopId: string) {
+    setErr(null);
+    // Nouvel itinéraire : pickup → autres stops modifiables (sans celui promu)
+    // → nouvelle destination (le stop promu)
+    // Note : le RPC recycle le stop en "ancien dropoff" à la fin des stops.
+    const promoted = active.find((s) => s.id === stopId);
+    if (!promoted) return;
+    const otherStops = active.filter((s) => s.id !== stopId && s.status !== 'cancelled');
+    // Après swap : stops = [...otherStops, ancien dropoff], nouveau dropoff = promoted
+    const newRouteStops = [
+      ...otherStops.map((s) => [s.lng, s.lat] as [number, number]),
+      dropoff, // ancien dropoff recyclé en stop
+    ];
+    startTransition(async () => {
+      try {
+        const { totalKm, totalMin } = await totalItineraryKm(
+          pickup,
+          newRouteStops,
+          [promoted.lng, promoted.lat] as [number, number],
+        );
+        const { error } = await supabaseBrowser.rpc('swap_stop_and_dropoff', {
+          p_stop_id: stopId,
+          p_new_total_km: totalKm,
+          p_new_total_min: totalMin,
+        });
+        if (error) throw new Error(error.message);
+        onChanged();
+      } catch (e) {
+        setErr(e instanceof Error ? e.message : 'Erreur promotion en destination');
+      }
+    });
+  }
+
   return (
     <div className="mb-sm space-y-xs">
       {active.map((s) => {
         const modIdx = modifiable.findIndex((m) => m.id === s.id);
-        const canMoveUp = modIdx > 0;
-        const canMoveDown = modIdx >= 0 && modIdx < modifiable.length - 1;
-        const canRemove = isModifiable(s);
+        const canMoveUp = canEdit && modIdx > 0;
+        const canMoveDown = canEdit && modIdx >= 0 && modIdx < modifiable.length - 1;
+        const canRemove = canEdit && isModifiable(s);
+        const canPromote = canEdit && isModifiable(s);
         return (
           <div
             key={s.id}
@@ -140,7 +180,19 @@ export function StopsListClient({ rideId, pickup, dropoff, stops, onChanged }: P
             >
               +{fmt(s.extra_price_fcfa)} F
             </span>
-            {canRemove && (
+            {canPromote && (
+              <button
+                type="button"
+                onClick={() => void handlePromoteToDropoff(s.id)}
+                disabled={pending}
+                aria-label="Faire de cet arrêt ma destination finale"
+                title="Faire de cet arrêt ma destination finale"
+                className="grid h-6 w-6 flex-none place-items-center rounded-full bg-primary-500 text-[11px] text-white hover:brightness-110 disabled:opacity-40"
+              >
+                ★
+              </button>
+            )}
+            {(canMoveUp || canMoveDown) && (
               <div className="flex flex-none flex-col gap-0.5">
                 <button
                   type="button"
@@ -168,7 +220,7 @@ export function StopsListClient({ rideId, pickup, dropoff, stops, onChanged }: P
                 onClick={() => void handleRemove(s.id)}
                 disabled={pending}
                 aria-label="Retirer cet arrêt"
-                className="ml-xs grid h-6 w-6 flex-none place-items-center rounded-full bg-error/10 text-error hover:bg-error/20 disabled:opacity-40"
+                className="grid h-6 w-6 flex-none place-items-center rounded-full bg-error/10 text-error hover:bg-error/20 disabled:opacity-40"
               >
                 ×
               </button>
