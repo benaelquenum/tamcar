@@ -19,7 +19,9 @@ type Props = {
   rideId: string;
   rideStatus: string;
   pickup: [number, number];
+  pickupAddress: string;
   dropoff: [number, number];
+  dropoffAddress: string;
   stops: ClientStopRow[];
   onChanged: () => void;
 };
@@ -49,7 +51,9 @@ export function StopsListClient({
   rideId,
   rideStatus,
   pickup,
+  pickupAddress,
   dropoff,
+  dropoffAddress,
   stops,
   onChanged,
 }: Props) {
@@ -149,7 +153,7 @@ export function StopsListClient({
     });
   }
 
-  // --- Drag & drop (pointer events, mobile-friendly) ------------------
+  // Drag & drop tactile (pointer events)
   const dragStartYRef = useRef<number>(0);
   const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -164,7 +168,6 @@ export function StopsListClient({
     const target = active.find((s) => s.id === stopId);
     if (!target || !isModifiable(target)) return;
     dragStartYRef.current = e.clientY;
-    // long-press 200ms pour éviter les scrolls accidentels
     if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
     holdTimerRef.current = setTimeout(() => {
       setDraggingId(stopId);
@@ -174,12 +177,10 @@ export function StopsListClient({
 
   function onPointerMove(e: React.PointerEvent<HTMLDivElement>) {
     if (holdTimerRef.current && Math.abs(e.clientY - dragStartYRef.current) > 8) {
-      // Scroll détecté avant le hold complet → abandonne le drag
       clearTimeout(holdTimerRef.current);
       holdTimerRef.current = null;
     }
     if (!draggingId || !containerRef.current) return;
-    // Détecte l'item survolé par la position Y du pointeur
     const rows = containerRef.current.querySelectorAll<HTMLDivElement>('[data-stop-id]');
     let overId: string | null = null;
     for (const row of rows) {
@@ -208,119 +209,155 @@ export function StopsListClient({
     setDragOverId(null);
   }
 
-  if (active.length === 0) return null;
-
   return (
     <div
       ref={containerRef}
-      className="mb-sm space-y-xs"
+      className="mb-sm"
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
     >
-      {active.map((s) => {
-        const modIdx = modifiable.findIndex((m) => m.id === s.id);
-        const canMoveUp = canEdit && modIdx > 0;
-        const canMoveDown = canEdit && modIdx >= 0 && modIdx < modifiable.length - 1;
-        const canRemove = canEdit && isModifiable(s);
-        const canPromote = canEdit && isModifiable(s);
-        const isDragging = draggingId === s.id;
-        const isDragTarget = dragOverId === s.id && draggingId && draggingId !== s.id;
-        return (
-          <div
-            key={s.id}
-            data-stop-id={s.id}
-            onPointerDown={(e) => onPointerDown(e, s.id)}
-            className={`flex items-center gap-sm rounded-lg p-sm text-xs ring-1 transition ${
-              isDragging
-                ? 'scale-[1.02] bg-primary-100 ring-primary-500 shadow-lg'
-                : isDragTarget
-                  ? 'bg-primary-50 ring-primary-400'
-                  : 'bg-violet-500/10 ring-violet-500/20'
-            }`}
-            style={{ touchAction: canEdit && isModifiable(s) ? 'none' : 'auto' }}
-          >
-            {canEdit && isModifiable(s) && (
-              <span
-                aria-hidden
-                className="grid h-8 w-6 flex-none place-items-center text-neutral-400"
-                title="Maintiens pour glisser"
-              >
-                ⋮⋮
-              </span>
-            )}
-            <span className="grid h-6 w-6 flex-none place-items-center rounded-full bg-violet-500 font-bold text-white">
-              {s.order_idx}
-            </span>
-            <div className="flex-1 min-w-0">
-              <p className="truncate font-semibold text-neutral-900">{s.address}</p>
-              <p className="text-[10px] text-neutral-600">
-                {s.status === 'pending' && 'Envoyé au chauffeur'}
-                {s.status === 'accepted' && 'Prévu'}
-                {s.status === 'arrived' && '↳ Arrêt en cours'}
-                {s.status === 'departed' && `Terminé · +${fmt(s.waiting_extra_fee_fcfa)} F attente`}
-              </p>
-            </div>
-            <span
-              className="text-[10px] font-bold text-violet-700"
-              style={{ fontVariantNumeric: 'tabular-nums' }}
-            >
-              +{fmt(s.extra_price_fcfa)} F
-            </span>
-            {canPromote && (
-              <button
-                type="button"
-                onClick={() => void handlePromoteToDropoff(s.id)}
-                disabled={pending}
-                aria-label="Faire de cet arrêt ma destination finale"
-                title="Faire de cet arrêt ma destination finale"
-                className="grid h-8 w-8 flex-none place-items-center rounded-full bg-primary-500 text-sm text-white hover:brightness-110 disabled:opacity-40"
-              >
-                ★
-              </button>
-            )}
-            {(canMoveUp || canMoveDown) && (
-              <div className="flex flex-none flex-col gap-xs">
-                <button
-                  type="button"
-                  onClick={() => void handleReorderByIdx(modIdx, modIdx - 1)}
-                  disabled={!canMoveUp || pending}
-                  aria-label="Remonter cet arrêt"
-                  className="grid h-7 w-7 place-items-center rounded-md bg-white text-neutral-700 ring-1 ring-neutral-200 hover:bg-primary-50 hover:text-primary-700 disabled:opacity-30"
-                >
-                  ▲
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handleReorderByIdx(modIdx, modIdx + 1)}
-                  disabled={!canMoveDown || pending}
-                  aria-label="Descendre cet arrêt"
-                  className="grid h-7 w-7 place-items-center rounded-md bg-white text-neutral-700 ring-1 ring-neutral-200 hover:bg-primary-50 hover:text-primary-700 disabled:opacity-30"
-                >
-                  ▼
-                </button>
-              </div>
-            )}
-            {canRemove && (
-              <button
-                type="button"
-                onClick={() => void handleRemove(s.id)}
-                disabled={pending}
-                aria-label="Retirer cet arrêt"
-                className="grid h-8 w-8 flex-none place-items-center rounded-full bg-error/10 text-lg text-error hover:bg-error/20 disabled:opacity-40"
-              >
-                ×
-              </button>
-            )}
+      {/* Timeline pickup → escales → destination */}
+      <div className="rounded-xl bg-neutral-50 p-md ring-1 ring-neutral-200">
+        {/* Départ */}
+        <div className="flex items-start gap-md">
+          <span className="mt-xs grid h-4 w-4 flex-none place-items-center rounded-full bg-neutral-400" aria-hidden />
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+              Départ
+            </p>
+            <p className="text-xs font-semibold text-neutral-900">{pickupAddress}</p>
           </div>
-        );
-      })}
-      {canEdit && modifiable.length >= 2 && (
-        <p className="text-center text-[10px] text-neutral-500">
-          Astuce : maintiens un arrêt (⋮⋮) puis fais-le glisser pour réordonner.
+        </div>
+
+        {/* Escales */}
+        {active.map((s) => {
+          const modIdx = modifiable.findIndex((m) => m.id === s.id);
+          const canMoveUp = canEdit && modIdx > 0;
+          const canMoveDown = canEdit && modIdx >= 0 && modIdx < modifiable.length - 1;
+          const canRemove = canEdit && isModifiable(s);
+          const canPromote = canEdit && isModifiable(s);
+          const isDragging = draggingId === s.id;
+          const isDragTarget = dragOverId === s.id && draggingId && draggingId !== s.id;
+          return (
+            <div key={s.id}>
+              <div className="ml-2 h-3 border-l-2 border-dashed border-neutral-300" />
+              <div
+                data-stop-id={s.id}
+                onPointerDown={(e) => onPointerDown(e, s.id)}
+                className={`flex items-start gap-md rounded-lg p-sm transition ${
+                  isDragging
+                    ? 'scale-[1.02] bg-primary-100 ring-2 ring-primary-500 shadow-lg'
+                    : isDragTarget
+                      ? 'bg-primary-50 ring-2 ring-primary-400'
+                      : 'bg-violet-500/10 ring-1 ring-violet-500/20'
+                }`}
+                style={{ touchAction: canEdit && isModifiable(s) ? 'none' : 'auto' }}
+              >
+                {canEdit && isModifiable(s) && (
+                  <span aria-hidden className="grid h-8 w-4 flex-none place-items-center text-neutral-400">
+                    ⋮⋮
+                  </span>
+                )}
+                <span className="mt-0.5 grid h-6 w-6 flex-none place-items-center rounded-full bg-violet-500 text-[10px] font-bold text-white">
+                  {s.order_idx}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-violet-700">
+                    Escale {s.order_idx}
+                  </p>
+                  <p className="truncate text-xs font-semibold text-neutral-900">{s.address}</p>
+                  <p className="text-[10px] text-neutral-600">
+                    {s.status === 'pending' && 'Envoyé au chauffeur'}
+                    {s.status === 'accepted' && 'Prévu'}
+                    {s.status === 'arrived' && '↳ En cours'}
+                    {s.status === 'departed' && `Terminé · +${fmt(s.waiting_extra_fee_fcfa)} F attente`}
+                  </p>
+                </div>
+                <div className="flex flex-col items-end gap-xs">
+                  <span
+                    className="text-[10px] font-bold text-violet-700"
+                    style={{ fontVariantNumeric: 'tabular-nums' }}
+                  >
+                    +{fmt(s.extra_price_fcfa)} F
+                  </span>
+                  <div className="flex items-center gap-xs">
+                    {canPromote && (
+                      <button
+                        type="button"
+                        onClick={() => void handlePromoteToDropoff(s.id)}
+                        disabled={pending}
+                        aria-label="En faire ma destination finale"
+                        title="En faire ma destination finale"
+                        className="grid h-8 w-8 flex-none place-items-center rounded-full bg-primary-500 text-sm text-white hover:brightness-110 disabled:opacity-40"
+                      >
+                        ★
+                      </button>
+                    )}
+                    {(canMoveUp || canMoveDown) && (
+                      <div className="flex flex-none flex-col gap-xs">
+                        <button
+                          type="button"
+                          onClick={() => void handleReorderByIdx(modIdx, modIdx - 1)}
+                          disabled={!canMoveUp || pending}
+                          aria-label="Remonter"
+                          className="grid h-7 w-7 place-items-center rounded-md bg-white text-neutral-700 ring-1 ring-neutral-200 hover:bg-primary-50 hover:text-primary-700 disabled:opacity-30"
+                        >
+                          ▲
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void handleReorderByIdx(modIdx, modIdx + 1)}
+                          disabled={!canMoveDown || pending}
+                          aria-label="Descendre"
+                          className="grid h-7 w-7 place-items-center rounded-md bg-white text-neutral-700 ring-1 ring-neutral-200 hover:bg-primary-50 hover:text-primary-700 disabled:opacity-30"
+                        >
+                          ▼
+                        </button>
+                      </div>
+                    )}
+                    {canRemove && (
+                      <button
+                        type="button"
+                        onClick={() => void handleRemove(s.id)}
+                        disabled={pending}
+                        aria-label="Retirer cet arrêt"
+                        className="grid h-8 w-8 flex-none place-items-center rounded-full bg-error/10 text-lg text-error hover:bg-error/20 disabled:opacity-40"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Destination finale */}
+        <div className="ml-2 h-3 border-l-2 border-dashed border-neutral-300" />
+        <div className="flex items-start gap-md rounded-lg bg-primary-50 p-sm ring-1 ring-primary-200">
+          <span className="mt-0.5 grid h-6 w-6 flex-none place-items-center rounded-full bg-primary-500 text-white">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+              <circle cx="12" cy="10" r="3" />
+            </svg>
+          </span>
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-primary-700">
+              Destination finale
+            </p>
+            <p className="text-xs font-bold text-neutral-900">{dropoffAddress}</p>
+          </div>
+        </div>
+      </div>
+
+      {canEdit && modifiable.length > 0 && (
+        <p className="mt-xs text-center text-[10px] text-neutral-500">
+          ★ pour en faire ta destination · ⋮⋮ + glisse pour réordonner · × pour retirer
         </p>
       )}
-      {err && <p className="text-[10px] text-error">{err}</p>}
+      {err && <p className="mt-xs text-[10px] text-error">{err}</p>}
     </div>
   );
 }

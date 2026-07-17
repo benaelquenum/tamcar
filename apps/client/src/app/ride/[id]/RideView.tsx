@@ -706,24 +706,10 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
             </div>
           )}
 
-          {/* Adresses + metrics */}
-          <div className={`overflow-hidden transition-all ${sheetExpanded ? 'max-h-96' : 'max-h-0'}`}>
+          {/* Métriques (distance / durée / paiement) — pickup et dropoff sont
+              rendus dans la timeline plus bas */}
+          <div className={`overflow-hidden transition-all ${sheetExpanded ? 'max-h-40' : 'max-h-0'}`}>
             <div className="space-y-md px-lg pb-md">
-              <div className="rounded-xl bg-neutral-100 p-md">
-                <div className="flex items-start gap-md">
-                  <span className="mt-xs grid h-4 w-4 flex-none place-items-center rounded-full bg-primary-500 text-white">
-                    <PinIcon className="h-2.5 w-2.5" strokeWidth={3} />
-                  </span>
-                  <p className="flex-1 text-xs text-neutral-900">{ride.pickup_address}</p>
-                </div>
-                <div className="ml-1.5 h-4 border-l-2 border-dashed border-neutral-300" />
-                <div className="flex items-start gap-md">
-                  <span className="mt-xs grid h-4 w-4 flex-none place-items-center rounded-full bg-violet-500 text-white">
-                    <PinIcon className="h-2.5 w-2.5" strokeWidth={3} />
-                  </span>
-                  <p className="flex-1 text-xs text-neutral-900">{ride.dropoff_address}</p>
-                </div>
-              </div>
               <div className="grid grid-cols-3 gap-sm text-center">
                 <Mini label="Distance" value={ride.distance_km ? `${ride.distance_km.toFixed(1)} km` : '—'} />
                 <Mini label="Durée" value={ride.duration_min ? `${ride.duration_min} min` : '—'} />
@@ -759,12 +745,14 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
               </button>
             )}
 
-            {/* Liste des arrêts avec suppression + réordonnage + promotion en destination */}
+            {/* Timeline complète : départ → escales → destination finale */}
             <StopsListClient
               rideId={ride.id}
               rideStatus={ride.status}
               pickup={pickupCoord}
+              pickupAddress={ride.pickup_address}
               dropoff={dropoffCoord}
+              dropoffAddress={ride.dropoff_address}
               stops={stops}
               onChanged={() => { void refetchStops(); void refetchDetails(); }}
             />
