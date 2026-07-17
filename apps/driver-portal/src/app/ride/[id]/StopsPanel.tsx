@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 
 type RideStopRow = {
@@ -19,16 +19,68 @@ function fmt(n: number): string {
   return n.toLocaleString('fr-FR').replace(/,/g, ' ');
 }
 
+// Signature stable pour détecter un changement d'itinéraire :
+// - la liste et l'ordre des stops actifs (id + order_idx)
+function signatureOfStops(list: RideStopRow[]): string {
+  return list
+    .filter((s) => s.status !== 'cancelled' && s.status !== 'departed')
+    .map((s) => `${s.id}:${s.order_idx}:${s.address}`)
+    .join('|');
+}
+
+function playRouteChangeChime() {
+  if (typeof window === 'undefined') return;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const AudioCtx: typeof AudioContext | undefined =
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const notes = [660, 880]; // 2 bips ascendants courts
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      const t0 = ctx.currentTime + i * 0.18;
+      gain.gain.setValueAtTime(0, t0);
+      gain.gain.linearRampToValueAtTime(0.25, t0 + 0.015);
+      gain.gain.linearRampToValueAtTime(0, t0 + 0.14);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t0);
+      osc.stop(t0 + 0.16);
+    });
+    setTimeout(() => ctx.close().catch(() => undefined), 700);
+    if (navigator.vibrate) navigator.vibrate([30, 60, 30]);
+  } catch {
+    // audio non dispo → silencieux
+  }
+}
+
 export function StopsPanel({ rideId }: { rideId: string }) {
   const [stops, setStops] = useState<RideStopRow[]>([]);
   const [pending, startTransition] = useTransition();
   const [err, setErr] = useState<string | null>(null);
+  const [flashChange, setFlashChange] = useState(false);
+  const prevSigRef = useRef<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
       const { data } = await supabaseBrowser.rpc('ride_stops_of', { p_ride_id: rideId });
-      if (!cancelled) setStops((data ?? []) as RideStopRow[]);
+      if (cancelled) return;
+      const list = (data ?? []) as RideStopRow[];
+      const sig = signatureOfStops(list);
+      // Ne joue le son qu'après le premier load (sinon bip à l'ouverture)
+      if (prevSigRef.current !== null && prevSigRef.current !== sig) {
+        playRouteChangeChime();
+        setFlashChange(true);
+        setTimeout(() => setFlashChange(false), 3500);
+      }
+      prevSigRef.current = sig;
+      setStops(list);
     }
     load();
     const channel = supabaseBrowser
@@ -54,6 +106,11 @@ export function StopsPanel({ rideId }: { rideId: string }) {
 
   return (
     <section className="mb-md space-y-xs">
+      {flashChange && (
+        <div className="rounded-lg bg-primary-500 px-md py-xs text-center text-[11px] font-bold text-white shadow-md">
+          Le client a modifié l&apos;itinéraire
+        </div>
+      )}
       {stops.map((s) => (
         <StopRow key={s.id} stop={s} pending={pending} onCall={call} />
       ))}
