@@ -39,9 +39,14 @@ export function AddStopModal({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSelectStop(addr: SelectedAddress) {
+  async function handleSelectStop(addr: SelectedAddress | null) {
     setSelected(addr);
+    setNewTotalKm(null);
+    setNewTotalMin(null);
+    setExtraKm(null);
+    setExtraPrice(null);
     setError(null);
+    if (!addr) return;
     setComputing(true);
     // Nouvel itinéraire : pickup → stops existants → nouveau stop → dropoff
     const waypoints: Array<[number, number]> = [
@@ -122,7 +127,8 @@ export function AddStopModal({
           label="Où veux-tu passer ?"
           placeholder="Cherche une adresse ou un lieu…"
           value={selected}
-          onSelect={handleSelectStop}
+          onChange={handleSelectStop}
+          markerColor="#8B5CF6"
         />
 
         {computing && (
