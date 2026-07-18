@@ -8,6 +8,12 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
 });
 
+// Fetch handler minimal (passthrough) — nécessaire pour que Chrome
+// propose l'installation PWA. Sinon les critères d'installabilité échouent.
+self.addEventListener('fetch', () => {
+  // Passthrough : on ne intercepte rien, mais le listener doit exister.
+});
+
 self.addEventListener('push', (event) => {
   if (!event.data) return;
   let payload = {};
