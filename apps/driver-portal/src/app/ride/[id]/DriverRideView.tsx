@@ -223,6 +223,7 @@ export function DriverRideView({ initialRide }: { initialRide: DriverRideForView
           .single();
         if (fresh?.status) {
           setRide((prev) => ({ ...prev, status: fresh.status as DriverRideForView['status'] }));
+          if (fresh.status === 'completed') setErr(null);
         }
       }
     };
