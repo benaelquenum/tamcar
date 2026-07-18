@@ -38,7 +38,7 @@ export default async function AdminBannersPage() {
         Bannières de communication
       </h1>
 
-      <section className="mb-2xl rounded-xl border border-neutral-200 bg-white p-lg shadow-sm">
+      <section id="nouvelle" className="mb-2xl scroll-mt-lg rounded-xl border border-neutral-200 bg-white p-lg shadow-sm">
         <h2 className="mb-md text-sm font-bold uppercase tracking-wider text-neutral-500">
           Nouvelle bannière
         </h2>

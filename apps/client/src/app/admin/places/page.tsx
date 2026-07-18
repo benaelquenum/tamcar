@@ -13,6 +13,8 @@ type PlaceRow = {
   created_at: string;
   submitted_by: string | null;
   submitter_name?: string | null;
+  lat: number | null;
+  lng: number | null;
 };
 
 const SOURCE_LABEL: Record<PlaceRow['source'], string> = {
@@ -33,8 +35,8 @@ export default async function AdminPlacesPage() {
   const supabase = createServerSupabase();
 
   const { data: pending } = await supabase
-    .from('places')
-    .select('id, name, category, category_group, city, district, source, verified, created_at, submitted_by')
+    .from('places_admin_view')
+    .select('id, name, category, category_group, city, district, source, verified, created_at, submitted_by, lat, lng')
     .eq('verified', false)
     .eq('source', 'user_submitted')
     .order('created_at', { ascending: false })
@@ -120,11 +122,22 @@ export default async function AdminPlacesPage() {
                     </td>
                     <td className="px-md py-md text-right">
                       <div className="flex justify-end gap-xs">
+                        {p.lat != null && p.lng != null && (
+                          <a
+                            href={`https://www.google.com/maps?q=${p.lat},${p.lng}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="rounded-md bg-neutral-100 px-md py-xs text-xs font-bold text-neutral-700 hover:bg-neutral-200"
+                            title="Localiser sur Google Maps"
+                          >
+                            📍 Voir
+                          </a>
+                        )}
                         <form action={approvePlace} className="inline">
                           <input type="hidden" name="id" value={p.id} />
                           <button
                             type="submit"
-                            className="rounded-md bg-success px-md py-xs text-xs font-bold text-white hover:brightness-110"
+                            className="rounded-md bg-primary-500 px-md py-xs text-xs font-bold text-white hover:brightness-110"
                           >
                             Valider
                           </button>

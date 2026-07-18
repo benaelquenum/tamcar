@@ -245,11 +245,27 @@ export default async function AdminHome() {
 
   return (
     <div className="space-y-lg">
-      <div>
-        <h1 className="text-2xl font-extrabold text-neutral-900">Back-office TamCar</h1>
-        <p className="mt-xs text-sm text-neutral-600">
-          Vue temps réel de la plateforme. Les chiffres sont sur la période en cours (jour / semaine / mois calendaire).
-        </p>
+      <div className="flex flex-col gap-md lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <h1 className="text-2xl font-extrabold text-neutral-900">Back-office TamCar</h1>
+          <p className="mt-xs text-sm text-neutral-600">
+            Vue temps réel de la plateforme. Les chiffres sont sur la période en cours (jour / semaine / mois calendaire).
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-sm">
+          <Link
+            href="/admin/banners#nouvelle"
+            className="inline-flex items-center gap-xs rounded-lg bg-primary-500 px-md py-sm text-xs font-bold text-white shadow-sm hover:brightness-110"
+          >
+            + Nouvelle bannière
+          </Link>
+          <Link
+            href="/admin/candidatures"
+            className="inline-flex items-center gap-xs rounded-lg border-2 border-primary-500 bg-white px-md py-sm text-xs font-bold text-primary-700 hover:bg-primary-50"
+          >
+            Voir candidatures
+          </Link>
+        </div>
       </div>
 
       {/* ===== KPI Header ===== */}

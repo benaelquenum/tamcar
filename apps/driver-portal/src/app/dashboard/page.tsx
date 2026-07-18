@@ -155,14 +155,31 @@ export default async function DriverDashboardPage() {
           <TodayProgress progress={progress} />
         )}
 
-        {/* Wallets */}
+        {/* Cash disponible — carte pleine largeur */}
         <section className="mt-lg">
-          <WalletCard
-            label="Cash disponible"
-            value={revenus}
-            highlight
+          <Link
             href="/wallet"
-          />
+            className="block rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 p-lg text-white shadow-glow"
+          >
+            <div className="flex items-baseline justify-between">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-primary-100">
+                  Cash disponible
+                </p>
+                <p className="mt-xs text-xs text-primary-100/90">
+                  Retire sur Mobile Money depuis ton portefeuille
+                </p>
+              </div>
+              <span className="text-3xl" aria-hidden>💵</span>
+            </div>
+            <p
+              className="mt-lg text-4xl font-extrabold"
+              style={{ fontVariantNumeric: 'tabular-nums' }}
+            >
+              {formatFcfa(revenus)}
+              <span className="ml-xs text-lg font-medium text-primary-100/90">FCFA</span>
+            </p>
+          </Link>
         </section>
 
         {/* Gains période */}
