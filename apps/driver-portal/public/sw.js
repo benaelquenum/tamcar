@@ -27,23 +27,20 @@ self.addEventListener('push', (event) => {
     body = '',
     tag,
     url = '/',
-    icon = '/icon-192.png',
-    badge = '/icon-72.png',
     vibrate = [80, 40, 80, 40, 80],
     requireInteraction = true, // chauffeur : alertes persistent
   } = payload;
 
-  event.waitUntil(
-    self.registration.showNotification(title, {
-      body,
-      tag,
-      icon,
-      badge,
-      vibrate,
-      requireInteraction,
-      data: { url },
-    }),
-  );
+  const options = {
+    body,
+    tag,
+    vibrate,
+    requireInteraction,
+    icon: '/logo.svg',
+    data: { url },
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
 });
 
 self.addEventListener('notificationclick', (event) => {
