@@ -1,17 +1,14 @@
 // Supabase Edge Function : send-push
-// Reçoit { profile_id, title, body, url?, tag? } et pousse à toutes les
-// PushSubscriptions du profile via Web Push Protocol (VAPID + AES-GCM).
+// Reçoit { profile_id, title, body, url?, tag?, requireInteraction? } et pousse
+// à toutes les PushSubscriptions du profile via Web Push Protocol (VAPID).
 //
 // Secrets requis :
 //   VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_CONTACT (mailto:...)
 //   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
-//
-// Déploiement : `supabase functions deploy send-push --project-ref <ref>`
 
 // deno-lint-ignore-file no-explicit-any
-import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
-import * as webpush from 'https://esm.sh/web-push@3.6.7?target=deno&bundle';
+import { createClient } from 'npm:@supabase/supabase-js@2.45.0';
+import webpush from 'npm:web-push@3.6.7';
 
 const SB_URL = Deno.env.get('SUPABASE_URL')!;
 const SB_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -21,7 +18,7 @@ const VAPID_CONTACT = Deno.env.get('VAPID_CONTACT') || 'mailto:contact@tamcar.ap
 
 webpush.setVapidDetails(VAPID_CONTACT, VAPID_PUB, VAPID_PRIV);
 
-serve(async (req) => {
+Deno.serve(async (req: Request) => {
   if (req.method !== 'POST') {
     return new Response('Method not allowed', { status: 405 });
   }
@@ -31,6 +28,7 @@ serve(async (req) => {
   } catch {
     return new Response('Invalid JSON', { status: 400 });
   }
+
   const { profile_id, title, body: text, url, tag, requireInteraction } = body ?? {};
   if (!profile_id || !title) {
     return new Response('profile_id and title required', { status: 400 });
@@ -64,11 +62,12 @@ serve(async (req) => {
       }, payload);
       return { id: s.id, ok: true };
     } catch (e: any) {
-      const gone = e?.statusCode === 404 || e?.statusCode === 410;
+      const status = e?.statusCode ?? null;
+      const gone = status === 404 || status === 410;
       if (gone) {
         await admin.from('push_subscriptions').delete().eq('id', s.id);
       }
-      return { id: s.id, ok: false, statusCode: e?.statusCode ?? null, gone };
+      return { id: s.id, ok: false, statusCode: status, gone, message: e?.message ?? String(e) };
     }
   }));
 

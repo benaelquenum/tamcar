@@ -87,10 +87,9 @@ export default async function DriverHistoryPage() {
         <h1 className="mt-lg text-2xl font-extrabold text-neutral-900">Historique</h1>
 
         {/* Stats */}
-        <div className="mt-lg grid grid-cols-3 gap-sm">
+        <div className="mt-lg grid grid-cols-2 gap-sm">
           <StatCard label="Courses" value={completed.length.toString()} />
-          <StatCard label="Cash gagné" value={formatFcfa(totalRevenu)} suffix="F" />
-          <StatCard label="Fonds rachat" value={formatFcfa(totalRachat)} suffix="F" highlight />
+          <StatCard label="Cash gagné" value={formatFcfa(totalRevenu)} suffix="F" highlight />
         </div>
 
         {list.length === 0 ? (

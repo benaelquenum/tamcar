@@ -66,7 +66,7 @@ export default async function ComptePage() {
             href="/dashboard"
             Icon={WalletIcon}
             title="Mes gains"
-            sub="Cash, fonds rachat, progression du jour"
+            sub="Cash, progression du jour, statistiques"
           />
           <ShortcutLink
             href="/history"

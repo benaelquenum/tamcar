@@ -86,7 +86,6 @@ export default async function DriverDashboardPage() {
 
   const w = (wallets ?? []) as WalletRow[];
   const revenus = w.find((x) => x.kind === 'tamcar_revenus')?.balance_fcfa ?? 0;
-  const rachat = w.find((x) => x.kind === 'tamcar_rachat')?.balance_fcfa ?? 0;
 
   const list = (rides ?? []) as RideRow[];
   const weekStart = startOfWeek().toISOString();
@@ -157,26 +156,13 @@ export default async function DriverDashboardPage() {
         )}
 
         {/* Wallets */}
-        <section className="mt-lg grid grid-cols-2 gap-sm">
+        <section className="mt-lg">
           <WalletCard
             label="Cash disponible"
             value={revenus}
             highlight
             href="/wallet"
           />
-          {!isProprietaire && (
-            <WalletCard label="Fonds rachat" value={rachat} gold href="/wallet" />
-          )}
-          {isProprietaire && (
-            <div className="rounded-xl border border-primary-100 bg-primary-50 p-md">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-primary-700">
-                Bonus formule B
-              </p>
-              <p className="mt-xs text-xs text-neutral-800">
-                10% de chaque course, plafonné 100 F, ajouté automatiquement au cash.
-              </p>
-            </div>
-          )}
         </section>
 
         {/* Gains période */}

@@ -530,7 +530,7 @@ export function DriverRideView({ initialRide }: { initialRide: DriverRideForView
             {ride.status === 'completed' && (
               <>
                 <p className="mt-md text-center text-xs text-neutral-500">
-                  Wallet crédité : {formatFcfa(ride.driver_share_fcfa)} F cash + {formatFcfa(ride.driver_rachat_fcfa)} F rachat
+                  Wallet crédité : {formatFcfa(ride.driver_share_fcfa)} F
                 </p>
                 <button
                   type="button"

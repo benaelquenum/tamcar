@@ -27,7 +27,6 @@ export function WalletView({ wallets, transactions, isDriver, driverApplicationT
 
   const creditWallet = wallets.find((w) => w.kind === 'tamcar_credit');
   const revenusWallet = wallets.find((w) => w.kind === 'tamcar_revenus');
-  const rachatWallet = wallets.find((w) => w.kind === 'tamcar_rachat');
 
   return (
     <main className="relative min-h-dvh bg-white">
@@ -70,10 +69,6 @@ export function WalletView({ wallets, transactions, isDriver, driverApplicationT
               onAction={() => setModal('withdraw')}
               disabled={revenusWallet.balance_fcfa < 500}
             />
-          )}
-          {/* Chauffeur formule A uniquement : fonds rachat */}
-          {isDriver && driverApplicationType === 'cession' && rachatWallet && (
-            <BigWalletCard wallet={rachatWallet} note="Débloqué au bout de 24 mois de service" />
           )}
         </div>
 

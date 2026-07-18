@@ -18,10 +18,22 @@ export default async function WalletPage() {
   const applicationType =
     (driver as { application_type: 'cession' | 'proprietaire' } | null)?.application_type ?? null;
 
+  // Le chauffeur ne voit que ce qui le concerne : ni ligne dealer, ni ligne rachat,
+  // ni ligne de la contrepartie du rendu monnaie.
+  const HIDDEN_FOR_DRIVER = new Set<string>([
+    'dealer_share_credit',
+    'rachat_credit',
+    'change_return_in',   // c'est le crédit côté client, ne devrait pas être là mais safe
+  ]);
+  // On retire aussi le wallet rachat des cards.
+  const visibleWallets = ((wallets ?? []) as Wallet[]).filter((w) => w.kind !== 'tamcar_rachat');
+  const visibleTx = ((transactions ?? []) as WalletTransaction[])
+    .filter((tx) => !HIDDEN_FOR_DRIVER.has(tx.type) && tx.wallet_kind !== 'tamcar_rachat');
+
   return (
     <WalletView
-      wallets={(wallets ?? []) as Wallet[]}
-      transactions={(transactions ?? []) as WalletTransaction[]}
+      wallets={visibleWallets}
+      transactions={visibleTx}
       isDriver
       driverApplicationType={applicationType}
     />
