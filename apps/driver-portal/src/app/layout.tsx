@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Sora } from 'next/font/google';
 import './globals.css';
+import { AudioUnlockBanner } from '@/components/AudioUnlockBanner';
 
 const sora = Sora({
   subsets: ['latin'],
@@ -40,7 +41,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr" className={sora.variable}>
-      <body className="font-sans antialiased">{children}</body>
+      <body className="font-sans antialiased">
+        <AudioUnlockBanner label="Activer les alertes sonores" />
+        {children}
+      </body>
     </html>
   );
 }
