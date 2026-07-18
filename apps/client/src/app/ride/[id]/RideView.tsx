@@ -288,6 +288,39 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
     // Sinon → la modale d'attente s'affiche grâce à completion_requested_at
   }
 
+  // Unlock audio au premier gesture user : les navigateurs bloquent play()
+  // sans interaction récente (autoplay policy). Sur le premier click/touch,
+  // on force un mini play() muet qui autorise les lectures futures pour
+  // toute la session.
+  useEffect(() => {
+    let unlocked = false;
+    const unlock = () => {
+      if (unlocked) return;
+      unlocked = true;
+      try {
+        const a = new Audio();
+        a.muted = true;
+        a.play().catch(() => undefined);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const AudioCtx: typeof AudioContext | undefined =
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          window.AudioContext || (window as any).webkitAudioContext;
+        if (AudioCtx) {
+          const ctx = new AudioCtx();
+          if (ctx.state === 'suspended') ctx.resume().catch(() => undefined);
+        }
+      } catch { /* ignore */ }
+    };
+    document.addEventListener('pointerdown', unlock, { once: true });
+    document.addEventListener('touchstart', unlock, { once: true });
+    document.addEventListener('keydown', unlock, { once: true });
+    return () => {
+      document.removeEventListener('pointerdown', unlock);
+      document.removeEventListener('touchstart', unlock);
+      document.removeEventListener('keydown', unlock);
+    };
+  }, []);
+
   // Auto-accept : quand completion_auto_accept_at expire, on force la fin.
   // Le chauffeur fait la même chose de son côté (RPC ouvert aux deux depuis
   // 20260717220000_auto_accept_dual_actor.sql) — le premier arrivé gagne,
@@ -442,6 +475,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
       arrived: { file: '/sounds/driver-arrived.mp3', fallback: 'arrived', loopMs: 10_000 },
       in_progress: { file: '/sounds/ride-started.mp3', fallback: 'started' },
       completed: { file: '/sounds/ride-completed.mp3', fallback: 'completed' },
+      cancelled_by_driver: { file: '/sounds/driver-cancelled.mp3', fallback: 'completed' },
     };
     const entry = soundByStatus[ride.status];
     if (!entry) return;

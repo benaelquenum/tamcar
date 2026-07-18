@@ -176,7 +176,7 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
     try {
-      audioEl = new Audio('/sounds/alert.mp3');
+      audioEl = new Audio('/sounds/new-request.mp3');
       audioEl.volume = 0.7;
       audioEl.preload = 'auto';
     } catch {
@@ -274,6 +274,12 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
     startAccept(async () => {
       try {
         await acceptRideAction(rideId);
+        // Feedback sonore : le gesture (click) est frais → autoplay OK
+        try {
+          const a = new Audio('/sounds/request-accepted.mp3');
+          a.volume = 0.85;
+          a.play().catch(() => undefined);
+        } catch { /* ignore */ }
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Erreur');
       } finally {

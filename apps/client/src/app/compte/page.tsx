@@ -55,7 +55,9 @@ export default async function ComptePage() {
             Mes informations
           </h2>
           <AccountForm
+            profileId={profile.id}
             initialFullName={profile.full_name}
+            initialAvatarUrl={profile.avatar_url}
             userEmail={user.email ?? ''}
             userPhone={profile.phone ?? ''}
           />

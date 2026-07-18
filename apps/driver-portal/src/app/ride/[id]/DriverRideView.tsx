@@ -47,6 +47,18 @@ export type DriverRideForView = {
   completion_auto_accept_at: string | null;
 };
 
+// Joue un mp3 court. En cas de blocage autoplay ou fichier manquant :
+// silencieux (le fallback vibration + bandeau visuel a déjà été déclenché).
+function playSound(path: string, volume = 0.85): void {
+  try {
+    const el = new Audio(path);
+    el.volume = volume;
+    el.play().catch(() => undefined);
+  } catch {
+    /* ignore */
+  }
+}
+
 function formatFcfa(n: number): string {
   return n.toLocaleString('fr-FR').replace(/,/g, ' ');
 }
@@ -128,7 +140,7 @@ export function DriverRideView({ initialRide }: { initialRide: DriverRideForView
   }, [ride.id, ride.status]);
 
   // Realtime : écoute updates ride pour rester en sync si annulée client par exemple.
-  // Bip + vibration si la destination ou le prix changent (le client a réaménagé).
+  // Son + vibration sur les transitions clés.
   useEffect(() => {
     const channel = supabaseBrowser
       .channel(`driver-ride:${ride.id}`)
@@ -141,32 +153,19 @@ export function DriverRideView({ initialRide }: { initialRide: DriverRideForView
             const routeChanged =
               (next.dropoff_address && next.dropoff_address !== prev.dropoff_address) ||
               (typeof next.price_total_fcfa === 'number' && next.price_total_fcfa !== prev.price_total_fcfa);
+            const statusChanged = next.status && next.status !== prev.status;
             if (routeChanged) {
-              try {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const AudioCtx: typeof AudioContext | undefined =
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  window.AudioContext || (window as any).webkitAudioContext;
-                if (AudioCtx) {
-                  const ctx = new AudioCtx();
-                  [660, 880].forEach((freq, i) => {
-                    const osc = ctx.createOscillator();
-                    const gain = ctx.createGain();
-                    osc.type = 'sine';
-                    osc.frequency.value = freq;
-                    const t0 = ctx.currentTime + i * 0.18;
-                    gain.gain.setValueAtTime(0, t0);
-                    gain.gain.linearRampToValueAtTime(0.25, t0 + 0.015);
-                    gain.gain.linearRampToValueAtTime(0, t0 + 0.14);
-                    osc.connect(gain);
-                    gain.connect(ctx.destination);
-                    osc.start(t0);
-                    osc.stop(t0 + 0.16);
-                  });
-                  setTimeout(() => ctx.close().catch(() => undefined), 700);
-                }
-                if (navigator.vibrate) navigator.vibrate([30, 60, 30]);
-              } catch { /* silencieux */ }
+              playSound('/sounds/route-updated.mp3');
+              if (navigator.vibrate) navigator.vibrate([30, 60, 30]);
+            }
+            if (statusChanged) {
+              if (next.status === 'cancelled_by_client') {
+                playSound('/sounds/client-cancelled.mp3');
+                if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
+              } else if (next.status === 'completed') {
+                playSound('/sounds/ride-completed.mp3');
+                if (navigator.vibrate) navigator.vibrate(60);
+              }
             }
             return { ...prev, ...next };
           });
