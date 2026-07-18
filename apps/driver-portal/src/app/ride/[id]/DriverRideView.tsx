@@ -197,15 +197,32 @@ export function DriverRideView({ initialRide }: { initialRide: DriverRideForView
       setCompletionRemaining(remaining);
       if (remaining === 0 && !autoAcceptFiredRef.current) {
         autoAcceptFiredRef.current = true;
-        const { error } = await supabaseBrowser.rpc('auto_accept_completion', {
+        // eslint-disable-next-line no-console
+        console.log('[auto_accept_completion] firing for ride', ride.id);
+        const { data, error } = await supabaseBrowser.rpc('auto_accept_completion', {
           ride_id: ride.id,
         });
         if (error) {
-          // Si un autre acteur (le client) a déjà déclenché juste avant,
-          // on ignore l'erreur "déjà completed"
+          // eslint-disable-next-line no-console
+          console.error('[auto_accept_completion] error:', error.message);
           if (!/completed|introuvable/i.test(error.message)) {
             setErr(error.message);
           }
+          // On refetch quand même : peut-être que le client a déjà finalisé
+          // et le realtime va prendre le relai — sinon on retente au tour suivant.
+          autoAcceptFiredRef.current = false;
+        } else {
+          // eslint-disable-next-line no-console
+          console.log('[auto_accept_completion] success:', data);
+        }
+        // Sync forcé : le realtime peut avoir raté l'événement
+        const { data: fresh } = await supabaseBrowser
+          .from('rides_view')
+          .select('status')
+          .eq('id', ride.id)
+          .single();
+        if (fresh?.status) {
+          setRide((prev) => ({ ...prev, status: fresh.status as DriverRideForView['status'] }));
         }
       }
     };

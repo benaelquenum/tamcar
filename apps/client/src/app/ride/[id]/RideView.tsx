@@ -737,8 +737,10 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
             </div>
           )}
 
-          {/* Card chauffeur assigné */}
-          {hasDriver && (ride.driver_full_name || ride.vehicle_plate) && (
+          {/* Card chauffeur assigné : visible dès qu'un driver_id existe.
+              Le nom/photo peuvent arriver un peu plus tard via realtime — on
+              affiche 'Chauffeur' + Avatar initiale en attendant. */}
+          {hasDriver && (
             <div className="mx-lg mb-md rounded-xl bg-neutral-100 p-md">
               <div className="flex items-center gap-md">
                 <Avatar
