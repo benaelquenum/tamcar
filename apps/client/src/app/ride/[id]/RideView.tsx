@@ -14,6 +14,7 @@ import { SUPPORT_PHONE, SUPPORT_PHONE_DISPLAY } from '@/lib/support';
 import { AddStopModal } from './AddStopModal';
 import { StopsListClient } from './StopsListClient';
 import { isAccurateEnough, SmoothingBuffer } from '@/lib/geo-precision';
+import { SosButton } from '@/components/SosButton';
 
 type RideStopRow = {
   id: string;
@@ -992,6 +993,11 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
             )}
           </div>
         </div>
+      )}
+
+      {/* SOS flottant client — visible dès qu'il y a une course active */}
+      {['matched','arrived','in_progress'].includes(ride.status) && (
+        <SosButton rideId={ride.id} />
       )}
 
       {/* Modale timeout : aucun TamCar trouvé après 2 min de recherche */}

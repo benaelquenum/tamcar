@@ -14,6 +14,8 @@ import { isAccurateEnough, SmoothingBuffer } from '@/lib/geo-precision';
 import { SUPPORT_PHONE, SUPPORT_PHONE_DISPLAY } from '@/lib/support';
 import { markArrivedAction, startRideAction } from './actions';
 import { StopsPanel } from './StopsPanel';
+import { ReturnChangeModal } from './ReturnChangeModal';
+import { SosButton } from '@/components/SosButton';
 
 type RideStatus =
   | 'requested'
@@ -191,6 +193,7 @@ export function DriverRideView({ initialRide }: { initialRide: DriverRideForView
   }, [ride.id]);
 
   const [arrivalConfirm, setArrivalConfirm] = useState<{ distance: number } | null>(null);
+  const [returnChangeOpen, setReturnChangeOpen] = useState(false);
   const [acceptingCompletion, setAcceptingCompletion] = useState(false);
   const [completionRemaining, setCompletionRemaining] = useState<number>(20);
   const autoAcceptFiredRef = useRef(false);
@@ -525,9 +528,18 @@ export function DriverRideView({ initialRide }: { initialRide: DriverRideForView
             )}
 
             {ride.status === 'completed' && (
-              <p className="mt-md text-center text-xs text-neutral-500">
-                Wallet crédité : {formatFcfa(ride.driver_share_fcfa)} F cash + {formatFcfa(ride.driver_rachat_fcfa)} F rachat
-              </p>
+              <>
+                <p className="mt-md text-center text-xs text-neutral-500">
+                  Wallet crédité : {formatFcfa(ride.driver_share_fcfa)} F cash + {formatFcfa(ride.driver_rachat_fcfa)} F rachat
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setReturnChangeOpen(true)}
+                  className="mt-md w-full rounded-xl border-2 border-primary-500 py-md text-sm font-bold text-primary-700 hover:bg-primary-50"
+                >
+                  Rendre la monnaie sur wallet client
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -590,6 +602,20 @@ export function DriverRideView({ initialRide }: { initialRide: DriverRideForView
             </div>
           </div>
         </div>
+      )}
+
+      {/* Rendre la monnaie */}
+      <ReturnChangeModal
+        open={returnChangeOpen}
+        onClose={() => setReturnChangeOpen(false)}
+        rideId={ride.id}
+        ridePrice={ride.price_total_fcfa}
+        onDone={() => undefined}
+      />
+
+      {/* SOS flottant côté chauffeur */}
+      {['matched','arrived','in_progress'].includes(ride.status) && (
+        <SosButton rideId={ride.id} />
       )}
 
       {/* Modal demande de fin de course (envoyée par le client) */}
