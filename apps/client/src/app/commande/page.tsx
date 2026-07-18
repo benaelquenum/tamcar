@@ -124,10 +124,16 @@ export default function CommandePage() {
   }, [pickup, dropoff, withAc]);
 
   async function handleMapClick(lngLat: [number, number]) {
+    // Debug clic carte — visible dans F12 console si Terence a un souci
+    // eslint-disable-next-line no-console
+    console.log('[map click]', { lngLat, pickingMode });
     if (!pickingMode) return;
 
+    const target = pickingMode; // capture avant l'await pour éviter une race si l'user annule
     setCandidate(lngLat);
     const feature = await reverseGeocode(lngLat[0], lngLat[1]);
+    // eslint-disable-next-line no-console
+    console.log('[reverseGeocode result]', feature);
     const place: SelectedAddress = feature
       ? { place_name: feature.place_name, center: feature.center }
       : {
@@ -135,19 +141,28 @@ export default function CommandePage() {
           center: lngLat,
         };
 
-    if (pickingMode === 'pickup') {
+    if (target === 'pickup') {
       setPickup(place);
       setPickingMode(null);
       setCandidate(null);
-    } else if (pickingMode === 'dropoff') {
+    } else if (target === 'dropoff') {
       setDropoff(place);
       setPickingMode(null);
       setCandidate(null);
-    } else if (pickingMode === 'suggest') {
+    } else if (target === 'suggest') {
       setSuggestCenter(lngLat);
       setSuggestOpen(true);
       setPickingMode(null);
-      // Ne pas clear candidate — reste visible pendant que user remplit le form
+    }
+    // Scroll doux vers le champ concerné pour que le user voie que sa
+    // sélection a été prise en compte
+    if (target === 'pickup' || target === 'dropoff') {
+      setTimeout(() => {
+        document.querySelector('input[type="text"]')?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      }, 100);
     }
   }
 
