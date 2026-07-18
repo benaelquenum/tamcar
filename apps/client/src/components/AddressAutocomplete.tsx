@@ -6,7 +6,7 @@ import {
   COTONOU_CENTER,
   geocode,
   popularPlaceToFeature,
-  reverseGeocode,
+  reverseGeocode as mapboxReverseGeocode,
   type GeocodeFeature,
 } from '@/lib/mapbox';
 import {
@@ -16,6 +16,11 @@ import {
   searchPlaces,
   type RecentAddress,
 } from '@/lib/places';
+import {
+  googlePlacesSearch,
+  googlePlacesConfigured,
+  googleReverseGeocode,
+} from '@/lib/google-places';
 import { CheckIcon, CrosshairIcon, PinIcon } from './Icon';
 
 export type SelectedAddress = {
@@ -54,7 +59,7 @@ export function AddressAutocomplete({
 }: Props) {
   const [query, setQuery] = useState(value?.place_name || '');
   const [results, setResults] = useState<
-    Array<GeocodeFeature & { origin: 'tamcar' | 'mapbox'; verified?: boolean }>
+    Array<GeocodeFeature & { origin: 'tamcar' | 'google' | 'mapbox'; verified?: boolean }>
   >([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -94,15 +99,24 @@ export function AddressAutocomplete({
         verified: p.verified,
       }));
 
-      // 2. Fallback Mapbox si peu de résultats locaux
+      // 2. Fallback : Google Places (New) si configuré — meilleur sur POI Bénin.
+      //    Sinon Mapbox comme avant.
       let combined = localFeatures;
       if (localFeatures.length < 5) {
-        const mapbox = await geocode(query, COTONOU_CENTER);
         const seenIds = new Set(localFeatures.map((f) => f.id));
-        const mapboxFeatures = mapbox
-          .filter((f) => !seenIds.has(f.id))
-          .map((f) => ({ ...f, origin: 'mapbox' as const, verified: false }));
-        combined = [...localFeatures, ...mapboxFeatures].slice(0, 8);
+        if (googlePlacesConfigured()) {
+          const google = await googlePlacesSearch(query, COTONOU_CENTER, 8);
+          const googleFeatures = google
+            .filter((f) => !seenIds.has(f.id))
+            .map((f) => ({ ...f, origin: 'google' as const, verified: false }));
+          combined = [...localFeatures, ...googleFeatures].slice(0, 8);
+        } else {
+          const mapbox = await geocode(query, COTONOU_CENTER);
+          const mapboxFeatures = mapbox
+            .filter((f) => !seenIds.has(f.id))
+            .map((f) => ({ ...f, origin: 'mapbox' as const, verified: false }));
+          combined = [...localFeatures, ...mapboxFeatures].slice(0, 8);
+        }
       }
 
       setResults(combined);
@@ -125,7 +139,9 @@ export function AddressAutocomplete({
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const { longitude, latitude } = pos.coords;
-        const feature = await reverseGeocode(longitude, latitude);
+        const feature =
+          (googlePlacesConfigured() ? await googleReverseGeocode(longitude, latitude) : null) ||
+          (await mapboxReverseGeocode(longitude, latitude));
         const selected: SelectedAddress = feature
           ? { place_name: feature.place_name, center: feature.center }
           : {
@@ -279,6 +295,11 @@ export function AddressAutocomplete({
                     title="Lieu vérifié par TamCar"
                   >
                     <CheckIcon className="h-2.5 w-2.5" strokeWidth={3} />
+                  </span>
+                )}
+                {r.origin === 'google' && !r.verified && (
+                  <span className="mt-xs text-[10px] font-medium text-neutral-400">
+                    Google
                   </span>
                 )}
                 {r.origin === 'mapbox' && !r.verified && (
