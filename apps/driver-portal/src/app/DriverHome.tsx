@@ -13,6 +13,7 @@ import {
 } from '@/components/Icon';
 import { Map } from '@/components/Map';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+import { isAccurateEnough } from '@/lib/geo-precision';
 import { acceptRideAction } from './actions';
 
 type PendingRide = {
@@ -56,16 +57,25 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
   const [accepting, startAccept] = useTransition();
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
 
-  // Récupère la position GPS actuelle
+  // Récupère la position GPS actuelle en rejetant les fixes imprécis
+  // (accuracy > 50 m). Retry une fois avant fallback.
   const getMyPosition = useCallback(async (): Promise<[number, number] | null> => {
     if (!('geolocation' in navigator)) return null;
-    return new Promise((resolve) => {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => resolve([pos.coords.longitude, pos.coords.latitude]),
-        () => resolve(null),
-        { enableHighAccuracy: true, timeout: 15000 },
-      );
-    });
+    const readOnce = () =>
+      new Promise<GeolocationPosition | null>((resolve) => {
+        navigator.geolocation.getCurrentPosition(
+          resolve,
+          () => resolve(null),
+          { enableHighAccuracy: true, timeout: 15000 },
+        );
+      });
+    let pos = await readOnce();
+    if (pos && !isAccurateEnough(pos)) {
+      // Retente une fois pour laisser le GPS converger
+      pos = await readOnce();
+    }
+    if (!pos) return null;
+    return [pos.coords.longitude, pos.coords.latitude];
   }, []);
 
   async function goOnline() {

@@ -10,6 +10,7 @@ import { Map } from '@/components/Map';
 import { RatingModal } from '@/components/RatingModal';
 import { getRoute } from '@/lib/mapbox';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+import { isAccurateEnough, SmoothingBuffer } from '@/lib/geo-precision';
 import { SUPPORT_PHONE, SUPPORT_PHONE_DISPLAY } from '@/lib/support';
 import { markArrivedAction, startRideAction } from './actions';
 import { StopsPanel } from './StopsPanel';
@@ -89,12 +90,24 @@ export function DriverRideView({ initialRide }: { initialRide: DriverRideForView
     return [ride.pickup_lng, ride.pickup_lat];
   }, [ride.status, ride.pickup_lat, ride.pickup_lng, ride.dropoff_lat, ride.dropoff_lng]);
 
-  // Get my position + heartbeat
+  // Get my position + heartbeat.
+  // Filtre les fixes imprécis (accuracy > 50 m) et lisse sur 3 samples
+  // (poll toutes les 15 s, un buffer plus large créerait trop d'inertie).
+  const smoothingBufferRef = useRef(new SmoothingBuffer(3));
   const getMyPos = useCallback(async (): Promise<[number, number] | null> => {
     if (!('geolocation' in navigator)) return null;
     return new Promise((resolve) => {
       navigator.geolocation.getCurrentPosition(
-        (p) => resolve([p.coords.longitude, p.coords.latitude]),
+        (p) => {
+          if (!isAccurateEnough(p)) return resolve(null);
+          const smoothed = smoothingBufferRef.current.push({
+            lng: p.coords.longitude,
+            lat: p.coords.latitude,
+            accuracy: p.coords.accuracy,
+            ts: p.timestamp,
+          });
+          resolve(smoothed);
+        },
         () => resolve(null),
         { enableHighAccuracy: true, timeout: 15000 },
       );

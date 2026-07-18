@@ -13,6 +13,7 @@ import { supabaseBrowser } from '@/lib/supabase-browser';
 import { SUPPORT_PHONE, SUPPORT_PHONE_DISPLAY } from '@/lib/support';
 import { AddStopModal } from './AddStopModal';
 import { StopsListClient } from './StopsListClient';
+import { isAccurateEnough, SmoothingBuffer } from '@/lib/geo-precision';
 
 type RideStopRow = {
   id: string;
@@ -443,15 +444,26 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ride.id, ride.status]);
 
-  // Geolocation live du client — actif pendant matched/arrived/in_progress
+  // Geolocation live du client — actif pendant matched/arrived/in_progress.
+  // Filtre les fixes imprécis (accuracy > 50 m) et lisse les 5 derniers.
   useEffect(() => {
     if (!['matched', 'arrived', 'in_progress'].includes(ride.status)) {
       setMyLocation(null);
       return;
     }
     if (typeof navigator === 'undefined' || !navigator.geolocation) return;
+    const buffer = new SmoothingBuffer(5);
     const watchId = navigator.geolocation.watchPosition(
-      (pos) => setMyLocation([pos.coords.longitude, pos.coords.latitude]),
+      (pos) => {
+        if (!isAccurateEnough(pos)) return;
+        const smoothed = buffer.push({
+          lng: pos.coords.longitude,
+          lat: pos.coords.latitude,
+          accuracy: pos.coords.accuracy,
+          ts: pos.timestamp,
+        });
+        setMyLocation(smoothed);
+      },
       () => undefined,
       { enableHighAccuracy: true, maximumAge: 3000, timeout: 15000 },
     );
