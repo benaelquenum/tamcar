@@ -13,7 +13,7 @@ export default async function DriverRideDetail({ params }: { params: { id: strin
   const { data: ride, error } = await supabase
     .from('rides_view')
     .select(
-      'id, status, driver_id, pickup_address, pickup_lat, pickup_lng, dropoff_address, dropoff_lat, dropoff_lng, distance_km, duration_min, price_total_fcfa, driver_share_fcfa, driver_rachat_fcfa, client_id, completion_requested_at, completion_recomputed_price_fcfa, completion_distance_from_dropoff_m, completion_auto_accept_at',
+      'id, status, driver_id, vehicle_id, pickup_address, pickup_lat, pickup_lng, dropoff_address, dropoff_lat, dropoff_lng, distance_km, duration_min, price_total_fcfa, driver_share_fcfa, driver_rachat_fcfa, client_id, completion_requested_at, completion_recomputed_price_fcfa, completion_distance_from_dropoff_m, completion_auto_accept_at',
     )
     .eq('id', params.id)
     .single();
@@ -26,6 +26,17 @@ export default async function DriverRideDetail({ params }: { params: { id: strin
     .select('full_name, phone, avatar_url')
     .eq('id', ride.client_id)
     .single();
+
+  // Catégorie du véhicule qui fait la course (pour le pin sur la carte)
+  let vehicleCategory: string | null = null;
+  if (ride.vehicle_id) {
+    const { data: vehicle } = await supabase
+      .from('vehicles')
+      .select('category')
+      .eq('id', ride.vehicle_id)
+      .single();
+    vehicleCategory = vehicle?.category ?? null;
+  }
 
   const initialRide: DriverRideForView = {
     id: ride.id,
@@ -48,6 +59,7 @@ export default async function DriverRideDetail({ params }: { params: { id: strin
     completion_recomputed_price_fcfa: ride.completion_recomputed_price_fcfa ?? null,
     completion_distance_from_dropoff_m: ride.completion_distance_from_dropoff_m ?? null,
     completion_auto_accept_at: ride.completion_auto_accept_at ?? null,
+    vehicle_category: vehicleCategory,
   };
 
   return <DriverRideView initialRide={initialRide} />;

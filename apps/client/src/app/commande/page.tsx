@@ -9,7 +9,15 @@ import { Map } from '@/components/Map';
 import { SuggestPlaceModal } from '@/components/SuggestPlaceModal';
 import { getRoute, reverseGeocode, type RouteResult } from '@/lib/mapbox';
 import { computePrice, type PriceQuote, type VehicleCategory } from '@/lib/pricing';
+import { supabaseBrowser } from '@/lib/supabase-browser';
 import { createRideAction } from './actions';
+
+type AvailabilityRow = {
+  category: VehicleCategory;
+  online_count: number;
+  nearest_driver_distance_m: number | null;
+  eta_min: number | null;
+};
 
 type CategoryDef = {
   id: VehicleCategory;
@@ -38,6 +46,9 @@ export default function CommandePage() {
   const [route, setRoute] = useState<RouteResult | null>(null);
   const [prices, setPrices] = useState<Record<VehicleCategory, PriceQuote | null>>(
     {} as Record<VehicleCategory, PriceQuote | null>,
+  );
+  const [availability, setAvailability] = useState<Record<VehicleCategory, AvailabilityRow | null>>(
+    {} as Record<VehicleCategory, AvailabilityRow | null>,
   );
   const [selectedCat, setSelectedCat] = useState<VehicleCategory>('essentiel');
   const [loading, setLoading] = useState(false);
@@ -120,6 +131,33 @@ export default function CommandePage() {
 
     return () => { cancelled = true; };
   }, [pickup, dropoff]);
+
+  // Dispo chauffeurs par catégorie autour du pickup — refresh toutes les 30 s
+  useEffect(() => {
+    if (!pickup) {
+      setAvailability({} as Record<VehicleCategory, AvailabilityRow | null>);
+      return;
+    }
+    let cancelled = false;
+
+    async function fetchAvailability() {
+      const { data } = await supabaseBrowser.rpc('drivers_availability_by_category', {
+        p_lat: pickup!.center[1],
+        p_lng: pickup!.center[0],
+        p_radius_km: 10,
+      });
+      if (cancelled || !Array.isArray(data)) return;
+      const byId = {} as Record<VehicleCategory, AvailabilityRow | null>;
+      for (const row of data as AvailabilityRow[]) {
+        byId[row.category] = row;
+      }
+      setAvailability(byId);
+    }
+
+    fetchAvailability();
+    const interval = setInterval(fetchAvailability, 30_000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, [pickup]);
 
   async function handleMapClick(lngLat: [number, number]) {
     // Debug clic carte — visible dans F12 console si Terence a un souci
@@ -263,6 +301,7 @@ export default function CommandePage() {
                   key={cat.id}
                   category={cat}
                   price={prices[cat.id] ?? null}
+                  availability={availability[cat.id] ?? null}
                   selected={selectedCat === cat.id}
                   onSelect={() => setSelectedCat(cat.id)}
                   climateLabel={
@@ -320,10 +359,11 @@ export default function CommandePage() {
 }
 
 function CategoryChoice({
-  category, price, selected, onSelect, climateLabel,
+  category, price, availability, selected, onSelect, climateLabel,
 }: {
   category: CategoryDef;
   price: PriceQuote | null;
+  availability: AvailabilityRow | null;
   selected: boolean;
   onSelect: () => void;
   climateLabel: string;
@@ -357,6 +397,24 @@ function CategoryChoice({
           <SnowflakeIcon className="h-3 w-3" strokeWidth={2.5} />
           {climateLabel}
         </p>
+        {availability && (
+          <p className="mt-xs inline-flex items-center gap-xs text-[11px] font-semibold">
+            {availability.online_count > 0 ? (
+              <>
+                <span className="relative grid h-1.5 w-1.5 place-items-center">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary-500/60" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary-500" />
+                </span>
+                <span className="text-primary-700" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {availability.online_count} dispo
+                  {availability.eta_min != null ? ` · ~${availability.eta_min} min` : ''}
+                </span>
+              </>
+            ) : (
+              <span className="text-neutral-400">Aucun chauffeur à proximité</span>
+            )}
+          </p>
+        )}
         {price?.is_corridor && (
           <p className="mt-xs text-xs font-semibold text-primary-500">
             Prix fixe corridor

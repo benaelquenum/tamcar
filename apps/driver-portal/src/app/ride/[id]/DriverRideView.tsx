@@ -48,6 +48,7 @@ export type DriverRideForView = {
   completion_recomputed_price_fcfa: number | null;
   completion_distance_from_dropoff_m: number | null;
   completion_auto_accept_at: string | null;
+  vehicle_category: string | null;
 };
 
 // Joue un mp3 court. En cas de blocage autoplay ou fichier manquant :
@@ -367,7 +368,7 @@ export function DriverRideView({ initialRide }: { initialRide: DriverRideForView
         <Map
           pickup={[ride.pickup_lng, ride.pickup_lat]}
           dropoff={ride.status === 'in_progress' ? [ride.dropoff_lng, ride.dropoff_lat] : undefined}
-          assignedDriver={driverPos ? { driver_id: 'me', lng: driverPos[0], lat: driverPos[1] } : null}
+          assignedDriver={driverPos ? { driver_id: 'me', lng: driverPos[0], lat: driverPos[1], category: ride.vehicle_category ?? undefined } : null}
           route={routeGeo}
           autoFit={false}
           className="h-full w-full"
