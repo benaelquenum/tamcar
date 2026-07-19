@@ -47,12 +47,37 @@ body {
 }
 .tc-driver-pin svg { width: 14px; height: 14px; }
 
+.tc-driver-pin.moto {
+  background: linear-gradient(135deg, #F97316, #EA580C);
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.55);
+}
+.tc-driver-pin.tricycle {
+  background: linear-gradient(135deg, #A855F7, #7E22CE);
+  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.55);
+}
+.tc-driver-pin.confort {
+  background: linear-gradient(135deg, #D97706, #B45309);
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.55);
+}
+
 .tc-driver-pin.assigned {
   width: 38px;
   height: 38px;
   background: linear-gradient(135deg, #10B981, #059669);
   border-width: 3px;
   box-shadow: 0 4px 14px rgba(16, 185, 129, 0.6);
+}
+.tc-driver-pin.moto.assigned {
+  background: linear-gradient(135deg, #F97316, #EA580C);
+  box-shadow: 0 4px 14px rgba(249, 115, 22, 0.65);
+}
+.tc-driver-pin.tricycle.assigned {
+  background: linear-gradient(135deg, #A855F7, #7E22CE);
+  box-shadow: 0 4px 14px rgba(168, 85, 247, 0.65);
+}
+.tc-driver-pin.confort.assigned {
+  background: linear-gradient(135deg, #D97706, #B45309);
+  box-shadow: 0 4px 14px rgba(217, 119, 6, 0.65);
 }
 .tc-driver-pin.assigned svg { width: 20px; height: 20px; }
 

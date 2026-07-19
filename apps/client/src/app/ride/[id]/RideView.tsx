@@ -55,7 +55,8 @@ export type RideForView = {
   status: RideStatus;
   payment_method: string | null;
   requested_at: string;
-  requested_category?: 'essentiel' | 'confort' | null;
+  requested_category?: 'moto' | 'tricycle' | 'essentiel' | 'confort' | null;
+  vehicle_category?: string | null;
   downgrade_accepted_at?: string | null;
   matched_at?: string | null;
   started_at?: string | null;
@@ -77,7 +78,7 @@ export type RideForView = {
   vehicle_color?: string | null;
 };
 
-type NearbyDriverRow = { driver_id: string; lat: number; lng: number };
+type NearbyDriverRow = { driver_id: string; lat: number; lng: number; category?: string };
 
 const STATUS_META: Record<RideStatus, { title: string; sub: string; color: string }> = {
   requested: {
@@ -172,6 +173,9 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
     fee_fcfa: number;
     reason_code: string;
     driver_still_busy_elsewhere: boolean;
+    is_driver_fault: boolean;
+    driver_fault_evidence: string | null;
+    will_be_disputed: boolean;
   } | null>(null);
   const [completing, setCompleting] = useState(false);
   const [completeError, setCompleteError] = useState<string | null>(null);
@@ -203,17 +207,24 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
   } | null>(null);
 
   async function openCancelConfirm() {
-    // Charge le montant estimé pour affichage transparent
     setCancelPreview(null);
     setCancelConfirm(true);
+    await fetchCancelPreview(null);
+  }
+
+  async function fetchCancelPreview(userReason: string | null) {
     const { data } = await supabaseBrowser.rpc('cancellation_fee_preview', {
       p_ride_id: ride.id,
+      p_user_reason: userReason,
     });
     if (Array.isArray(data) && data[0]) {
       setCancelPreview(data[0] as {
         fee_fcfa: number;
         reason_code: string;
         driver_still_busy_elsewhere: boolean;
+        is_driver_fault: boolean;
+        driver_fault_evidence: string | null;
+        will_be_disputed: boolean;
       });
     }
   }
@@ -720,8 +731,11 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
         <Map
           pickup={pickupCoord}
           dropoff={dropoffCoord}
-          driversNearby={isWaiting ? nearbyDrivers : []}
-          assignedDriver={hasDriver && driverCoord ? { driver_id: ride.driver_id!, lng: driverCoord[0], lat: driverCoord[1] } : null}
+          driversNearby={isWaiting
+            ? nearbyDrivers.filter((d) => !ride.requested_category || d.category === ride.requested_category)
+            : []
+          }
+          assignedDriver={hasDriver && driverCoord ? { driver_id: ride.driver_id!, lng: driverCoord[0], lat: driverCoord[1], category: ride.vehicle_category ?? ride.requested_category ?? undefined } : null}
           clientLocation={myLocation}
           pickupPulse={isWaiting}
           autoFit={isWaiting}
@@ -768,20 +782,35 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                 <p className="text-lg font-extrabold leading-tight">{meta.title}</p>
                 {meta.sub && <p className="text-xs text-white/90">{meta.sub}</p>}
               </div>
-              {isWaiting && (
-                <div className="flex-none text-right">
-                  <p className="text-2xl font-extrabold leading-none" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                    {nearbyDrivers.length}
-                  </p>
-                  <p className="text-[10px] leading-tight text-white/80">
-                    {nearbyDrivers.length === 0
-                      ? 'chauffeur dans 10 km'
-                      : nearbyDrivers.length > 1
-                        ? 'chauffeurs dans 10 km'
-                        : 'chauffeur dans 10 km'}
-                  </p>
-                </div>
-              )}
+              {isWaiting && (() => {
+                const matchingCat = ride.requested_category;
+                const matching = matchingCat
+                  ? nearbyDrivers.filter((d) => d.category === matchingCat)
+                  : nearbyDrivers;
+                const other = nearbyDrivers.length - matching.length;
+                const catName = matchingCat
+                  ? (matchingCat === 'moto' ? 'Moto'
+                    : matchingCat === 'tricycle' ? 'Tricycle'
+                    : matchingCat === 'essentiel' ? 'Essentiel'
+                    : matchingCat === 'confort' ? 'Confort'
+                    : String(matchingCat))
+                  : 'véhicule';
+                return (
+                  <div className="flex-none text-right">
+                    <p className="text-2xl font-extrabold leading-none" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                      {matching.length}
+                    </p>
+                    <p className="text-[10px] leading-tight text-white/80">
+                      {catName}{matching.length > 1 ? ' à proximité' : ' à proximité'}
+                    </p>
+                    {other > 0 && (
+                      <p className="mt-xs text-[9px] leading-tight text-white/60">
+                        + {other} autre{other > 1 ? 's' : ''} véhicule{other > 1 ? 's' : ''}
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           </div>
 
@@ -952,6 +981,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                     preview={cancelPreview}
                     onKeep={() => setCancelConfirm(false)}
                     onConfirm={handleCancelRide}
+                    onReasonChange={fetchCancelPreview}
                     cancelling={cancelling}
                     error={cancelError}
                     etaMin={durationToPickup}
@@ -1239,6 +1269,7 @@ function CancelConfirmPanel({
   preview,
   onKeep,
   onConfirm,
+  onReasonChange,
   cancelling,
   error,
   etaMin,
@@ -1247,9 +1278,13 @@ function CancelConfirmPanel({
     fee_fcfa: number;
     reason_code: string;
     driver_still_busy_elsewhere: boolean;
+    is_driver_fault: boolean;
+    driver_fault_evidence: string | null;
+    will_be_disputed: boolean;
   } | null;
   onKeep: () => void;
   onConfirm: (userReason?: string) => void;
+  onReasonChange: (userReason: string | null) => void;
   cancelling: boolean;
   error: string | null;
   etaMin?: number | null;
@@ -1259,6 +1294,9 @@ function CancelConfirmPanel({
   const fee = preview?.fee_fcfa ?? 0;
   const isFree = fee === 0;
   const reason = preview?.reason_code;
+  const isDriverFault = preview?.is_driver_fault ?? false;
+  const willBeDisputed = preview?.will_be_disputed ?? false;
+  const evidence = preview?.driver_fault_evidence ?? null;
 
   const explanationLine = (() => {
     switch (reason) {
@@ -1268,6 +1306,8 @@ function CancelConfirmPanel({
         return 'Tu es dans la fenêtre de 30 secondes de rétractation. Annulation gratuite.';
       case 'free_driver_busy':
         return 'Ton chauffeur termine une autre course, il n\'a pas encore démarré vers toi. Annulation gratuite.';
+      case 'free_driver_fault':
+        return 'Annulation gratuite — la faute du chauffeur est confirmée par nos données.';
       case 'driver_on_way':
         return 'Le chauffeur roule déjà vers toi pour te prendre en charge.';
       case 'driver_arrived':
@@ -1295,7 +1335,10 @@ function CancelConfirmPanel({
           <li key={r.code}>
             <button
               type="button"
-              onClick={() => setPickedReason(r.code)}
+              onClick={() => {
+                setPickedReason(r.code);
+                onReasonChange(r.code);
+              }}
               className={`flex w-full items-center justify-between rounded-lg border p-md text-left text-sm transition ${
                 pickedReason === r.code
                   ? 'border-primary-500 bg-white ring-2 ring-primary-500'
@@ -1315,7 +1358,32 @@ function CancelConfirmPanel({
         ))}
       </ul>
 
-      {etaMin != null && etaMin > 0 && (
+      {isDriverFault && evidence && (
+        <div className="mt-md rounded-lg bg-white p-md ring-2 ring-primary-500">
+          <p className="text-xs font-bold uppercase tracking-wider text-primary-700">
+            ✓ Preuve automatique
+          </p>
+          <p className="mt-xs text-sm font-semibold text-neutral-900">{evidence}</p>
+          <p className="mt-xs text-[11px] text-neutral-600">
+            Annulation gratuite. Le chauffeur reçoit un signalement sur son historique.
+          </p>
+        </div>
+      )}
+
+      {willBeDisputed && !isDriverFault && (
+        <div className="mt-md rounded-lg bg-amber-50 p-md ring-1 ring-amber-300">
+          <p className="text-xs font-bold uppercase tracking-wider text-amber-800">
+            ⚠ Litige — sera examiné
+          </p>
+          <p className="mt-xs text-[11px] text-neutral-700">
+            Nos données ne confirment pas cette raison automatiquement. Les frais
+            s&apos;appliquent, mais ton annulation sera examinée par notre équipe. Si le
+            chauffeur est en tort, tu seras remboursé.
+          </p>
+        </div>
+      )}
+
+      {etaMin != null && etaMin > 0 && !isDriverFault && (
         <p className="mt-md text-center text-sm text-neutral-700">
           Ton chauffeur est à <strong>{etaMin} min</strong> de ta position — tu peux
           l&apos;attendre.

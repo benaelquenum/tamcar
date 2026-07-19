@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { CategoryPricingCards } from '@/components/CategoryPricingCards';
 import { Logo } from '@/components/Logo';
 import {
   ArrowRightIcon,
@@ -237,6 +236,13 @@ export default async function HomePage() {
           </Link>
         </section>
 
+        {/* Quick actions row — remontées haut : accès direct aux fonctions courantes */}
+        <section className="mt-lg grid grid-cols-3 gap-sm">
+          <QuickActionLink href="/history" Icon={HistoryIcon} label="Historique" tint="primary" />
+          <QuickAction Icon={GiftIcon} label="Parrainer" tag="Bientôt" tint="violet" />
+          <QuickAction Icon={LifeBuoyIcon} label="Aide" tint="cyan" />
+        </section>
+
         {/* Bannières de communication */}
         {banners.length > 0 && (
           <section className="mt-xl">
@@ -249,16 +255,6 @@ export default async function HomePage() {
             </div>
           </section>
         )}
-
-        {/* Cartes catégories — prix calculés en direct via Supabase RPC compute_price */}
-        <CategoryPricingCards />
-
-        {/* Quick actions row */}
-        <section className="mt-lg grid grid-cols-3 gap-sm">
-          <QuickActionLink href="/history" Icon={HistoryIcon} label="Historique" tint="primary" />
-          <QuickAction Icon={GiftIcon} label="Parrainer" tag="Bientôt" tint="violet" />
-          <QuickAction Icon={LifeBuoyIcon} label="Aide" tint="cyan" />
-        </section>
 
         {/* Devenir chauffeur */}
         <section className="mt-lg">

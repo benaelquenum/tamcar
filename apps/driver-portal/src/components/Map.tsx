@@ -14,6 +14,7 @@ export type DriverPin = {
   driver_id: string;
   lat: number;
   lng: number;
+  category?: string;
 };
 
 export type PendingPickup = {
@@ -29,6 +30,36 @@ const CAR_SVG = `
   <circle cx="8" cy="15" r="0.9" fill="white"/>
   <circle cx="16" cy="15" r="0.9" fill="white"/>
 </svg>`;
+
+const MOTO_SVG = `
+<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <circle cx="5.5" cy="17" r="2.5"/>
+  <circle cx="18.5" cy="17" r="2.5"/>
+  <path d="M8 17h6l-2-5h4l-2-4h-3"/>
+  <path d="M14 8l2 2"/>
+</svg>`;
+
+const TRICYCLE_SVG = `
+<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <path d="M3 16h4l2-6h9l1 6"/>
+  <path d="M9 10V7h4"/>
+  <circle cx="5" cy="18" r="1.6"/>
+  <circle cx="14" cy="18" r="1.6"/>
+  <circle cx="19" cy="18" r="1.6"/>
+</svg>`;
+
+function svgForCategory(cat?: string): string {
+  if (cat === 'moto') return MOTO_SVG;
+  if (cat === 'tricycle') return TRICYCLE_SVG;
+  return CAR_SVG;
+}
+
+function pinClassForCategory(cat?: string): string {
+  if (cat === 'moto') return 'tc-driver-pin moto';
+  if (cat === 'tricycle') return 'tc-driver-pin tricycle';
+  if (cat === 'confort') return 'tc-driver-pin confort';
+  return 'tc-driver-pin';
+}
 
 type Props = {
   pickup?: [number, number] | null;
@@ -190,17 +221,22 @@ export function Map({
       const existing = driverMarkersRef.current.get(drv.driver_id);
       if (existing) {
         existing.setLngLat([drv.lng, drv.lat]);
+        const el = existing.getElement();
+        const nextClass = pinClassForCategory(drv.category);
+        if (el.className !== nextClass) {
+          el.className = nextClass;
+          el.innerHTML = svgForCategory(drv.category);
+        }
       } else {
         const el = document.createElement('div');
-        el.className = 'tc-driver-pin';
-        el.innerHTML = CAR_SVG;
+        el.className = pinClassForCategory(drv.category);
+        el.innerHTML = svgForCategory(drv.category);
         const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
           .setLngLat([drv.lng, drv.lat])
           .addTo(map);
         driverMarkersRef.current.set(drv.driver_id, marker);
       }
     }
-    // Retirer ceux qui ne sont plus dans la liste
     for (const [id, marker] of driverMarkersRef.current.entries()) {
       if (!seen.has(id)) {
         marker.remove();
@@ -252,8 +288,8 @@ export function Map({
     assignedMarkerRef.current = null;
     if (assignedDriver) {
       const el = document.createElement('div');
-      el.className = 'tc-driver-pin assigned';
-      el.innerHTML = CAR_SVG;
+      el.className = pinClassForCategory(assignedDriver.category) + ' assigned';
+      el.innerHTML = svgForCategory(assignedDriver.category);
       assignedMarkerRef.current = new mapboxgl.Marker({ element: el, anchor: 'center' })
         .setLngLat([assignedDriver.lng, assignedDriver.lat])
         .addTo(map);

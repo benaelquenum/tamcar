@@ -49,6 +49,9 @@ export default async function AdminLayout({
             <Link href="/admin/dealer-advances" className="text-sm font-semibold text-neutral-900 hover:text-primary-500">
               ADR
             </Link>
+            <Link href="/admin/litiges" className="text-sm font-semibold text-neutral-900 hover:text-primary-500">
+              Litiges
+            </Link>
             <Link href="/admin/banners" className="text-sm font-semibold text-neutral-900 hover:text-primary-500">
               Bannières
             </Link>

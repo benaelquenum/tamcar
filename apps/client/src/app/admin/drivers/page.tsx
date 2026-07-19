@@ -24,7 +24,17 @@ type DriverRow = {
   total_rachat_fcfa: number;
   completed_rides_count: number;
   cancelled_by_driver_count: number;
+  driver_fault_strikes: number;
+  pending_disputes_count: number;
 };
+
+function strikesBadge(strikes: number, pending: number): { className: string; label: string } | null {
+  const total = strikes + pending;
+  if (total === 0) return null;
+  if (total >= 5) return { className: 'bg-error text-white', label: `⚠ ${total}` };
+  if (total >= 3) return { className: 'bg-error/15 text-error', label: `${total}` };
+  return { className: 'bg-warning/15 text-warning', label: `${total}` };
+}
 
 function fmt(n: number): string {
   return n.toLocaleString('fr-FR').replace(/,/g, ' ');
@@ -53,6 +63,13 @@ export default async function AdminDriversPage() {
   const list = (data ?? []) as DriverRow[];
   const active = list.filter((d) => d.status !== 'archived');
   const archived = list.filter((d) => d.status === 'archived');
+  const watchList = active
+    .filter((d) => (d.driver_fault_strikes ?? 0) + (d.pending_disputes_count ?? 0) > 0)
+    .sort(
+      (a, b) =>
+        (b.driver_fault_strikes + b.pending_disputes_count) -
+        (a.driver_fault_strikes + a.pending_disputes_count),
+    );
 
   return (
     <div>
@@ -66,6 +83,67 @@ export default async function AdminDriversPage() {
       </div>
 
       <CreateDriverForm />
+
+      {watchList.length > 0 && (
+        <section className="mb-2xl">
+          <div className="mb-md flex items-baseline justify-between">
+            <h2 className="text-lg font-bold text-neutral-900">
+              🎯 Chauffeurs à surveiller
+            </h2>
+            <p className="text-xs text-neutral-600">
+              Strikes prouvés + litiges en attente
+            </p>
+          </div>
+          <div className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-error/20">
+            <table className="w-full">
+              <thead className="border-b border-neutral-200 bg-error/5 text-left text-xs font-bold uppercase tracking-wider text-neutral-600">
+                <tr>
+                  <th className="px-md py-sm">Chauffeur</th>
+                  <th className="px-md py-sm text-right">Strikes prouvés</th>
+                  <th className="px-md py-sm text-right">Litiges en attente</th>
+                  <th className="px-md py-sm text-right">Annul. chauffeur</th>
+                  <th className="px-md py-sm text-right">Note</th>
+                </tr>
+              </thead>
+              <tbody>
+                {watchList.map((d) => (
+                  <tr key={d.driver_id} className="border-b border-neutral-100 last:border-0">
+                    <td className="px-md py-md">
+                      <p className="font-semibold text-neutral-900">{d.full_name}</p>
+                      <p className="text-[10px] text-neutral-500">{d.phone}</p>
+                    </td>
+                    <td className="px-md py-md text-right" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                      <span className={`inline-block rounded-full px-sm py-0.5 text-xs font-bold ${
+                        d.driver_fault_strikes >= 3 ? 'bg-error text-white' : 'bg-error/15 text-error'
+                      }`}>
+                        {d.driver_fault_strikes}
+                      </span>
+                    </td>
+                    <td className="px-md py-md text-right" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                      {d.pending_disputes_count > 0 ? (
+                        <a
+                          href="/admin/litiges"
+                          className="inline-block rounded-full bg-warning/15 px-sm py-0.5 text-xs font-bold text-warning hover:bg-warning/30"
+                        >
+                          {d.pending_disputes_count} →
+                        </a>
+                      ) : (
+                        <span className="text-xs text-neutral-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-md py-md text-right text-sm text-neutral-700" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                      {d.cancelled_by_driver_count}
+                    </td>
+                    <td className="px-md py-md text-right text-sm text-neutral-700" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                      {d.rating_count > 0 ? `${d.rating_avg.toFixed(2)}` : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       <section>
         <h2 className="mb-md text-lg font-bold text-neutral-900">Chauffeurs</h2>
@@ -82,6 +160,7 @@ export default async function AdminDriversPage() {
                   <th className="px-md py-sm">Formule</th>
                   <th className="px-md py-sm">Statut</th>
                   <th className="px-md py-sm text-right">Courses</th>
+                  <th className="px-md py-sm text-right">Strikes</th>
                   <th className="px-md py-sm text-right">Cash cumulé</th>
                   <th className="px-md py-sm text-right">Note</th>
                   <th className="px-md py-sm text-right">Actions</th>
@@ -118,6 +197,18 @@ export default async function AdminDriversPage() {
                           −{d.cancelled_by_driver_count} annul.
                         </p>
                       )}
+                    </td>
+                    <td className="px-md py-md text-right text-sm" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                      {(() => {
+                        const b = strikesBadge(d.driver_fault_strikes, d.pending_disputes_count);
+                        return b ? (
+                          <span className={`inline-block rounded-full px-sm py-0.5 text-[11px] font-bold ${b.className}`}>
+                            {b.label}
+                          </span>
+                        ) : (
+                          <span className="text-neutral-400">—</span>
+                        );
+                      })()}
                     </td>
                     <td className="px-md py-md text-right text-sm font-bold text-neutral-900" style={{ fontVariantNumeric: 'tabular-nums' }}>
                       {fmt(d.total_cash_fcfa)} F
