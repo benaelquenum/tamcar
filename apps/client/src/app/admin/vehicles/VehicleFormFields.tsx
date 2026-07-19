@@ -3,7 +3,7 @@
 import { useState } from 'react';
 
 type DealerOption = { dealer_id: string; company_name: string };
-type DriverOption = { driver_id: string; profile_id: string; full_name: string };
+type DriverOption = { driver_id: string; profile_id: string; full_name: string; current_formula?: 'cession' | 'proprietaire' };
 
 export function VehicleFormFields({
   dealers,
@@ -63,7 +63,10 @@ export function VehicleFormFields({
         >
           <option value="">— Aucun —</option>
           {ownerCandidates.map((d) => (
-            <option key={d.driver_id} value={d.profile_id}>{d.full_name}</option>
+            <option key={d.driver_id} value={d.profile_id}>
+              {d.full_name}
+              {d.current_formula === 'cession' && ' (actuellement cession — basculera en propriétaire)'}
+            </option>
           ))}
         </select>
       </label>

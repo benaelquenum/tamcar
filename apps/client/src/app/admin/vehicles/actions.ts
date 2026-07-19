@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createServerSupabase } from '@/lib/supabase-server';
+import { createAdminSupabase } from '@/lib/supabase-admin';
 
 export async function createVehicle(formData: FormData) {
   const plate = String(formData.get('plate') || '').trim();
@@ -22,6 +23,17 @@ export async function createVehicle(formData: FormData) {
   if (formula === 'proprietaire' && !owner_profile_id) {
     throw new Error('Formule propriétaire : chauffeur propriétaire obligatoire');
   }
+
+  // Si formule propriétaire, on s'assure que le chauffeur choisi est bien
+  // marqué en 'proprietaire' — sinon on le bascule (split 80/20 à sa faveur).
+  if (formula === 'proprietaire' && owner_profile_id) {
+    const admin = createAdminSupabase();
+    await admin
+      .from('drivers')
+      .update({ application_type: 'proprietaire', updated_at: new Date().toISOString() })
+      .eq('profile_id', owner_profile_id);
+  }
+
   const supabase = createServerSupabase();
   const { error } = await supabase.rpc('admin_register_vehicle', {
     p_plate: plate,

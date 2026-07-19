@@ -89,13 +89,16 @@ export default async function AdminVehiclesPage() {
               { value: 'confort', label: 'Confort' },
             ]}
           />
-          {/* Formule dérivée automatiquement : dealer choisi → cession, sinon → propriétaire */}
+          {/* Formule dérivée automatiquement : dealer choisi → cession, sinon → propriétaire.
+              Le dropdown liste tous les chauffeurs actifs — le driver.application_type sera
+              basculé à 'proprietaire' automatiquement côté server action si besoin. */}
           <VehicleFormFields
             dealers={D}
-            ownerCandidates={DR.filter((d) => d.application_type === 'proprietaire').map((d) => ({
+            ownerCandidates={DR.map((d) => ({
               driver_id: d.driver_id,
               profile_id: d.profile_id,
               full_name: d.full_name,
+              current_formula: d.application_type,
             }))}
           />
           <div className="md:col-span-2">
