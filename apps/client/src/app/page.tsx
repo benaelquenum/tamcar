@@ -60,6 +60,11 @@ export default async function HomePage() {
     redirect('/onboarding');
   }
 
+  // Redirect concessionnaire vers son portail dédié
+  if (profile && profile.role === 'dealer') {
+    redirect('/dealer');
+  }
+
   const firstName = firstNameOf(profile);
   const isLoggedIn = profile !== null;
 
