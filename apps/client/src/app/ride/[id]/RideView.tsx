@@ -55,6 +55,8 @@ export type RideForView = {
   status: RideStatus;
   payment_method: string | null;
   requested_at: string;
+  requested_category?: 'essentiel' | 'confort' | null;
+  downgrade_accepted_at?: string | null;
   matched_at?: string | null;
   started_at?: string | null;
   ended_at?: string | null;
@@ -170,6 +172,13 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
   const [myLocation, setMyLocation] = useState<[number, number] | null>(null);
   const [searchTimedOut, setSearchTimedOut] = useState(false);
   const [retrying, setRetrying] = useState(false);
+  const [downgradeOffer, setDowngradeOffer] = useState<null | {
+    current_price: number;
+    new_price: number;
+    refund: number;
+  }>(null);
+  const [downgradeAccepting, setDowngradeAccepting] = useState(false);
+  const [downgradeError, setDowngradeError] = useState<string | null>(null);
   const [stops, setStops] = useState<RideStopRow[]>([]);
   const [addStopOpen, setAddStopOpen] = useState(false);
   const [driverOtherRide, setDriverOtherRide] = useState<{
@@ -400,6 +409,47 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
     const timer = setTimeout(() => setSearchTimedOut(true), remaining);
     return () => clearTimeout(timer);
   }, [ride.status, ride.requested_at]);
+
+  // Downgrade offer : après 60 s en Confort sans match, on propose Essentiel.
+  useEffect(() => {
+    if (ride.status !== 'requested') return;
+    if (ride.requested_category !== 'confort') return;
+    if (ride.downgrade_accepted_at) return;
+    if (downgradeOffer !== null) return; // déjà proposé
+    const start = new Date(ride.requested_at).getTime();
+    const deadline = start + 60_000;
+    const remaining = Math.max(0, deadline - Date.now());
+    const timer = setTimeout(async () => {
+      const { data, error } = await supabaseBrowser.rpc('preview_downgrade_price', {
+        p_ride_id: ride.id,
+      });
+      if (error || !data) return;
+      const d = data as { current_price_fcfa: number; new_price_fcfa: number; refund_fcfa: number };
+      setDowngradeOffer({
+        current_price: d.current_price_fcfa,
+        new_price: d.new_price_fcfa,
+        refund: d.refund_fcfa,
+      });
+    }, remaining);
+    return () => clearTimeout(timer);
+  }, [ride.status, ride.requested_at, ride.requested_category, ride.downgrade_accepted_at, ride.id, downgradeOffer]);
+
+  async function handleAcceptDowngrade() {
+    if (downgradeAccepting) return;
+    setDowngradeAccepting(true);
+    setDowngradeError(null);
+    const { error } = await supabaseBrowser.rpc('client_accept_downgrade', {
+      p_ride_id: ride.id,
+    });
+    if (error) {
+      setDowngradeError(error.message);
+      setDowngradeAccepting(false);
+      return;
+    }
+    setDowngradeOffer(null);
+    setDowngradeAccepting(false);
+    await refetchDetails();
+  }
 
   async function handleRetrySearch() {
     if (retrying) return;
@@ -1001,6 +1051,81 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
       )}
 
       {/* Modale timeout : aucun TamCar trouvé après 2 min de recherche */}
+      {/* Downgrade offer : aucun Confort trouvé après 60 s */}
+      {downgradeOffer && ride.status === 'requested' && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-neutral-900/75 backdrop-blur-sm sm:items-center"
+          onClick={() => !downgradeAccepting && setDowngradeOffer(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-t-2xl bg-white p-lg shadow-xl sm:rounded-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-md text-center">
+              <div className="mx-auto mb-md grid h-14 w-14 place-items-center rounded-full bg-primary-50 text-primary-700">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="h-7 w-7">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+              </div>
+              <h2 className="text-lg font-extrabold text-neutral-900">
+                Aucun TamCar Confort disponible
+              </h2>
+              <p className="mt-xs text-sm text-neutral-600">
+                Aucun chauffeur Confort n&apos;est libre autour de toi pour le moment.
+              </p>
+            </div>
+
+            <div className="mb-md rounded-xl border border-primary-200 bg-primary-50 p-md">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-primary-700">
+                Basculer vers Essentiel
+              </p>
+              <div className="mt-sm flex items-baseline justify-between text-sm">
+                <span className="text-neutral-600">Prix Confort actuel</span>
+                <span className="font-semibold text-neutral-500 line-through" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {formatFcfa(downgradeOffer.current_price)} F
+                </span>
+              </div>
+              <div className="mt-xs flex items-baseline justify-between">
+                <span className="text-sm font-bold text-neutral-900">Nouveau prix Essentiel</span>
+                <span className="text-2xl font-extrabold text-neutral-900" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {formatFcfa(downgradeOffer.new_price)} F
+                </span>
+              </div>
+              {downgradeOffer.refund > 0 && (
+                <p className="mt-sm text-[11px] text-primary-800">
+                  <strong>{formatFcfa(downgradeOffer.refund)} F</strong> te seront remboursés sur
+                  ton wallet TamCar Crédit.
+                </p>
+              )}
+            </div>
+
+            {downgradeError && (
+              <p className="mb-md text-center text-xs text-error">{downgradeError}</p>
+            )}
+
+            <div className="flex gap-md">
+              <button
+                type="button"
+                onClick={() => setDowngradeOffer(null)}
+                disabled={downgradeAccepting}
+                className="flex-1 rounded-xl border-2 border-neutral-200 py-md text-sm font-bold text-neutral-600 hover:border-neutral-300"
+              >
+                Attendre encore
+              </button>
+              <button
+                type="button"
+                onClick={handleAcceptDowngrade}
+                disabled={downgradeAccepting}
+                className="flex-1 rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-md text-sm font-bold text-white shadow-glow disabled:opacity-50"
+              >
+                {downgradeAccepting ? 'Envoi…' : 'Basculer en Essentiel'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {searchTimedOut && ride.status === 'requested' && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-neutral-900/75 backdrop-blur-sm sm:items-center">
           <div className="w-full max-w-md rounded-t-2xl bg-white p-lg shadow-xl sm:rounded-2xl">

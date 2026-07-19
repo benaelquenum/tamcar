@@ -38,7 +38,6 @@ export default function CommandePage() {
     {} as Record<VehicleCategory, PriceQuote | null>,
   );
   const [selectedCat, setSelectedCat] = useState<VehicleCategory>('essentiel');
-  const [withAc, setWithAc] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Mode sélection sur carte
@@ -70,7 +69,7 @@ export default function CommandePage() {
           distance_km: route.distance_km,
           duration_min: route.duration_min,
           is_night: false,
-          with_ac: selectedCat === 'essentiel' && withAc,
+          with_ac: false,
         });
       } catch (e) {
         setConfirmError(e instanceof Error ? e.message : 'Erreur inconnue');
@@ -105,7 +104,6 @@ export default function CommandePage() {
           dropoff_lat: dropoff.center[1], dropoff_lng: dropoff.center[0],
           distance_km: r.distance_km, duration_min: r.duration_min,
           p_category: 'essentiel',
-          with_ac: withAc,
         }),
         computePrice({
           pickup_lat: pickup.center[1], pickup_lng: pickup.center[0],
@@ -121,7 +119,7 @@ export default function CommandePage() {
     })();
 
     return () => { cancelled = true; };
-  }, [pickup, dropoff, withAc]);
+  }, [pickup, dropoff]);
 
   async function handleMapClick(lngLat: [number, number]) {
     // Debug clic carte — visible dans F12 console si Terence a un souci
@@ -267,55 +265,10 @@ export default function CommandePage() {
                   price={prices[cat.id] ?? null}
                   selected={selectedCat === cat.id}
                   onSelect={() => setSelectedCat(cat.id)}
-                  climateLabel={
-                    cat.id === 'essentiel'
-                      ? withAc
-                        ? 'Clim ajoutée'
-                        : 'Sans clim (option)'
-                      : 'Clim incluse'
-                  }
+                  climateLabel={cat.id === 'essentiel' ? 'Sans clim' : 'Clim incluse'}
                 />
               ))}
 
-              {/* Toggle climatisation — visible seulement quand Essentiel sélectionné */}
-              {selectedCat === 'essentiel' && (
-                <button
-                  type="button"
-                  onClick={() => setWithAc((v) => !v)}
-                  className={`flex w-full items-center gap-md rounded-xl border-2 p-md text-left transition ${
-                    withAc
-                      ? 'border-cyan-500 bg-cyan-500/10'
-                      : 'border-neutral-200 bg-white hover:border-cyan-300'
-                  }`}
-                >
-                  <span
-                    className={`grid h-11 w-11 flex-none place-items-center rounded-lg transition ${
-                      withAc ? 'bg-cyan-500 text-white shadow-md' : 'bg-neutral-100 text-neutral-500'
-                    }`}
-                  >
-                    <SnowflakeIcon className="h-5 w-5" strokeWidth={2.5} />
-                  </span>
-                  <div className="flex-1">
-                    <p className="text-sm font-bold text-neutral-900">
-                      {withAc ? 'Climatisation activée' : 'Ajouter la climatisation'}
-                    </p>
-                    <p className="text-[11px] text-neutral-600">
-                      40 FCFA par km · 200 FCFA minimum
-                    </p>
-                  </div>
-                  <span
-                    className={`grid h-6 w-11 flex-none items-center rounded-full p-0.5 transition ${
-                      withAc ? 'bg-cyan-500' : 'bg-neutral-300'
-                    }`}
-                  >
-                    <span
-                      className={`block h-5 w-5 rounded-full bg-white shadow transition ${
-                        withAc ? 'translate-x-5' : ''
-                      }`}
-                    />
-                  </span>
-                </button>
-              )}
             </section>
 
             <section className="mt-lg">
