@@ -32,9 +32,9 @@ const CATEGORIES: CategoryDef[] = [
     ],
     gradient: 'from-primary-500 to-primary-700',
     climate: {
-      label: 'Clim en option',
-      detail: '+200 FCFA si tu la demandes',
-      badgeClass: 'bg-primary-500 text-white',
+      label: 'Sans clim',
+      detail: 'Voiture sans climatisation',
+      badgeClass: 'bg-neutral-300 text-neutral-700',
     },
   },
   {
@@ -91,9 +91,9 @@ export async function CategoryPricingCards() {
           <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
             Essentiel
           </p>
-          <p className="mt-xs inline-flex items-center gap-xs text-xs font-bold text-gold-500">
+          <p className="mt-xs inline-flex items-center gap-xs text-xs font-bold text-neutral-500">
             <SnowflakeIcon className="h-3 w-3" strokeWidth={2.5} />
-            Clim +200 F
+            Sans clim
           </p>
         </div>
         <div className="flex-1 rounded-lg bg-white p-sm text-center ring-1 ring-neutral-200">
