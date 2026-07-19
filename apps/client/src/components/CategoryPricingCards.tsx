@@ -36,14 +36,14 @@ const CATEGORIES: CategoryDef[] = [
   {
     id: 'tricycle',
     name: 'Tricycle',
-    tagline: 'Kékéno confortable à petit prix',
+    tagline: 'Kloboto confortable à petit prix',
     features: [
       '3 places, plus abrité qu\'une moto',
       'Bagage possible',
       'Prix fixe, sans surge',
     ],
     gradient: 'from-primary-500 to-primary-700',
-    climate: { label: '3 places', detail: 'Kékéno-taxi', badgeClass: 'bg-neutral-300 text-neutral-700' },
+    climate: { label: '3 places', detail: 'Kloboto-taxi', badgeClass: 'bg-neutral-300 text-neutral-700' },
   },
   {
     id: 'essentiel',

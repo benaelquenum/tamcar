@@ -20,7 +20,7 @@ type CategoryDef = {
 
 const CATEGORIES: CategoryDef[] = [
   { id: 'moto', name: 'Moto', tagline: 'Rapide, éco, zémidjan formalisé' },
-  { id: 'tricycle', name: 'Tricycle', tagline: 'Kékéno confortable à petit prix' },
+  { id: 'tricycle', name: 'Tricycle', tagline: 'Kloboto confortable à petit prix' },
   { id: 'essentiel', name: 'Essentiel', tagline: 'Voiture éco sans surprise' },
   { id: 'confort', name: 'Confort', tagline: 'Voiture premium clim incluse', badge: 'Best-seller' },
 ];

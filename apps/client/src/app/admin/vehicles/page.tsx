@@ -86,7 +86,7 @@ export default async function AdminVehiclesPage() {
             label="Catégorie *" name="category"
             options={[
               { value: 'moto', label: 'Moto (zémidjan)' },
-              { value: 'tricycle', label: 'Tricycle (kékéno)' },
+              { value: 'tricycle', label: 'Tricycle (Kloboto)' },
               { value: 'essentiel', label: 'Essentiel (voiture éco)' },
               { value: 'confort', label: 'Confort (voiture premium)' },
             ]}
@@ -209,9 +209,14 @@ function VehicleTable({
                       >
                         <option value="" disabled>Choisir chauffeur…</option>
                         {drivers
-                          .filter((d) => d.application_type === v.formula)
+                          // Le driver.application_type sera synchronisé lors de l'affectation
+                          // (admin_assign_vehicle_to_driver vérifie la cohérence côté DB).
+                          // On affiche donc tous les chauffeurs actifs.
                           .map((d) => (
-                            <option key={d.driver_id} value={d.driver_id}>{d.full_name}</option>
+                            <option key={d.driver_id} value={d.driver_id}>
+                              {d.full_name}
+                              {d.application_type !== v.formula && ' (basculera en ' + v.formula + ')'}
+                            </option>
                           ))}
                       </select>
                       <button

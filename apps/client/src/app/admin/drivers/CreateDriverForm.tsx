@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { useFormState, useFormStatus } from 'react-dom';
 import { createDriver, type CreateDriverState } from './actions';
 
@@ -7,6 +8,16 @@ const initial: CreateDriverState = { ok: false };
 
 export function CreateDriverForm() {
   const [state, formAction] = useFormState(createDriver, initial);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  // Vide les champs après un enregistrement réussi — le panneau
+  // d'identifiants reste affiché au-dessus pour que la secrétaire
+  // ait le temps de les copier avant d'enregistrer le suivant.
+  useEffect(() => {
+    if (state.ok && state.credentials) {
+      formRef.current?.reset();
+    }
+  }, [state.ok, state.credentials]);
 
   return (
     <section className="mb-2xl rounded-xl border border-neutral-200 bg-white p-lg shadow-sm">
@@ -23,7 +34,7 @@ export function CreateDriverForm() {
         </div>
       )}
 
-      <form action={formAction} className="grid grid-cols-1 gap-md md:grid-cols-2">
+      <form ref={formRef} action={formAction} className="grid grid-cols-1 gap-md md:grid-cols-2">
         <Field label="Téléphone *" name="phone" placeholder="+229..." />
         <Field label="Email" name="email" type="email" placeholder="chauffeur@exemple.com" />
         <Field label="Nom complet *" name="full_name" required />

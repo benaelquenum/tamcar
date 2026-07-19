@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { useFormState, useFormStatus } from 'react-dom';
 import { createDealer, type CreateDealerState } from './actions';
 
@@ -7,6 +8,11 @@ const initial: CreateDealerState = { ok: false };
 
 export function CreateDealerForm() {
   const [state, formAction] = useFormState(createDealer, initial);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (state.ok && state.credentials) formRef.current?.reset();
+  }, [state.ok, state.credentials]);
 
   return (
     <section className="mb-2xl rounded-xl border border-neutral-200 bg-white p-lg shadow-sm">
@@ -40,7 +46,7 @@ export function CreateDealerForm() {
         </div>
       )}
 
-      <form action={formAction} className="grid grid-cols-1 gap-md md:grid-cols-2">
+      <form ref={formRef} action={formAction} className="grid grid-cols-1 gap-md md:grid-cols-2">
         <Field label="Téléphone *" name="phone" placeholder="+229..." />
         <Field label="Email" name="email" type="email" placeholder="contact@concession.bj" />
         <Field label="Nom complet du contact *" name="full_name" required />
