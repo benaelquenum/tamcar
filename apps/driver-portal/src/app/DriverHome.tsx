@@ -30,6 +30,9 @@ type PendingRide = {
   price_total_fcfa: number;
   driver_share_fcfa: number;
   requested_at: string;
+  requested_category?: string | null;
+  downgrade_accepted_at?: string | null;
+  is_below_driver_category?: boolean | null;
 };
 
 type Props = {
@@ -56,6 +59,7 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
   const [pending, setPending] = useState<PendingRide[]>([]);
   const [accepting, startAccept] = useTransition();
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
+  const [crossCatConfirm, setCrossCatConfirm] = useState<PendingRide | null>(null);
 
   // Récupère la position GPS actuelle en rejetant les fixes imprécis
   // (accuracy > 50 m). Retry une fois avant fallback.
@@ -279,12 +283,22 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
   }, [pending.length, isOnline]);
 
   function handleAccept(rideId: string) {
+    // Si la course est cross-catégorie (chauffeur > catégorie ride), on ouvre
+    // une confirmation. Sinon on accepte directement.
+    const target = pending.find((p) => p.id === rideId);
+    if (target && target.is_below_driver_category) {
+      setCrossCatConfirm(target);
+      return;
+    }
+    doAccept(rideId);
+  }
+
+  function doAccept(rideId: string) {
     setAcceptingId(rideId);
     setError(null);
     startAccept(async () => {
       try {
         await acceptRideAction(rideId);
-        // Feedback sonore : le gesture (click) est frais → autoplay OK
         try {
           const a = new Audio('/sounds/request-accepted.mp3');
           a.volume = 0.85;
@@ -294,6 +308,7 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
         setError(e instanceof Error ? e.message : 'Erreur');
       } finally {
         setAcceptingId(null);
+        setCrossCatConfirm(null);
       }
     });
   }
@@ -421,8 +436,83 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
           </div>
         </div>
       </div>
+
+      {/* Modal confirmation cross-catégorie */}
+      {crossCatConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-neutral-900/75 backdrop-blur-sm sm:items-center"
+          onClick={() => !accepting && setCrossCatConfirm(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-t-2xl bg-white p-lg shadow-xl sm:rounded-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-lg text-center">
+              <div className="mx-auto mb-md grid h-14 w-14 place-items-center rounded-full bg-primary-50 text-primary-700">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="h-7 w-7">
+                  <path d="M12 2v20M2 12h20" />
+                </svg>
+              </div>
+              <h2 className="text-lg font-extrabold text-neutral-900">
+                Course de catégorie inférieure
+              </h2>
+              <p className="mt-xs text-sm text-neutral-600">
+                Cette course est classée{' '}
+                <strong>{catLabel(crossCatConfirm.requested_category || '')}</strong>,
+                mais tu conduis un véhicule de catégorie supérieure. Tu peux la prendre
+                au tarif de la catégorie du client.
+              </p>
+            </div>
+
+            <div className="mb-md rounded-xl border border-primary-200 bg-primary-50 p-md">
+              <div className="flex items-baseline justify-between">
+                <span className="text-sm text-neutral-700">Prix de la course</span>
+                <span className="text-2xl font-extrabold text-neutral-900" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {crossCatConfirm.price_total_fcfa.toLocaleString('fr-FR').replace(/,/g, ' ')} F
+                </span>
+              </div>
+              <div className="mt-xs flex items-baseline justify-between">
+                <span className="text-[11px] text-neutral-600">Ta part</span>
+                <span className="text-sm font-bold text-primary-700" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {crossCatConfirm.driver_share_fcfa.toLocaleString('fr-FR').replace(/,/g, ' ')} F
+                </span>
+              </div>
+            </div>
+
+            <div className="flex gap-md">
+              <button
+                type="button"
+                onClick={() => setCrossCatConfirm(null)}
+                disabled={accepting}
+                className="flex-1 rounded-xl border-2 border-neutral-200 py-md text-sm font-bold text-neutral-600 hover:border-neutral-300"
+              >
+                Non merci
+              </button>
+              <button
+                type="button"
+                onClick={() => doAccept(crossCatConfirm.id)}
+                disabled={accepting}
+                className="flex-1 rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-md text-sm font-bold text-white shadow-glow disabled:opacity-50"
+              >
+                {accepting ? 'Envoi…' : 'Accepter au tarif réduit'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
+}
+
+function catLabel(cat: string): string {
+  switch (cat) {
+    case 'moto': return 'Moto';
+    case 'tricycle': return 'Tricycle';
+    case 'essentiel': return 'Essentiel';
+    case 'confort': return 'Confort';
+    case 'premium': return 'Premium';
+    default: return cat;
+  }
 }
 
 function RideCard({
