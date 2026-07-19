@@ -1,5 +1,6 @@
 import { createServerSupabase } from '@/lib/supabase-server';
-import { createDriver, suspendDriver, unsuspendDriver, archiveDriver } from './actions';
+import { suspendDriver, unsuspendDriver, archiveDriver } from './actions';
+import { CreateDriverForm } from './CreateDriverForm';
 
 type DriverRow = {
   driver_id: string;
@@ -64,40 +65,7 @@ export default async function AdminDriversPage() {
         </p>
       </div>
 
-      <section className="mb-2xl rounded-xl border border-neutral-200 bg-white p-lg shadow-sm">
-        <h2 className="mb-md text-sm font-bold uppercase tracking-wider text-neutral-500">
-          Enregistrer un chauffeur
-        </h2>
-        <form action={createDriver} className="grid grid-cols-1 gap-md md:grid-cols-2">
-          <Field label="Téléphone *" name="phone" required placeholder="+229..." />
-          <Field label="Nom complet *" name="full_name" required />
-          <label className="block">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">Formule *</span>
-            <select
-              name="application_type"
-              required
-              className="mt-xs w-full rounded-lg bg-neutral-100 px-md py-sm text-sm text-neutral-900 ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
-            >
-              <option value="cession">Cession (location-vente)</option>
-              <option value="proprietaire">Propriétaire</option>
-            </select>
-          </label>
-          <Field label="N° permis de conduire" name="license" />
-          <Field label="N° pièce d'identité (CIP)" name="id_card" />
-          <div className="md:col-span-2">
-            <button
-              type="submit"
-              className="rounded-lg bg-gradient-to-r from-primary-500 to-primary-700 px-lg py-sm text-sm font-bold text-white shadow-glow"
-            >
-              Enregistrer
-            </button>
-            <p className="mt-xs text-[11px] text-neutral-500">
-              Le chauffeur sera immédiatement en statut actif + kyc_status approved. Il pourra se connecter par magic-link plus tard.
-              Assigne-lui un véhicule depuis <a href="/admin/vehicles" className="underline">/admin/vehicles</a>.
-            </p>
-          </div>
-        </form>
-      </section>
+      <CreateDriverForm />
 
       <section>
         <h2 className="mb-md text-lg font-bold text-neutral-900">Chauffeurs</h2>

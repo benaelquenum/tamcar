@@ -1,5 +1,6 @@
 import { createServerSupabase } from '@/lib/supabase-server';
-import { createDealer, archiveDealer } from './actions';
+import { archiveDealer } from './actions';
+import { CreateDealerForm } from './CreateDealerForm';
 
 type DealerRow = {
   dealer_id: string;
@@ -43,31 +44,7 @@ export default async function AdminDealersPage() {
         </p>
       </div>
 
-      <section className="mb-2xl rounded-xl border border-neutral-200 bg-white p-lg shadow-sm">
-        <h2 className="mb-md text-sm font-bold uppercase tracking-wider text-neutral-500">
-          Enregistrer un concessionnaire
-        </h2>
-        <form action={createDealer} className="grid grid-cols-1 gap-md md:grid-cols-2">
-          <Field label="Téléphone *" name="phone" placeholder="+229..." required />
-          <Field label="Nom complet du contact *" name="full_name" required />
-          <Field label="Raison sociale *" name="company_name" required />
-          <Field label="RCCM" name="rccm" />
-          <Field label="Part concessionnaire (%)" name="share_pct" type="number" step="0.5" defaultValue="25" />
-          <Field label="Part actionnaire (%)" name="shareholder_pct" type="number" step="0.5" />
-          <label className="flex items-center gap-sm text-sm text-neutral-800">
-            <input type="checkbox" name="is_shareholder" className="h-4 w-4" />
-            Actionnaire SARL
-          </label>
-          <div className="md:col-span-2">
-            <button
-              type="submit"
-              className="rounded-lg bg-gradient-to-r from-primary-500 to-primary-700 px-lg py-sm text-sm font-bold text-white shadow-glow"
-            >
-              Enregistrer
-            </button>
-          </div>
-        </form>
-      </section>
+      <CreateDealerForm />
 
       <section>
         <h2 className="mb-md text-lg font-bold text-neutral-900">
