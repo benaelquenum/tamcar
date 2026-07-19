@@ -526,8 +526,16 @@ function RideCard({
   accepting: boolean;
   disabled: boolean;
 }) {
+  const isBelow = Boolean(ride.is_below_driver_category);
   return (
-    <div className="rounded-xl border border-neutral-200 bg-white p-md shadow-sm">
+    <div className={`rounded-xl border p-md shadow-sm ${
+      isBelow ? 'border-warning/40 bg-warning/5' : 'border-neutral-200 bg-white'
+    }`}>
+      {isBelow && (
+        <div className="mb-sm inline-flex items-center gap-xs rounded-full bg-warning/20 px-md py-xs text-[10px] font-bold text-warning">
+          ⚠ Course {catLabel(ride.requested_category || '')} — tarif réduit
+        </div>
+      )}
       <div className="flex items-start justify-between gap-md">
         <div className="flex-1 space-y-xs">
           <div className="flex items-start gap-xs">
