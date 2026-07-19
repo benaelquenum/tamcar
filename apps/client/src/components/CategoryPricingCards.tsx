@@ -152,26 +152,13 @@ function CategoryCard({
         <p className="mt-xs text-sm text-white/85">{category.tagline}</p>
       </div>
 
-      {/* Encart climatisation — élément différenciant, mis en avant */}
-      <div className="mt-md flex items-center gap-md rounded-xl bg-white/15 p-md ring-1 ring-white/25 backdrop-blur-sm">
-        <span
-          className={`grid h-10 w-10 flex-none place-items-center rounded-lg shadow-md ${category.climate.badgeClass}`}
-        >
-          <SnowflakeIcon className="h-5 w-5" strokeWidth={2.5} />
-        </span>
-        <div className="flex-1">
-          <p className="text-sm font-extrabold leading-tight text-white">
-            {category.climate.label}
-          </p>
-          <p className="text-[11px] text-white/80">{category.climate.detail}</p>
+      {/* Micro-badge clim discret (seulement Confort, sans redondance visuelle) */}
+      {category.id === 'confort' && (
+        <div className="mt-md inline-flex items-center gap-xs rounded-full bg-white/20 px-md py-xs text-[11px] font-bold text-white ring-1 ring-white/30 backdrop-blur-sm">
+          <SnowflakeIcon className="h-3 w-3" strokeWidth={2.5} />
+          Climatisation incluse
         </div>
-        {category.id === 'confort' && (
-          <span className="inline-flex items-center gap-xs rounded-full bg-cyan-500/40 px-sm py-xs text-[10px] font-bold uppercase text-white">
-            <SparkleIcon className="h-3 w-3" strokeWidth={2.5} />
-            Standard
-          </span>
-        )}
-      </div>
+      )}
 
       <ul className="mt-md space-y-xs">
         {category.features.map((f) => (
