@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { createServerSupabase } from '@/lib/supabase-server';
 import { createAdminSupabase } from '@/lib/supabase-admin';
+import { deriveEmail, ensureUniqueEmail } from '@/lib/derive-email';
 
 function generatePassword(): string {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -42,12 +43,18 @@ async function createDriverImpl(formData: FormData): Promise<{ email: string; pa
     throw new Error('Formule invalide');
   }
 
-  // Email requis pour le login initial. Génère un email .tamcar.local si non fourni.
-  const email = email_raw || `chauffeur-${Date.now().toString(36)}@tamcar.local`;
   const phone = phone_raw || null;
   const password = generatePassword();
-
   const admin = createAdminSupabase();
+
+  // Email : si l'admin en fournit un, on le prend tel quel.
+  // Sinon on dérive un login lisible depuis le nom : {initiale_nom}{prenom}@tamcar.local
+  // avec suffixe numérique si collision (afulbert, afulbert2, afulbert3...).
+  const email = email_raw
+    || (await ensureUniqueEmail(deriveEmail(full_name), async (candidate) => {
+      const { data } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
+      return (data?.users ?? []).some((u) => u.email?.toLowerCase() === candidate.toLowerCase());
+    }));
 
   // 1. Crée le user auth (le trigger handle_new_user insère profiles auto)
   const { data: authData, error: authErr } = await admin.auth.admin.createUser({

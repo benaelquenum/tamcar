@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { createServerSupabase } from '@/lib/supabase-server';
 import { createAdminSupabase } from '@/lib/supabase-admin';
+import { deriveEmail, ensureUniqueEmail } from '@/lib/derive-email';
 
 function generatePassword(): string {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -39,11 +40,17 @@ async function createDealerImpl(formData: FormData): Promise<{ email: string; pa
   if (!full_name || !company_name) throw new Error('Nom et raison sociale obligatoires');
   if (!phone_raw && !email_raw) throw new Error('Téléphone ou email obligatoire');
 
-  const email = email_raw || `dealer-${Date.now().toString(36)}@tamcar.local`;
   const phone = phone_raw || null;
   const password = generatePassword();
-
   const admin = createAdminSupabase();
+
+  // Email : fourni tel quel, sinon dérivé du nom du contact (initiale nom + prénom)
+  // avec suffixe numérique si collision.
+  const email = email_raw
+    || (await ensureUniqueEmail(deriveEmail(full_name), async (candidate) => {
+      const { data } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
+      return (data?.users ?? []).some((u) => u.email?.toLowerCase() === candidate.toLowerCase());
+    }));
 
   const { data: authData, error: authErr } = await admin.auth.admin.createUser({
     email,
