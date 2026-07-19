@@ -1,5 +1,6 @@
 import { createServerSupabase } from '@/lib/supabase-server';
 import { createVehicle, activateVehicle, assignVehicle } from './actions';
+import { VehicleFormFields } from './VehicleFormFields';
 
 type VehicleRow = {
   vehicle_id: string;
@@ -88,20 +89,14 @@ export default async function AdminVehiclesPage() {
               { value: 'confort', label: 'Confort' },
             ]}
           />
-          <Select
-            label="Formule *" name="formula"
-            options={[
-              { value: 'cession', label: 'Cession (concessionnaire)' },
-              { value: 'proprietaire', label: 'Propriétaire (chauffeur)' },
-            ]}
-          />
-          <Select
-            label="Concessionnaire (si cession)" name="dealer_partner_id"
-            options={[{ value: '', label: '— Aucun —' }, ...D.map((d) => ({ value: d.dealer_id, label: d.company_name }))]}
-          />
-          <Select
-            label="Chauffeur propriétaire (si propriétaire)" name="owner_profile_id"
-            options={[{ value: '', label: '— Aucun —' }, ...DR.filter((d) => d.application_type === 'proprietaire').map((d) => ({ value: d.profile_id, label: d.full_name }))]}
+          {/* Formule dérivée automatiquement : dealer choisi → cession, sinon → propriétaire */}
+          <VehicleFormFields
+            dealers={D}
+            ownerCandidates={DR.filter((d) => d.application_type === 'proprietaire').map((d) => ({
+              driver_id: d.driver_id,
+              profile_id: d.profile_id,
+              full_name: d.full_name,
+            }))}
           />
           <div className="md:col-span-2">
             <button
@@ -112,7 +107,6 @@ export default async function AdminVehiclesPage() {
             </button>
             <p className="mt-xs text-[11px] text-neutral-500">
               Le véhicule sera créé en statut &quot;pending&quot; jusqu&apos;à activation.
-              Cession = concessionnaire obligatoire. Propriétaire = chauffeur propriétaire obligatoire.
             </p>
           </div>
         </form>
