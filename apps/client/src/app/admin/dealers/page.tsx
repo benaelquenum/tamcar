@@ -73,11 +73,6 @@ export default async function AdminDealersPage() {
                     <td className="px-md py-md">
                       <p className="font-semibold text-neutral-900">{d.company_name}</p>
                       {d.rccm && <p className="text-[10px] text-neutral-500">RCCM {d.rccm}</p>}
-                      {d.is_shareholder && (
-                        <span className="mt-xs inline-flex rounded-full bg-primary-100 px-sm py-0.5 text-[10px] font-bold text-primary-700">
-                          Actionnaire {d.shareholder_pct ?? '—'} %
-                        </span>
-                      )}
                     </td>
                     <td className="px-md py-md text-sm text-neutral-700">
                       <p>{d.full_name}</p>

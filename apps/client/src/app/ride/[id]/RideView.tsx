@@ -206,12 +206,13 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
     }
   }
 
-  async function handleCancelRide() {
+  async function handleCancelRide(userReason?: string) {
     if (cancelling) return;
     setCancelling(true);
     setCancelError(null);
     const { error } = await supabaseBrowser.rpc('cancel_ride_by_client', {
       ride_id: ride.id,
+      p_user_reason: userReason ?? null,
     });
     if (error) {
       setCancelError(error.message);
@@ -942,6 +943,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                     onConfirm={handleCancelRide}
                     cancelling={cancelling}
                     error={cancelError}
+                    etaMin={durationToPickup}
                   />
                 )}
               </>
@@ -1212,12 +1214,21 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
   );
 }
 
+const CANCEL_REASONS = [
+  { code: 'driver_asked', label: "Le chauffeur m'a demandé d'annuler" },
+  { code: 'driver_not_moving', label: "Le chauffeur ne bouge pas" },
+  { code: 'wrong_direction', label: "Le chauffeur va dans la mauvaise direction" },
+  { code: 'wait_too_long', label: "Le temps d'attente est trop long" },
+  { code: 'other', label: "Autre" },
+];
+
 function CancelConfirmPanel({
   preview,
   onKeep,
   onConfirm,
   cancelling,
   error,
+  etaMin,
 }: {
   preview: {
     fee_fcfa: number;
@@ -1225,10 +1236,12 @@ function CancelConfirmPanel({
     driver_still_busy_elsewhere: boolean;
   } | null;
   onKeep: () => void;
-  onConfirm: () => void;
+  onConfirm: (userReason?: string) => void;
   cancelling: boolean;
   error: string | null;
+  etaMin?: number | null;
 }) {
+  const [pickedReason, setPickedReason] = useState<string | null>(null);
   const loading = preview === null;
   const fee = preview?.fee_fcfa ?? 0;
   const isFree = fee === 0;
@@ -1260,9 +1273,41 @@ function CancelConfirmPanel({
       }`}
     >
       <p className="text-sm font-semibold text-neutral-900">
-        Confirmer l&apos;annulation ?
+        Pourquoi souhaites-tu annuler la course ?
       </p>
       <p className="mt-xs text-xs text-neutral-700">{explanationLine}</p>
+
+      <ul className="mt-md space-y-xs">
+        {CANCEL_REASONS.map((r) => (
+          <li key={r.code}>
+            <button
+              type="button"
+              onClick={() => setPickedReason(r.code)}
+              className={`flex w-full items-center justify-between rounded-lg border p-md text-left text-sm transition ${
+                pickedReason === r.code
+                  ? 'border-primary-500 bg-white ring-2 ring-primary-500'
+                  : 'border-neutral-200 bg-white hover:border-neutral-300'
+              }`}
+            >
+              <span className="text-neutral-800">{r.label}</span>
+              <span
+                className={`h-4 w-4 flex-none rounded-full border-2 ${
+                  pickedReason === r.code
+                    ? 'border-primary-500 bg-primary-500'
+                    : 'border-neutral-300'
+                }`}
+              />
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      {etaMin != null && etaMin > 0 && (
+        <p className="mt-md text-center text-sm text-neutral-700">
+          Ton chauffeur est à <strong>{etaMin} min</strong> de ta position — tu peux
+          l&apos;attendre.
+        </p>
+      )}
 
       {!loading && !isFree && (
         <div className="mt-md rounded-lg bg-white p-md ring-1 ring-error/30">
@@ -1291,28 +1336,28 @@ function CancelConfirmPanel({
         </p>
       )}
 
-      <div className="mt-md flex gap-sm">
+      <div className="mt-md space-y-sm">
         <button
           type="button"
           onClick={onKeep}
           disabled={cancelling}
-          className="flex-1 rounded-lg bg-white py-sm text-sm font-semibold text-neutral-600 ring-1 ring-neutral-200"
+          className="w-full rounded-xl bg-white py-md text-sm font-bold text-primary-700 ring-2 ring-primary-500 hover:bg-primary-50"
         >
-          Non, garder
+          Attendre mon chauffeur
         </button>
         <button
           type="button"
-          onClick={onConfirm}
-          disabled={cancelling || loading}
-          className={`flex-1 rounded-lg py-sm text-sm font-bold text-white disabled:opacity-40 ${
+          onClick={() => onConfirm(pickedReason ?? undefined)}
+          disabled={cancelling || loading || pickedReason === null}
+          className={`w-full rounded-xl py-md text-sm font-bold text-white shadow-md disabled:opacity-40 ${
             isFree ? 'bg-primary-500' : 'bg-error'
           }`}
         >
           {cancelling
             ? '…'
             : isFree
-              ? 'Oui, annuler'
-              : `Oui, débiter ${fee.toLocaleString('fr-FR').replace(/,/g, ' ')} F`}
+              ? 'Annuler la course'
+              : `Annuler et débiter ${fee.toLocaleString('fr-FR').replace(/,/g, ' ')} F`}
         </button>
       </div>
       {error && <p className="mt-sm text-xs text-error">{error}</p>}

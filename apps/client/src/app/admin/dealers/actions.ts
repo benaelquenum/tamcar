@@ -34,8 +34,6 @@ async function createDealerImpl(formData: FormData): Promise<{ email: string; pa
   const company_name = String(formData.get('company_name') || '').trim();
   const rccm = String(formData.get('rccm') || '').trim();
   const share_pct = parseFloat(String(formData.get('share_pct') || '25'));
-  const is_shareholder = String(formData.get('is_shareholder') || '') === 'on';
-  const shareholder_pct_raw = String(formData.get('shareholder_pct') || '').trim();
 
   if (!full_name || !company_name) throw new Error('Nom et raison sociale obligatoires');
   if (!phone_raw && !email_raw) throw new Error('Téléphone ou email obligatoire');
@@ -75,8 +73,6 @@ async function createDealerImpl(formData: FormData): Promise<{ email: string; pa
     company_name,
     rccm: rccm || null,
     dealer_share_pct: share_pct,
-    is_shareholder,
-    shareholder_pct: shareholder_pct_raw ? parseFloat(shareholder_pct_raw) : null,
   }, { onConflict: 'profile_id' });
   if (dpErr) throw new Error(`Création concessionnaire : ${dpErr.message}`);
 

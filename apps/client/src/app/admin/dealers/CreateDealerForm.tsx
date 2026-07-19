@@ -53,11 +53,6 @@ export function CreateDealerForm() {
         <Field label="Raison sociale *" name="company_name" required />
         <Field label="RCCM" name="rccm" />
         <Field label="Part concessionnaire (%)" name="share_pct" type="number" step="0.5" defaultValue="25" />
-        <Field label="Part actionnaire (%)" name="shareholder_pct" type="number" step="0.5" />
-        <label className="flex items-center gap-sm text-sm text-neutral-800">
-          <input type="checkbox" name="is_shareholder" className="h-4 w-4" />
-          Actionnaire SARL
-        </label>
         <div className="md:col-span-2">
           <SubmitButton />
         </div>
