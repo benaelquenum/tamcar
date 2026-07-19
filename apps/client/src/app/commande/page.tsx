@@ -19,8 +19,10 @@ type CategoryDef = {
 };
 
 const CATEGORIES: CategoryDef[] = [
-  { id: 'essentiel', name: 'Essentiel', tagline: 'Ta course sans surprise' },
-  { id: 'confort', name: 'Confort', tagline: 'Le voyage sans compromis', badge: 'Best-seller' },
+  { id: 'moto', name: 'Moto', tagline: 'Rapide, éco, zémidjan formalisé' },
+  { id: 'tricycle', name: 'Tricycle', tagline: 'Kékéno confortable à petit prix' },
+  { id: 'essentiel', name: 'Essentiel', tagline: 'Voiture éco sans surprise' },
+  { id: 'confort', name: 'Confort', tagline: 'Voiture premium clim incluse', badge: 'Best-seller' },
 ];
 
 function formatFcfa(n: number | undefined | null): string {
@@ -98,23 +100,21 @@ export default function CommandePage() {
         return;
       }
 
-      const [essentiel, confort] = await Promise.all([
-        computePrice({
-          pickup_lat: pickup.center[1], pickup_lng: pickup.center[0],
-          dropoff_lat: dropoff.center[1], dropoff_lng: dropoff.center[0],
-          distance_km: r.distance_km, duration_min: r.duration_min,
-          p_category: 'essentiel',
-        }),
-        computePrice({
-          pickup_lat: pickup.center[1], pickup_lng: pickup.center[0],
-          dropoff_lat: dropoff.center[1], dropoff_lng: dropoff.center[0],
-          distance_km: r.distance_km, duration_min: r.duration_min,
-          p_category: 'confort',
-        }),
-      ]);
+      const quotes = await Promise.all(
+        CATEGORIES.map((c) =>
+          computePrice({
+            pickup_lat: pickup.center[1], pickup_lng: pickup.center[0],
+            dropoff_lat: dropoff.center[1], dropoff_lng: dropoff.center[0],
+            distance_km: r.distance_km, duration_min: r.duration_min,
+            p_category: c.id,
+          }),
+        ),
+      );
 
       if (cancelled) return;
-      setPrices({ essentiel, confort } as Record<VehicleCategory, PriceQuote | null>);
+      const byId = {} as Record<VehicleCategory, PriceQuote | null>;
+      CATEGORIES.forEach((c, i) => { byId[c.id] = quotes[i]; });
+      setPrices(byId);
       setLoading(false);
     })();
 
@@ -265,7 +265,12 @@ export default function CommandePage() {
                   price={prices[cat.id] ?? null}
                   selected={selectedCat === cat.id}
                   onSelect={() => setSelectedCat(cat.id)}
-                  climateLabel={cat.id === 'essentiel' ? 'Sans clim' : 'Clim incluse'}
+                  climateLabel={
+                    cat.id === 'confort' ? 'Clim incluse'
+                    : cat.id === 'moto' ? '2 places max'
+                    : cat.id === 'tricycle' ? '3 places · plein air'
+                    : 'Sans clim'
+                  }
                 />
               ))}
 

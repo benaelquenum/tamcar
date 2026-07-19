@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 
-export type VehicleCategory = 'essentiel' | 'confort' | 'premium';
+export type VehicleCategory = 'moto' | 'tricycle' | 'essentiel' | 'confort' | 'premium';
 
 export type CorridorDetail = {
   from_checkpoint: string;

@@ -4,7 +4,7 @@ import {
   type PriceQuote,
   type VehicleCategory,
 } from '@/lib/pricing';
-import { CheckIcon, SnowflakeIcon, SparkleIcon, StarIcon } from './Icon';
+import { CheckIcon, SnowflakeIcon, StarIcon } from './Icon';
 
 type CategoryDef = {
   id: VehicleCategory;
@@ -22,25 +22,45 @@ type CategoryDef = {
 
 const CATEGORIES: CategoryDef[] = [
   {
+    id: 'moto',
+    name: 'Moto',
+    tagline: 'Rapide, économique, zémidjan formalisé',
+    features: [
+      'Casque fourni, chauffeur vérifié',
+      '2 places max, idéal courtes distances',
+      'Prix fixe, sans surge',
+    ],
+    gradient: 'from-primary-500 to-primary-700',
+    climate: { label: '2 places', detail: 'Zémidjan formalisé', badgeClass: 'bg-neutral-300 text-neutral-700' },
+  },
+  {
+    id: 'tricycle',
+    name: 'Tricycle',
+    tagline: 'Kékéno confortable à petit prix',
+    features: [
+      '3 places, plus abrité qu\'une moto',
+      'Bagage possible',
+      'Prix fixe, sans surge',
+    ],
+    gradient: 'from-primary-500 to-primary-700',
+    climate: { label: '3 places', detail: 'Kékéno-taxi', badgeClass: 'bg-neutral-300 text-neutral-700' },
+  },
+  {
     id: 'essentiel',
     name: 'Essentiel',
-    tagline: 'Ta course sans surprise',
+    tagline: 'Voiture éco, sans surprise',
     features: [
       'Voiture propre et vérifiée',
       'Chauffeur noté 4,2 étoiles minimum',
       'Prix fixe garanti, jamais de surge',
     ],
     gradient: 'from-primary-500 to-primary-700',
-    climate: {
-      label: 'Sans clim',
-      detail: 'Voiture sans climatisation',
-      badgeClass: 'bg-neutral-300 text-neutral-700',
-    },
+    climate: { label: 'Sans clim', detail: 'Voiture sans climatisation', badgeClass: 'bg-neutral-300 text-neutral-700' },
   },
   {
     id: 'confort',
     name: 'Confort',
-    tagline: 'Le voyage sans compromis',
+    tagline: 'Voiture premium, climatisation incluse',
     features: [
       'Voiture récente de moins de 5 ans',
       'Chauffeur noté 4,6 étoiles minimum + formé qualité',
@@ -48,11 +68,7 @@ const CATEGORIES: CategoryDef[] = [
     ],
     badge: 'Best-seller',
     gradient: 'from-violet-500 via-primary-500 to-primary-700',
-    climate: {
-      label: 'Clim incluse',
-      detail: 'Fraîcheur assurée dès le départ',
-      badgeClass: 'bg-cyan-500 text-white',
-    },
+    climate: { label: 'Clim incluse', detail: 'Fraîcheur assurée dès le départ', badgeClass: 'bg-cyan-500 text-white' },
   },
 ];
 
@@ -84,28 +100,6 @@ export async function CategoryPricingCards() {
       <p className="mt-xs text-sm text-neutral-600">
         Deux niveaux de service, un même engagement prix fixe.
       </p>
-
-      {/* Ligne comparaison rapide — la clim est le différenciateur clé */}
-      <div className="mt-md flex items-stretch gap-sm rounded-xl bg-neutral-100 p-sm">
-        <div className="flex-1 rounded-lg bg-white p-sm text-center ring-1 ring-neutral-200">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
-            Essentiel
-          </p>
-          <p className="mt-xs inline-flex items-center gap-xs text-xs font-bold text-neutral-500">
-            <SnowflakeIcon className="h-3 w-3" strokeWidth={2.5} />
-            Sans clim
-          </p>
-        </div>
-        <div className="flex-1 rounded-lg bg-white p-sm text-center ring-1 ring-neutral-200">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
-            Confort
-          </p>
-          <p className="mt-xs inline-flex items-center gap-xs text-xs font-bold text-cyan-500">
-            <SnowflakeIcon className="h-3 w-3" strokeWidth={2.5} />
-            Clim incluse
-          </p>
-        </div>
-      </div>
 
       <div className="mt-lg space-y-md">
         {CATEGORIES.map((cat) => (

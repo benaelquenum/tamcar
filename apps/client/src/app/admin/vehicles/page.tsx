@@ -85,8 +85,10 @@ export default async function AdminVehiclesPage() {
           <Select
             label="Catégorie *" name="category"
             options={[
-              { value: 'essentiel', label: 'Essentiel' },
-              { value: 'confort', label: 'Confort' },
+              { value: 'moto', label: 'Moto (zémidjan)' },
+              { value: 'tricycle', label: 'Tricycle (kékéno)' },
+              { value: 'essentiel', label: 'Essentiel (voiture éco)' },
+              { value: 'confort', label: 'Confort (voiture premium)' },
             ]}
           />
           {/* Formule dérivée automatiquement : dealer choisi → cession, sinon → propriétaire.
