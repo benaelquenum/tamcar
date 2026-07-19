@@ -423,6 +423,9 @@ export default async function AdminHome() {
       <Section title="Détails par section">
         <div className="grid grid-cols-1 gap-md sm:grid-cols-2 lg:grid-cols-3">
           <ShortcutCard href="/admin/rides" title="Courses" description="Historique complet, statuts, prix, wallet transactions." />
+          <ShortcutCard href="/admin/drivers" title="Chauffeurs" description="Enregistrement, formule, gains cumulés, suspend/archive." />
+          <ShortcutCard href="/admin/dealers" title="Concessionnaires" description="Enregistrement, part, actionnariat, CA cumulé." />
+          <ShortcutCard href="/admin/vehicles" title="Véhicules" description="Enregistrement, activation, affectation chauffeur." />
           <ShortcutCard href="/admin/candidatures" title="Candidatures & RDV" description="Validation dossiers chauffeurs, KYC, planning." />
           <ShortcutCard href="/admin/dealer-advances" title="Avances Concessionnaires" description="Ligne de crédit ADR par partenaire." />
           <ShortcutCard href="/admin/banners" title="Bannières" description="Communications marketing home client." />
