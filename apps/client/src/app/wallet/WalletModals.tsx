@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation';
 import { CheckIcon } from '@/components/Icon';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { formatFcfa } from '@/lib/wallet';
+import { launchFedapayCheckout } from '@/lib/fedapay';
+
+const FEDAPAY_PUBLIC_KEY = process.env.NEXT_PUBLIC_FEDAPAY_PUBLIC_KEY;
 
 type ModalKind = 'topup' | 'withdraw';
 
@@ -45,22 +48,69 @@ export function WalletModal({ open, onClose, kind, availableBalance }: Props) {
 
     setError(null);
     startTransition(async () => {
-      const rpc = kind === 'topup' ? 'topup_tamcar_credit' : 'withdraw_tamcar_revenus';
-      const { error: rpcErr } = await supabaseBrowser.rpc(rpc, {
-        amount_fcfa: amount,
-        provider,
-      });
-      if (rpcErr) {
-        setError(rpcErr.message);
-        return;
+      if (kind === 'topup') {
+        // Flow FedaPay : initie une transaction pending côté DB,
+        // ouvre le widget, attend le webhook via polling.
+        if (!FEDAPAY_PUBLIC_KEY) {
+          setError('Recharge indisponible (config FedaPay manquante).');
+          return;
+        }
+        const { data, error: initErr } = await supabaseBrowser.rpc('initiate_fedapay_topup', {
+          p_amount_fcfa: amount,
+        });
+        if (initErr || !Array.isArray(data) || !data[0]) {
+          setError(initErr?.message ?? 'Impossible d\'initier la recharge');
+          return;
+        }
+        const ref = (data[0] as { reference: string }).reference;
+        const result = await launchFedapayCheckout({
+          publicKey: FEDAPAY_PUBLIC_KEY,
+          amountFcfa: amount,
+          reference: ref,
+        });
+        if (result !== 'completed') {
+          setError(result === 'error' ? 'Erreur de paiement' : 'Paiement annulé');
+          return;
+        }
+        // Poll wallet_transactions jusqu'à voir status='success' (max 30 s)
+        for (let i = 0; i < 30; i++) {
+          await new Promise((r) => setTimeout(r, 1000));
+          const { data: rows } = await supabaseBrowser
+            .from('wallet_transactions')
+            .select('status')
+            .eq('fedapay_reference', ref)
+            .limit(1);
+          if (Array.isArray(rows) && rows[0]?.status === 'success') break;
+          if (Array.isArray(rows) && rows[0]?.status === 'failed') {
+            setError('Paiement refusé');
+            return;
+          }
+        }
+        setSuccess(true);
+        setTimeout(() => {
+          onClose();
+          setSuccess(false);
+          setAmount(0);
+          router.refresh();
+        }, 900);
+      } else {
+        // Withdraw : reste sur le flow simulé pour l'instant
+        const { error: rpcErr } = await supabaseBrowser.rpc('withdraw_tamcar_revenus', {
+          amount_fcfa: amount,
+          provider,
+        });
+        if (rpcErr) {
+          setError(rpcErr.message);
+          return;
+        }
+        setSuccess(true);
+        setTimeout(() => {
+          onClose();
+          setSuccess(false);
+          setAmount(0);
+          router.refresh();
+        }, 900);
       }
-      setSuccess(true);
-      setTimeout(() => {
-        onClose();
-        setSuccess(false);
-        setAmount(0);
-        router.refresh();
-      }, 900);
     });
   }
 
@@ -72,8 +122,8 @@ export function WalletModal({ open, onClose, kind, availableBalance }: Props) {
             <h2 className="text-xl font-extrabold text-neutral-900">{title}</h2>
             <p className="mt-xs text-xs text-neutral-600">
               {kind === 'topup'
-                ? 'Simulation Mobile Money (intégration API réelle à venir).'
-                : `Vers ton Mobile Money · Simulation (intégration réelle à venir).`}
+                ? 'Paiement sécurisé via FedaPay (MTN, Moov, carte).'
+                : 'Vers ton Mobile Money · Simulation (intégration réelle à venir).'}
             </p>
           </div>
           <button
