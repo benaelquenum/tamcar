@@ -63,10 +63,28 @@ export function WalletModal({ open, onClose, kind, availableBalance }: Props) {
           return;
         }
         const ref = (data[0] as { reference: string }).reference;
+
+        // Pré-remplir customer avec les infos du user (évite "undefined" dans le widget)
+        const { data: { user } } = await supabaseBrowser.auth.getUser();
+        const { data: profileRows } = await supabaseBrowser
+          .from('profiles')
+          .select('full_name, phone')
+          .eq('id', user?.id ?? '')
+          .limit(1);
+        const profile = Array.isArray(profileRows) ? profileRows[0] as { full_name?: string; phone?: string } | undefined : undefined;
+        const fullName = profile?.full_name?.trim() ?? '';
+        const parts = fullName.split(/\s+/);
+        const firstName = parts[0] || undefined;
+        const lastName = parts.slice(1).join(' ') || undefined;
+        const email = user?.email || undefined;
+
         const result = await launchFedapayCheckout({
           publicKey: FEDAPAY_PUBLIC_KEY,
           amountFcfa: amount,
           reference: ref,
+          customerEmail: email,
+          customerFirstName: firstName,
+          customerLastName: lastName,
         });
         if (result !== 'completed') {
           setError(result === 'error' ? 'Erreur de paiement' : 'Paiement annulé');
@@ -184,7 +202,7 @@ export function WalletModal({ open, onClose, kind, availableBalance }: Props) {
                 <ProviderChoice
                   active={provider === 'mtn'}
                   onClick={() => setProvider('mtn')}
-                  label="MTN Money"
+                  label="MTN MoMo"
                   sub="+229 6X XX XX XX"
                 />
                 <ProviderChoice

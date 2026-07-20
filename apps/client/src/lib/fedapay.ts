@@ -49,29 +49,35 @@ export async function launchFedapayCheckout(opts: LaunchOpts): Promise<LaunchRes
   const FedaPay = window.FedaPay;
   if (!FedaPay) return 'error';
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const config: any = {
+    public_key: opts.publicKey,
+    transaction: {
+      amount: opts.amountFcfa,
+      description: opts.description || 'Recharge TamCar Crédit',
+    },
+    currency: { iso: 'XOF' },
+    custom_metadata: { reference: opts.reference },
+  };
+
+  // N'inclure `customer` que si on a de vraies valeurs — sinon le widget
+  // stringifie `undefined` en "undefined" et FedaPay rejette la transaction.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const customer: any = {};
+  if (opts.customerEmail) customer.email = opts.customerEmail;
+  if (opts.customerFirstName) customer.firstname = opts.customerFirstName;
+  if (opts.customerLastName) customer.lastname = opts.customerLastName;
+  if (Object.keys(customer).length > 0) config.customer = customer;
+
   return new Promise<LaunchResult>((resolve) => {
     try {
-      const widget = FedaPay.init({
-        public_key: opts.publicKey,
-        transaction: {
-          amount: opts.amountFcfa,
-          description: opts.description || 'Recharge TamCar Crédit',
-        },
-        currency: { iso: 'XOF' },
-        custom_metadata: { reference: opts.reference },
-        customer: {
-          email: opts.customerEmail || undefined,
-          firstname: opts.customerFirstName || undefined,
-          lastname: opts.customerLastName || undefined,
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        onComplete: (resp: any) => {
-          const reason = String(resp?.reason || '').toUpperCase();
-          if (reason === 'CHECKOUT_COMPLETED') resolve('completed');
-          else if (reason === 'DIALOG_DISMISSED') resolve('cancelled');
-          else resolve('cancelled');
-        },
-      });
+      config.onComplete = (resp: unknown) => {
+        const reason = String((resp as { reason?: string } | null)?.reason || '').toUpperCase();
+        if (reason === 'CHECKOUT_COMPLETED') resolve('completed');
+        else if (reason === 'DIALOG_DISMISSED') resolve('cancelled');
+        else resolve('cancelled');
+      };
+      const widget = FedaPay.init(config);
       widget.open();
     } catch (e) {
       // eslint-disable-next-line no-console
