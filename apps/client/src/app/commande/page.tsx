@@ -382,15 +382,15 @@ export default function CommandePage() {
               <span className="font-bold" style={{ fontVariantNumeric: 'tabular-nums' }}>
                 {route.distance_km.toFixed(1)} km
               </span>
-              &nbsp;·&nbsp;{route.duration_min} min estimés
-              {loading && <span className="ml-md text-primary-500">Calcul du prix…</span>}
+              &nbsp;·&nbsp;{route.duration_min} min {t('commande.min_distance')}
+              {loading && <span className="ml-md text-primary-500">{t('commande.calculating_price')}</span>}
             </section>
 
             {outOfZone && (
               <section className="mt-lg rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">
-                <p className="font-bold">Hors zone de service</p>
+                <p className="font-bold">{t('commande.out_of_zone_title')}</p>
                 <p className="mt-xs text-xs">
-                  TamCar couvre actuellement <strong>{SERVICE_ZONE_LABEL}</strong> uniquement.
+                  {t('commande.out_of_zone_body', { zone: SERVICE_ZONE_LABEL })}
                   {pickupOut && ' Ton point de départ est hors zone.'}
                   {dropoffOut && ' Ta destination est hors zone.'}
                 </p>
@@ -404,17 +404,14 @@ export default function CommandePage() {
               {CATEGORIES.map((cat) => (
                 <CategoryChoice
                   key={cat.id}
-                  category={cat}
+                  category={{ ...cat, tagline: t(`cat.${cat.id}.tagline`) }}
                   price={prices[cat.id] ?? null}
                   availability={availability[cat.id] ?? null}
                   selected={selectedCat === cat.id}
                   onSelect={() => setSelectedCat(cat.id)}
-                  climateLabel={
-                    cat.id === 'confort' ? 'Clim incluse'
-                    : cat.id === 'moto' ? '2 places max'
-                    : cat.id === 'tricycle' ? '3 places · plein air'
-                    : 'Sans clim'
-                  }
+                  climateLabel={t(`cat.${cat.id}.climate`)}
+                  noDriverLabel={t('commande.no_driver_nearby')}
+                  availableLabel={t('commande.available')}
                 />
               ))}
 
@@ -566,7 +563,7 @@ export default function CommandePage() {
 }
 
 function CategoryChoice({
-  category, price, availability, selected, onSelect, climateLabel,
+  category, price, availability, selected, onSelect, climateLabel, noDriverLabel, availableLabel,
 }: {
   category: CategoryDef;
   price: PriceQuote | null;
@@ -574,11 +571,10 @@ function CategoryChoice({
   selected: boolean;
   onSelect: () => void;
   climateLabel: string;
+  noDriverLabel: string;
+  availableLabel: string;
 }) {
-  const climateTint =
-    category.id === 'confort' || climateLabel === 'Clim ajoutée'
-      ? 'text-cyan-500'
-      : 'text-neutral-500';
+  const climateTint = category.id === 'confort' ? 'text-cyan-500' : 'text-neutral-500';
   return (
     <button
       type="button"
@@ -613,12 +609,12 @@ function CategoryChoice({
                   <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary-500" />
                 </span>
                 <span className="text-primary-700" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                  {availability.online_count} dispo
+                  {availability.online_count} {availableLabel}
                   {availability.eta_min != null ? ` · ~${availability.eta_min} min` : ''}
                 </span>
               </>
             ) : (
-              <span className="text-neutral-400">Aucun chauffeur à proximité</span>
+              <span className="text-neutral-400">{noDriverLabel}</span>
             )}
           </p>
         )}

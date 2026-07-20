@@ -817,11 +817,11 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                       {matching.length}
                     </p>
                     <p className="text-[10px] leading-tight text-white/80">
-                      {catName}{matching.length > 1 ? ' à proximité' : ' à proximité'}
+                      {t('ride.category_nearby', { cat: catName })}
                     </p>
                     {other > 0 && (
                       <p className="mt-xs text-[9px] leading-tight text-white/60">
-                        + {other} autre{other > 1 ? 's' : ''} véhicule{other > 1 ? 's' : ''}
+                        {t(other > 1 ? 'ride.other_vehicles_plural' : 'ride.other_vehicles', { n: other })}
                       </p>
                     )}
                   </div>
@@ -949,7 +949,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
           {/* Prix + actions */}
           <div className="border-t border-neutral-100 px-lg py-md">
             <div className="mb-md flex items-baseline justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-neutral-600">Total</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-neutral-600">{t('ride.total')}</span>
               <span
                 className="text-2xl font-extrabold text-neutral-900"
                 style={{ fontVariantNumeric: 'tabular-nums' }}
@@ -1148,11 +1148,10 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                 </svg>
               </div>
               <h2 className="text-lg font-extrabold text-neutral-900">
-                Recherche en cours…
+                {t('alternatives.title')}
               </h2>
               <p className="mt-xs text-sm text-neutral-600">
-                Aucun {ride.requested_category} disponible pour l&apos;instant.
-                Choisis une alternative pour partir plus vite :
+                {t('alternatives.no_available', { cat: ride.requested_category ?? 'ride' })}
               </p>
             </div>
 
@@ -1174,7 +1173,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                         <div>
                           <p className="text-base font-bold text-neutral-900">{label}</p>
                           <p className="text-[11px] text-neutral-600" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                            {o.drivers_online_nearby} chauffeur{o.drivers_online_nearby > 1 ? 's' : ''} proche{o.drivers_online_nearby > 1 ? 's' : ''}
+                            {t(o.drivers_online_nearby > 1 ? 'alternatives.driver_nearby_plural' : 'alternatives.driver_nearby', { n: o.drivers_online_nearby })}
                           </p>
                           {o.eta_min != null && (
                             <p className="text-[11px] font-bold text-primary-700" style={{ fontVariantNumeric: 'tabular-nums' }}>
@@ -1207,7 +1206,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
               disabled={switching}
               className="w-full rounded-xl border-2 border-neutral-200 py-md text-sm font-bold text-neutral-600 hover:border-neutral-300"
             >
-              Attendre encore
+              {t('alternatives.wait_more')}
             </button>
           </div>
         </div>
@@ -1308,13 +1307,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
   );
 }
 
-const CANCEL_REASONS = [
-  { code: 'driver_asked', label: "Le chauffeur m'a demandé d'annuler" },
-  { code: 'driver_not_moving', label: "Le chauffeur ne bouge pas" },
-  { code: 'wrong_direction', label: "Le chauffeur va dans la mauvaise direction" },
-  { code: 'wait_too_long', label: "Le temps d'attente est trop long" },
-  { code: 'other', label: "Autre" },
-];
+const CANCEL_REASON_CODES = ['driver_asked', 'driver_not_moving', 'wrong_direction', 'wait_too_long', 'other'] as const;
 
 function CancelConfirmPanel({
   preview,
@@ -1378,29 +1371,29 @@ function CancelConfirmPanel({
       }`}
     >
       <p className="text-sm font-semibold text-neutral-900">
-        Pourquoi souhaites-tu annuler la course ?
+        {t('cancel.title')}
       </p>
       <p className="mt-xs text-xs text-neutral-700">{explanationLine}</p>
 
       <ul className="mt-md space-y-xs">
-        {CANCEL_REASONS.map((r) => (
-          <li key={r.code}>
+        {CANCEL_REASON_CODES.map((code) => (
+          <li key={code}>
             <button
               type="button"
               onClick={() => {
-                setPickedReason(r.code);
-                onReasonChange(r.code);
+                setPickedReason(code);
+                onReasonChange(code);
               }}
               className={`flex w-full items-center justify-between rounded-lg border p-md text-left text-sm transition ${
-                pickedReason === r.code
+                pickedReason === code
                   ? 'border-primary-500 bg-white ring-2 ring-primary-500'
                   : 'border-neutral-200 bg-white hover:border-neutral-300'
               }`}
             >
-              <span className="text-neutral-800">{r.label}</span>
+              <span className="text-neutral-800">{t(`cancel.reason.${code}`)}</span>
               <span
                 className={`h-4 w-4 flex-none rounded-full border-2 ${
-                  pickedReason === r.code
+                  pickedReason === code
                     ? 'border-primary-500 bg-primary-500'
                     : 'border-neutral-300'
                 }`}

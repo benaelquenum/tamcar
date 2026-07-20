@@ -3,6 +3,7 @@
 import { useState, useTransition, useRef, useEffect } from 'react';
 import { getRoute } from '@/lib/mapbox';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+import { useT } from '@/lib/i18n-client';
 
 export type ClientStopRow = {
   id: string;
@@ -57,6 +58,7 @@ export function StopsListClient({
   stops,
   onChanged,
 }: Props) {
+  const t = useT();
   const [pending, startTransition] = useTransition();
   const [err, setErr] = useState<string | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -224,7 +226,7 @@ export function StopsListClient({
           <span className="mt-xs grid h-4 w-4 flex-none place-items-center rounded-full bg-neutral-400" aria-hidden />
           <div className="flex-1 min-w-0">
             <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
-              Départ
+              {t('ride.pickup_label')}
             </p>
             <p className="text-xs font-semibold text-neutral-900">{pickupAddress}</p>
           </div>
@@ -345,7 +347,7 @@ export function StopsListClient({
           </span>
           <div className="flex-1 min-w-0">
             <p className="text-[10px] font-bold uppercase tracking-wider text-primary-700">
-              Destination finale
+              {t('ride.dropoff_final')}
             </p>
             <p className="text-xs font-bold text-neutral-900">{dropoffAddress}</p>
           </div>

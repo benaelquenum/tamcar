@@ -9,6 +9,7 @@ import {
   reverseGeocode as mapboxReverseGeocode,
   type GeocodeFeature,
 } from '@/lib/mapbox';
+import { useT } from '@/lib/i18n-client';
 import {
   fetchRecentAddresses,
   placeToFeature,
@@ -57,6 +58,7 @@ export function AddressAutocomplete({
   onPickOnMap,
   onSuggestPlace,
 }: Props) {
+  const t = useT();
   const [query, setQuery] = useState(value?.place_name || '');
   const [results, setResults] = useState<
     Array<GeocodeFeature & { origin: 'tamcar' | 'google' | 'mapbox'; verified?: boolean }>
@@ -186,7 +188,7 @@ export function AddressAutocomplete({
               title="Poser le point sur la carte"
             >
               <PinIcon className="h-3.5 w-3.5" strokeWidth={2.5} />
-              Sur carte
+              {t('commande.on_map')}
             </button>
           )}
           {showLocationButton && (
@@ -197,7 +199,7 @@ export function AddressAutocomplete({
               className="inline-flex items-center gap-xs rounded-full bg-primary-50 px-md py-xs text-xs font-bold text-primary-700 transition hover:bg-primary-100 disabled:opacity-50"
             >
               <CrosshairIcon className="h-3.5 w-3.5" strokeWidth={2.5} />
-              {geolocating ? 'Localisation…' : 'Ma position'}
+              {geolocating ? '…' : t('commande.my_position')}
             </button>
           )}
         </div>
@@ -235,7 +237,7 @@ export function AddressAutocomplete({
           {recents.length > 0 ? (
             <>
               <p className="mb-xs text-[11px] font-semibold uppercase tracking-wide text-neutral-500">
-                Récents
+                {t('commande.recents')}
               </p>
               <div className="flex flex-wrap gap-xs">
                 {recents.map((r) => (
