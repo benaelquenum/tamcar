@@ -1,4 +1,5 @@
 import { createServerSupabase } from '@/lib/supabase-server';
+import { CheckIcon } from '@/components/Icon';
 import { approvePlace, rejectPlace } from './actions';
 
 type PlaceRow = {
@@ -82,7 +83,8 @@ export default async function AdminPlacesPage() {
 
         {!pending || pending.length === 0 ? (
           <div className="rounded-xl bg-white p-2xl text-center text-sm text-neutral-600 shadow-sm">
-            Rien en attente. 👌
+            <CheckIcon className="mx-auto h-6 w-6 text-primary-500" strokeWidth={3} />
+            <p className="mt-sm">Rien en attente.</p>
           </div>
         ) : (
           <div className="overflow-hidden rounded-xl bg-white shadow-sm">
@@ -162,7 +164,7 @@ export default async function AdminPlacesPage() {
       </section>
 
       <p className="mt-xl text-center text-xs text-neutral-400">
-        Les user_submitted validés apparaissent dans l&apos;autocomplete client avec le badge ✓ TamCar.
+        Les user_submitted validés apparaissent dans l&apos;autocomplete client avec le badge « TamCar vérifié ».
       </p>
     </div>
   );

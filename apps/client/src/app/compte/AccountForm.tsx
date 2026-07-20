@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Avatar } from '@/components/Avatar';
+import { CheckIcon } from '@/components/Icon';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 
 type Props = {
@@ -216,8 +217,9 @@ export function AccountForm({
         <div className="rounded-md bg-error/10 p-md text-sm text-error">{error}</div>
       )}
       {saved && (
-        <div className="rounded-md bg-primary-50 p-md text-sm font-semibold text-primary-700">
-          Enregistré ✓
+        <div className="inline-flex items-center gap-xs rounded-md bg-primary-50 p-md text-sm font-semibold text-primary-700">
+          Enregistré
+          <CheckIcon className="h-4 w-4" strokeWidth={3} />
         </div>
       )}
 

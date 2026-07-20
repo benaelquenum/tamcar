@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useFormState, useFormStatus } from 'react-dom';
+import { CheckIcon } from '@/components/Icon';
 import { createDriver, type CreateDriverState } from './actions';
 
 const initial: CreateDriverState = { ok: false };
@@ -72,8 +73,9 @@ function CredentialsPanel({
 }) {
   return (
     <div className="mb-md rounded-xl border-2 border-primary-500 bg-primary-50 p-lg">
-      <p className="text-sm font-bold text-primary-900">
-        ✓ {kind === 'chauffeur' ? 'Chauffeur' : 'Concessionnaire'} <strong>{c.full_name}</strong> enregistré.
+      <p className="flex items-center gap-xs text-sm font-bold text-primary-900">
+        <CheckIcon className="h-4 w-4" strokeWidth={3} />
+        {kind === 'chauffeur' ? 'Chauffeur' : 'Concessionnaire'} <strong className="mx-xs">{c.full_name}</strong> enregistré.
       </p>
       <p className="mt-md text-xs font-semibold text-neutral-700">
         Identifiants à transmettre au {kind} :

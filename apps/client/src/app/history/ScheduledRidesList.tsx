@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+import { CalendarIcon, CheckIcon } from '@/components/Icon';
 
 type Scheduled = {
   id: string;
@@ -60,15 +61,19 @@ export function ScheduledRidesList({ initial, justScheduled }: { initial: Schedu
     <section className="mt-lg">
       {justScheduled && items.length > 0 && (
         <div className="mb-md rounded-xl bg-primary-500 p-md text-white shadow-glow">
-          <p className="text-sm font-bold">✓ Réservation enregistrée</p>
+          <p className="flex items-center gap-xs text-sm font-bold">
+            <CheckIcon className="h-3.5 w-3.5" strokeWidth={3} />
+            Réservation enregistrée
+          </p>
           <p className="mt-xs text-xs">
             Un chauffeur te sera assigné automatiquement 15 min avant le départ.
           </p>
         </div>
       )}
 
-      <h2 className="mb-md text-xs font-bold uppercase tracking-wider text-violet-700">
-        📅 Réservations à venir ({items.length})
+      <h2 className="mb-md flex items-center gap-xs text-xs font-bold uppercase tracking-wider text-violet-700">
+        <CalendarIcon className="h-3.5 w-3.5" />
+        Réservations à venir ({items.length})
       </h2>
 
       <ul className="space-y-sm">

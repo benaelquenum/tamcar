@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { Logo } from '@/components/Logo';
 import {
+  AlertTriangleIcon,
   ArrowRightIcon,
   ClockIcon,
   MenuIcon,
@@ -533,7 +534,8 @@ function RideCard({
     }`}>
       {isBelow && (
         <div className="mb-sm inline-flex items-center gap-xs rounded-full bg-warning/20 px-md py-xs text-[10px] font-bold text-warning">
-          ⚠ Course {catLabel(ride.requested_category || '')} — tarif réduit
+          <AlertTriangleIcon className="h-3 w-3" />
+          Course {catLabel(ride.requested_category || '')} — tarif réduit
         </div>
       )}
       <div className="flex items-start justify-between gap-md">

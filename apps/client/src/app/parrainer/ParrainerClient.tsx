@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { CheckIcon } from '@/components/Icon';
 
 export function ParrainerClient({ code }: { code: string }) {
   const [copied, setCopied] = useState(false);
@@ -31,9 +32,16 @@ export function ParrainerClient({ code }: { code: string }) {
       <button
         type="button"
         onClick={copy}
-        className="flex-1 rounded-full bg-white/95 px-md py-sm text-xs font-bold text-primary-700 shadow-sm"
+        className="flex flex-1 items-center justify-center gap-xs rounded-full bg-white/95 px-md py-sm text-xs font-bold text-primary-700 shadow-sm"
       >
-        {copied ? '✓ Copié' : 'Copier le code'}
+        {copied ? (
+          <>
+            <CheckIcon className="h-3.5 w-3.5" strokeWidth={3} />
+            Copié
+          </>
+        ) : (
+          'Copier le code'
+        )}
       </button>
       <button
         type="button"

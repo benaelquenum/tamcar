@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { CheckIcon } from './Icon';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 
 type Props = { rideId?: string };
@@ -62,7 +63,9 @@ export function SosButton({ rideId }: Props) {
       >
         {sent ? (
           <div className="text-center">
-            <div className="mx-auto mb-md grid h-14 w-14 place-items-center rounded-full bg-primary-50 text-primary-700">✓</div>
+            <div className="mx-auto mb-md grid h-14 w-14 place-items-center rounded-full bg-primary-50 text-primary-700">
+              <CheckIcon className="h-7 w-7" strokeWidth={3} />
+            </div>
             <p className="font-bold text-neutral-900">Alerte envoyée</p>
             <p className="mt-xs text-xs text-neutral-600">
               Le support TamCar reçoit ta position en temps réel.

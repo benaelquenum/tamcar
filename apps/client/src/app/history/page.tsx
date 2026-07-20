@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Logo } from '@/components/Logo';
-import { PinIcon } from '@/components/Icon';
+import { PinIcon, FileTextIcon } from '@/components/Icon';
 import { getCurrentUser } from '@/lib/session';
 import { createServerSupabase } from '@/lib/supabase-server';
 import { ScheduledRidesList } from './ScheduledRidesList';
@@ -145,9 +145,10 @@ export default async function HistoryPage({ searchParams }: { searchParams: { ju
                       href={`/facture/${r.id}`}
                       target="_blank"
                       rel="noopener"
-                      className="mt-sm block rounded-lg border border-primary-500 bg-primary-50 py-xs text-center text-[11px] font-bold text-primary-700 hover:bg-primary-100"
+                      className="mt-sm inline-flex w-full items-center justify-center gap-xs rounded-lg border border-primary-500 bg-primary-50 py-xs text-center text-[11px] font-bold text-primary-700 hover:bg-primary-100"
                     >
-                      📄 Télécharger la facture
+                      <FileTextIcon className="h-3.5 w-3.5" />
+                      Télécharger la facture
                     </a>
                   )}
                 </div>

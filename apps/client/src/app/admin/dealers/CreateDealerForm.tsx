@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useFormState, useFormStatus } from 'react-dom';
+import { CheckIcon } from '@/components/Icon';
 import { createDealer, type CreateDealerState } from './actions';
 
 const initial: CreateDealerState = { ok: false };
@@ -22,8 +23,9 @@ export function CreateDealerForm() {
 
       {state.ok && state.credentials && (
         <div className="mb-md rounded-xl border-2 border-primary-500 bg-primary-50 p-lg">
-          <p className="text-sm font-bold text-primary-900">
-            ✓ Concessionnaire <strong>{state.credentials.company_name}</strong> (contact {state.credentials.full_name}) enregistré.
+          <p className="flex items-center gap-xs text-sm font-bold text-primary-900">
+            <CheckIcon className="h-4 w-4" strokeWidth={3} />
+            Concessionnaire <strong className="mx-xs">{state.credentials.company_name}</strong> (contact {state.credentials.full_name}) enregistré.
           </p>
           <p className="mt-md text-xs font-semibold text-neutral-700">
             Identifiants à transmettre :

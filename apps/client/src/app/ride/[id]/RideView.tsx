@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/Logo';
-import { CarIcon, CheckIcon, PinIcon, StarIcon } from '@/components/Icon';
+import { CarIcon, CheckIcon, PinIcon, StarIcon, AlertTriangleIcon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { Map } from '@/components/Map';
 import { RatingModal } from '@/components/RatingModal';
@@ -1360,8 +1360,9 @@ function CancelConfirmPanel({
 
       {isDriverFault && evidence && (
         <div className="mt-md rounded-lg bg-white p-md ring-2 ring-primary-500">
-          <p className="text-xs font-bold uppercase tracking-wider text-primary-700">
-            ✓ Preuve automatique
+          <p className="flex items-center gap-xs text-xs font-bold uppercase tracking-wider text-primary-700">
+            <CheckIcon className="h-3.5 w-3.5" strokeWidth={3} />
+            Preuve automatique
           </p>
           <p className="mt-xs text-sm font-semibold text-neutral-900">{evidence}</p>
           <p className="mt-xs text-[11px] text-neutral-600">
@@ -1372,8 +1373,9 @@ function CancelConfirmPanel({
 
       {willBeDisputed && !isDriverFault && (
         <div className="mt-md rounded-lg bg-amber-50 p-md ring-1 ring-amber-300">
-          <p className="text-xs font-bold uppercase tracking-wider text-amber-800">
-            ⚠ Litige — sera examiné
+          <p className="flex items-center gap-xs text-xs font-bold uppercase tracking-wider text-amber-800">
+            <AlertTriangleIcon className="h-3.5 w-3.5" />
+            Litige — sera examiné
           </p>
           <p className="mt-xs text-[11px] text-neutral-700">
             Nos données ne confirment pas cette raison automatiquement. Les frais

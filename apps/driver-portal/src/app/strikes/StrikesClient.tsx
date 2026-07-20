@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { CheckIcon, ThumbsUpIcon } from '@/components/Icon';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 
 type Strike = {
@@ -98,7 +99,7 @@ export function StrikesClient({ strikes }: { strikes: Strike[] }) {
 
         {strikes.length === 0 ? (
           <div className="mt-xl rounded-xl bg-primary-50 p-lg text-center">
-            <p className="text-lg">👌</p>
+            <ThumbsUpIcon className="mx-auto h-6 w-6 text-primary-700" strokeWidth={2.2} />
             <p className="mt-xs text-sm font-semibold text-primary-900">
               Aucun signalement. Continue comme ça.
             </p>
@@ -124,8 +125,9 @@ export function StrikesClient({ strikes }: { strikes: Strike[] }) {
                         {fmt(s.ended_at)}
                       </p>
                       {isRevoked && (
-                        <span className="rounded-full bg-primary-100 px-sm py-0.5 text-[10px] font-bold text-primary-700">
-                          ✓ Révoqué
+                        <span className="inline-flex items-center gap-xs rounded-full bg-primary-100 px-sm py-0.5 text-[10px] font-bold text-primary-700">
+                          <CheckIcon className="h-3 w-3" strokeWidth={3} />
+                          Révoqué
                         </span>
                       )}
                       {isUpheld && (

@@ -392,7 +392,7 @@ export default async function AdminHome() {
 
       {/* ===== SOS ouverts (détail) ===== */}
       {openSos.length > 0 && (
-        <Section title="⚠ Alertes SOS ouvertes">
+        <Section title="Alertes SOS ouvertes">
           <div className="space-y-xs">
             {openSos.slice(0, 5).map((s) => (
               <div key={s.id} className="flex items-center gap-md rounded-lg border border-error/30 bg-error/5 p-md">

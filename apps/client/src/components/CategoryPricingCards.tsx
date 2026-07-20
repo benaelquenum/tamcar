@@ -4,6 +4,7 @@ import {
   type PriceQuote,
   type VehicleCategory,
 } from '@/lib/pricing';
+import { CarIcon, MotoIcon, TricycleIcon, SuvIcon } from './Icon';
 
 type CategoryDef = {
   id: VehicleCategory;
@@ -11,14 +12,14 @@ type CategoryDef = {
   tagline: string;
   seats: string;
   accent: string;
-  emoji: string;
+  Icon: (props: { className?: string; strokeWidth?: number }) => JSX.Element;
 };
 
 const CATEGORIES: CategoryDef[] = [
-  { id: 'moto',      name: 'Moto',      tagline: 'Rapide, éco', seats: '2 pl.', accent: 'bg-orange-500',  emoji: '🛵' },
-  { id: 'tricycle',  name: 'Tricycle',  tagline: 'Kloboto',     seats: '3 pl.', accent: 'bg-violet-500',  emoji: '🛺' },
-  { id: 'essentiel', name: 'Essentiel', tagline: 'Voiture éco', seats: '4 pl.', accent: 'bg-primary-500', emoji: '🚗' },
-  { id: 'confort',   name: 'Confort',   tagline: 'Voiture clim.', seats: '4 pl.', accent: 'bg-amber-500', emoji: '🚙' },
+  { id: 'moto',      name: 'Moto',      tagline: 'Rapide, éco',    seats: '2 pl.', accent: 'bg-orange-500',  Icon: MotoIcon },
+  { id: 'tricycle',  name: 'Tricycle',  tagline: 'Kloboto',        seats: '3 pl.', accent: 'bg-violet-500',  Icon: TricycleIcon },
+  { id: 'essentiel', name: 'Essentiel', tagline: 'Voiture éco',    seats: '4 pl.', accent: 'bg-primary-500', Icon: CarIcon },
+  { id: 'confort',   name: 'Confort',   tagline: 'Voiture clim.',  seats: '4 pl.', accent: 'bg-amber-500',   Icon: SuvIcon },
 ];
 
 export async function CategoryPricingCards() {
@@ -51,14 +52,15 @@ export async function CategoryPricingCards() {
 }
 
 function MiniCategoryTile({ category, quote }: { category: CategoryDef; quote: PriceQuote | null }) {
+  const { Icon } = category;
   return (
     <div className="relative overflow-hidden rounded-xl bg-white p-md shadow-sm ring-1 ring-neutral-200">
       <div className="flex items-center gap-sm">
         <span
-          className={`grid h-9 w-9 flex-none place-items-center rounded-full text-lg text-white ${category.accent}`}
+          className={`grid h-9 w-9 flex-none place-items-center rounded-full text-white ${category.accent}`}
           aria-hidden="true"
         >
-          {category.emoji}
+          <Icon className="h-5 w-5" strokeWidth={2.2} />
         </span>
         <div className="min-w-0">
           <p className="truncate text-sm font-extrabold text-neutral-900">{category.name}</p>

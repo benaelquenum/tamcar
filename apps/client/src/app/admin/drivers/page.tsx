@@ -1,4 +1,5 @@
 import { createServerSupabase } from '@/lib/supabase-server';
+import { AlertTriangleIcon, TargetIcon2 } from '@/components/Icon';
 import { suspendDriver, unsuspendDriver, archiveDriver } from './actions';
 import { CreateDriverForm } from './CreateDriverForm';
 
@@ -28,12 +29,12 @@ type DriverRow = {
   pending_disputes_count: number;
 };
 
-function strikesBadge(strikes: number, pending: number): { className: string; label: string } | null {
+function strikesBadge(strikes: number, pending: number): { className: string; label: string; warn: boolean } | null {
   const total = strikes + pending;
   if (total === 0) return null;
-  if (total >= 5) return { className: 'bg-error text-white', label: `⚠ ${total}` };
-  if (total >= 3) return { className: 'bg-error/15 text-error', label: `${total}` };
-  return { className: 'bg-warning/15 text-warning', label: `${total}` };
+  if (total >= 5) return { className: 'bg-error text-white', label: String(total), warn: true };
+  if (total >= 3) return { className: 'bg-error/15 text-error', label: `${total}`, warn: false };
+  return { className: 'bg-warning/15 text-warning', label: `${total}`, warn: false };
 }
 
 function fmt(n: number): string {
@@ -87,8 +88,9 @@ export default async function AdminDriversPage() {
       {watchList.length > 0 && (
         <section className="mb-2xl">
           <div className="mb-md flex items-baseline justify-between">
-            <h2 className="text-lg font-bold text-neutral-900">
-              🎯 Chauffeurs à surveiller
+            <h2 className="flex items-center gap-xs text-lg font-bold text-neutral-900">
+              <TargetIcon2 className="h-5 w-5 text-error" />
+              Chauffeurs à surveiller
             </h2>
             <p className="text-xs text-neutral-600">
               Strikes prouvés + litiges en attente
@@ -202,7 +204,8 @@ export default async function AdminDriversPage() {
                       {(() => {
                         const b = strikesBadge(d.driver_fault_strikes, d.pending_disputes_count);
                         return b ? (
-                          <span className={`inline-block rounded-full px-sm py-0.5 text-[11px] font-bold ${b.className}`}>
+                          <span className={`inline-flex items-center gap-xs rounded-full px-sm py-0.5 text-[11px] font-bold ${b.className}`}>
+                            {b.warn && <AlertTriangleIcon className="h-3 w-3" />}
                             {b.label}
                           </span>
                         ) : (

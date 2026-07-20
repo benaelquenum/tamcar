@@ -1,4 +1,5 @@
 import { createServerSupabase } from '@/lib/supabase-server';
+import { AlertTriangleIcon, CheckIcon, CrosshairIcon } from '@/components/Icon';
 import { resolveDispute, resolveStrikeDispute } from './actions';
 
 type DisputeRow = {
@@ -76,7 +77,8 @@ export default async function AdminLitigesPage() {
 
       {list.length === 0 ? (
         <div className="rounded-xl bg-white p-2xl text-center text-sm text-neutral-600 shadow-sm">
-          Aucun litige en attente. 👌
+          <CheckIcon className="mx-auto h-6 w-6 text-primary-500" strokeWidth={3} />
+          <p className="mt-sm">Aucun litige en attente.</p>
         </div>
       ) : (
         <ul className="space-y-md">
@@ -89,15 +91,23 @@ export default async function AdminLitigesPage() {
             >
               <div className="border-b border-neutral-100 bg-neutral-50 px-md py-xs">
                 <span
-                  className={`inline-block rounded-full px-sm py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                  className={`inline-flex items-center gap-xs rounded-full px-sm py-0.5 text-[10px] font-bold uppercase tracking-wider ${
                     d.dispute_kind === 'driver_contest'
                       ? 'bg-warning text-white'
                       : 'bg-primary-500 text-white'
                   }`}
                 >
-                  {d.dispute_kind === 'driver_contest'
-                    ? '⚠ Contestation chauffeur'
-                    : '🔍 Raison client à examiner'}
+                  {d.dispute_kind === 'driver_contest' ? (
+                    <>
+                      <AlertTriangleIcon className="h-3 w-3" />
+                      Contestation chauffeur
+                    </>
+                  ) : (
+                    <>
+                      <CrosshairIcon className="h-3 w-3" strokeWidth={2.5} />
+                      Raison client à examiner
+                    </>
+                  )}
                 </span>
               </div>
               <div className="grid grid-cols-1 gap-md p-md md:grid-cols-3">
@@ -115,8 +125,9 @@ export default async function AdminLitigesPage() {
                     {d.driver_name ?? '—'}
                   </p>
                   {d.driver_strike_count != null && d.driver_strike_count > 0 && (
-                    <p className="mt-xs text-[11px] text-error">
-                      ⚠ {d.driver_strike_count} strike{d.driver_strike_count > 1 ? 's' : ''} au total
+                    <p className="mt-xs inline-flex items-center gap-xs text-[11px] text-error">
+                      <AlertTriangleIcon className="h-3 w-3" />
+                      {d.driver_strike_count} strike{d.driver_strike_count > 1 ? 's' : ''} au total
                     </p>
                   )}
                 </div>
