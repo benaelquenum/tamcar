@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { CheckIcon, StarIcon } from './Icon';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+import { useT } from '@/lib/i18n-client';
 
 type Props = {
   open: boolean;
@@ -15,6 +16,7 @@ type Props = {
 };
 
 export function RatingModal({ open, onClose, rideId, ratedName, onSubmitted, mandatory }: Props) {
+  const t = useT();
   const [stars, setStars] = useState(0);
   const [hover, setHover] = useState(0);
   const [comment, setComment] = useState('');
@@ -60,16 +62,14 @@ export function RatingModal({ open, onClose, rideId, ratedName, onSubmitted, man
         <div className="mb-lg text-center">
           {mandatory && (
             <p className="mb-sm inline-block rounded-full bg-primary-50 px-md py-xs text-[10px] font-bold uppercase tracking-wider text-primary-700">
-              Note requise pour continuer
+              {t('rating.required')}
             </p>
           )}
           <h2 className="text-xl font-extrabold text-neutral-900">
-            Comment s&apos;est passée la course avec {ratedName} ?
+            {t('rating.how_ride', { name: ratedName })}
           </h2>
           <p className="mt-xs text-sm text-neutral-600">
-            {mandatory
-              ? 'Ta note libère l\'écran d\'accueil.'
-              : 'Ta note aide TamCar à améliorer le service.'}
+            {mandatory ? t('rating.your_note_unlocks') : t('rating.your_note_unlocks')}
           </p>
         </div>
 
@@ -115,7 +115,7 @@ export function RatingModal({ open, onClose, rideId, ratedName, onSubmitted, man
 
             <div className="mb-md">
               <label htmlFor="rating-comment" className="mb-xs block text-sm font-semibold text-neutral-900">
-                Un commentaire ? (optionnel)
+                {t('rating.comment_optional')}
               </label>
               <textarea
                 id="rating-comment"
@@ -123,7 +123,7 @@ export function RatingModal({ open, onClose, rideId, ratedName, onSubmitted, man
                 maxLength={500}
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                placeholder="Un mot sur la course…"
+                placeholder={t('rating.comment_placeholder')}
                 className="w-full resize-none rounded-xl bg-neutral-100 px-lg py-md text-sm text-neutral-900 shadow-sm ring-1 ring-neutral-200 transition placeholder:text-neutral-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
@@ -150,7 +150,7 @@ export function RatingModal({ open, onClose, rideId, ratedName, onSubmitted, man
                 disabled={submitting || stars < 1}
                 className={`${mandatory ? 'w-full' : 'flex-1'} rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-md text-sm font-bold text-white shadow-glow disabled:cursor-not-allowed disabled:opacity-50`}
               >
-                {submitting ? 'Envoi…' : 'Envoyer'}
+                {submitting ? '…' : t('rating.send')}
               </button>
             </div>
           </>

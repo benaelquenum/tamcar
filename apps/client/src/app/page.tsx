@@ -39,11 +39,11 @@ type ActiveRideRow = {
   driver_full_name: string | null;
 };
 
-const ACTIVE_STATUS_META: Record<ActiveRideRow['status'], { label: string; tint: string; sub: string }> = {
-  requested: { label: 'Recherche d\'un chauffeur', tint: 'from-primary-500 to-primary-700', sub: 'On cherche pour toi…' },
-  matched: { label: 'Chauffeur en route', tint: 'from-primary-500 to-primary-700', sub: 'Ton chauffeur arrive.' },
-  arrived: { label: 'Chauffeur arrivé', tint: 'from-primary-700 to-cyan-500', sub: 'Rejoins-le au point de départ.' },
-  in_progress: { label: 'Course en cours', tint: 'from-primary-500 to-primary-700', sub: 'Bon voyage !' },
+const ACTIVE_STATUS_TINT: Record<ActiveRideRow['status'], string> = {
+  requested: 'from-primary-500 to-primary-700',
+  matched: 'from-primary-500 to-primary-700',
+  arrived: 'from-primary-700 to-cyan-500',
+  in_progress: 'from-primary-500 to-primary-700',
 };
 
 const DEFAULT_NAMES = new Set(['utilisateur', 'Nouveau client', 'Ami TamCar']);
@@ -142,7 +142,7 @@ export default async function HomePage() {
         </header>
 
         {/* Onglet notification course active */}
-        {activeRide && <ActiveRideBanner ride={activeRide} />}
+        {activeRide && <ActiveRideBanner ride={activeRide} t={t} />}
 
         {/* Greeting + hero */}
         <section className="mt-xl">
@@ -320,12 +320,13 @@ function BannerCard({ banner }: { banner: BannerRow }) {
   );
 }
 
-function ActiveRideBanner({ ride }: { ride: ActiveRideRow }) {
-  const meta = ACTIVE_STATUS_META[ride.status];
+function ActiveRideBanner({ ride, t }: { ride: ActiveRideRow; t: (key: string, vars?: Record<string, string | number>) => string }) {
+  const tint = ACTIVE_STATUS_TINT[ride.status];
+  const label = t(`ride.status.${ride.status}`);
   return (
     <Link
       href={`/ride/${ride.id}`}
-      className={`mt-lg block overflow-hidden rounded-2xl bg-gradient-to-r ${meta.tint} text-white shadow-glow transition hover:brightness-110`}
+      className={`mt-lg block overflow-hidden rounded-2xl bg-gradient-to-r ${tint} text-white shadow-glow transition hover:brightness-110`}
     >
       <div className="flex items-center gap-md p-md">
         <span className="relative grid h-10 w-10 flex-none place-items-center">
@@ -336,12 +337,12 @@ function ActiveRideBanner({ ride }: { ride: ActiveRideRow }) {
         </span>
         <div className="flex-1 min-w-0">
           <p className="text-[10px] font-bold uppercase tracking-wider text-white/80">
-            Course en cours
+            {t('home.active_ride')}
           </p>
-          <p className="truncate text-sm font-extrabold">{meta.label}</p>
+          <p className="truncate text-sm font-extrabold">{label}</p>
           <p className="truncate text-[11px] text-white/90">
             {ride.status === 'in_progress' || ride.status === 'arrived'
-              ? `Vers ${ride.dropoff_address}`
+              ? `→ ${ride.dropoff_address}`
               : ride.driver_full_name
                 ? `${ride.driver_full_name.split(' ')[0]} · ${ride.pickup_address}`
                 : ride.pickup_address}

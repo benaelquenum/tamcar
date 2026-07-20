@@ -12,6 +12,7 @@ import { getRoute, reverseGeocode, type RouteResult } from '@/lib/mapbox';
 import { computePrice, type PriceQuote, type VehicleCategory } from '@/lib/pricing';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { isWithinServiceZone, SERVICE_ZONE_LABEL } from '@/lib/service-zone';
+import { useT } from '@/lib/i18n-client';
 import { createRideAction } from './actions';
 
 type AvailabilityRow = {
@@ -63,6 +64,7 @@ function minScheduledLocal(): string {
 }
 
 export default function CommandePage() {
+  const t = useT();
   const searchParams = useSearchParams();
   const isScheduled = searchParams.get('scheduled') === '1';
 
@@ -302,13 +304,13 @@ export default function CommandePage() {
         </header>
 
         <h1 className="mt-lg text-2xl font-extrabold leading-tight text-neutral-900">
-          Où allez-vous ?
+          {t('commande.title')}
         </h1>
 
         <section className="mt-lg space-y-md">
           <AddressAutocomplete
-            label="Départ"
-            placeholder="Adresse ou lieu de départ"
+            label={t('commande.pickup')}
+            placeholder={t('commande.pickup_placeholder')}
             value={pickup}
             onChange={setPickup}
             markerColor="#2563EB"
@@ -317,8 +319,8 @@ export default function CommandePage() {
             onSuggestPlace={startSuggest}
           />
           <AddressAutocomplete
-            label="Destination"
-            placeholder="Où voulez-vous aller ?"
+            label={t('commande.dropoff')}
+            placeholder={t('commande.dropoff_placeholder')}
             value={dropoff}
             onChange={setDropoff}
             markerColor="#8B5CF6"
@@ -397,7 +399,7 @@ export default function CommandePage() {
 
             <section className="mt-lg space-y-sm">
               <p className="text-xs font-semibold uppercase tracking-wide text-neutral-600">
-                Choisis ta catégorie
+                {t('commande.choose_category')}
               </p>
               {CATEGORIES.map((cat) => (
                 <CategoryChoice
@@ -420,7 +422,7 @@ export default function CommandePage() {
 
             <section className="mt-lg">
               <p className="text-xs font-semibold uppercase tracking-wide text-neutral-600">
-                Code promo
+                {t('commande.promo_code')}
               </p>
               <div className="mt-sm flex gap-sm">
                 <input
@@ -438,7 +440,7 @@ export default function CommandePage() {
                   disabled={promoChecking || !promoCode.trim() || !prices[selectedCat]}
                   className="rounded-lg bg-primary-500 px-md text-xs font-bold text-white shadow-sm disabled:opacity-50"
                 >
-                  {promoChecking ? '…' : 'Appliquer'}
+                  {promoChecking ? '…' : t('commande.promo_apply')}
                 </button>
               </div>
               {promoPreview && (
@@ -463,24 +465,25 @@ export default function CommandePage() {
 
             <section className="mt-lg">
               <p className="text-xs font-semibold uppercase tracking-wide text-neutral-600">
-                Mode de paiement
+                {t('commande.payment_method')}
               </p>
               <div className="mt-sm grid grid-cols-2 gap-sm">
                 <PaymentChoice
                   id="cash"
-                  label="Espèces"
-                  sub="Au chauffeur, en fin de course"
+                  label={t('commande.payment_cash')}
+                  sub={t('commande.payment_cash_sub')}
                   selected={paymentMethod === 'cash'}
                   onSelect={() => setPaymentMethod('cash')}
                 />
                 {(() => {
                   const price = prices[selectedCat]?.price_total_fcfa ?? 0;
                   const enough = creditBalance >= price;
+                  const balanceFmt = creditBalance.toLocaleString('fr-FR').replace(/,/g, ' ');
                   return (
                     <PaymentChoice
                       id="tamcar_credit"
-                      label="TamCar Crédit"
-                      sub={enough ? `Solde ${creditBalance.toLocaleString('fr-FR').replace(/,/g, ' ')} F` : `Insuffisant (${creditBalance.toLocaleString('fr-FR').replace(/,/g, ' ')} F)`}
+                      label={t('commande.payment_credit')}
+                      sub={enough ? `${balanceFmt} F` : `${t('commande.payment_credit_insufficient')} (${balanceFmt} F)`}
                       disabled={!enough}
                       selected={paymentMethod === 'tamcar_credit'}
                       onSelect={() => enough && setPaymentMethod('tamcar_credit')}
@@ -489,7 +492,7 @@ export default function CommandePage() {
                 })()}
               </div>
               <p className="mt-xs text-[10px] text-neutral-400">
-                Mobile Money (MTN, Moov) — bientôt disponible.
+                {t('commande.payment_momo_soon')}
               </p>
             </section>
 
@@ -525,10 +528,9 @@ export default function CommandePage() {
                   const finalPrice = promoPreview?.valid
                     ? promoPreview.final_price_fcfa
                     : prices[selectedCat]?.price_total_fcfa;
-                  if (confirming) return 'Envoi de la course…';
-                  return isScheduled
-                    ? `Réserver · ${formatFcfa(finalPrice)} FCFA`
-                    : `Confirmer la course · ${formatFcfa(finalPrice)} FCFA`;
+                  if (confirming) return '…';
+                  const label = isScheduled ? t('commande.reserve') : t('commande.confirm_ride');
+                  return `${label} · ${formatFcfa(finalPrice)} FCFA`;
                 })()}
                 {!confirming && <ArrowRightIcon />}
               </button>
@@ -538,7 +540,7 @@ export default function CommandePage() {
                 </p>
               )}
               <p className="mt-md text-center text-[11px] text-neutral-400">
-                Prochaine étape : matching chauffeur automatique (à venir)
+                {t('commande.next_step')}
               </p>
             </section>
           </>

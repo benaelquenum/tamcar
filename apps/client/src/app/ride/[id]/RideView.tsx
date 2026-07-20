@@ -16,6 +16,7 @@ import { StopsListClient } from './StopsListClient';
 import { isAccurateEnough, SmoothingBuffer } from '@/lib/geo-precision';
 import { SosButton } from '@/components/SosButton';
 import { RideChat } from '@/components/RideChat';
+import { useT } from '@/lib/i18n-client';
 
 type RideStopRow = {
   id: string;
@@ -159,6 +160,7 @@ function firstNameOf(fullName: string | null | undefined): string {
 }
 
 export function RideView({ initialRide }: { initialRide: RideForView }) {
+  const t = useT();
   const router = useRouter();
   const [ride, setRide] = useState<RideForView>(initialRide);
   const [nearbyDrivers, setNearbyDrivers] = useState<NearbyDriverRow[]>([]);
@@ -385,6 +387,16 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
   }, [ride.completion_auto_accept_at, ride.completion_requested_at, ride.status, ride.id]);
 
   const meta = STATUS_META[ride.status];
+  const statusTitle = t(`ride.status.${ride.status}`);
+  const statusSub = (() => {
+    switch (ride.status) {
+      case 'requested': return t('ride.searching_near');
+      case 'matched': return t('ride.driver_on_way');
+      case 'arrived': return t('ride.driver_arrived');
+      case 'in_progress': return t('ride.in_progress_sub');
+      default: return meta.sub;
+    }
+  })();
   const isWaiting = ride.status === 'requested';
   const isActive = ['requested', 'matched', 'arrived', 'in_progress'].includes(ride.status);
   const hasDriver = ride.driver_id !== null;
@@ -783,8 +795,8 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                 </span>
               )}
               <div className="flex-1">
-                <p className="text-lg font-extrabold leading-tight">{meta.title}</p>
-                {meta.sub && <p className="text-xs text-white/90">{meta.sub}</p>}
+                <p className="text-lg font-extrabold leading-tight">{statusTitle}</p>
+                {statusSub && <p className="text-xs text-white/90">{statusSub}</p>}
               </div>
               {isWaiting && (() => {
                 const matchingCat = ride.requested_category;
@@ -885,7 +897,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                     onClick={() => setChatOpen(true)}
                     className="rounded-full bg-white px-md py-xs text-xs font-bold text-primary-700 shadow-md ring-1 ring-primary-500"
                   >
-                    Message
+                    {t('ride.message')}
                   </button>
                   {ride.driver_phone && (
                     <>
@@ -893,7 +905,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                         href={`tel:${ride.driver_phone}`}
                         className="rounded-full bg-primary-500 px-md py-xs text-xs font-bold text-white shadow-md"
                       >
-                        Appeler
+                        {t('ride.call')}
                       </a>
                       <a
                         href={`https://wa.me/${ride.driver_phone.replace(/^\+/, '')}?text=${encodeURIComponent('Bonjour, je suis ton client TamCar.')}`}
@@ -912,10 +924,10 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
               {ride.status === 'matched' && distanceToPickup != null && (
                 <div className="mt-sm flex justify-between text-xs text-neutral-600">
                   <span style={{ fontVariantNumeric: 'tabular-nums' }}>
-                    📍 {formatDistance(distanceToPickup)} restants
+                    {t('ride.meters_left', { m: formatDistance(distanceToPickup) })}
                   </span>
                   <span style={{ fontVariantNumeric: 'tabular-nums' }}>
-                    ⏱ ~{durationToPickup ?? '—'} min
+                    {t('ride.eta_short', { n: durationToPickup ?? '—' })}
                   </span>
                 </div>
               )}
@@ -957,7 +969,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                   <line x1="12" y1="5" x2="12" y2="19" />
                   <line x1="5" y1="12" x2="19" y2="12" />
                 </svg>
-                Ajouter un arrêt
+                {t('ride.add_stop')}
               </button>
             )}
 
@@ -983,7 +995,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                 disabled={completing}
                 className="w-full rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-md text-sm font-bold text-white shadow-glow disabled:opacity-50"
               >
-                {completing ? 'Fin de course…' : 'Je suis arrivé — terminer la course'}
+                {completing ? '…' : t('ride.finish')}
               </button>
             )}
             {completeError && (
@@ -999,7 +1011,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                     onClick={openCancelConfirm}
                     className="w-full rounded-xl border-2 border-neutral-200 py-md text-sm font-bold text-neutral-600 transition hover:border-error hover:text-error"
                   >
-                    Annuler la course
+                    {t('ride.cancel_ride')}
                   </button>
                 ) : (
                   <CancelConfirmPanel
@@ -1328,6 +1340,7 @@ function CancelConfirmPanel({
   error: string | null;
   etaMin?: number | null;
 }) {
+  const t = useT();
   const [pickedReason, setPickedReason] = useState<string | null>(null);
   const loading = preview === null;
   const fee = preview?.fee_fcfa ?? 0;
@@ -1465,7 +1478,7 @@ function CancelConfirmPanel({
           disabled={cancelling}
           className="w-full rounded-xl bg-white py-md text-sm font-bold text-primary-700 ring-2 ring-primary-500 hover:bg-primary-50"
         >
-          Attendre mon chauffeur
+          {t('ride.wait_driver')}
         </button>
         <button
           type="button"
@@ -1478,8 +1491,8 @@ function CancelConfirmPanel({
           {cancelling
             ? '…'
             : isFree
-              ? 'Annuler la course'
-              : `Annuler et débiter ${fee.toLocaleString('fr-FR').replace(/,/g, ' ')} F`}
+              ? t('ride.cancel_ride')
+              : `${t('ride.cancel_ride')} · ${fee.toLocaleString('fr-FR').replace(/,/g, ' ')} F`}
         </button>
       </div>
       {error && <p className="mt-sm text-xs text-error">{error}</p>}
