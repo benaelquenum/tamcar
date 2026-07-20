@@ -73,7 +73,7 @@ export default async function DevenirChauffeurPage() {
               '40 % du prix de chaque course en cash immédiat',
               'Bonus +5 % dès ta 16e course du jour',
               '10 % en plus dans ton fonds rachat, voiture à toi en 24 mois',
-              'Assurance et grosses réparations à la charge du concessionnaire',
+              'Assurance et grosses réparations couvertes pendant les 24 mois',
             ]}
             icon={<CarIcon />}
           />

@@ -239,7 +239,7 @@ export default async function HomePage() {
         {/* Quick actions row — remontées haut : accès direct aux fonctions courantes */}
         <section className="mt-lg grid grid-cols-3 gap-sm">
           <QuickActionLink href="/history" Icon={HistoryIcon} label="Historique" tint="primary" />
-          <QuickAction Icon={GiftIcon} label="Parrainer" tag="Bientôt" tint="violet" />
+          <QuickActionLink href="/parrainer" Icon={GiftIcon} label="Parrainer" tint="violet" />
           <QuickAction Icon={LifeBuoyIcon} label="Aide" tint="cyan" />
         </section>
 

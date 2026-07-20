@@ -10,6 +10,7 @@ import { SuggestPlaceModal } from '@/components/SuggestPlaceModal';
 import { getRoute, reverseGeocode, type RouteResult } from '@/lib/mapbox';
 import { computePrice, type PriceQuote, type VehicleCategory } from '@/lib/pricing';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+import { isWithinServiceZone, SERVICE_ZONE_LABEL } from '@/lib/service-zone';
 import { createRideAction } from './actions';
 
 type AvailabilityRow = {
@@ -282,7 +283,11 @@ export default function CommandePage() {
           />
         </section>
 
-        {route && (
+        {route && (() => {
+          const pickupOut = pickup ? !isWithinServiceZone(pickup.center[1], pickup.center[0]) : false;
+          const dropoffOut = dropoff ? !isWithinServiceZone(dropoff.center[1], dropoff.center[0]) : false;
+          const outOfZone = pickupOut || dropoffOut;
+          return (
           <>
             <section className="mt-lg rounded-xl bg-primary-50 p-md text-sm text-primary-900">
               <span className="font-bold" style={{ fontVariantNumeric: 'tabular-nums' }}>
@@ -291,6 +296,17 @@ export default function CommandePage() {
               &nbsp;·&nbsp;{route.duration_min} min estimés
               {loading && <span className="ml-md text-primary-500">Calcul du prix…</span>}
             </section>
+
+            {outOfZone && (
+              <section className="mt-lg rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">
+                <p className="font-bold">Hors zone de service</p>
+                <p className="mt-xs text-xs">
+                  TamCar couvre actuellement <strong>{SERVICE_ZONE_LABEL}</strong> uniquement.
+                  {pickupOut && ' Ton point de départ est hors zone.'}
+                  {dropoffOut && ' Ta destination est hors zone.'}
+                </p>
+              </section>
+            )}
 
             <section className="mt-lg space-y-sm">
               <p className="text-xs font-semibold uppercase tracking-wide text-neutral-600">
@@ -319,7 +335,7 @@ export default function CommandePage() {
               <button
                 type="button"
                 onClick={handleConfirm}
-                disabled={loading || confirming || !prices[selectedCat]}
+                disabled={loading || confirming || !prices[selectedCat] || outOfZone}
                 className="flex w-full items-center justify-center gap-sm rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-lg text-base font-bold text-white shadow-glow transition hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <CarIcon className="h-5 w-5" />
@@ -338,7 +354,8 @@ export default function CommandePage() {
               </p>
             </section>
           </>
-        )}
+          );
+        })()}
 
         <div className="h-2xl" />
       </div>
