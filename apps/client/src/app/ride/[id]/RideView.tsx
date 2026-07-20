@@ -193,6 +193,8 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
     new_price_fcfa: number;
     delta_fcfa: number;
     drivers_online_nearby: number;
+    nearest_driver_distance_m: number | null;
+    eta_min: number | null;
   }> | null>(null);
   const [switching, setSwitching] = useState(false);
   const [switchError, setSwitchError] = useState<string | null>(null);
@@ -1162,6 +1164,11 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                           <p className="text-[11px] text-neutral-600" style={{ fontVariantNumeric: 'tabular-nums' }}>
                             {o.drivers_online_nearby} chauffeur{o.drivers_online_nearby > 1 ? 's' : ''} proche{o.drivers_online_nearby > 1 ? 's' : ''}
                           </p>
+                          {o.eta_min != null && (
+                            <p className="text-[11px] font-bold text-primary-700" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                              ~{o.eta_min} min
+                            </p>
+                          )}
                         </div>
                         <div className="text-right">
                           <p className="text-lg font-extrabold text-neutral-900" style={{ fontVariantNumeric: 'tabular-nums' }}>
