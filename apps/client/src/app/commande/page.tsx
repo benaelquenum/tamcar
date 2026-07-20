@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useTransition } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { AddressAutocomplete, type SelectedAddress } from '@/components/AddressAutocomplete';
 import { ArrowRightIcon, CarIcon, SnowflakeIcon, StarIcon } from '@/components/Icon';
 import { Logo } from '@/components/Logo';
@@ -41,10 +42,21 @@ function formatFcfa(n: number | undefined | null): string {
 
 type PickingMode = 'pickup' | 'dropoff' | 'suggest' | null;
 
+function minScheduledLocal(): string {
+  // now() + 20 min, formaté YYYY-MM-DDTHH:MM (local) pour <input type="datetime-local">
+  const d = new Date(Date.now() + 20 * 60 * 1000);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 export default function CommandePage() {
+  const searchParams = useSearchParams();
+  const isScheduled = searchParams.get('scheduled') === '1';
+
   const [pickup, setPickup] = useState<SelectedAddress | null>(null);
   const [dropoff, setDropoff] = useState<SelectedAddress | null>(null);
   const [route, setRoute] = useState<RouteResult | null>(null);
+  const [scheduledAt, setScheduledAt] = useState<string>(isScheduled ? minScheduledLocal() : '');
   const [prices, setPrices] = useState<Record<VehicleCategory, PriceQuote | null>>(
     {} as Record<VehicleCategory, PriceQuote | null>,
   );
@@ -84,6 +96,7 @@ export default function CommandePage() {
           duration_min: route.duration_min,
           is_night: false,
           with_ac: false,
+          scheduled_at: isScheduled && scheduledAt ? new Date(scheduledAt).toISOString() : null,
         });
       } catch (e) {
         setConfirmError(e instanceof Error ? e.message : 'Erreur inconnue');
@@ -256,6 +269,22 @@ export default function CommandePage() {
           />
         </section>
 
+        {(() => {
+          const pickupOut = pickup ? !isWithinServiceZone(pickup.center[1], pickup.center[0]) : false;
+          const dropoffOut = dropoff ? !isWithinServiceZone(dropoff.center[1], dropoff.center[0]) : false;
+          if (!pickupOut && !dropoffOut) return null;
+          return (
+            <section className="mt-md rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">
+              <p className="font-bold">Hors zone de service</p>
+              <p className="mt-xs text-xs">
+                TamCar couvre actuellement <strong>{SERVICE_ZONE_LABEL}</strong> uniquement.
+                {pickupOut && ' Ton point de départ est hors zone.'}
+                {dropoffOut && ' Ta destination est hors zone.'}
+              </p>
+            </section>
+          );
+        })()}
+
         {pickingMode && (
           <div className="mt-md flex items-center justify-between gap-md rounded-xl bg-primary-50 p-md text-sm ring-1 ring-primary-200">
             <span className="font-semibold text-neutral-900">
@@ -331,17 +360,39 @@ export default function CommandePage() {
 
             </section>
 
+            {isScheduled && (
+              <section className="mt-lg rounded-xl bg-violet-500/10 p-md ring-1 ring-violet-500/30">
+                <label className="block">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-violet-700">
+                    Date & heure de départ
+                  </span>
+                  <input
+                    type="datetime-local"
+                    value={scheduledAt}
+                    min={minScheduledLocal()}
+                    onChange={(e) => setScheduledAt(e.target.value)}
+                    className="mt-xs w-full rounded-lg bg-white px-md py-sm text-sm font-semibold text-neutral-900 ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  />
+                </label>
+                <p className="mt-xs text-[11px] text-neutral-600">
+                  Réservation min. 15 min à l&apos;avance, jusqu&apos;à 30 jours.
+                </p>
+              </section>
+            )}
+
             <section className="mt-lg">
               <button
                 type="button"
                 onClick={handleConfirm}
-                disabled={loading || confirming || !prices[selectedCat] || outOfZone}
+                disabled={loading || confirming || !prices[selectedCat] || outOfZone || (isScheduled && !scheduledAt)}
                 className="flex w-full items-center justify-center gap-sm rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-lg text-base font-bold text-white shadow-glow transition hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <CarIcon className="h-5 w-5" />
                 {confirming
                   ? 'Envoi de la course…'
-                  : `Confirmer la course · ${formatFcfa(prices[selectedCat]?.price_total_fcfa)} FCFA`}
+                  : isScheduled
+                    ? `Réserver · ${formatFcfa(prices[selectedCat]?.price_total_fcfa)} FCFA`
+                    : `Confirmer la course · ${formatFcfa(prices[selectedCat]?.price_total_fcfa)} FCFA`}
                 {!confirming && <ArrowRightIcon />}
               </button>
               {confirmError && (

@@ -4,6 +4,7 @@ import { Logo } from '@/components/Logo';
 import { PinIcon } from '@/components/Icon';
 import { getCurrentUser } from '@/lib/session';
 import { createServerSupabase } from '@/lib/supabase-server';
+import { ScheduledRidesList } from './ScheduledRidesList';
 
 type RideRow = {
   id: string;
@@ -33,19 +34,32 @@ function truncate(s: string, n: number): string {
   return s.length > n ? s.slice(0, n - 1) + '…' : s;
 }
 
-export default async function HistoryPage() {
+export default async function HistoryPage({ searchParams }: { searchParams: { just_scheduled?: string } }) {
   const user = await getCurrentUser();
   if (!user) redirect('/login');
 
   const supabase = createServerSupabase();
-  const { data: rides } = await supabase
-    .from('rides_view')
-    .select('id, pickup_address, dropoff_address, price_total_fcfa, distance_km, status, requested_at')
-    .eq('client_id', user.id)
-    .order('requested_at', { ascending: false })
-    .limit(50);
+  const [{ data: rides }, { data: scheduled }] = await Promise.all([
+    supabase
+      .from('rides_view')
+      .select('id, pickup_address, dropoff_address, price_total_fcfa, distance_km, status, requested_at')
+      .eq('client_id', user.id)
+      .neq('status', 'scheduled')
+      .order('requested_at', { ascending: false })
+      .limit(50),
+    supabase.rpc('my_scheduled_rides'),
+  ]);
 
   const list = (rides ?? []) as RideRow[];
+  const scheduledList = (scheduled ?? []) as Array<{
+    id: string;
+    pickup_address: string;
+    dropoff_address: string;
+    scheduled_at: string;
+    price_total_fcfa: number;
+    requested_category: string | null;
+  }>;
+  const justScheduled = searchParams.just_scheduled === '1';
 
   return (
     <main className="relative min-h-dvh bg-white">
@@ -69,6 +83,8 @@ export default async function HistoryPage() {
         <p className="mt-xs text-sm text-neutral-600">
           Tes {list.length} dernière{list.length > 1 ? 's' : ''} course{list.length > 1 ? 's' : ''}.
         </p>
+
+        <ScheduledRidesList initial={scheduledList} justScheduled={justScheduled} />
 
         {list.length === 0 ? (
           <div className="mt-xl rounded-xl bg-neutral-100 p-2xl text-center text-sm text-neutral-600">

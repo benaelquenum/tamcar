@@ -52,5 +52,9 @@ export async function createRideAction(input: CreateRideInput) {
     throw new Error(error?.message ?? 'Erreur inconnue lors de la création de la course');
   }
 
-  redirect(`/ride/${(data as { id: string }).id}`);
+  const ride = data as { id: string; status: string };
+  if (ride.status === 'scheduled') {
+    redirect('/history?just_scheduled=1');
+  }
+  redirect(`/ride/${ride.id}`);
 }
