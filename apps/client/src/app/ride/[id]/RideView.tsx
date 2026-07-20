@@ -15,6 +15,7 @@ import { AddStopModal } from './AddStopModal';
 import { StopsListClient } from './StopsListClient';
 import { isAccurateEnough, SmoothingBuffer } from '@/lib/geo-precision';
 import { SosButton } from '@/components/SosButton';
+import { RideChat } from '@/components/RideChat';
 
 type RideStopRow = {
   id: string;
@@ -197,6 +198,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
   const [switchError, setSwitchError] = useState<string | null>(null);
   const [stops, setStops] = useState<RideStopRow[]>([]);
   const [addStopOpen, setAddStopOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
   const [driverOtherRide, setDriverOtherRide] = useState<{
     other_ride_id: string;
     other_dropoff_address: string;
@@ -875,14 +877,23 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                     </p>
                   )}
                 </div>
-                {ride.driver_phone && (
-                  <a
-                    href={`tel:${ride.driver_phone}`}
-                    className="rounded-full bg-primary-500 px-md py-xs text-xs font-bold text-white shadow-md"
+                <div className="flex gap-xs">
+                  <button
+                    type="button"
+                    onClick={() => setChatOpen(true)}
+                    className="rounded-full bg-white px-md py-xs text-xs font-bold text-primary-700 shadow-md ring-1 ring-primary-500"
                   >
-                    Appeler
-                  </a>
-                )}
+                    Message
+                  </button>
+                  {ride.driver_phone && (
+                    <a
+                      href={`tel:${ride.driver_phone}`}
+                      className="rounded-full bg-primary-500 px-md py-xs text-xs font-bold text-white shadow-md"
+                    >
+                      Appeler
+                    </a>
+                  )}
+                </div>
               </div>
               {ride.status === 'matched' && distanceToPickup != null && (
                 <div className="mt-sm flex justify-between text-xs text-neutral-600">
@@ -1251,6 +1262,15 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
               router.refresh();
             }, 1100);
           }}
+        />
+      )}
+
+      {chatOpen && (
+        <RideChat
+          rideId={ride.id}
+          myUserId={ride.client_id}
+          otherName={ride.driver_full_name ?? 'Chauffeur'}
+          onClose={() => setChatOpen(false)}
         />
       )}
     </main>

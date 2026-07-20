@@ -64,6 +64,8 @@ export default function CommandePage() {
     {} as Record<VehicleCategory, AvailabilityRow | null>,
   );
   const [selectedCat, setSelectedCat] = useState<VehicleCategory>('essentiel');
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'tamcar_credit'>('cash');
+  const [creditBalance, setCreditBalance] = useState<number>(0);
   const [loading, setLoading] = useState(false);
 
   // Mode sélection sur carte
@@ -97,12 +99,25 @@ export default function CommandePage() {
           is_night: false,
           with_ac: false,
           scheduled_at: isScheduled && scheduledAt ? new Date(scheduledAt).toISOString() : null,
+          payment_method: paymentMethod,
         });
       } catch (e) {
         setConfirmError(e instanceof Error ? e.message : 'Erreur inconnue');
       }
     });
   }
+
+  // Fetch balance TamCar Crédit au mount pour griser l'option si insuffisant
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabaseBrowser.rpc('my_wallets');
+      if (Array.isArray(data)) {
+        const credit = (data as Array<{ kind: string; balance_fcfa: number }>)
+          .find((w) => w.kind === 'tamcar_credit');
+        setCreditBalance(credit?.balance_fcfa ?? 0);
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     if (!pickup || !dropoff) {
@@ -360,6 +375,38 @@ export default function CommandePage() {
 
             </section>
 
+            <section className="mt-lg">
+              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-600">
+                Mode de paiement
+              </p>
+              <div className="mt-sm grid grid-cols-2 gap-sm">
+                <PaymentChoice
+                  id="cash"
+                  label="Espèces"
+                  sub="Au chauffeur, en fin de course"
+                  selected={paymentMethod === 'cash'}
+                  onSelect={() => setPaymentMethod('cash')}
+                />
+                {(() => {
+                  const price = prices[selectedCat]?.price_total_fcfa ?? 0;
+                  const enough = creditBalance >= price;
+                  return (
+                    <PaymentChoice
+                      id="tamcar_credit"
+                      label="TamCar Crédit"
+                      sub={enough ? `Solde ${creditBalance.toLocaleString('fr-FR').replace(/,/g, ' ')} F` : `Insuffisant (${creditBalance.toLocaleString('fr-FR').replace(/,/g, ' ')} F)`}
+                      disabled={!enough}
+                      selected={paymentMethod === 'tamcar_credit'}
+                      onSelect={() => enough && setPaymentMethod('tamcar_credit')}
+                    />
+                  );
+                })()}
+              </div>
+              <p className="mt-xs text-[10px] text-neutral-400">
+                Mobile Money (MTN, Moov) — bientôt disponible.
+              </p>
+            </section>
+
             {isScheduled && (
               <section className="mt-lg rounded-xl bg-violet-500/10 p-md ring-1 ring-violet-500/30">
                 <label className="block">
@@ -496,6 +543,42 @@ function CategoryChoice({
         {formatFcfa(price?.price_total_fcfa)}
         <span className="ml-xs text-xs font-medium text-neutral-600">FCFA</span>
       </p>
+    </button>
+  );
+}
+
+function PaymentChoice({
+  id, label, sub, selected, onSelect, disabled = false,
+}: {
+  id: string;
+  label: string;
+  sub: string;
+  selected: boolean;
+  onSelect: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      disabled={disabled}
+      className={`flex flex-col items-start gap-xs rounded-xl border-2 p-md text-left transition ${
+        disabled
+          ? 'cursor-not-allowed border-neutral-200 bg-neutral-100 opacity-60'
+          : selected
+            ? 'border-primary-500 bg-primary-50 shadow-md'
+            : 'border-neutral-200 bg-white hover:border-primary-300'
+      }`}
+      aria-pressed={selected}
+      aria-label={label}
+      data-payment-id={id}
+    >
+      <span className={`text-sm font-bold ${selected ? 'text-primary-700' : 'text-neutral-900'}`}>
+        {label}
+      </span>
+      <span className="text-[10px] text-neutral-500" style={{ fontVariantNumeric: 'tabular-nums' }}>
+        {sub}
+      </span>
     </button>
   );
 }

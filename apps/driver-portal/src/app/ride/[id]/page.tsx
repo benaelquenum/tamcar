@@ -62,5 +62,5 @@ export default async function DriverRideDetail({ params }: { params: { id: strin
     vehicle_category: vehicleCategory,
   };
 
-  return <DriverRideView initialRide={initialRide} />;
+  return <DriverRideView initialRide={initialRide} myUserId={profile.id} />;
 }

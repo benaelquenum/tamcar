@@ -16,6 +16,7 @@ import { markArrivedAction, startRideAction } from './actions';
 import { StopsPanel } from './StopsPanel';
 import { ReturnChangeModal } from './ReturnChangeModal';
 import { SosButton } from '@/components/SosButton';
+import { RideChat } from '@/components/RideChat';
 
 type RideStatus =
   | 'requested'
@@ -71,8 +72,9 @@ function formatDistance(m: number | null | undefined): string {
   return m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`;
 }
 
-export function DriverRideView({ initialRide }: { initialRide: DriverRideForView }) {
+export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverRideForView; myUserId: string }) {
   const [ride, setRide] = useState<DriverRideForView>(initialRide);
+  const [chatOpen, setChatOpen] = useState(false);
   const [driverPos, setDriverPos] = useState<[number, number] | null>(null);
   const [routeGeo, setRouteGeo] = useState<GeoJSON.LineString | null>(null);
   const [distanceToTarget, setDistanceToTarget] = useState<number | null>(null);
@@ -467,14 +469,23 @@ export function DriverRideView({ initialRide }: { initialRide: DriverRideForView
                   </p>
                 )}
               </div>
-              {ride.client_phone && (
-                <a
-                  href={`tel:${ride.client_phone}`}
-                  className="rounded-full bg-primary-500 px-md py-xs text-xs font-bold text-white shadow-md hover:brightness-110"
+              <div className="flex gap-xs">
+                <button
+                  type="button"
+                  onClick={() => setChatOpen(true)}
+                  className="rounded-full bg-white px-md py-xs text-xs font-bold text-primary-700 shadow-md ring-1 ring-primary-500"
                 >
-                  Appeler
-                </a>
-              )}
+                  Message
+                </button>
+                {ride.client_phone && (
+                  <a
+                    href={`tel:${ride.client_phone}`}
+                    className="rounded-full bg-primary-500 px-md py-xs text-xs font-bold text-white shadow-md hover:brightness-110"
+                  >
+                    Appeler
+                  </a>
+                )}
+              </div>
             </div>
             )}
 
@@ -628,6 +639,15 @@ export function DriverRideView({ initialRide }: { initialRide: DriverRideForView
           remaining={completionRemaining}
           onAccept={handleAcceptCompletion}
           accepting={acceptingCompletion}
+        />
+      )}
+
+      {chatOpen && (
+        <RideChat
+          rideId={ride.id}
+          myUserId={myUserId}
+          otherName={ride.client_full_name ?? 'Client'}
+          onClose={() => setChatOpen(false)}
         />
       )}
     </main>
