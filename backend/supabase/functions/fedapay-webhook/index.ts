@@ -80,12 +80,20 @@ Deno.serve(async (req: Request) => {
 
   const eventName: string = event?.name ?? event?.event ?? '';
   const tx = event?.entity ?? event?.data ?? event?.transaction ?? event;
-  const reference: string = tx?.reference ?? tx?.metadata?.reference ?? '';
+  // La reference qu'on a envoyée via custom_metadata au widget FedaPay.
+  // FedaPay a aussi sa propre `tx.reference` (trx_xxx) qui ne matche pas
+  // la nôtre — c'est notre custom_metadata.reference qu'on veut.
+  const reference: string =
+    tx?.custom_metadata?.reference ??
+    tx?.metadata?.reference ??
+    tx?.customMetadata?.reference ??
+    '';
   const fedaId: string = String(tx?.id ?? tx?.transaction_id ?? '');
   const amount: number = Number(tx?.amount ?? 0);
 
   if (!reference) {
-    console.error('No reference in event', eventName, tx);
+    console.error('No reference in event', eventName, 'keys:', Object.keys(tx ?? {}));
+    console.error('Full tx:', JSON.stringify(tx));
     return new Response('No reference', { status: 200 });
   }
 

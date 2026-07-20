@@ -78,7 +78,7 @@ export function WalletModal({ open, onClose, kind, availableBalance }: Props) {
         const lastName = parts.slice(1).join(' ') || undefined;
         const email = user?.email || undefined;
 
-        const result = await launchFedapayCheckout({
+        await launchFedapayCheckout({
           publicKey: FEDAPAY_PUBLIC_KEY,
           amountFcfa: amount,
           reference: ref,
@@ -86,23 +86,26 @@ export function WalletModal({ open, onClose, kind, availableBalance }: Props) {
           customerFirstName: firstName,
           customerLastName: lastName,
         });
-        if (result !== 'completed') {
-          setError(result === 'error' ? 'Erreur de paiement' : 'Paiement annulé');
-          return;
-        }
-        // Poll wallet_transactions jusqu'à voir status='success' (max 30 s)
-        for (let i = 0; i < 30; i++) {
+        // Toujours poll — la source de vérité est le webhook, pas l'onComplete
+        // (l'user peut fermer la fenêtre après avoir validé MoMo).
+        let finalStatus: string | null = null;
+        for (let i = 0; i < 45; i++) {
           await new Promise((r) => setTimeout(r, 1000));
           const { data: rows } = await supabaseBrowser
             .from('wallet_transactions')
             .select('status')
             .eq('fedapay_reference', ref)
             .limit(1);
-          if (Array.isArray(rows) && rows[0]?.status === 'success') break;
-          if (Array.isArray(rows) && rows[0]?.status === 'failed') {
-            setError('Paiement refusé');
-            return;
-          }
+          const s = Array.isArray(rows) ? (rows[0] as { status?: string } | undefined)?.status : undefined;
+          if (s === 'success' || s === 'failed') { finalStatus = s; break; }
+        }
+        if (finalStatus === 'failed') {
+          setError('Paiement refusé');
+          return;
+        }
+        if (finalStatus !== 'success') {
+          setError('Paiement en attente de confirmation — vérifie ton portefeuille dans quelques minutes.');
+          return;
         }
         setSuccess(true);
         setTimeout(() => {

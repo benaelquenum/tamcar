@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Sora } from 'next/font/google';
 import './globals.css';
 import { EnableNotifications } from '@/components/EnableNotifications';
+import { InstallPwaBanner } from '@/components/InstallPwaBanner';
 
 const sora = Sora({
   subsets: ['latin'],
@@ -44,6 +45,7 @@ export default function RootLayout({
     <html lang="fr" className={sora.variable}>
       <body className="font-sans antialiased">
         <EnableNotifications />
+        <InstallPwaBanner />
         {children}
       </body>
     </html>
