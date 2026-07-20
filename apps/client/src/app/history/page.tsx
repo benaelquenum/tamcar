@@ -98,47 +98,59 @@ export default async function HistoryPage({ searchParams }: { searchParams: { ju
           <div className="mt-lg space-y-sm">
             {list.map((r) => {
               const status = STATUS_LABEL[r.status] ?? { label: r.status, color: 'bg-neutral-200 text-neutral-700' };
+              const isCompleted = r.status === 'completed';
               return (
-                <Link
+                <div
                   key={r.id}
-                  href={`/ride/${r.id}`}
-                  className="block rounded-xl border border-neutral-200 bg-white p-md shadow-sm transition hover:shadow-md"
+                  className="rounded-xl border border-neutral-200 bg-white p-md shadow-sm transition hover:shadow-md"
                 >
-                  <div className="mb-sm flex items-start justify-between gap-md">
-                    <div className="flex-1 space-y-xs">
-                      <div className="flex items-start gap-xs">
-                        <span className="mt-xs grid h-4 w-4 flex-none place-items-center rounded-full bg-primary-500 text-white">
-                          <PinIcon className="h-2.5 w-2.5" strokeWidth={3} />
-                        </span>
-                        <p className="flex-1 text-xs text-neutral-900">{truncate(r.pickup_address, 60)}</p>
+                  <Link href={`/ride/${r.id}`} className="block">
+                    <div className="mb-sm flex items-start justify-between gap-md">
+                      <div className="flex-1 space-y-xs">
+                        <div className="flex items-start gap-xs">
+                          <span className="mt-xs grid h-4 w-4 flex-none place-items-center rounded-full bg-primary-500 text-white">
+                            <PinIcon className="h-2.5 w-2.5" strokeWidth={3} />
+                          </span>
+                          <p className="flex-1 text-xs text-neutral-900">{truncate(r.pickup_address, 60)}</p>
+                        </div>
+                        <div className="ml-1.5 h-3 border-l-2 border-dashed border-neutral-300" />
+                        <div className="flex items-start gap-xs">
+                          <span className="mt-xs grid h-4 w-4 flex-none place-items-center rounded-full bg-violet-500 text-white">
+                            <PinIcon className="h-2.5 w-2.5" strokeWidth={3} />
+                          </span>
+                          <p className="flex-1 text-xs text-neutral-900">{truncate(r.dropoff_address, 60)}</p>
+                        </div>
                       </div>
-                      <div className="ml-1.5 h-3 border-l-2 border-dashed border-neutral-300" />
-                      <div className="flex items-start gap-xs">
-                        <span className="mt-xs grid h-4 w-4 flex-none place-items-center rounded-full bg-violet-500 text-white">
-                          <PinIcon className="h-2.5 w-2.5" strokeWidth={3} />
-                        </span>
-                        <p className="flex-1 text-xs text-neutral-900">{truncate(r.dropoff_address, 60)}</p>
+                      <div className="text-right">
+                        <p className="text-lg font-extrabold text-neutral-900" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                          {formatFcfa(r.price_total_fcfa)}
+                        </p>
+                        <p className="text-[10px] text-neutral-500">FCFA</p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-lg font-extrabold text-neutral-900" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                        {formatFcfa(r.price_total_fcfa)}
-                      </p>
-                      <p className="text-[10px] text-neutral-500">FCFA</p>
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className={`inline-flex rounded-full px-sm py-0.5 font-bold ${status.color}`}>
+                        {status.label}
+                      </span>
+                      <span className="text-neutral-500" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                        {new Date(r.requested_at).toLocaleString('fr-FR', {
+                          day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
+                        })}
+                        {r.distance_km && <> · {r.distance_km.toFixed(1)} km</>}
+                      </span>
                     </div>
-                  </div>
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className={`inline-flex rounded-full px-sm py-0.5 font-bold ${status.color}`}>
-                      {status.label}
-                    </span>
-                    <span className="text-neutral-500" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                      {new Date(r.requested_at).toLocaleString('fr-FR', {
-                        day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
-                      })}
-                      {r.distance_km && <> · {r.distance_km.toFixed(1)} km</>}
-                    </span>
-                  </div>
-                </Link>
+                  </Link>
+                  {isCompleted && (
+                    <a
+                      href={`/facture/${r.id}`}
+                      target="_blank"
+                      rel="noopener"
+                      className="mt-sm block rounded-lg border border-primary-500 bg-primary-50 py-xs text-center text-[11px] font-bold text-primary-700 hover:bg-primary-100"
+                    >
+                      📄 Télécharger la facture
+                    </a>
+                  )}
+                </div>
               );
             })}
           </div>
