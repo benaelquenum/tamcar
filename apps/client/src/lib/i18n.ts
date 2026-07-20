@@ -1,0 +1,256 @@
+// Système i18n léger — FR (défaut) + EN
+// Utilisation :
+//   const t = useT()          // client component
+//   const t = await getT()    // server component
+//   t('common.confirm')       // → "Confirmer" ou "Confirm"
+
+export type Lang = 'fr' | 'en';
+
+export const AVAILABLE_LANGS: { code: Lang; label: string; native: string }[] = [
+  { code: 'fr', label: 'Français', native: 'Français' },
+  { code: 'en', label: 'English',  native: 'English' },
+];
+
+export const DEFAULT_LANG: Lang = 'fr';
+export const LANG_COOKIE = 'tamcar-lang';
+
+const dict: Record<Lang, Record<string, string>> = {
+  fr: {
+    // Common
+    'common.confirm': 'Confirmer',
+    'common.cancel': 'Annuler',
+    'common.back': 'Retour',
+    'common.close': 'Fermer',
+    'common.send': 'Envoyer',
+    'common.save': 'Enregistrer',
+    'common.saved': 'Enregistré',
+    'common.loading': 'Chargement…',
+    'common.retry': 'Réessayer',
+    'common.next': 'Suivant',
+    'common.previous': 'Précédent',
+    'common.yes': 'Oui',
+    'common.no': 'Non',
+    'common.free': 'Gratuit',
+
+    // Home
+    'home.greeting': 'Bonjour',
+    'home.hero': 'Où allez-vous',
+    'home.hero.today': 'aujourd\'hui',
+    'home.search': 'Où voulez-vous aller ?',
+    'home.credit': 'Crédit',
+    'home.recharge': 'Recharger',
+    'home.book_now': 'Commander maintenant',
+    'home.book_later': 'Réserver à l\'avance',
+    'home.history': 'Historique',
+    'home.refer': 'Parrainer',
+    'home.help': 'Aide',
+    'home.become_driver': 'Deviens chauffeur TamCar',
+    'home.online_drivers': '{n} chauffeur en ligne',
+    'home.online_drivers_plural': '{n} chauffeurs en ligne',
+    'home.active_ride': 'Course en cours',
+
+    // Commande
+    'commande.title': 'Où allez-vous ?',
+    'commande.pickup': 'Départ',
+    'commande.dropoff': 'Destination',
+    'commande.on_map': 'Sur carte',
+    'commande.my_position': 'Ma position',
+    'commande.dropoff_placeholder': 'Où voulez-vous aller ?',
+    'commande.recents': 'Récents',
+    'commande.choose_category': 'Choisis ta catégorie',
+    'commande.available': 'dispo',
+    'commande.no_driver_nearby': 'Aucun chauffeur à proximité',
+    'commande.min_distance': 'estimés',
+    'commande.calculating_price': 'Calcul du prix…',
+    'commande.promo_code': 'Code promo',
+    'commande.promo_apply': 'Appliquer',
+    'commande.promo_valid': 'Code valide — remise de',
+    'commande.promo_new_price': 'nouveau prix',
+    'commande.payment_method': 'Mode de paiement',
+    'commande.payment_cash': 'Espèces',
+    'commande.payment_cash_sub': 'Au chauffeur, en fin de course',
+    'commande.payment_credit': 'TamCar Crédit',
+    'commande.payment_credit_insufficient': 'Insuffisant',
+    'commande.payment_momo_soon': 'Mobile Money (MTN, Moov) — bientôt disponible.',
+    'commande.confirm_ride': 'Confirmer la course',
+    'commande.reserve': 'Réserver',
+    'commande.datetime_label': 'Date & heure de départ',
+    'commande.datetime_help': 'Réservation min. 15 min à l\'avance, jusqu\'à 30 jours.',
+    'commande.out_of_zone_title': 'Hors zone de service',
+    'commande.out_of_zone_body': 'TamCar couvre actuellement {zone} uniquement.',
+    'commande.out_of_zone_pickup': 'Ton point de départ est hors zone.',
+    'commande.out_of_zone_dropoff': 'Ta destination est hors zone.',
+
+    // Ride statuses
+    'ride.status.requested': 'Recherche d\'un chauffeur',
+    'ride.status.matched': 'Chauffeur en route',
+    'ride.status.arrived': 'Chauffeur arrivé',
+    'ride.status.in_progress': 'Course en cours',
+    'ride.status.completed': 'Terminée',
+    'ride.status.cancelled_by_client': 'Annulée',
+    'ride.status.cancelled_by_driver': 'Annulée par chauffeur',
+    'ride.status.expired': 'Expirée',
+    'ride.searching': 'On cherche un chauffeur pour toi…',
+    'ride.searching_sub': 'On cherche pour toi…',
+    'ride.driver_on_way': 'Ton chauffeur arrive.',
+    'ride.driver_arrived': 'Rejoins-le au point de départ.',
+    'ride.in_progress_sub': 'Bon voyage !',
+    'ride.call': 'Appeler',
+    'ride.message': 'Message',
+    'ride.whatsapp': 'WhatsApp',
+    'ride.cancel_ride': 'Annuler la course',
+    'ride.wait_driver': 'Attendre mon chauffeur',
+    'ride.completed_at': 'Terminée à',
+
+    // History
+    'history.title': 'Historique',
+    'history.subtitle': 'Tes {n} dernières courses.',
+    'history.empty': 'Aucune course encore.',
+    'history.book_first': 'commander une',
+    'history.scheduled_upcoming': 'Réservations à venir',
+    'history.scheduled_saved': 'Réservation enregistrée',
+    'history.cancel_reservation': 'Annuler la réservation',
+    'history.download_invoice': 'Télécharger la facture',
+
+    // Wallet
+    'wallet.credit_balance': 'Crédit TamCar',
+    'wallet.recharge': 'Recharger',
+    'wallet.withdraw': 'Retirer',
+
+    // Refer
+    'refer.title': 'Parrainer',
+    'refer.your_code': 'Ton code parrain',
+    'refer.reward_line': 'Partage ton code. Dès son 1er trajet complété, vous recevez 500 F chacun.',
+    'refer.copy': 'Copier le code',
+    'refer.copied': 'Copié',
+    'refer.share': 'Partager',
+
+    // Errors
+    'error.generic': 'Une erreur est survenue',
+    'error.unknown': 'Erreur inconnue',
+    'error.not_your_ride': 'Ce n\'est pas ta course',
+    'error.auth_required': 'Connexion requise',
+  },
+  en: {
+    // Common
+    'common.confirm': 'Confirm',
+    'common.cancel': 'Cancel',
+    'common.back': 'Back',
+    'common.close': 'Close',
+    'common.send': 'Send',
+    'common.save': 'Save',
+    'common.saved': 'Saved',
+    'common.loading': 'Loading…',
+    'common.retry': 'Retry',
+    'common.next': 'Next',
+    'common.previous': 'Previous',
+    'common.yes': 'Yes',
+    'common.no': 'No',
+    'common.free': 'Free',
+
+    // Home
+    'home.greeting': 'Hi',
+    'home.hero': 'Where are you going',
+    'home.hero.today': 'today',
+    'home.search': 'Where do you want to go?',
+    'home.credit': 'Credit',
+    'home.recharge': 'Top up',
+    'home.book_now': 'Book now',
+    'home.book_later': 'Book for later',
+    'home.history': 'History',
+    'home.refer': 'Refer',
+    'home.help': 'Help',
+    'home.become_driver': 'Become a TamCar driver',
+    'home.online_drivers': '{n} driver online',
+    'home.online_drivers_plural': '{n} drivers online',
+    'home.active_ride': 'Ride in progress',
+
+    // Commande
+    'commande.title': 'Where to?',
+    'commande.pickup': 'Pickup',
+    'commande.dropoff': 'Destination',
+    'commande.on_map': 'On map',
+    'commande.my_position': 'My location',
+    'commande.dropoff_placeholder': 'Where do you want to go?',
+    'commande.recents': 'Recent',
+    'commande.choose_category': 'Choose your ride',
+    'commande.available': 'available',
+    'commande.no_driver_nearby': 'No driver nearby',
+    'commande.min_distance': 'estimated',
+    'commande.calculating_price': 'Calculating price…',
+    'commande.promo_code': 'Promo code',
+    'commande.promo_apply': 'Apply',
+    'commande.promo_valid': 'Valid code — discount of',
+    'commande.promo_new_price': 'new price',
+    'commande.payment_method': 'Payment method',
+    'commande.payment_cash': 'Cash',
+    'commande.payment_cash_sub': 'To driver, at ride end',
+    'commande.payment_credit': 'TamCar Credit',
+    'commande.payment_credit_insufficient': 'Insufficient',
+    'commande.payment_momo_soon': 'Mobile Money (MTN, Moov) — coming soon.',
+    'commande.confirm_ride': 'Confirm ride',
+    'commande.reserve': 'Book',
+    'commande.datetime_label': 'Pickup date & time',
+    'commande.datetime_help': 'Book min. 15 min ahead, up to 30 days.',
+    'commande.out_of_zone_title': 'Out of service area',
+    'commande.out_of_zone_body': 'TamCar currently only covers {zone}.',
+    'commande.out_of_zone_pickup': 'Your pickup is out of zone.',
+    'commande.out_of_zone_dropoff': 'Your destination is out of zone.',
+
+    // Ride statuses
+    'ride.status.requested': 'Finding a driver',
+    'ride.status.matched': 'Driver on the way',
+    'ride.status.arrived': 'Driver arrived',
+    'ride.status.in_progress': 'Ride in progress',
+    'ride.status.completed': 'Completed',
+    'ride.status.cancelled_by_client': 'Cancelled',
+    'ride.status.cancelled_by_driver': 'Cancelled by driver',
+    'ride.status.expired': 'Expired',
+    'ride.searching': 'Finding a driver for you…',
+    'ride.searching_sub': 'Searching for you…',
+    'ride.driver_on_way': 'Your driver is on the way.',
+    'ride.driver_arrived': 'Meet them at the pickup.',
+    'ride.in_progress_sub': 'Enjoy your ride!',
+    'ride.call': 'Call',
+    'ride.message': 'Message',
+    'ride.whatsapp': 'WhatsApp',
+    'ride.cancel_ride': 'Cancel ride',
+    'ride.wait_driver': 'Wait for driver',
+    'ride.completed_at': 'Completed at',
+
+    // History
+    'history.title': 'History',
+    'history.subtitle': 'Your last {n} rides.',
+    'history.empty': 'No ride yet.',
+    'history.book_first': 'book one',
+    'history.scheduled_upcoming': 'Upcoming reservations',
+    'history.scheduled_saved': 'Reservation saved',
+    'history.cancel_reservation': 'Cancel reservation',
+    'history.download_invoice': 'Download invoice',
+
+    // Wallet
+    'wallet.credit_balance': 'TamCar Credit',
+    'wallet.recharge': 'Top up',
+    'wallet.withdraw': 'Withdraw',
+
+    // Refer
+    'refer.title': 'Refer',
+    'refer.your_code': 'Your referral code',
+    'refer.reward_line': 'Share your code. When they complete their 1st ride, you both get 500 F.',
+    'refer.copy': 'Copy code',
+    'refer.copied': 'Copied',
+    'refer.share': 'Share',
+
+    // Errors
+    'error.generic': 'An error occurred',
+    'error.unknown': 'Unknown error',
+    'error.not_your_ride': 'Not your ride',
+    'error.auth_required': 'Sign in required',
+  },
+};
+
+export function t(lang: Lang, key: string, vars?: Record<string, string | number>): string {
+  const raw = dict[lang]?.[key] ?? dict[DEFAULT_LANG][key] ?? key;
+  if (!vars) return raw;
+  return raw.replace(/\{(\w+)\}/g, (_, k) => String(vars[k] ?? `{${k}}`));
+}

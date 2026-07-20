@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Logo } from '@/components/Logo';
+import { getT } from '@/lib/i18n-server';
 import {
   ArrowRightIcon,
   CalendarIcon,
@@ -52,6 +53,7 @@ function formatFcfaHome(n: number): string {
 }
 
 export default async function HomePage() {
+  const t = getT();
   const profile = await getCurrentProfile();
 
   // Force onboarding si le profil est loggé mais pas encore complété
@@ -146,13 +148,13 @@ export default async function HomePage() {
         <section className="mt-xl">
           <p className="flex items-center gap-xs text-base font-medium text-neutral-600">
             <WaveIcon className="h-5 w-5 text-primary-500" />
-            <span>{firstName ? `Bonjour ${firstName}` : 'Bonjour'}</span>
+            <span>{firstName ? `${t('home.greeting')} ${firstName}` : t('home.greeting')}</span>
           </p>
           <h1 className="mt-xs text-4xl font-extrabold leading-[1.05] tracking-tight text-neutral-900">
-            Où allez-vous
+            {t('home.hero')}
             <br />
             <span className="bg-gradient-to-r from-primary-500 to-primary-700 bg-clip-text text-transparent">
-              aujourd&apos;hui
+              {t('home.hero.today')}
             </span>
             &nbsp;?
           </h1>
@@ -184,7 +186,7 @@ export default async function HomePage() {
               <PinIcon />
             </span>
             <span className="flex-1 text-neutral-400 group-hover:text-neutral-600">
-              Où voulez-vous aller ?
+              {t('home.search')}
             </span>
             <ArrowRightIcon />
           </Link>
@@ -201,7 +203,7 @@ export default async function HomePage() {
                 <WalletIcon className="h-4 w-4" />
               </span>
               <span className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500">
-                Crédit
+                {t('home.credit')}
               </span>
               <span
                 className="flex-1 text-right text-sm font-extrabold text-neutral-900"
@@ -212,7 +214,7 @@ export default async function HomePage() {
               </span>
               <span className="inline-flex items-center gap-xs rounded-md bg-primary-500 px-sm py-xs text-[11px] font-bold text-white">
                 <PlusIcon className="h-3 w-3" strokeWidth={3} />
-                Recharger
+                {t('home.recharge')}
               </span>
             </Link>
           </section>
@@ -225,22 +227,22 @@ export default async function HomePage() {
             className="flex w-full items-center justify-center gap-sm rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-lg text-base font-bold text-white shadow-glow transition hover:brightness-110 active:scale-[0.98]"
           >
             <CarIcon className="h-5 w-5" />
-            Commander maintenant
+            {t('home.book_now')}
           </Link>
           <Link
             href="/commande?scheduled=1"
             className="flex w-full items-center justify-center gap-sm rounded-xl border-2 border-primary-500 bg-white py-lg text-base font-semibold text-primary-700 transition hover:bg-primary-50"
           >
             <CalendarIcon className="h-5 w-5" />
-            Réserver à l&apos;avance
+            {t('home.book_later')}
           </Link>
         </section>
 
         {/* Quick actions row — remontées haut : accès direct aux fonctions courantes */}
         <section className="mt-lg grid grid-cols-3 gap-sm">
-          <QuickActionLink href="/history" Icon={HistoryIcon} label="Historique" tint="primary" />
-          <QuickActionLink href="/parrainer" Icon={GiftIcon} label="Parrainer" tint="violet" />
-          <QuickAction Icon={LifeBuoyIcon} label="Aide" tint="cyan" />
+          <QuickActionLink href="/history" Icon={HistoryIcon} label={t('home.history')} tint="primary" />
+          <QuickActionLink href="/parrainer" Icon={GiftIcon} label={t('home.refer')} tint="violet" />
+          <QuickAction Icon={LifeBuoyIcon} label={t('home.help')} tint="cyan" />
         </section>
 
         {/* Bannières de communication */}
@@ -266,7 +268,7 @@ export default async function HomePage() {
               <CarIcon className="h-5 w-5" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-bold text-neutral-900">Deviens chauffeur TamCar</p>
+              <p className="text-sm font-bold text-neutral-900">{t('home.become_driver')}</p>
               <p className="text-[10px] text-neutral-600">
                 2 formules · cession 24 mois ou propriétaire libre
               </p>

@@ -4,8 +4,10 @@ import { Logo } from '@/components/Logo';
 import { LogOutIcon, WalletIcon, HistoryIcon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { getCurrentProfile, getCurrentUser } from '@/lib/session';
+import { getLang } from '@/lib/i18n-server';
 import { logout } from '@/app/login/actions';
 import { AccountForm } from './AccountForm';
+import { LangSwitcher } from '@/components/LangSwitcher';
 
 export default async function ComptePage() {
   const [user, profile] = await Promise.all([getCurrentUser(), getCurrentProfile()]);
@@ -79,6 +81,16 @@ export default async function ComptePage() {
             </Link>
           </section>
         )}
+
+        {/* Langue */}
+        <section className="mt-xl rounded-xl bg-white p-md shadow-sm ring-1 ring-neutral-200">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+            Langue / Language
+          </p>
+          <div className="mt-sm">
+            <LangSwitcher current={getLang()} />
+          </div>
+        </section>
 
         {/* Déconnexion */}
         <section className="mt-2xl">
