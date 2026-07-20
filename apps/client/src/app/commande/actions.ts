@@ -18,6 +18,7 @@ export type CreateRideInput = {
   with_ac?: boolean;
   scheduled_at?: string | null;
   payment_method?: 'cash' | 'mobile_money_mtn' | 'mobile_money_moov' | 'tamcar_credit';
+  promo_code?: string | null;
 };
 
 export async function createRideAction(input: CreateRideInput) {
@@ -44,6 +45,7 @@ export async function createRideAction(input: CreateRideInput) {
     p_with_ac: input.with_ac ?? false,
     p_scheduled_at: input.scheduled_at ?? null,
     p_payment_method: input.payment_method ?? 'cash',
+    p_promo_code: input.promo_code ?? null,
   });
 
   if (error || !data) {

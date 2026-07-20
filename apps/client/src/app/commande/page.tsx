@@ -40,6 +40,19 @@ function formatFcfa(n: number | undefined | null): string {
   return n.toLocaleString('fr-FR').replace(/,/g, ' ');
 }
 
+function promoReasonLabel(reason: string): string {
+  switch (reason) {
+    case 'unknown': return 'Code inconnu';
+    case 'inactive': return 'Ce code n\'est plus actif';
+    case 'not_started': return 'Ce code n\'est pas encore actif';
+    case 'expired': return 'Ce code a expiré';
+    case 'exhausted': return 'Ce code a atteint sa limite d\'utilisations';
+    case 'already_used_by_you': return 'Tu as déjà utilisé ce code';
+    case 'empty': return 'Entre un code';
+    default: return 'Code invalide';
+  }
+}
+
 type PickingMode = 'pickup' | 'dropoff' | 'suggest' | null;
 
 function minScheduledLocal(): string {
@@ -66,6 +79,14 @@ export default function CommandePage() {
   const [selectedCat, setSelectedCat] = useState<VehicleCategory>('essentiel');
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'tamcar_credit'>('cash');
   const [creditBalance, setCreditBalance] = useState<number>(0);
+  const [promoCode, setPromoCode] = useState<string>('');
+  const [promoPreview, setPromoPreview] = useState<{
+    valid: boolean;
+    reason: string;
+    discount_fcfa: number;
+    final_price_fcfa: number;
+  } | null>(null);
+  const [promoChecking, setPromoChecking] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Mode sélection sur carte
@@ -80,6 +101,27 @@ export default function CommandePage() {
   // Confirmation ride (server action + redirect)
   const [confirming, startConfirm] = useTransition();
   const [confirmError, setConfirmError] = useState<string | null>(null);
+
+  async function handleCheckPromo() {
+    const code = promoCode.trim().toUpperCase();
+    const basePrice = prices[selectedCat]?.price_total_fcfa ?? 0;
+    if (!code || basePrice === 0) return;
+    setPromoChecking(true);
+    setPromoPreview(null);
+    const { data } = await supabaseBrowser.rpc('preview_promo_code', {
+      p_code: code,
+      p_price_total: basePrice,
+    });
+    setPromoChecking(false);
+    if (Array.isArray(data) && data[0]) {
+      setPromoPreview(data[0] as {
+        valid: boolean;
+        reason: string;
+        discount_fcfa: number;
+        final_price_fcfa: number;
+      });
+    }
+  }
 
   function handleConfirm() {
     if (!pickup || !dropoff || !route || !prices[selectedCat]) return;
@@ -100,6 +142,7 @@ export default function CommandePage() {
           with_ac: false,
           scheduled_at: isScheduled && scheduledAt ? new Date(scheduledAt).toISOString() : null,
           payment_method: paymentMethod,
+          promo_code: promoPreview?.valid ? promoCode.trim().toUpperCase() : null,
         });
       } catch (e) {
         setConfirmError(e instanceof Error ? e.message : 'Erreur inconnue');
@@ -377,6 +420,49 @@ export default function CommandePage() {
 
             <section className="mt-lg">
               <p className="text-xs font-semibold uppercase tracking-wide text-neutral-600">
+                Code promo
+              </p>
+              <div className="mt-sm flex gap-sm">
+                <input
+                  type="text"
+                  value={promoCode}
+                  onChange={(e) => { setPromoCode(e.target.value); setPromoPreview(null); }}
+                  placeholder="Ex : LANCEMENT"
+                  maxLength={20}
+                  className="flex-1 rounded-lg border border-neutral-200 bg-white px-md py-sm text-sm font-mono uppercase tracking-widest text-neutral-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  style={{ fontVariantNumeric: 'tabular-nums' }}
+                />
+                <button
+                  type="button"
+                  onClick={handleCheckPromo}
+                  disabled={promoChecking || !promoCode.trim() || !prices[selectedCat]}
+                  className="rounded-lg bg-primary-500 px-md text-xs font-bold text-white shadow-sm disabled:opacity-50"
+                >
+                  {promoChecking ? '…' : 'Appliquer'}
+                </button>
+              </div>
+              {promoPreview && (
+                promoPreview.valid ? (
+                  <p className="mt-xs text-xs font-semibold text-primary-700">
+                    Code valide — remise de{' '}
+                    <strong style={{ fontVariantNumeric: 'tabular-nums' }}>
+                      {formatFcfa(promoPreview.discount_fcfa)} F
+                    </strong>{' '}
+                    · nouveau prix{' '}
+                    <strong style={{ fontVariantNumeric: 'tabular-nums' }}>
+                      {formatFcfa(promoPreview.final_price_fcfa)} F
+                    </strong>
+                  </p>
+                ) : (
+                  <p className="mt-xs text-xs font-semibold text-error">
+                    {promoReasonLabel(promoPreview.reason)}
+                  </p>
+                )
+              )}
+            </section>
+
+            <section className="mt-lg">
+              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-600">
                 Mode de paiement
               </p>
               <div className="mt-sm grid grid-cols-2 gap-sm">
@@ -435,11 +521,15 @@ export default function CommandePage() {
                 className="flex w-full items-center justify-center gap-sm rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-lg text-base font-bold text-white shadow-glow transition hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <CarIcon className="h-5 w-5" />
-                {confirming
-                  ? 'Envoi de la course…'
-                  : isScheduled
-                    ? `Réserver · ${formatFcfa(prices[selectedCat]?.price_total_fcfa)} FCFA`
-                    : `Confirmer la course · ${formatFcfa(prices[selectedCat]?.price_total_fcfa)} FCFA`}
+                {(() => {
+                  const finalPrice = promoPreview?.valid
+                    ? promoPreview.final_price_fcfa
+                    : prices[selectedCat]?.price_total_fcfa;
+                  if (confirming) return 'Envoi de la course…';
+                  return isScheduled
+                    ? `Réserver · ${formatFcfa(finalPrice)} FCFA`
+                    : `Confirmer la course · ${formatFcfa(finalPrice)} FCFA`;
+                })()}
                 {!confirming && <ArrowRightIcon />}
               </button>
               {confirmError && (
