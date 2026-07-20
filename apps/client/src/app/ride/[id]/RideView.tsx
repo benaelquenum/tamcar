@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/Logo';
-import { CarIcon, CheckIcon, PinIcon, StarIcon, AlertTriangleIcon } from '@/components/Icon';
+import { CarIcon, CheckIcon, PinIcon, StarIcon, AlertTriangleIcon, WhatsAppIcon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { Map } from '@/components/Map';
 import { RatingModal } from '@/components/RatingModal';
@@ -877,7 +877,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                     </p>
                   )}
                 </div>
-                <div className="flex gap-xs">
+                <div className="flex flex-wrap items-center gap-xs">
                   <button
                     type="button"
                     onClick={() => setChatOpen(true)}
@@ -886,12 +886,24 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                     Message
                   </button>
                   {ride.driver_phone && (
-                    <a
-                      href={`tel:${ride.driver_phone}`}
-                      className="rounded-full bg-primary-500 px-md py-xs text-xs font-bold text-white shadow-md"
-                    >
-                      Appeler
-                    </a>
+                    <>
+                      <a
+                        href={`tel:${ride.driver_phone}`}
+                        className="rounded-full bg-primary-500 px-md py-xs text-xs font-bold text-white shadow-md"
+                      >
+                        Appeler
+                      </a>
+                      <a
+                        href={`https://wa.me/${ride.driver_phone.replace(/^\+/, '')}?text=${encodeURIComponent('Bonjour, je suis ton client TamCar.')}`}
+                        target="_blank"
+                        rel="noopener"
+                        className="inline-flex items-center gap-xs rounded-full bg-[#25D366] px-md py-xs text-xs font-bold text-white shadow-md hover:brightness-110"
+                        aria-label="Contacter par WhatsApp — appel vocal ou vidéo"
+                      >
+                        <WhatsAppIcon className="h-3.5 w-3.5" />
+                        WhatsApp
+                      </a>
+                    </>
                   )}
                 </div>
               </div>
