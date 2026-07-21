@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>TamCar — Plaquette actionnaires</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --blue: #2563EB;
+    --blue-dark: #1E3A8A;
+    --blue-light: #DBEAFE;
+    --cyan: #06B6D4;
+    --violet: #7C3AED;
+    --amber: #D97706;
+    --ink: #0F172A;
+    --muted: #64748B;
+    --line: #E2E8F0;
+    --bg: #FFFFFF;
+    --gold: #EAB308;
+  }
+  html, body {
+    font-family: 'Sora', system-ui, -apple-system, sans-serif;
+    color: var(--ink);
+    background: #F1F5F9;
+    line-height: 1.5;
+    font-size: 11pt;
+  }
+  .page {
+    width: 210mm; min-height: 297mm; padding: 15mm;
+    margin: 6mm auto; background: var(--bg);
+    box-shadow: 0 4px 20px rgba(0,0,0,.08);
+    page-break-after: always;
+    display: flex; flex-direction: column;
+    position: relative; overflow: hidden;
+  }
+  .page:last-child { page-break-after: auto; }
+
+  h1 { font-size: 28pt; font-weight: 800; color: var(--blue-dark); letter-spacing: -.5px; line-height: 1.1; }
+  h2 { font-size: 18pt; font-weight: 700; color: var(--blue-dark); margin-top: 10mm; margin-bottom: 4mm; }
+  h3 { font-size: 13pt; font-weight: 700; color: var(--ink); margin-top: 5mm; margin-bottom: 2mm; }
+  p { margin-bottom: 3mm; }
+  .lead { font-size: 13pt; color: var(--muted); line-height: 1.5; }
+  strong { color: var(--blue-dark); font-weight: 700; }
+  .muted { color: var(--muted); }
+  .small { font-size: 9pt; }
+  .center { text-align: center; }
+
+  /* COVER */
+  .cover {
+    background: linear-gradient(135deg, #1E40AF 0%, #2563EB 50%, #7C3AED 100%);
+    color: #FFFFFF; padding: 20mm 15mm;
+    display: flex; flex-direction: column;
+    position: relative; overflow: hidden;
+  }
+  .cover::before {
+    content: ""; position: absolute; top: -50mm; right: -50mm;
+    width: 200mm; height: 200mm; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,.15) 0%, transparent 60%);
+    z-index: 0;
+  }
+  .cover::after {
+    content: ""; position: absolute; bottom: -80mm; left: -60mm;
+    width: 250mm; height: 250mm; border-radius: 50%;
+    background: radial-gradient(circle, rgba(6,182,212,.25) 0%, transparent 60%);
+    z-index: 0;
+  }
+  .cover > * { position: relative; z-index: 1; }
+  .brand { font-size: 56pt; font-weight: 800; letter-spacing: -2px; line-height: 1; margin-bottom: 4mm; }
+  .brand-t { color: #93C5FD; }
+  .tagline { font-size: 22pt; font-weight: 600; color: #FFFFFF; margin-bottom: 8mm; opacity: .95; }
+  .subline { font-size: 14pt; color: rgba(255,255,255,.85); max-width: 140mm; line-height: 1.4; margin-bottom: auto; }
+
+  .cover-stats {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 6mm;
+    margin-top: 40mm; padding: 8mm; background: rgba(255,255,255,.12);
+    border-radius: 8mm; backdrop-filter: blur(10px);
+  }
+  .stat-value { font-size: 30pt; font-weight: 800; color: #FFFFFF; line-height: 1; }
+  .stat-label { font-size: 10pt; font-weight: 600; color: #FFFFFF; margin-top: 2mm; }
+  .stat-sub { font-size: 9pt; color: rgba(255,255,255,.75); margin-top: 1mm; }
+
+  .cover-footer {
+    margin-top: 20mm; padding-top: 8mm;
+    border-top: 1px solid rgba(255,255,255,.25);
+    font-size: 10pt; color: rgba(255,255,255,.85);
+  }
+  .cover-footer strong { color: #FFFFFF; }
+
+  /* CARDS */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; margin-bottom: 5mm; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm; margin-bottom: 5mm; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3mm; margin-bottom: 5mm; }
+
+  .card {
+    background: #F8FAFC; border: 1px solid var(--line);
+    border-radius: 4mm; padding: 5mm;
+  }
+  .card.primary { background: var(--blue-light); border-color: var(--blue); }
+  .card.accent { background: #FEF3E2; border-color: var(--amber); }
+  .card.violet { background: #EDE9FE; border-color: var(--violet); }
+  .card.dark { background: var(--blue-dark); color: #FFFFFF; border: none; }
+  .card.dark h3 { color: #FFFFFF; }
+  .card.dark p { color: rgba(255,255,255,.9); }
+
+  .icon {
+    width: 12mm; height: 12mm; border-radius: 3mm;
+    display: grid; place-items: center;
+    color: #FFFFFF; margin-bottom: 3mm;
+  }
+  .icon.blue { background: var(--blue); }
+  .icon.cyan { background: var(--cyan); }
+  .icon.violet { background: var(--violet); }
+  .icon.amber { background: var(--amber); }
+  .icon.dark { background: var(--blue-dark); }
+
+  .cat-card {
+    background: #FFFFFF; border: 2px solid var(--line);
+    border-radius: 4mm; padding: 4mm; text-align: center;
+  }
+  .cat-icon {
+    width: 16mm; height: 16mm; border-radius: 50%;
+    display: grid; place-items: center; margin: 0 auto 3mm;
+    color: #FFFFFF; font-size: 20pt;
+  }
+  .cat-name { font-size: 13pt; font-weight: 700; color: var(--ink); margin-bottom: 1mm; }
+  .cat-sub { font-size: 9pt; color: var(--muted); margin-bottom: 3mm; line-height: 1.3; }
+  .cat-price { font-size: 14pt; font-weight: 800; color: var(--blue-dark); }
+  .cat-price-sub { font-size: 8pt; color: var(--muted); font-weight: 400; }
+
+  /* KPIs */
+  .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm; margin: 6mm 0; }
+  .kpi {
+    background: var(--blue-light); padding: 6mm 4mm;
+    border-radius: 4mm; text-align: center;
+  }
+  .kpi-val { font-size: 26pt; font-weight: 800; color: var(--blue); line-height: 1; }
+  .kpi-lbl { font-size: 9pt; font-weight: 600; color: var(--ink); margin-top: 2mm; }
+  .kpi-sub { font-size: 8pt; color: var(--muted); margin-top: 1mm; }
+
+  /* TABLES */
+  table { width: 100%; border-collapse: collapse; margin: 4mm 0; }
+  th {
+    background: var(--blue-dark); color: #FFFFFF; padding: 3mm;
+    text-align: left; font-size: 10pt; font-weight: 700;
+  }
+  td {
+    padding: 3mm; border-bottom: 1px solid var(--line);
+    font-size: 10pt;
+  }
+  td.right { text-align: right; font-variant-numeric: tabular-nums; }
+  tr:nth-child(even) td { background: #F8FAFC; }
+  tr.total td { background: var(--blue-light); font-weight: 700; color: var(--blue-dark); }
+
+  /* Split table (color coded) */
+  .split-bar {
+    display: flex; height: 12mm; border-radius: 3mm;
+    overflow: hidden; margin: 4mm 0 2mm;
+  }
+  .split-bar div {
+    color: #FFFFFF; font-size: 10pt; font-weight: 700;
+    display: grid; place-items: center;
+    padding: 0 2mm;
+  }
+
+  /* Timeline */
+  .timeline { position: relative; padding-left: 12mm; margin: 5mm 0; }
+  .timeline::before {
+    content: ""; position: absolute; left: 5mm; top: 3mm; bottom: 3mm;
+    width: 1.5mm; background: var(--blue-light);
+  }
+  .step { position: relative; margin-bottom: 6mm; }
+  .step-num {
+    position: absolute; left: -12mm; top: 0;
+    width: 10mm; height: 10mm; border-radius: 50%;
+    background: var(--blue); color: #FFFFFF;
+    display: grid; place-items: center;
+    font-weight: 800; font-size: 11pt;
+    box-shadow: 0 2px 4px rgba(37,99,235,.35);
+  }
+  .step-title { font-size: 12pt; font-weight: 700; color: var(--blue-dark); margin-bottom: 1mm; }
+
+  /* Section header */
+  .section-hd { display: flex; align-items: baseline; gap: 4mm; margin-top: 5mm; margin-bottom: 5mm; padding-bottom: 3mm; border-bottom: 3px solid var(--blue); }
+  .section-num { font-size: 32pt; font-weight: 800; color: var(--blue); line-height: 1; letter-spacing: -1px; }
+  .section-name { font-size: 20pt; font-weight: 700; color: var(--blue-dark); }
+
+  /* Contact final */
+  .contact-card {
+    background: linear-gradient(135deg, var(--blue) 0%, var(--blue-dark) 100%);
+    color: #FFFFFF; padding: 12mm; border-radius: 6mm;
+    margin-top: 5mm;
+  }
+  .contact-card h3 { color: #FFFFFF; }
+  .contact-card p { color: rgba(255,255,255,.95); margin-bottom: 2mm; }
+
+  .footer-legal {
+    margin-top: auto; padding-top: 6mm; border-top: 1px solid var(--line);
+    font-size: 8pt; color: var(--muted); text-align: center; font-style: italic;
+  }
+
+  .list-clean { list-style: none; padding: 0; }
+  .list-clean li { padding: 2mm 0; padding-left: 8mm; position: relative; font-size: 10.5pt; }
+  .list-clean li::before {
+    content: ""; position: absolute; left: 0; top: 4mm;
+    width: 5mm; height: 1mm; background: var(--blue);
+  }
+
+  @media print {
+    html, body { background: #FFFFFF; }
+    .page { margin: 0; box-shadow: none; }
+    @page { size: A4; margin: 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ================================================================ -->
+<!-- PAGE 1 — COUVERTURE -->
+<!-- ================================================================ -->
+<div class="page cover">
+  <div class="brand"><span class="brand-t">Tam</span>Car</div>
+  <div class="tagline">Le VTC qui respecte le Béninois.</div>
+  <div class="subline">
+    Devenez actionnaire de la plateforme technologique de VTC dédiée
+    au corridor Cotonou · Porto-Novo. Prix fixes garantis, matching intelligent,
+    chauffeurs équitablement rémunérés.
+  </div>
+
+  <div class="cover-stats">
+    <div>
+      <div class="stat-value">~2 M</div>
+      <div class="stat-label">habitants cibles</div>
+      <div class="stat-sub">Cotonou + Porto-Novo</div>
+    </div>
+    <div>
+      <div class="stat-value">30-50k</div>
+      <div class="stat-label">courses/jour</div>
+      <div class="stat-sub">potentiel corridor</div>
+    </div>
+    <div>
+      <div class="stat-value">10 M F</div>
+      <div class="stat-label">levée cible</div>
+      <div class="stat-sub">phase 1 pilote</div>
+    </div>
+  </div>
+
+  <div class="cover-footer">
+    <strong>TamCar SARL</strong> · en cours de constitution · siège Porto-Novo, Bénin<br>
+    contact@tamcar.app · Édition septembre 2026
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- PAGE 2 — LE MARCHÉ -->
+<!-- ================================================================ -->
+<div class="page">
+  <div class="section-hd">
+    <div class="section-num">01</div>
+    <div class="section-name">Le marché du VTC au Bénin</div>
+  </div>
+
+  <p class="lead">
+    Le marché du VTC est en pleine explosion en Afrique de l'Ouest.
+    Au Bénin, la métropole Cotonou–Porto-Novo cumule <strong>~2 millions d'habitants</strong>
+    urbains connectés, avec un besoin quotidien de mobilité qu'aucun acteur
+    ne sert avec les bons prix ni la bonne fiabilité.
+  </p>
+
+  <h2>Les concurrents en place — leurs faiblesses</h2>
+  <div class="grid-3">
+    <div class="card">
+      <div class="icon blue">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20"/></svg>
+      </div>
+      <h3>Yango (Russe)</h3>
+      <p class="small muted">Filiale Yandex, prix cassé, image agressive. <strong>Zéro ancrage local</strong>, pas d'écoute des chauffeurs, image négative dans la population.</p>
+    </div>
+    <div class="card">
+      <div class="icon cyan">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="8" cy="18" r="2"/><circle cx="16" cy="18" r="2"/></svg>
+      </div>
+      <h3>Gozem (Togolais)</h3>
+      <p class="small muted">Historique moto-taxi, vert/jaune, notoire mais <strong>vieillissant</strong>. Techno plafonnée, pas d'innovation depuis 2 ans.</p>
+    </div>
+    <div class="card">
+      <div class="icon violet">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      </div>
+      <h3>Nonvi (Local)</h3>
+      <p class="small muted">Tentative locale <strong>faible tech</strong>, peu de chauffeurs actifs, matching aléatoire, pas de confiance utilisateur.</p>
+    </div>
+  </div>
+
+  <h2>Le trou de marché — la promesse TamCar</h2>
+  <div style="background:var(--blue-light); padding:6mm; border-radius:4mm; border-left:4px solid var(--blue); margin-bottom:5mm;">
+    <div style="font-size:15pt; font-weight:700; color:var(--blue-dark); font-style:italic;">
+      « Le VTC qui respecte le Béninois — client comme chauffeur. »
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card primary">
+      <h3>💎 Fiabilité</h3>
+      <p class="small">Prix fixe garanti, jamais de surge. Le client sait ce qu'il paie <strong>avant</strong> de commander.</p>
+    </div>
+    <div class="card primary">
+      <h3>⚖ Confiance</h3>
+      <p class="small">Auto-preuve télémétrie des annulations, matching multi-catégories, arbitrage équitable des litiges.</p>
+    </div>
+    <div class="card primary">
+      <h3>🇧🇯 Ancrage local</h3>
+      <p class="small">Kloboto, Zémidjan formalisés, cash accepté, Mobile Money, tarifs pouvoir d'achat local.</p>
+    </div>
+    <div class="card primary">
+      <h3>🤝 Équité chauffeurs</h3>
+      <p class="small">40 % du prix pour le chauffeur, formule cession voiture en 24 mois, contrats concessionnaires transparents.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- PAGE 3 — LA SOLUTION -->
+<!-- ================================================================ -->
+<div class="page">
+  <div class="section-hd">
+    <div class="section-num">02</div>
+    <div class="section-name">La solution TamCar</div>
+  </div>
+
+  <p class="lead">
+    Plateforme technologique complète : <strong>PWA installable client + chauffeur, backend Supabase,
+    paiement FedaPay</strong>. Développée à 100 %, déjà déployée en production, prête à opérer.
+  </p>
+
+  <h2>4 catégories de véhicules — un choix pour chaque budget</h2>
+  <div class="grid-4">
+    <div class="cat-card">
+      <div class="cat-icon" style="background:#F97316;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17" r="2.5"/><circle cx="18.5" cy="17" r="2.5"/><path d="M8 17h6l-2-5h4l-2-4h-3"/><path d="M14 8l2 2"/></svg>
+      </div>
+      <div class="cat-name">Moto</div>
+      <div class="cat-sub">Zémidjan formalisé<br>2 places</div>
+      <div class="cat-price">400 F<div class="cat-price-sub">course urbaine 5 km</div></div>
+    </div>
+    <div class="cat-card">
+      <div class="cat-icon" style="background:#A855F7;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 16h4l2-6h9l1 6"/><path d="M9 10V7h4"/><circle cx="5" cy="18" r="1.6"/><circle cx="14" cy="18" r="1.6"/><circle cx="19" cy="18" r="1.6"/></svg>
+      </div>
+      <div class="cat-name">Tricycle</div>
+      <div class="cat-sub">Kloboto<br>3 places</div>
+      <div class="cat-price">700 F<div class="cat-price-sub">course urbaine 5 km</div></div>
+    </div>
+    <div class="cat-card">
+      <div class="cat-icon" style="background:#2563EB;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14M5 17v-4l1.5-4A2 2 0 018.4 7.7h7.2a2 2 0 011.9 1.3L19 13v4"/><circle cx="8" cy="15" r=".9" fill="#fff"/><circle cx="16" cy="15" r=".9" fill="#fff"/></svg>
+      </div>
+      <div class="cat-name">Essentiel</div>
+      <div class="cat-sub">Voiture éco<br>4 places</div>
+      <div class="cat-price">1 200 F<div class="cat-price-sub">course urbaine 5 km</div></div>
+    </div>
+    <div class="cat-card">
+      <div class="cat-icon" style="background:#D97706;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 16h18v-3l-2-6H6L3 13z"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/><path d="M8 10h8"/></svg>
+      </div>
+      <div class="cat-name">Confort</div>
+      <div class="cat-sub">Premium clim.<br>4 places</div>
+      <div class="cat-price">1 500 F<div class="cat-price-sub">course urbaine 5 km</div></div>
+    </div>
+  </div>
+
+  <h2>Fonctionnalités déjà livrées</h2>
+  <div class="grid-2">
+    <ul class="list-clean">
+      <li><strong>Réservation flexible</strong> — instantanée ou programmée jusqu'à 30 jours</li>
+      <li><strong>Tracking live</strong> — chauffeur sur carte, ETA à la minute</li>
+      <li><strong>Chat in-app + WhatsApp</strong> vocal et vidéo intégré</li>
+      <li><strong>Wallet TamCar Crédit</strong> + FedaPay (MTN, Moov, carte)</li>
+    </ul>
+    <ul class="list-clean">
+      <li><strong>Bouton SOS</strong> géolocalisé + arbitrage litiges télémétrie</li>
+      <li><strong>Multi-langue</strong> Français + Anglais (fongbé phase 2)</li>
+      <li><strong>Push notifications</strong> même application fermée</li>
+      <li><strong>Parrainage 500 F</strong>, codes promo, courses programmées</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- PAGE 4 — MODÈLE ÉCONOMIQUE -->
+<!-- ================================================================ -->
+<div class="page">
+  <div class="section-hd">
+    <div class="section-num">03</div>
+    <div class="section-name">Modèle économique</div>
+  </div>
+
+  <p class="lead">
+    TamCar aligne les intérêts de chaque partie prenante. <strong>Deux formules</strong> de chauffeur
+    coexistent, avec un partage transparent des revenus après chaque course.
+  </p>
+
+  <h2>Formule Cession — chauffeur devient propriétaire en 24 mois</h2>
+  <div class="split-bar">
+    <div style="width:40%; background:#2563EB;">40 % Chauffeur</div>
+    <div style="width:10%; background:#7C3AED;">10 % Rachat</div>
+    <div style="width:30%; background:#D97706;">30 % Concessionnaire</div>
+    <div style="width:20%; background:#1E3A8A;">20 % TamCar</div>
+  </div>
+  <p class="small muted">
+    Le fonds rachat (10 %) est accumulé course après course pour le chauffeur ; la voiture devient sa propriété à M+24.
+  </p>
+
+  <h2>Formule Propriétaire — chauffeur déjà équipé</h2>
+  <div class="split-bar">
+    <div style="width:80%; background:#2563EB;">80 % Chauffeur</div>
+    <div style="width:20%; background:#1E3A8A;">20 % TamCar</div>
+  </div>
+
+  <h2>Projection revenus — 1 véhicule Essentiel</h2>
+  <p class="small">Hypothèse conservatrice : 10 courses/jour × 300 jours actifs × prix moyen 2 500 F = <strong>7 500 000 F de volume annuel</strong>.</p>
+  <table>
+    <thead>
+      <tr>
+        <th>Répartition annuelle (cession)</th>
+        <th class="right">FCFA / an</th>
+        <th class="right">%</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Chauffeur cash + fonds rachat</td><td class="right">3 750 000</td><td class="right">50 %</td></tr>
+      <tr><td>Concessionnaire (dividende exploitation)</td><td class="right">2 250 000</td><td class="right">30 %</td></tr>
+      <tr><td>Plateforme TamCar (marge nette)</td><td class="right">1 500 000</td><td class="right">20 %</td></tr>
+      <tr class="total"><td>Total volume annuel</td><td class="right">7 500 000</td><td class="right">100 %</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ================================================================ -->
+<!-- PAGE 5 — OPPORTUNITÉ D'INVESTISSEMENT -->
+<!-- ================================================================ -->
+<div class="page">
+  <div class="section-hd">
+    <div class="section-num">04</div>
+    <div class="section-name">L'opportunité d'investissement</div>
+  </div>
+
+  <p class="lead">
+    TamCar SARL est en cours de constitution (SARL OHADA). Le fondateur apporte l'application
+    (valorisée <strong>20 M FCFA</strong>, validation commissaire aux apports). Les
+    concessionnaires et investisseurs apportent la trésorerie.
+  </p>
+
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="kpi-val">20 M</div>
+      <div class="kpi-lbl">Apport IP fondateur</div>
+      <div class="kpi-sub">Application déjà déployée</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-val">10 M</div>
+      <div class="kpi-lbl">Levée numéraire cible</div>
+      <div class="kpi-sub">Runway 12 mois pilote</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-val">10 000</div>
+      <div class="kpi-lbl">Valeur d'une part</div>
+      <div class="kpi-sub">Fixée aux statuts</div>
+    </div>
+  </div>
+
+  <h2>Structure cible à la constitution</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Contributeur</th>
+        <th class="right">Apport</th>
+        <th>Nature</th>
+        <th class="right">% capital</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Fondateur — Terence Beni Raphaël QUENUM</td><td class="right">20 M F</td><td>Nature (IP)</td><td class="right">66,7 %</td></tr>
+      <tr><td>Concessionnaires-actionnaires (5-10)</td><td class="right">4-6 M F</td><td>Numéraire</td><td class="right">13-20 %</td></tr>
+      <tr><td>Investisseurs passifs (2-4)</td><td class="right">4-6 M F</td><td>Numéraire</td><td class="right">13-20 %</td></tr>
+      <tr class="total"><td>Capital total cible</td><td class="right">30 M F</td><td>—</td><td class="right">100 %</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Roadmap — de la phase pilote à la régionalisation</h2>
+  <div class="grid-3">
+    <div class="card">
+      <div class="icon blue">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      </div>
+      <h3>Phase 1 · M0-6</h3>
+      <p class="small">Pilote Cotonou–Porto-Novo. 5-10 concessionnaires, 10-20 véhicules. Cible : 1500-3000 courses/mois.</p>
+    </div>
+    <div class="card">
+      <div class="icon cyan">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg>
+      </div>
+      <h3>Phase 2 · M6-18</h3>
+      <p class="small">Extension Parakou, Abomey-Calavi, Bohicon. Levée pre-seed 20-40 M F. 20-50k courses/mois.</p>
+    </div>
+    <div class="card">
+      <div class="icon violet">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/></svg>
+      </div>
+      <h3>Phase 3 · M18+</h3>
+      <p class="small">Régionalisation Togo (Lomé), Ghana (Accra). Levée seed 100-300 M F sur base de traction.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- PAGE 6 — 2 PROFILS D'ACTIONNAIRE -->
+<!-- ================================================================ -->
+<div class="page">
+  <div class="section-hd">
+    <div class="section-num">05</div>
+    <div class="section-name">2 façons de devenir actionnaire</div>
+  </div>
+
+  <div class="grid-2">
+    <!-- CONCESSIONNAIRE -->
+    <div class="card dark">
+      <div class="icon amber" style="background:#EAB308;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="8" cy="18" r="2"/><circle cx="16" cy="18" r="2"/></svg>
+      </div>
+      <h3 style="font-size:16pt;">Concessionnaire-actionnaire</h3>
+      <p style="font-size:9pt; opacity:.85;">Tu possèdes un ou plusieurs véhicules et souhaites générer un revenu régulier.</p>
+      <hr style="border:none; border-top:1px solid rgba(255,255,255,.25); margin:4mm 0;">
+      <p style="font-size:9pt; font-weight:600;">CONDITIONS</p>
+      <ul style="list-style:none; padding:0; margin:2mm 0;">
+        <li style="padding:1.5mm 0; font-size:9pt;">✔ 1 véhicule minimum (Moto, Kloboto, Essentiel, Confort)</li>
+        <li style="padding:1.5mm 0; font-size:9pt;">✔ Souscription 500 000 F (50 parts)</li>
+        <li style="padding:1.5mm 0; font-size:9pt;">✔ ADR 100 000 F / véhicule (remboursable)</li>
+      </ul>
+      <hr style="border:none; border-top:1px solid rgba(255,255,255,.25); margin:4mm 0;">
+      <p style="font-size:9pt; font-weight:600;">TES 3 SOURCES DE REVENUS</p>
+      <ul style="list-style:none; padding:0; margin:2mm 0;">
+        <li style="padding:1.5mm 0; font-size:9pt;">💰 30 % de chaque course de ton véhicule</li>
+        <li style="padding:1.5mm 0; font-size:9pt;">🔄 ADR 100 k F remboursée sur 6-12 mois</li>
+        <li style="padding:1.5mm 0; font-size:9pt;">📈 Dividende actionnarial annuel</li>
+      </ul>
+      <hr style="border:none; border-top:1px solid rgba(255,255,255,.25); margin:4mm 0;">
+      <p style="font-size:9pt; font-weight:600;">SIMULATION 5 ANS · 1 VÉHICULE ESSENTIEL</p>
+      <div style="font-size:24pt; font-weight:800; color:#EAB308; line-height:1.1;">11-13 M F</div>
+      <p style="font-size:8pt; opacity:.85;">de revenus estimés hors valorisation parts</p>
+    </div>
+
+    <!-- INVESTISSEUR -->
+    <div class="card violet" style="background:linear-gradient(135deg,#7C3AED 0%,#5B21B6 100%); color:#FFF; border:none;">
+      <div class="icon" style="background:#F59E0B;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+      </div>
+      <h3 style="font-size:16pt; color:#FFF;">Investisseur passif</h3>
+      <p style="font-size:9pt; opacity:.85; color:#FFF;">Tu crois au projet et veux prendre part au capital sans obligation opérationnelle.</p>
+      <hr style="border:none; border-top:1px solid rgba(255,255,255,.25); margin:4mm 0;">
+      <p style="font-size:9pt; font-weight:600; color:#FFF;">CONDITIONS</p>
+      <ul style="list-style:none; padding:0; margin:2mm 0;">
+        <li style="padding:1.5mm 0; font-size:9pt; color:#FFF;">✔ Souscription 1 000 000 F (100 parts)</li>
+        <li style="padding:1.5mm 0; font-size:9pt; color:#FFF;">✔ Aucun véhicule requis</li>
+        <li style="padding:1.5mm 0; font-size:9pt; color:#FFF;">✔ Plafond individuel 20 % capital</li>
+      </ul>
+      <hr style="border:none; border-top:1px solid rgba(255,255,255,.25); margin:4mm 0;">
+      <p style="font-size:9pt; font-weight:600; color:#FFF;">TES 2 SOURCES DE RETOUR</p>
+      <ul style="list-style:none; padding:0; margin:2mm 0;">
+        <li style="padding:1.5mm 0; font-size:9pt; color:#FFF;">📈 Dividendes annuels (dès année 2)</li>
+        <li style="padding:1.5mm 0; font-size:9pt; color:#FFF;">🚀 Valorisation des parts (× 3-10 en 3-5 ans)</li>
+      </ul>
+      <hr style="border:none; border-top:1px solid rgba(255,255,255,.25); margin:4mm 0;">
+      <p style="font-size:9pt; font-weight:600; color:#FFF;">SIMULATION TICKET 2 M F · 5 ANS</p>
+      <div style="font-size:24pt; font-weight:800; color:#F59E0B; line-height:1.1;">+500 %</div>
+      <p style="font-size:8pt; opacity:.85; color:#FFF;">retour cumulé projeté (hypothèses conservatrices)</p>
+    </div>
+  </div>
+
+  <p class="small muted" style="margin-top:4mm; text-align:center; font-style:italic;">
+    Simulations basées sur hypothèses conservatrices — ne constituent pas une garantie de rendement.
+  </p>
+</div>
+
+<!-- ================================================================ -->
+<!-- PAGE 7 — SOUSCRIPTION + CONTACT -->
+<!-- ================================================================ -->
+<div class="page">
+  <div class="section-hd">
+    <div class="section-num">06</div>
+    <div class="section-name">Comment souscrire</div>
+  </div>
+
+  <p class="lead">
+    Un processus clair, sécurisé, en 3 phases. À chaque étape, tes fonds sont protégés
+    et tu gardes la maîtrise de ton engagement.
+  </p>
+
+  <div class="timeline">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-title">Prise de contact et Protocole d'Accord · M1-M2</div>
+      <p class="small">
+        Rendez-vous individuel avec Terence pour présentation détaillée.
+        Signature d'un <strong>Protocole d'Accord (LOI)</strong> qui formalise ton intention :
+        catégorie (concessionnaire ou investisseur), montant d'apport, calendrier prévisionnel.
+        Non-contraignant juridiquement — te permet de te retirer avant la phase 3.
+      </p>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-title">Consignation des fonds sur compte séquestre · M2-M3</div>
+      <p class="small">
+        Ouverture d'un <strong>compte séquestre bancaire</strong> au nom de « TamCar en formation ».
+        Chaque associé y verse son apport en cash. Les fonds sont bloqués et
+        <strong>ne peuvent être utilisés qu'après constitution officielle</strong>. En cas d'échec
+        du tour de table, restitution intégrale sans frais.
+      </p>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-title">Constitution officielle de la SARL · M3-M4</div>
+      <p class="small">
+        Commissaire aux apports (validation IP 20 M F), <strong>Assemblée Générale
+        constitutive</strong> avec tous les associés, signature statuts + pacte devant notaire,
+        immatriculation RCCM. La société est opérationnelle, les fonds séquestre alimentent
+        la trésorerie SARL, TamCar peut lancer.
+      </p>
+    </div>
+  </div>
+
+  <div class="contact-card">
+    <h3 style="font-size:18pt; margin-bottom:3mm;">Prenez rendez-vous</h3>
+    <p><strong style="color:#FFF; font-size:14pt;">Terence Beni Raphaël QUENUM</strong></p>
+    <p style="opacity:.9;">Fondateur — futur Gérant de TamCar SARL</p>
+    <hr style="border:none; border-top:1px solid rgba(255,255,255,.3); margin:4mm 0;">
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:4mm;">
+      <div>
+        <p style="font-size:9pt; opacity:.75; margin-bottom:1mm;">EMAIL</p>
+        <p style="font-weight:600;">terencebeniraphael@gmail.com</p>
+      </div>
+      <div>
+        <p style="font-size:9pt; opacity:.75; margin-bottom:1mm;">WHATSAPP</p>
+        <p style="font-weight:600;">+229 [à compléter]</p>
+      </div>
+      <div>
+        <p style="font-size:9pt; opacity:.75; margin-bottom:1mm;">LIEU DE RDV</p>
+        <p style="font-weight:600;">Porto-Novo ou Cotonou · à votre convenance</p>
+      </div>
+      <div>
+        <p style="font-size:9pt; opacity:.75; margin-bottom:1mm;">DÉMO EN DIRECT</p>
+        <p style="font-weight:600;">Application client + chauffeur sur mobile</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-legal">
+    Ce document est confidentiel et destiné exclusivement à son destinataire.
+    Il ne constitue ni une offre publique de souscription, ni un prospectus.
+    Toute reproduction ou diffusion sans autorisation écrite du fondateur est interdite.
+    <br><br>
+    <strong style="color:var(--blue);">TamCar SARL</strong> · en cours de constitution · siège Porto-Novo, Bénin · Édition septembre 2026
+  </div>
+</div>
+
+</body>
+</html>

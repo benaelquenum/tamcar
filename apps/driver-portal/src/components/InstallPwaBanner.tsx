@@ -75,7 +75,7 @@ export function InstallPwaBanner() {
           <PhoneIcon className="h-6 w-6" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold">Installer TamCar</p>
+          <p className="text-sm font-bold">Installer TamCar Pro</p>
           <p className="text-[11px] text-white/85">
             Icône sur ton écran d&apos;accueil · plein écran · plus rapide.
           </p>

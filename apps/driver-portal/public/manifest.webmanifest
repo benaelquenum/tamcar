@@ -1,7 +1,7 @@
 {
-  "name": "TamCar",
-  "short_name": "TamCar",
-  "description": "VTC pour le Bénin — Porto-Novo, Cotonou, corridor",
+  "name": "TamCar Pro",
+  "short_name": "TamCar Pro",
+  "description": "Espace chauffeur TamCar : accepte des courses, suis tes gains, gère ton portefeuille.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",

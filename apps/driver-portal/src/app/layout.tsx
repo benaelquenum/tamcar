@@ -12,14 +12,14 @@ const sora = Sora({
 });
 
 export const metadata: Metadata = {
-  title: 'TamCar Chauffeur — Espace pro',
+  title: 'TamCar Pro — Espace chauffeur',
   description: "Espace chauffeur TamCar : accepte des courses, suis tes gains, gère ton portefeuille.",
   manifest: '/manifest.webmanifest',
-  applicationName: 'TamCar Chauffeur',
+  applicationName: 'TamCar Pro',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'TamCar Chauffeur',
+    title: 'TamCar Pro',
   },
   formatDetection: {
     telephone: false,
