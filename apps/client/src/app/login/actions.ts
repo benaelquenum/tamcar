@@ -4,6 +4,7 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { formatBeninPhone } from '@/lib/phone';
 import { createServerSupabase } from '@/lib/supabase-server';
+import { TERMS_APP, TERMS_VERSION } from '@/lib/terms';
 
 /**
  * Sign IN — utilisateur existant, email + password
@@ -24,7 +25,10 @@ export async function signInAction(formData: FormData) {
   }
 
   const supabase = createServerSupabase();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
 
   if (error) {
     // eslint-disable-next-line no-console
@@ -33,6 +37,22 @@ export async function signInAction(formData: FormData) {
       '/login?tab=signin&error=' +
         encodeURIComponent(error.message || 'Email ou mot de passe incorrect'),
     );
+  }
+
+  // Gate CGU : si la version courante n'a pas été acceptée → /conditions
+  // Fail-open : en cas d'erreur technique (table absente, réseau), on laisse
+  // passer plutôt que de bloquer la connexion — le gate resservira ensuite.
+  if (data.user) {
+    const { count, error: termsError } = await supabase
+      .from('terms_acceptances')
+      .select('id', { count: 'exact', head: true })
+      .eq('profile_id', data.user.id)
+      .eq('doc', 'cgu')
+      .eq('version', TERMS_VERSION);
+
+    if (!termsError && !count) {
+      redirect('/conditions?next=' + encodeURIComponent(next));
+    }
   }
 
   redirect(next.startsWith('/') ? next : '/');
@@ -48,7 +68,16 @@ export async function signUpAction(formData: FormData) {
   const lastName = String(formData.get('last_name') || '').trim();
   const phoneRaw = String(formData.get('phone') || '').trim();
   const phone = phoneRaw ? formatBeninPhone(phoneRaw) : null;
+  const acceptedTerms = formData.get('accept_terms') === 'on';
 
+  if (!acceptedTerms) {
+    redirect(
+      '/login?tab=signup&error=' +
+        encodeURIComponent(
+          'Vous devez accepter les CGU et la Politique de confidentialité.',
+        ),
+    );
+  }
   if (!email || !email.includes('@')) {
     redirect(
       '/login?tab=signup&error=' + encodeURIComponent('Email invalide'),
@@ -84,7 +113,13 @@ export async function signUpAction(formData: FormData) {
     email,
     password,
     options: {
-      data: { full_name: fullName, phone },
+      data: {
+        full_name: fullName,
+        phone,
+        // Preuve de consentement dès l'inscription (avant même la 1re session)
+        terms_version: TERMS_VERSION,
+        terms_accepted_at: new Date().toISOString(),
+      },
     },
   });
 
@@ -108,10 +143,22 @@ export async function signUpAction(formData: FormData) {
       })
       .eq('id', data.user.id);
 
-    // Si session déjà établie (Confirm email OFF), on redirige direct
+    // Si session déjà établie (Confirm email OFF), on enregistre
+    // l'acceptation CGU + confidentialité en base, puis on redirige.
     if (data.session) {
+      await supabase.from('terms_acceptances').upsert(
+        ['cgu', 'privacy'].map((doc) => ({
+          profile_id: data.user!.id,
+          doc,
+          version: TERMS_VERSION,
+          app: TERMS_APP,
+        })),
+        { onConflict: 'profile_id,doc,version,app', ignoreDuplicates: true },
+      );
       redirect('/');
     }
+    // Sinon (Confirm email ON) : la preuve est dans les metadata du compte,
+    // et le gate /conditions enregistrera la ligne en base à la 1re connexion.
   }
 
   // Sinon (Confirm email ON), on affiche un message d'attente

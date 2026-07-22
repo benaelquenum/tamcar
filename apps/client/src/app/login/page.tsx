@@ -104,7 +104,16 @@ export default function LoginPage({
         )}
 
         <p className="mt-xl text-center text-xs text-neutral-400">
-          En continuant, tu acceptes les CGU TamCar.
+          <Link href="/cgu" className="underline hover:text-neutral-600">
+            CGU
+          </Link>
+          {' · '}
+          <Link
+            href="/confidentialite"
+            className="underline hover:text-neutral-600"
+          >
+            Politique de confidentialité
+          </Link>
         </p>
 
         <div className="flex-1" />
@@ -232,6 +241,34 @@ function SignUpForm({ error }: { error?: string }) {
           className="w-full rounded-lg bg-neutral-100 px-lg py-md text-base text-neutral-900 ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
         />
       </Field>
+
+      <label className="flex items-start gap-md rounded-lg bg-neutral-100 p-md">
+        <input
+          type="checkbox"
+          name="accept_terms"
+          required
+          className="mt-0.5 h-5 w-5 flex-none accent-primary-500"
+        />
+        <span className="text-xs leading-relaxed text-neutral-600">
+          J&apos;ai lu et j&apos;accepte les{' '}
+          <Link
+            href="/cgu"
+            target="_blank"
+            className="font-semibold text-primary-600 underline"
+          >
+            Conditions Générales d&apos;Utilisation
+          </Link>{' '}
+          et la{' '}
+          <Link
+            href="/confidentialite"
+            target="_blank"
+            className="font-semibold text-primary-600 underline"
+          >
+            Politique de confidentialité
+          </Link>{' '}
+          de TamCar.
+        </span>
+      </label>
 
       {error && (
         <div className="rounded-md bg-error/10 p-md text-sm font-medium text-error">

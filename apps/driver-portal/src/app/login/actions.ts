@@ -4,6 +4,7 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { formatBeninPhone } from '@/lib/phone';
 import { createServerSupabase } from '@/lib/supabase-server';
+import { TERMS_VERSION } from '@/lib/terms';
 
 /**
  * Sign In — chauffeur existant, email + password.
@@ -55,6 +56,20 @@ export async function signInAction(formData: FormData) {
             "Ce compte n'a pas le statut chauffeur. Prends d'abord un rendez-vous sur le site TamCar.",
           ),
       );
+    }
+
+    // Gate CGU : si la version courante n'a pas été acceptée → /conditions
+    // Fail-open : en cas d'erreur technique (table absente, réseau), on laisse
+    // passer plutôt que de bloquer la connexion — le gate resservira ensuite.
+    const { count, error: termsError } = await supabase
+      .from('terms_acceptances')
+      .select('id', { count: 'exact', head: true })
+      .eq('profile_id', data.user.id)
+      .eq('doc', 'cgu')
+      .eq('version', TERMS_VERSION);
+
+    if (!termsError && !count) {
+      redirect('/conditions?next=' + encodeURIComponent(next));
     }
   }
 

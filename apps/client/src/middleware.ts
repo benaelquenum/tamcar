@@ -15,6 +15,8 @@ const PUBLIC_PREFIXES = [
   '/reset-password', // définit un nouveau mot de passe (session recovery)
   '/devenir-chauffeur', // funnel candidat chauffeur (public marketing)
   '/driver', // page informative "L'espace chauffeur a déménagé"
+  '/cgu', // documents légaux consultables sans compte
+  '/confidentialite',
 ];
 
 export async function middleware(request: NextRequest) {
