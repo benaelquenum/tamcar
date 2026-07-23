@@ -35,6 +35,54 @@ const WEEKS_OPTIONS: { weeks: number; label: string }[] = [
   { weeks: 4, label: '1 mois' },
 ];
 
+const HOURS = Array.from({ length: 18 }, (_, i) =>
+  String(i + 5).padStart(2, '0'),
+); // 05 h à 22 h
+const MINUTES = ['00', '15', '30', '45'];
+
+/** Sélecteur d'heure maison (le picker natif Android déborde de l'écran). */
+function TimeSelect({
+  value,
+  onChange,
+  disabled = false,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  disabled?: boolean;
+}) {
+  const [h, m] = value.split(':');
+  const selectCls =
+    'min-w-0 flex-1 appearance-none rounded-lg bg-neutral-100 px-sm py-md text-center text-sm font-semibold ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-40';
+  return (
+    <div className="flex min-w-0 items-center gap-xs">
+      <select
+        value={h}
+        onChange={(e) => onChange(`${e.target.value}:${m}`)}
+        disabled={disabled}
+        className={selectCls}
+      >
+        {HOURS.map((hh) => (
+          <option key={hh} value={hh}>
+            {hh} h
+          </option>
+        ))}
+      </select>
+      <select
+        value={m}
+        onChange={(e) => onChange(`${h}:${e.target.value}`)}
+        disabled={disabled}
+        className={selectCls}
+      >
+        {MINUTES.map((mm) => (
+          <option key={mm} value={mm}>
+            {mm}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 /** Barème de remise par fréquence — miroir du serveur (source de vérité : SQL). */
 function discountFor(ridesTotal: number): number {
   if (ridesTotal >= 40) return 15;
@@ -269,18 +317,15 @@ export default function NouveauTamPassPage() {
           ))}
         </div>
         <div className="flex items-center gap-md">
-          <label className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1">
             <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
               Départ aller
             </span>
-            <input
-              type="time"
-              value={slotOut}
-              onChange={(e) => setSlotOut(e.target.value)}
-              className="mt-xs block w-full min-w-0 appearance-none rounded-lg bg-neutral-100 px-sm py-md text-sm ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
-          </label>
-          <label className="min-w-0 flex-1">
+            <div className="mt-xs">
+              <TimeSelect value={slotOut} onChange={setSlotOut} />
+            </div>
+          </div>
+          <div className="min-w-0 flex-1">
             <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
               Retour
             </span>
@@ -291,15 +336,13 @@ export default function NouveauTamPassPage() {
                 onChange={(e) => setRoundTrip(e.target.checked)}
                 className="h-5 w-5 flex-none accent-primary-500"
               />
-              <input
-                type="time"
+              <TimeSelect
                 value={slotReturn}
-                onChange={(e) => setSlotReturn(e.target.value)}
+                onChange={setSlotReturn}
                 disabled={!roundTrip}
-                className="block w-full min-w-0 appearance-none rounded-lg bg-neutral-100 px-sm py-md text-sm ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-40"
               />
             </div>
-          </label>
+          </div>
         </div>
       </section>
 
