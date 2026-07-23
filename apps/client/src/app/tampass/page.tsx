@@ -28,7 +28,9 @@ type SubRow = {
   rides_total: number;
   rides_remaining: number;
   reports_used_month: number;
+  reports_per_month: number;
   pauses_used: number;
+  pauses_max: number;
   paused_until: string | null;
   total_price_fcfa: number;
   starts_on: string;
@@ -111,15 +113,6 @@ export default async function TamPassPage({
     missed = (mi as SubRideRow[]) ?? [];
   }
 
-  let plans: PlanRow[] = [];
-  if (!sub) {
-    const { data } = await supabase
-      .from('subscription_plans')
-      .select('*')
-      .eq('active', true)
-      .order('rides_total');
-    plans = (data as PlanRow[]) ?? [];
-  }
 
   return (
     <main className="mx-auto max-w-md px-lg py-xl">
@@ -152,7 +145,7 @@ export default async function TamPassPage({
           <section className="mt-lg overflow-hidden rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 p-lg text-white shadow-glow">
             <div className="flex items-baseline justify-between">
               <p className="text-sm font-bold uppercase tracking-wider opacity-90">
-                {sub.subscription_plans?.label ?? sub.status}
+                {sub.subscription_plans?.label ?? 'Mon TamPass'}
               </p>
               <span className="rounded-full bg-white/15 px-md py-xs text-[11px] font-bold">
                 {sub.status === 'paused'
@@ -234,7 +227,7 @@ export default async function TamPassPage({
                 Trajets manqués — utiliser un joker
               </h2>
               <p className="mt-xs text-xs text-neutral-500">
-                {sub.subscription_plans?.reports_per_month ?? 0} joker(s)/mois ·{' '}
+                {sub.reports_per_month} joker(s)/mois ·{' '}
                 {sub.reports_used_month} utilisé(s) ce mois-ci
               </p>
               <div className="mt-md space-y-sm">
@@ -263,7 +256,7 @@ export default async function TamPassPage({
           {/* Actions */}
           <section className="mt-xl space-y-sm">
             {sub.status === 'active' &&
-              (sub.subscription_plans?.pauses_max ?? 0) > sub.pauses_used && (
+              sub.pauses_max > sub.pauses_used && (
                 <form action={pauseSubscriptionAction}>
                   <input type="hidden" name="subscription_id" value={sub.id} />
                   <button
@@ -306,28 +299,27 @@ export default async function TamPassPage({
             </ul>
           </section>
 
-          <section className="mt-xl space-y-md">
-            {plans.map((p) => (
-              <div
-                key={p.code}
-                className="flex items-center justify-between rounded-xl border border-neutral-200 bg-white p-lg"
-              >
-                <div>
-                  <p className="font-bold text-neutral-900">{p.label}</p>
-                  <p className="text-xs text-neutral-500">
-                    {p.rides_total} trajets · {p.validity_days} jours
-                    {Number(p.discount_pct) > 0
-                      ? ` · −${Number(p.discount_pct)} %`
-                      : ''}
-                  </p>
-                </div>
-                {p.is_flex && (
-                  <span className="rounded-full bg-cyan-500/10 px-md py-xs text-[11px] font-bold text-cyan-600">
-                    Sans créneaux
-                  </span>
-                )}
+          <section className="mt-xl rounded-xl border border-neutral-200 bg-white p-lg">
+            <p className="text-sm font-bold text-neutral-900">
+              Vous définissez tout, la remise suit votre fréquence
+            </p>
+            <p className="mt-xs text-xs text-neutral-500">
+              Trajet, jours, heures, durée — c&apos;est vous qui choisissez.
+            </p>
+            <div className="mt-md grid grid-cols-3 gap-sm text-center">
+              <div className="rounded-lg bg-neutral-50 p-md">
+                <p className="text-lg font-extrabold text-primary-600">−5 %</p>
+                <p className="text-[11px] text-neutral-500">dès 10 trajets</p>
               </div>
-            ))}
+              <div className="rounded-lg bg-neutral-50 p-md">
+                <p className="text-lg font-extrabold text-primary-600">−10 %</p>
+                <p className="text-[11px] text-neutral-500">dès 20 trajets</p>
+              </div>
+              <div className="rounded-lg bg-primary-50 p-md">
+                <p className="text-lg font-extrabold text-primary-700">−15 %</p>
+                <p className="text-[11px] text-neutral-600">dès 40 trajets</p>
+              </div>
+            </div>
           </section>
 
           <Link

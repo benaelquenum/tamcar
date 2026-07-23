@@ -9,16 +9,7 @@ import {
 } from '@/components/AddressAutocomplete';
 import { getRoute, type RouteResult } from '@/lib/mapbox';
 import { computePrice, type VehicleCategory } from '@/lib/pricing';
-import { supabase } from '@/lib/supabase';
-
-type PlanRow = {
-  code: string;
-  label: string;
-  rides_total: number;
-  validity_days: number;
-  discount_pct: number;
-  is_flex: boolean;
-};
+import { supabaseBrowser } from '@/lib/supabase-browser';
 
 const CATEGORIES: { code: VehicleCategory; label: string }[] = [
   { code: 'moto', label: 'Moto' },
@@ -37,6 +28,20 @@ const DAYS: { n: number; label: string }[] = [
   { n: 7, label: 'D' },
 ];
 
+const WEEKS_OPTIONS: { weeks: number; label: string }[] = [
+  { weeks: 1, label: '1 semaine' },
+  { weeks: 2, label: '2 semaines' },
+  { weeks: 4, label: '1 mois' },
+];
+
+/** Barème de remise par fréquence — miroir du serveur (source de vérité : SQL). */
+function discountFor(ridesTotal: number): number {
+  if (ridesTotal >= 40) return 15;
+  if (ridesTotal >= 20) return 10;
+  if (ridesTotal >= 10) return 5;
+  return 0;
+}
+
 function fmtFcfa(n: number): string {
   return n.toLocaleString('fr-FR');
 }
@@ -44,8 +49,6 @@ function fmtFcfa(n: number): string {
 export default function NouveauTamPassPage() {
   const router = useRouter();
 
-  const [plans, setPlans] = useState<PlanRow[]>([]);
-  const [planCode, setPlanCode] = useState<string>('pass_mois');
   const [category, setCategory] = useState<VehicleCategory>('moto');
   const [origin, setOrigin] = useState<SelectedAddress | null>(null);
   const [dropoff, setDropoff] = useState<SelectedAddress | null>(null);
@@ -53,6 +56,7 @@ export default function NouveauTamPassPage() {
   const [slotOut, setSlotOut] = useState('06:45');
   const [roundTrip, setRoundTrip] = useState(true);
   const [slotReturn, setSlotReturn] = useState('18:00');
+  const [weeks, setWeeks] = useState(4);
 
   const [route, setRoute] = useState<RouteResult | null>(null);
   const [unitPrice, setUnitPrice] = useState<number | null>(null);
@@ -61,39 +65,30 @@ export default function NouveauTamPassPage() {
   const [buying, setBuying] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const plan = useMemo(
-    () => plans.find((p) => p.code === planCode) ?? null,
-    [plans, planCode],
+  const ridesTotal = useMemo(
+    () => days.length * (roundTrip ? 2 : 1) * weeks,
+    [days, roundTrip, weeks],
   );
+  const discount = useMemo(() => discountFor(ridesTotal), [ridesTotal]);
 
   const total = useMemo(() => {
-    if (!plan || unitPrice == null) return null;
-    return Math.round(
-      unitPrice * plan.rides_total * (1 - Number(plan.discount_pct) / 100),
-    );
-  }, [plan, unitPrice]);
+    if (unitPrice == null || ridesTotal === 0) return null;
+    return Math.round(unitPrice * ridesTotal * (1 - discount / 100));
+  }, [unitPrice, ridesTotal, discount]);
 
-  // Formules + solde wallet
+  // Solde wallet
   useEffect(() => {
     (async () => {
-      const [{ data: pl }, { data: w }] = await Promise.all([
-        supabase
-          .from('subscription_plans')
-          .select('code, label, rides_total, validity_days, discount_pct, is_flex')
-          .eq('active', true)
-          .order('rides_total'),
-        supabase
-          .from('wallets')
-          .select('balance_fcfa')
-          .eq('kind', 'tamcar_credit')
-          .maybeSingle(),
-      ]);
-      setPlans((pl as PlanRow[]) ?? []);
-      setWalletBalance(w?.balance_fcfa ?? 0);
+      const { data } = await supabaseBrowser
+        .from('wallets')
+        .select('balance_fcfa')
+        .eq('kind', 'tamcar_credit')
+        .maybeSingle();
+      setWalletBalance(data?.balance_fcfa ?? 0);
     })();
   }, []);
 
-  // Itinéraire + prix unitaire dès que trajet + catégorie sont connus
+  // Itinéraire + prix unitaire
   useEffect(() => {
     if (!origin || !dropoff) {
       setRoute(null);
@@ -138,30 +133,30 @@ export default function NouveauTamPassPage() {
 
   async function buy() {
     setError(null);
-    if (!plan) return setError('Choisissez une formule.');
     if (!origin || !dropoff || !route)
       return setError('Renseignez le trajet (départ et destination).');
-    if (!plan.is_flex && days.length === 0)
-      return setError('Choisissez au moins un jour.');
-    if (!plan.is_flex && !slotOut)
-      return setError('Choisissez un créneau de départ.');
+    if (days.length === 0) return setError('Choisissez au moins un jour.');
+    if (!slotOut) return setError('Choisissez un créneau de départ.');
 
     setBuying(true);
-    const { error: err } = await supabase.rpc('purchase_subscription', {
-      p_plan_code: plan.code,
-      p_category: category,
-      p_origin_lat: origin.center[1],
-      p_origin_lng: origin.center[0],
-      p_origin_address: origin.place_name,
-      p_dropoff_lat: dropoff.center[1],
-      p_dropoff_lng: dropoff.center[0],
-      p_dropoff_address: dropoff.place_name,
-      p_distance_km: Number(route.distance_km.toFixed(2)),
-      p_duration_min: route.duration_min,
-      p_days_of_week: plan.is_flex ? null : days,
-      p_slot_out: plan.is_flex ? null : slotOut,
-      p_slot_return: plan.is_flex || !roundTrip ? null : slotReturn,
-    });
+    const { error: err } = await supabaseBrowser.rpc(
+      'purchase_subscription_flex',
+      {
+        p_category: category,
+        p_origin_lat: origin.center[1],
+        p_origin_lng: origin.center[0],
+        p_origin_address: origin.place_name,
+        p_dropoff_lat: dropoff.center[1],
+        p_dropoff_lng: dropoff.center[0],
+        p_dropoff_address: dropoff.place_name,
+        p_distance_km: Number(route.distance_km.toFixed(2)),
+        p_duration_min: route.duration_min,
+        p_days: days,
+        p_slot_out: slotOut,
+        p_slot_return: roundTrip ? slotReturn : null,
+        p_weeks: weeks,
+      },
+    );
     setBuying(false);
 
     if (err) {
@@ -186,45 +181,15 @@ export default function NouveauTamPassPage() {
           Créer mon TamPass
         </h1>
         <p className="text-sm text-neutral-500">
-          Votre trajet récurrent, prépayé et garanti.
+          Vous définissez tout : trajet, jours, heures, durée. Plus vous
+          voyagez, plus la remise monte.
         </p>
       </header>
 
-      {/* 1. Formule */}
+      {/* 1. Véhicule */}
       <section className="mt-lg">
         <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-          1 · Formule
-        </h2>
-        <div className="mt-sm grid grid-cols-3 gap-sm">
-          {plans.map((p) => (
-            <button
-              key={p.code}
-              type="button"
-              onClick={() => setPlanCode(p.code)}
-              className={`rounded-xl border-2 p-md text-left transition ${
-                planCode === p.code
-                  ? 'border-primary-500 bg-primary-50'
-                  : 'border-neutral-200 bg-white hover:border-neutral-300'
-              }`}
-            >
-              <p className="text-xs font-bold text-neutral-900">{p.label}</p>
-              <p className="mt-xs text-[11px] text-neutral-500">
-                {p.rides_total} trajets
-              </p>
-              {Number(p.discount_pct) > 0 && (
-                <p className="text-[11px] font-bold text-primary-600">
-                  −{Number(p.discount_pct)} %
-                </p>
-              )}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* 2. Catégorie */}
-      <section className="mt-lg">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-          2 · Véhicule
+          1 · Véhicule
         </h2>
         <div className="mt-sm grid grid-cols-4 gap-sm">
           {CATEGORIES.map((c) => (
@@ -244,10 +209,10 @@ export default function NouveauTamPassPage() {
         </div>
       </section>
 
-      {/* 3. Trajet */}
+      {/* 2. Trajet */}
       <section className="mt-lg space-y-md">
         <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-          3 · Trajet
+          2 · Trajet
         </h2>
         <AddressAutocomplete
           label="Départ (domicile)"
@@ -270,78 +235,104 @@ export default function NouveauTamPassPage() {
         )}
       </section>
 
-      {/* 4. Créneaux (masqué pour flex) */}
-      {plan && !plan.is_flex && (
-        <section className="mt-lg space-y-md">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-            4 · Jours et créneaux
-          </h2>
-          <div className="flex gap-xs">
-            {DAYS.map((d) => (
-              <button
-                key={d.n}
-                type="button"
-                onClick={() => toggleDay(d.n)}
-                className={`h-10 w-10 rounded-lg text-sm font-bold transition ${
-                  days.includes(d.n)
-                    ? 'bg-primary-500 text-white'
-                    : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'
-                }`}
-              >
-                {d.label}
-              </button>
-            ))}
-          </div>
-          <div className="flex items-center gap-md">
-            <label className="flex-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
-                Départ aller
-              </span>
+      {/* 3. Jours et heures */}
+      <section className="mt-lg space-y-md">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
+          3 · Jours et heures
+        </h2>
+        <div className="flex gap-xs">
+          {DAYS.map((d) => (
+            <button
+              key={d.n}
+              type="button"
+              onClick={() => toggleDay(d.n)}
+              className={`h-10 w-10 rounded-lg text-sm font-bold transition ${
+                days.includes(d.n)
+                  ? 'bg-primary-500 text-white'
+                  : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'
+              }`}
+            >
+              {d.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-md">
+          <label className="flex-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+              Départ aller
+            </span>
+            <input
+              type="time"
+              value={slotOut}
+              onChange={(e) => setSlotOut(e.target.value)}
+              className="mt-xs w-full rounded-lg bg-neutral-100 px-md py-md text-base ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </label>
+          <label className="flex-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+              Retour
+            </span>
+            <div className="mt-xs flex items-center gap-sm">
+              <input
+                type="checkbox"
+                checked={roundTrip}
+                onChange={(e) => setRoundTrip(e.target.checked)}
+                className="h-5 w-5 accent-primary-500"
+              />
               <input
                 type="time"
-                value={slotOut}
-                onChange={(e) => setSlotOut(e.target.value)}
-                className="mt-xs w-full rounded-lg bg-neutral-100 px-md py-md text-base ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                value={slotReturn}
+                onChange={(e) => setSlotReturn(e.target.value)}
+                disabled={!roundTrip}
+                className="w-full rounded-lg bg-neutral-100 px-md py-md text-base ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-40"
               />
-            </label>
-            <label className="flex-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
-                Retour
-              </span>
-              <div className="mt-xs flex items-center gap-sm">
-                <input
-                  type="checkbox"
-                  checked={roundTrip}
-                  onChange={(e) => setRoundTrip(e.target.checked)}
-                  className="h-5 w-5 accent-primary-500"
-                />
-                <input
-                  type="time"
-                  value={slotReturn}
-                  onChange={(e) => setSlotReturn(e.target.value)}
-                  disabled={!roundTrip}
-                  className="w-full rounded-lg bg-neutral-100 px-md py-md text-base ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-40"
-                />
-              </div>
-            </label>
-          </div>
-        </section>
-      )}
+            </div>
+          </label>
+        </div>
+      </section>
+
+      {/* 4. Durée */}
+      <section className="mt-lg">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
+          4 · Durée
+        </h2>
+        <div className="mt-sm grid grid-cols-3 gap-sm">
+          {WEEKS_OPTIONS.map((w) => (
+            <button
+              key={w.weeks}
+              type="button"
+              onClick={() => setWeeks(w.weeks)}
+              className={`rounded-xl border-2 py-md text-center text-xs font-bold transition ${
+                weeks === w.weeks
+                  ? 'border-primary-500 bg-primary-50 text-primary-700'
+                  : 'border-neutral-200 bg-white text-neutral-600 hover:border-neutral-300'
+              }`}
+            >
+              {w.label}
+            </button>
+          ))}
+        </div>
+      </section>
 
       {/* Récap prix */}
       <section className="mt-xl rounded-2xl border border-neutral-200 bg-neutral-50 p-lg">
         {quoting ? (
           <p className="text-sm text-neutral-500">Calcul du prix…</p>
-        ) : unitPrice != null && plan && total != null ? (
+        ) : unitPrice != null && total != null ? (
           <>
             <div className="flex justify-between text-sm text-neutral-600">
-              <span>Prix unitaire ({CATEGORIES.find((c) => c.code === category)?.label})</span>
-              <span>{fmtFcfa(unitPrice)} FCFA</span>
+              <span>
+                {ridesTotal} trajets ×{' '}
+                {CATEGORIES.find((c) => c.code === category)?.label}
+              </span>
+              <span>{fmtFcfa(unitPrice)} FCFA / trajet</span>
             </div>
-            <div className="flex justify-between text-sm text-neutral-600">
-              <span>× {plan.rides_total} trajets · remise −{Number(plan.discount_pct)} %</span>
-              <span />
-            </div>
+            {discount > 0 && (
+              <div className="mt-xs flex justify-between text-sm font-semibold text-primary-600">
+                <span>Remise fréquence</span>
+                <span>−{discount} %</span>
+              </div>
+            )}
             <div className="mt-sm flex items-baseline justify-between border-t border-neutral-200 pt-sm">
               <span className="font-bold text-neutral-900">Total à payer</span>
               <span className="text-xl font-extrabold text-primary-700">
@@ -384,8 +375,9 @@ export default function NouveauTamPassPage() {
       </button>
 
       <p className="mt-md text-center text-[11px] text-neutral-400">
-        Paiement par wallet TamCar Crédit. Trajets garantis — sinon recrédités
-        + 500 F offerts.
+        Paiement par wallet TamCar Crédit. La recherche de votre chauffeur
+        démarre jusqu&apos;à 3 h avant chaque départ — trajet garanti, sinon
+        recrédité + 500 F offerts.
       </p>
     </main>
   );
