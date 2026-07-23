@@ -7,6 +7,7 @@ import {
   AddressAutocomplete,
   type SelectedAddress,
 } from '@/components/AddressAutocomplete';
+import { Map } from '@/components/Map';
 import { getRoute, type RouteResult } from '@/lib/mapbox';
 import { computePrice, type VehicleCategory } from '@/lib/pricing';
 import { supabaseBrowser } from '@/lib/supabase-browser';
@@ -140,7 +141,7 @@ export default function NouveauTamPassPage() {
 
     setBuying(true);
     const { error: err } = await supabaseBrowser.rpc(
-      'purchase_subscription_flex',
+      'request_subscription_flex',
       {
         p_category: category,
         p_origin_lat: origin.center[1],
@@ -164,7 +165,10 @@ export default function NouveauTamPassPage() {
       return;
     }
     router.push(
-      '/tampass?ok=' + encodeURIComponent('Votre TamPass est actif. Bienvenue !'),
+      '/tampass?ok=' +
+        encodeURIComponent(
+          'Recherche de votre chauffeur lancée — vous serez notifié dès qu’il est trouvé (3 h max).',
+        ),
     );
   }
 
@@ -228,6 +232,14 @@ export default function NouveauTamPassPage() {
           onChange={setDropoff}
           markerColor="#7C3AED"
         />
+        {(origin || dropoff) && (
+          <Map
+            pickup={origin?.center ?? null}
+            dropoff={dropoff?.center ?? null}
+            route={route?.geometry ?? null}
+            className="h-52 w-full rounded-xl bg-neutral-100 shadow-sm ring-1 ring-neutral-200"
+          />
+        )}
         {route && (
           <p className="text-xs text-neutral-500">
             ≈ {route.distance_km.toFixed(1)} km · {route.duration_min} min
@@ -257,7 +269,7 @@ export default function NouveauTamPassPage() {
           ))}
         </div>
         <div className="flex items-center gap-md">
-          <label className="flex-1">
+          <label className="min-w-0 flex-1">
             <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
               Départ aller
             </span>
@@ -265,26 +277,26 @@ export default function NouveauTamPassPage() {
               type="time"
               value={slotOut}
               onChange={(e) => setSlotOut(e.target.value)}
-              className="mt-xs w-full rounded-lg bg-neutral-100 px-md py-md text-base ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="mt-xs block w-full min-w-0 appearance-none rounded-lg bg-neutral-100 px-sm py-md text-sm ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </label>
-          <label className="flex-1">
+          <label className="min-w-0 flex-1">
             <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
               Retour
             </span>
-            <div className="mt-xs flex items-center gap-sm">
+            <div className="mt-xs flex min-w-0 items-center gap-sm">
               <input
                 type="checkbox"
                 checked={roundTrip}
                 onChange={(e) => setRoundTrip(e.target.checked)}
-                className="h-5 w-5 accent-primary-500"
+                className="h-5 w-5 flex-none accent-primary-500"
               />
               <input
                 type="time"
                 value={slotReturn}
                 onChange={(e) => setSlotReturn(e.target.value)}
                 disabled={!roundTrip}
-                className="w-full rounded-lg bg-neutral-100 px-md py-md text-base ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-40"
+                className="block w-full min-w-0 appearance-none rounded-lg bg-neutral-100 px-sm py-md text-sm ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-40"
               />
             </div>
           </label>
@@ -348,7 +360,7 @@ export default function NouveauTamPassPage() {
                 href="/wallet"
                 className="mt-md block rounded-lg bg-amber-50 p-md text-center text-xs font-bold text-amber-700"
               >
-                Solde insuffisant — recharger mon wallet →
+                Ce solde sera nécessaire au moment de confirmer — recharger →
               </Link>
             )}
           </>
@@ -368,16 +380,17 @@ export default function NouveauTamPassPage() {
       <button
         type="button"
         onClick={buy}
-        disabled={buying || quoting || total == null || insufficient}
+        disabled={buying || quoting || total == null}
         className="mt-lg w-full rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-lg text-base font-bold text-white shadow-glow transition hover:brightness-110 active:scale-[0.98] disabled:opacity-50"
       >
-        {buying ? 'Achat en cours…' : 'Payer et activer mon TamPass'}
+        {buying ? 'Lancement de la recherche…' : 'Trouver mon chauffeur'}
       </button>
 
       <p className="mt-md text-center text-[11px] text-neutral-400">
-        Paiement par wallet TamCar Crédit. La recherche de votre chauffeur
-        démarre jusqu&apos;à 3 h avant chaque départ — trajet garanti, sinon
-        recrédité + 500 F offerts.
+        Rien à payer maintenant : nous cherchons d&apos;abord votre chauffeur
+        (proximité puis note, jusqu&apos;à 3 h). Vous confirmez ensuite en
+        payant par wallet TamCar Crédit — trajets garantis, sinon recrédités
+        + 500 F offerts.
       </p>
     </main>
   );

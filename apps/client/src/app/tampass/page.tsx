@@ -1,7 +1,12 @@
 import Link from 'next/link';
 import { RouteIcon, CheckIcon, ClockIcon } from '@/components/Icon';
 import { createServerSupabase } from '@/lib/supabase-server';
-import { pauseSubscriptionAction, useJokerAction } from './actions';
+import {
+  cancelRequestAction,
+  confirmPaymentAction,
+  pauseSubscriptionAction,
+  useJokerAction,
+} from './actions';
 
 type SearchParams = { error?: string; ok?: string };
 
@@ -35,6 +40,10 @@ type SubRow = {
   total_price_fcfa: number;
   starts_on: string;
   expires_on: string;
+  searching_until: string | null;
+  payment_deadline: string | null;
+  preferred_driver_name: string | null;
+  preferred_driver_rating: number | null;
   subscription_plans: PlanRow | null;
 };
 
@@ -82,7 +91,7 @@ export default async function TamPassPage({
   const { data: subs } = await supabase
     .from('subscriptions')
     .select('*, subscription_plans(*)')
-    .in('status', ['active', 'paused'])
+    .in('status', ['pending_driver', 'awaiting_payment', 'active', 'paused'])
     .order('created_at', { ascending: false })
     .limit(1);
 
@@ -139,7 +148,100 @@ export default async function TamPassPage({
         </div>
       )}
 
-      {sub ? (
+      {sub && sub.status === 'pending_driver' ? (
+        <>
+          {/* Recherche du chauffeur en cours */}
+          <section className="mt-lg rounded-2xl border-2 border-primary-200 bg-primary-50 p-lg">
+            <div className="flex items-center gap-md">
+              <span className="relative grid h-11 w-11 place-items-center rounded-full bg-primary-500 text-white">
+                <ClockIcon className="h-5 w-5" />
+                <span className="absolute inset-0 animate-ping rounded-full bg-primary-400 opacity-40" />
+              </span>
+              <div>
+                <p className="font-bold text-neutral-900">
+                  Recherche de votre chauffeur…
+                </p>
+                <p className="text-xs text-neutral-600">
+                  Les chauffeurs proches sont notifiés (jusqu&apos;à 3 h). Vous
+                  recevrez une notification dès qu&apos;un chauffeur accepte.
+                </p>
+              </div>
+            </div>
+            <p className="mt-md text-sm text-neutral-700">
+              {sub.origin_address} → {sub.dropoff_address}
+            </p>
+            <p className="mt-xs text-xs text-neutral-500">
+              {sub.rides_total} trajets ·{' '}
+              {sub.slot_out ? `départ ${fmtTime(sub.slot_out)}` : ''}
+              {sub.slot_return ? ` · retour ${fmtTime(sub.slot_return)}` : ''} ·{' '}
+              {fmtFcfa(sub.total_price_fcfa)} FCFA à la confirmation
+            </p>
+            <form action={cancelRequestAction} className="mt-lg">
+              <input type="hidden" name="subscription_id" value={sub.id} />
+              <button
+                type="submit"
+                className="w-full rounded-xl border-2 border-neutral-300 bg-white py-md text-sm font-semibold text-neutral-600 hover:bg-neutral-50"
+              >
+                Annuler la recherche
+              </button>
+            </form>
+          </section>
+        </>
+      ) : sub && sub.status === 'awaiting_payment' ? (
+        <>
+          {/* Chauffeur trouvé — confirmation par paiement */}
+          <section className="mt-lg rounded-2xl border-2 border-emerald-300 bg-emerald-50 p-lg">
+            <p className="text-sm font-bold uppercase tracking-wider text-emerald-700">
+              Chauffeur trouvé !
+            </p>
+            <p className="mt-sm text-lg font-extrabold text-neutral-900">
+              {sub.preferred_driver_name ?? 'Votre chauffeur'}
+              {sub.preferred_driver_rating != null && (
+                <span className="ml-sm text-sm font-bold text-amber-500">
+                  ★ {Number(sub.preferred_driver_rating).toFixed(1)}
+                </span>
+              )}
+            </p>
+            <p className="mt-xs text-sm text-neutral-600">
+              {sub.origin_address} → {sub.dropoff_address}
+            </p>
+            <p className="mt-xs text-xs text-neutral-500">
+              {sub.rides_total} trajets · confirmez avant le{' '}
+              {sub.payment_deadline
+                ? new Date(sub.payment_deadline).toLocaleString('fr-FR', {
+                    weekday: 'short',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })
+                : '—'}
+            </p>
+            <form action={confirmPaymentAction} className="mt-lg">
+              <input type="hidden" name="subscription_id" value={sub.id} />
+              <button
+                type="submit"
+                className="w-full rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-lg text-base font-bold text-white shadow-glow transition hover:brightness-110 active:scale-[0.98]"
+              >
+                Confirmer et payer {fmtFcfa(sub.total_price_fcfa)} FCFA
+              </button>
+            </form>
+            <form action={cancelRequestAction} className="mt-sm">
+              <input type="hidden" name="subscription_id" value={sub.id} />
+              <button
+                type="submit"
+                className="w-full rounded-xl border border-neutral-300 bg-white py-md text-sm font-semibold text-neutral-600 hover:bg-neutral-50"
+              >
+                Refuser et annuler
+              </button>
+            </form>
+            <p className="mt-sm text-center text-[11px] text-neutral-500">
+              Paiement par wallet TamCar Crédit.{' '}
+              <Link href="/wallet" className="underline">
+                Recharger mon wallet
+              </Link>
+            </p>
+          </section>
+        </>
+      ) : sub ? (
         <>
           {/* Carte du pass actif */}
           <section className="mt-lg overflow-hidden rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 p-lg text-white shadow-glow">

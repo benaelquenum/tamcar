@@ -1,5 +1,21 @@
 import Link from 'next/link';
 import { createServerSupabase } from '@/lib/supabase-server';
+import { acceptOfferAction } from './actions';
+
+type OfferRow = {
+  subscription_id: string;
+  origin_address: string;
+  dropoff_address: string;
+  category: string;
+  days_count: number;
+  slot_out: string | null;
+  slot_return: string | null;
+  rides_total: number;
+  weeks: number;
+  driver_estimate_fcfa: number;
+  distance_from_driver_km: number | null;
+  searching_until: string;
+};
 
 type PlanningRow = {
   subscription_ride_id: string;
@@ -75,13 +91,21 @@ function PlanningList({ rows, empty }: { rows: PlanningRow[]; empty: string }) {
   );
 }
 
-export default async function DriverTamPassPage() {
+export default async function DriverTamPassPage({
+  searchParams,
+}: {
+  searchParams: { ok?: string; error?: string };
+}) {
   const supabase = createServerSupabase();
 
-  const [{ data: today }, { data: tomorrow }] = await Promise.all([
-    supabase.rpc('tampass_driver_planning', { p_date: beninDate(0) }),
-    supabase.rpc('tampass_driver_planning', { p_date: beninDate(1) }),
-  ]);
+  const [{ data: offers }, { data: today }, { data: tomorrow }] =
+    await Promise.all([
+      supabase.rpc('tampass_open_offers'),
+      supabase.rpc('tampass_driver_planning', { p_date: beninDate(0) }),
+      supabase.rpc('tampass_driver_planning', { p_date: beninDate(1) }),
+    ]);
+
+  const offerRows = (offers as OfferRow[]) ?? [];
 
   return (
     <main className="mx-auto max-w-md px-lg py-xl">
@@ -90,13 +114,74 @@ export default async function DriverTamPassPage() {
           ← Accueil
         </Link>
         <h1 className="mt-sm text-xl font-extrabold text-neutral-900">
-          Planning TamPass
+          TamPass
         </h1>
         <p className="text-sm text-neutral-500">
           Vos abonnés et trajets récurrents. Soyez en position 15 min avant le
           créneau — le trajet vous est prioritaire.
         </p>
       </header>
+
+      {searchParams.ok && (
+        <div className="mt-md rounded-md bg-emerald-50 p-md text-sm font-medium text-emerald-700">
+          {searchParams.ok}
+        </div>
+      )}
+      {searchParams.error && (
+        <div className="mt-md rounded-md bg-error/10 p-md text-sm font-medium text-error">
+          {searchParams.error}
+        </div>
+      )}
+
+      {/* Offres ouvertes — revenu récurrent à saisir */}
+      {offerRows.length > 0 && (
+        <section className="mt-xl">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-primary-600">
+            Offres disponibles — premier arrivé, premier servi
+          </h2>
+          <div className="mt-md space-y-sm">
+            {offerRows.map((o) => (
+              <div
+                key={o.subscription_id}
+                className="rounded-xl border-2 border-primary-200 bg-primary-50 p-md"
+              >
+                <div className="flex items-baseline justify-between">
+                  <p className="text-lg font-extrabold text-primary-700">
+                    ~{o.driver_estimate_fcfa.toLocaleString('fr-FR')} FCFA
+                  </p>
+                  <span className="text-[11px] font-bold uppercase text-neutral-500">
+                    {o.category} · {o.weeks} sem.
+                  </span>
+                </div>
+                <p className="mt-xs text-sm text-neutral-800">
+                  {o.origin_address} → {o.dropoff_address}
+                </p>
+                <p className="text-xs text-neutral-500">
+                  {o.rides_total} trajets · {o.days_count} j/sem
+                  {o.slot_out ? ` · aller ${fmtTime(o.slot_out)}` : ''}
+                  {o.slot_return ? ` · retour ${fmtTime(o.slot_return)}` : ''}
+                  {o.distance_from_driver_km != null
+                    ? ` · à ${o.distance_from_driver_km} km`
+                    : ''}
+                </p>
+                <form action={acceptOfferAction} className="mt-md">
+                  <input
+                    type="hidden"
+                    name="subscription_id"
+                    value={o.subscription_id}
+                  />
+                  <button
+                    type="submit"
+                    className="w-full rounded-lg bg-gradient-to-r from-primary-500 to-primary-700 py-md text-sm font-bold text-white shadow-glow transition hover:brightness-110 active:scale-[0.98]"
+                  >
+                    Devenir le chauffeur attitré
+                  </button>
+                </form>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="mt-xl">
         <h2 className="text-sm font-bold uppercase tracking-wider text-neutral-500">
