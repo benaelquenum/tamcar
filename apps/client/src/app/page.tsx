@@ -11,6 +11,7 @@ import {
   LifeBuoyIcon,
   PinIcon,
   PlusIcon,
+  RouteIcon,
   WalletIcon,
   WaveIcon,
 } from '@/components/Icon';
@@ -239,7 +240,8 @@ export default async function HomePage() {
         </section>
 
         {/* Quick actions row — remontées haut : accès direct aux fonctions courantes */}
-        <section className="mt-lg grid grid-cols-3 gap-sm">
+        <section className="mt-lg grid grid-cols-4 gap-sm">
+          <QuickActionLink href="/tampass" Icon={RouteIcon} label="TamPass" tint="cyan" />
           <QuickActionLink href="/history" Icon={HistoryIcon} label={t('home.history')} tint="primary" />
           <QuickActionLink href="/parrainer" Icon={GiftIcon} label={t('home.refer')} tint="violet" />
           <QuickAction Icon={LifeBuoyIcon} label={t('home.help')} tint="cyan" />
