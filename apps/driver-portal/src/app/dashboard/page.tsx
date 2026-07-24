@@ -84,7 +84,7 @@ export default async function DriverDashboardPage() {
           .eq('id', driver.current_vehicle_id)
           .single()
       : Promise.resolve({ data: null }),
-    supabase.rpc('driver_today_progress', { p_driver_id: driver.id }),
+    supabase.rpc('driver_today_volume', { p_driver_id: driver.id }),
     supabase.rpc('my_insurance_status'),
   ]);
 
@@ -112,22 +112,22 @@ export default async function DriverDashboardPage() {
   const insuranceThisMonth = insurance.find((r) => r.period.slice(0, 7) === currentMonthKey) ?? null;
 
   type ProgressRow = {
-    rides_today: number;
+    volume_today: number;
     min_target: number;
     bonus_threshold: number;
     is_senior: boolean;
     in_bonus_zone: boolean;
-    courses_until_bonus: number;
-    courses_below_min: number;
+    fcfa_until_bonus: number;
+    fcfa_below_min: number;
   };
   const progress = ((progressData ?? []) as ProgressRow[])[0] ?? {
-    rides_today: 0,
-    min_target: 15,
-    bonus_threshold: 16,
+    volume_today: 0,
+    min_target: 15000,
+    bonus_threshold: 16050,
     is_senior: false,
     in_bonus_zone: false,
-    courses_until_bonus: 16,
-    courses_below_min: 15,
+    fcfa_until_bonus: 16050,
+    fcfa_below_min: 15000,
   };
 
   return (
@@ -329,27 +329,27 @@ function TodayProgress({
   progress,
 }: {
   progress: {
-    rides_today: number;
+    volume_today: number;
     min_target: number;
     bonus_threshold: number;
     is_senior: boolean;
     in_bonus_zone: boolean;
-    courses_until_bonus: number;
-    courses_below_min: number;
+    fcfa_until_bonus: number;
+    fcfa_below_min: number;
   };
 }) {
-  const pct = Math.min(100, Math.round((progress.rides_today / progress.bonus_threshold) * 100));
+  const pct = Math.min(100, Math.round((progress.volume_today / progress.bonus_threshold) * 100));
   const minPct = Math.min(100, Math.round((progress.min_target / progress.bonus_threshold) * 100));
 
   return (
     <section className="mt-lg rounded-xl border border-neutral-200 bg-white p-lg shadow-sm">
       <div className="mb-md flex items-baseline justify-between">
         <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-          Aujourd&apos;hui
+          Volume du jour
         </h2>
         {progress.is_senior && (
           <span className="rounded-full bg-gold px-sm py-0.5 text-[10px] font-bold text-neutral-900 shadow-glow-gold">
-            Senior · seuil abaissé 14e
+            Senior · seuil abaissé
           </span>
         )}
       </div>
@@ -359,10 +359,10 @@ function TodayProgress({
           className="text-4xl font-extrabold text-neutral-900"
           style={{ fontVariantNumeric: 'tabular-nums' }}
         >
-          {progress.rides_today}
+          {formatFcfa(progress.volume_today)}
         </p>
         <p className="text-sm text-neutral-500">
-          / {progress.bonus_threshold} pour toucher le bonus
+          F / {formatFcfa(progress.bonus_threshold)} F pour le bonus
         </p>
       </div>
 
@@ -384,8 +384,8 @@ function TodayProgress({
       </div>
       <div className="mt-xs flex justify-between text-[10px] text-neutral-500">
         <span>0</span>
-        <span style={{ marginLeft: `${minPct - 8}%` }}>Min {progress.min_target}</span>
-        <span>Bonus {progress.bonus_threshold}</span>
+        <span style={{ marginLeft: `${minPct - 10}%` }}>Min {formatFcfa(progress.min_target)}</span>
+        <span>Bonus {formatFcfa(progress.bonus_threshold)}</span>
       </div>
 
       <p className="mt-md text-sm text-neutral-800">
@@ -394,17 +394,15 @@ function TodayProgress({
             <strong className="text-warning">Bonus actif</strong> — +5% cash sur chaque course
             supplémentaire de la journée.
           </>
-        ) : progress.courses_below_min > 0 ? (
+        ) : progress.fcfa_below_min > 0 ? (
           <>
-            Encore <strong className="text-neutral-900">{progress.courses_below_min}</strong> course
-            {progress.courses_below_min > 1 ? 's' : ''} pour atteindre ton minimum quotidien de{' '}
-            {progress.min_target}.
+            Encore <strong className="text-neutral-900">{formatFcfa(progress.fcfa_below_min)} F</strong> de
+            volume pour atteindre ton minimum quotidien de {formatFcfa(progress.min_target)} F.
           </>
         ) : (
           <>
             <strong className="text-primary-700">Minimum atteint.</strong> Encore{' '}
-            <strong>{progress.courses_until_bonus}</strong> course
-            {progress.courses_until_bonus > 1 ? 's' : ''} pour déclencher le bonus +5%.
+            <strong>{formatFcfa(progress.fcfa_until_bonus)} F</strong> pour déclencher le bonus +5%.
           </>
         )}
       </p>
