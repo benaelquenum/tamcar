@@ -76,24 +76,35 @@ export default async function HomePage() {
   let onlineDrivers: { count: number; label: string } | null = null;
   const supabase = createServerSupabase();
 
-  // Nombre de chauffeurs actuellement online (globalement — hors géoloc précise)
-  const { count: driverCount } = await supabase
-    .from('drivers')
-    .select('*', { count: 'exact', head: true })
-    .eq('is_online', true)
-    .eq('status', 'active');
-  if ((driverCount ?? 0) > 0) {
+  // Les 3 blocs de données sont indépendants → une seule vague parallèle
+  // (chauffeurs en ligne, wallet + course active si connecté, bannières).
+  const [driversRes, walletActive, bannersRes] = await Promise.all([
+    supabase
+      .from('drivers')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_online', true)
+      .eq('status', 'active'),
+    isLoggedIn
+      ? Promise.all([supabase.rpc('my_wallets'), supabase.rpc('my_active_ride')])
+      : Promise.resolve(null),
+    supabase
+      .from('home_banners')
+      .select('id, title, subtitle, image_url, link_url, cta_text, gradient')
+      .eq('is_active', true)
+      .order('display_order', { ascending: true })
+      .limit(6),
+  ]);
+
+  const driverCount = driversRes.count ?? 0;
+  if (driverCount > 0) {
     onlineDrivers = {
-      count: driverCount ?? 0,
-      label: `${driverCount} chauffeur${(driverCount ?? 0) > 1 ? 's' : ''} en ligne`,
+      count: driverCount,
+      label: `${driverCount} chauffeur${driverCount > 1 ? 's' : ''} en ligne`,
     };
   }
 
-  if (isLoggedIn) {
-    const [{ data: wallets }, { data: activeData }] = await Promise.all([
-      supabase.rpc('my_wallets'),
-      supabase.rpc('my_active_ride'),
-    ]);
+  if (walletActive) {
+    const [{ data: wallets }, { data: activeData }] = walletActive;
     const credit = (wallets as Array<{ kind: string; balance_fcfa: number }> | null)?.find(
       (w) => w.kind === 'tamcar_credit',
     );
@@ -102,14 +113,7 @@ export default async function HomePage() {
     if (rows[0]) activeRide = rows[0];
   }
 
-  // Bannières actives
-  const { data: bannersData } = await supabase
-    .from('home_banners')
-    .select('id, title, subtitle, image_url, link_url, cta_text, gradient')
-    .eq('is_active', true)
-    .order('display_order', { ascending: true })
-    .limit(6);
-  const banners = (bannersData ?? []) as BannerRow[];
+  const banners = (bannersRes.data ?? []) as BannerRow[];
 
   return (
     <main className="relative min-h-dvh overflow-hidden bg-white">

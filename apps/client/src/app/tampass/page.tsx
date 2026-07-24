@@ -7,6 +7,7 @@ import {
   pauseSubscriptionAction,
   useJokerAction,
 } from './actions';
+import { AutoRefresh } from './AutoRefresh';
 
 type SearchParams = { error?: string; ok?: string };
 
@@ -123,8 +124,12 @@ export default async function TamPassPage({
   }
 
 
+  const isWaiting =
+    sub?.status === 'pending_driver' || sub?.status === 'awaiting_payment';
+
   return (
     <main className="mx-auto max-w-md px-lg py-xl">
+      <AutoRefresh active={isWaiting} />
       <Link
         href="/"
         className="mb-md inline-flex items-center gap-xs text-xs font-semibold text-primary-600"
