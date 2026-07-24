@@ -56,6 +56,29 @@ type SubRideRow = {
   status: string;
 };
 
+type PassListRow = {
+  id: string;
+  status: string;
+  category: string;
+  origin_address: string;
+  dropoff_address: string;
+  rides_total: number;
+  rides_remaining: number;
+  total_price_fcfa: number;
+  starts_on: string;
+  expires_on: string;
+  created_at: string;
+};
+
+const PASS_STATUS: Record<string, { label: string; cls: string }> = {
+  pending_driver: { label: 'Recherche', cls: 'bg-primary-50 text-primary-700' },
+  awaiting_payment: { label: 'À confirmer', cls: 'bg-amber-50 text-amber-700' },
+  active: { label: 'Actif', cls: 'bg-emerald-50 text-emerald-700' },
+  paused: { label: 'En pause', cls: 'bg-neutral-100 text-neutral-600' },
+  expired: { label: 'Expiré', cls: 'bg-neutral-100 text-neutral-500' },
+  cancelled: { label: 'Annulé', cls: 'bg-neutral-100 text-neutral-500' },
+};
+
 const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
   planned: { label: 'Planifié', cls: 'bg-neutral-100 text-neutral-600' },
   generated: { label: 'Programmé', cls: 'bg-primary-50 text-primary-700' },
@@ -97,6 +120,15 @@ export default async function TamPassPage({
     .limit(1);
 
   const sub = (subs?.[0] as SubRow | undefined) ?? null;
+
+  // Tous les pass du client (historique complet, tous statuts)
+  const { data: allSubs } = await supabase
+    .from('subscriptions')
+    .select(
+      'id, status, category, origin_address, dropoff_address, rides_total, rides_remaining, total_price_fcfa, starts_on, expires_on, created_at',
+    )
+    .order('created_at', { ascending: false });
+  const passes = (allSubs as PassListRow[]) ?? [];
 
   let upcoming: SubRideRow[] = [];
   let missed: SubRideRow[] = [];
@@ -442,6 +474,46 @@ export default async function TamPassPage({
             Créer mon TamPass
           </Link>
         </>
+      )}
+
+      {/* Tous mes pass — historique complet, chaque pass ouvre son détail */}
+      {passes.length > 0 && (
+        <section className="mt-2xl">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-neutral-500">
+            Tous mes pass
+          </h2>
+          <div className="mt-md space-y-sm">
+            {passes.map((p) => {
+              const b = PASS_STATUS[p.status] ?? PASS_STATUS.active;
+              return (
+                <Link
+                  key={p.id}
+                  href={`/tampass/${p.id}`}
+                  className="block rounded-xl border border-neutral-200 bg-white p-md transition hover:border-primary-300 hover:shadow-sm"
+                >
+                  <div className="flex items-baseline justify-between">
+                    <p className="text-sm font-bold text-neutral-900 capitalize">
+                      {p.category}
+                      <span className="ml-sm text-xs font-normal text-neutral-400">
+                        {fmtDate(p.created_at.slice(0, 10))}
+                      </span>
+                    </p>
+                    <span className={`rounded-full px-md py-xs text-[11px] font-bold ${b.cls}`}>
+                      {b.label}
+                    </span>
+                  </div>
+                  <p className="mt-xs truncate text-xs text-neutral-600">
+                    {p.origin_address} → {p.dropoff_address}
+                  </p>
+                  <p className="mt-xs text-xs text-neutral-500">
+                    {p.rides_remaining}/{p.rides_total} trajets ·{' '}
+                    {fmtFcfa(p.total_price_fcfa)} FCFA · voir le détail →
+                  </p>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
       )}
     </main>
   );
