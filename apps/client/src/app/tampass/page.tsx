@@ -112,6 +112,9 @@ export default async function TamPassPage({
 }) {
   const supabase = createServerSupabase();
 
+  // Auto-réparation : génère les trajets du jour/demain même sans cron.
+  await supabase.rpc('tampass_sync');
+
   const { data: subs } = await supabase
     .from('subscriptions')
     .select('*, subscription_plans(*)')

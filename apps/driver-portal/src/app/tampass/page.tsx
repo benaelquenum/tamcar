@@ -116,6 +116,10 @@ export default async function DriverTamPassPage({
 }) {
   const supabase = createServerSupabase();
 
+  // Auto-réparation : génère les trajets du jour/demain et rejoue le
+  // monitoring même si le cron ne tourne pas.
+  await supabase.rpc('tampass_sync');
+
   const [{ data: offers }, { data: subs }, { data: today }, { data: tomorrow }] =
     await Promise.all([
       supabase.rpc('tampass_open_offers'),
