@@ -1,0 +1,202 @@
+<meta charset="utf-8">
+<title>TamCar — Concessionnaire partenaire</title>
+<style>
+  :root{
+    --blue:#2563EB; --blue-dark:#1D4ED8; --blue-900:#1E3A8A;
+    --ink:#0F172A; --muted:#64748B; --line:#E2E8F0; --bg:#FFFFFF;
+    --blue-light:#EFF6FF; --gold:#EAB308;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{ font-family:'Segoe UI',Arial,sans-serif; color:var(--ink); background:#F1F5F9; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .page{
+    position:relative; width:210mm; min-height:297mm; padding:15mm 15mm 26mm;
+    margin:6mm auto; background:var(--bg); box-shadow:0 4px 20px rgba(0,0,0,.08);
+    page-break-after:always; overflow:hidden; display:flex; flex-direction:column;
+  }
+  .page:last-child{ page-break-after:auto; }
+  .page-number{ position:absolute; bottom:10mm; right:12mm; display:flex; align-items:center; gap:3mm; }
+  .page-number .num{ width:12mm; height:12mm; border-radius:50%; background:linear-gradient(135deg,var(--blue),var(--blue-dark)); color:#fff; display:grid; place-items:center; font-size:13pt; font-weight:800; box-shadow:0 4px 10px rgba(37,99,235,.3); }
+  .page-number .total{ font-size:9pt; color:var(--muted); font-weight:600; }
+  h1{ font-size:30pt; font-weight:800; color:var(--blue-900); line-height:1.1; }
+  h2{ font-size:18pt; font-weight:800; color:var(--blue-dark); margin-bottom:3mm; }
+  h3{ font-size:12pt; font-weight:700; color:var(--ink); }
+  p{ font-size:10.5pt; line-height:1.55; color:#334155; }
+  .lead{ font-size:12.5pt; line-height:1.5; color:#475569; }
+  .brand{ display:inline-flex; align-items:center; gap:3mm; padding:2mm 4mm; border-radius:4mm; background:var(--blue-900); }
+  .brand .logo{ font-size:15pt; font-weight:800; color:#fff; letter-spacing:.5px; }
+  .brand .logo span{ color:var(--gold); }
+  .tag{ display:inline-block; padding:1.5mm 4mm; border-radius:999px; background:var(--blue-light); color:var(--blue-dark); font-size:9pt; font-weight:800; letter-spacing:.5pt; text-transform:uppercase; }
+  .section-head{ display:flex; align-items:baseline; gap:4mm; border-bottom:3px solid var(--blue); padding-bottom:2mm; margin-bottom:5mm; }
+  .section-head .n{ font-size:26pt; font-weight:800; color:var(--blue); }
+  .card{ border:1px solid var(--line); border-radius:4mm; padding:5mm; margin-bottom:4mm; }
+  .card.blue{ background:var(--blue-light); border-color:#BFDBFE; }
+  .grid3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:4mm; }
+  .step{ position:relative; padding-left:11mm; margin-bottom:5mm; }
+  .step .b{ position:absolute; left:0; top:0; width:8mm; height:8mm; border-radius:50%; background:var(--blue); color:#fff; display:grid; place-items:center; font-size:10pt; font-weight:800; }
+  table{ width:100%; border-collapse:collapse; font-size:10pt; }
+  thead th{ background:var(--blue-900); color:#fff; text-align:left; padding:3mm; font-size:9pt; }
+  tbody td{ padding:3mm; border-bottom:1px solid var(--line); }
+  tbody tr:nth-child(even){ background:#F8FAFC; }
+  .right{ text-align:right; font-variant-numeric:tabular-nums; }
+  .big{ color:var(--blue); font-weight:800; }
+  .hero{ color:#fff; background:linear-gradient(140deg,var(--blue) 0%,var(--blue-900) 100%); }
+  .pill-list li{ list-style:none; padding:2mm 0 2mm 8mm; position:relative; font-size:10.5pt; }
+  .pill-list li::before{ content:"✓"; position:absolute; left:0; color:var(--blue); font-weight:800; }
+  .muted{ color:var(--muted); }
+  .kpi{ font-size:22pt; font-weight:800; color:var(--gold); }
+  .small{ font-size:9pt; }
+</style>
+
+<!-- ============ PAGE 1 — COUVERTURE ============ -->
+<div class="page hero" style="justify-content:center; padding:20mm 20mm 26mm;">
+  <div class="brand" style="align-self:flex-start;"><span class="logo">Tam<span>Car</span></span></div>
+  <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
+    <p style="color:#BFDBFE; font-weight:700; letter-spacing:1pt; text-transform:uppercase; font-size:10pt; margin-bottom:4mm;">Concessionnaire partenaire · sans entrer au capital</p>
+    <h1 style="color:#fff; font-size:34pt;">Votre véhicule,<br>une source de revenus.</h1>
+    <p class="lead" style="color:#E0ECFF; margin-top:6mm; max-width:150mm;">
+      Confiez votre voiture, moto ou tricycle à TamCar. Un chauffeur professionnel vérifié la fait rouler,
+      <strong style="color:#fff;">vous encaissez chaque mois</strong> — sans devenir actionnaire, sans vous en occuper.
+    </p>
+    <div style="margin-top:10mm; display:flex; gap:8mm; align-items:center;">
+      <div><div class="kpi">30 %</div><p class="small" style="color:#E0ECFF;">de chaque course, à vous</p></div>
+      <div><div class="kpi">~3,5 M</div><p class="small" style="color:#E0ECFF;">FCFA sur 24 mois (1 voiture)*</p></div>
+      <div><div class="kpi">0 F</div><p class="small" style="color:#E0ECFF;">d'apport au capital</p></div>
+    </div>
+  </div>
+  <p class="small" style="color:#BFDBFE; padding-right:30mm;">* Scénario réaliste, véhicule Essentiel, cession 24 mois. Détail p. 3. TamCar — VTC au Bénin (Tam Logistics SARL, en cours de constitution).</p>
+  <div class="page-number"><span class="num">1</span><span class="total" style="color:#BFDBFE;">/ 5</span></div>
+</div>
+
+<!-- ============ PAGE 2 — L'OFFRE ============ -->
+<div class="page">
+  <div class="section-head"><span class="n">01</span><h2 style="margin:0;">Le partenariat, en clair</h2></div>
+  <p class="lead">Vous possédez un ou plusieurs véhicules et vous voulez qu'ils <strong>génèrent un revenu régulier</strong>,
+  sans les conduire vous-même et sans vous engager au capital de la société. C'est exactement ce partenariat.</p>
+
+  <div class="grid3" style="margin-top:6mm;">
+    <div class="card">
+      <h3 style="color:var(--blue);">1 · Vous apportez</h3>
+      <p class="small" style="margin-top:2mm;">Votre véhicule (voiture, moto Zémidjan ou tricycle Kloboto). C'est votre seul apport — <strong>aucune souscription, aucun capital.</strong></p>
+    </div>
+    <div class="card">
+      <h3 style="color:var(--blue);">2 · TamCar équipe</h3>
+      <p class="small" style="margin-top:2mm;">Inspection d'entrée, habillage, affectation d'un <strong>chauffeur vérifié (KYC)</strong> qui s'engage sur un minimum de performance.</p>
+    </div>
+    <div class="card">
+      <h3 style="color:var(--blue);">3 · Vous encaissez</h3>
+      <p class="small" style="margin-top:2mm;"><strong>30 % de chaque course</strong>, versés en cash chaque mois, suivi transparent dans votre espace concessionnaire.</p>
+    </div>
+  </div>
+
+  <div class="card blue" style="margin-top:4mm;">
+    <h3 style="color:var(--blue-900);">Ce qui vous distingue du concessionnaire-actionnaire</h3>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:5mm; margin-top:3mm;">
+      <ul class="pill-list">
+        <li><strong>Aucun apport au capital</strong> ni souscription de parts</li>
+        <li><strong>Aucun engagement</strong> d'associé, aucune assemblée</li>
+        <li>Vous restez <strong>100 % propriétaire</strong> de votre décision</li>
+      </ul>
+      <div>
+        <p class="small muted">En contrepartie, vous ne percevez pas les dividendes ni la valorisation des parts réservés aux actionnaires. Vous gagnez sur <strong>l'exploitation pure</strong> : la part course + la cession du véhicule.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:auto;">
+    <p class="small"><strong>Deux formules possibles selon votre objectif :</strong> <span class="muted">verser un revenu régulier tout en cédant progressivement le véhicule à son chauffeur (cession-rachat), ou garder la propriété et percevoir la part course en continu. Choix discuté au rendez-vous.</span></p>
+  </div>
+  <div class="page-number"><span class="num">2</span><span class="total">/ 5</span></div>
+</div>
+
+<!-- ============ PAGE 3 — COMBIEN ÇA RAPPORTE ============ -->
+<div class="page">
+  <div class="section-head"><span class="n">02</span><h2 style="margin:0;">Combien ça rapporte</h2></div>
+  <p class="lead">Votre revenu = <strong>30 % de chaque course</strong> pendant toute la période, <strong>+ le rachat du véhicule à échéance</strong>
+  (si cession). Hypothèse réaliste : prix moyen course <strong>1 500 F</strong>, 26 jours actifs/mois.</p>
+
+  <table style="margin-top:5mm;">
+    <thead>
+      <tr><th>Véhicule</th><th>Plancher chauffeur</th><th class="right">Durée cession</th><th class="right">Vous touchez sur la période*</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Moto</strong> — Zémidjan formalisé</td><td class="small">~4 500 F/j de volume</td><td class="right">24 mois</td><td class="right big">~990 000 F</td></tr>
+      <tr><td><strong>Tricycle</strong> — Kloboto (passagers)</td><td class="small">~9 000 F/j de volume</td><td class="right">24 mois</td><td class="right big">~2 110 000 F</td></tr>
+      <tr><td><strong>Voiture Essentiel</strong> — occasion</td><td class="small">~15 000 F/j de volume</td><td class="right">24 mois</td><td class="right big">~3 510 000 F</td></tr>
+      <tr><td><strong>Voiture récente / neuve</strong></td><td class="small">~15 000 F/j de volume</td><td class="right">36-60 mois</td><td class="right big">3,4 à 5,7 M F</td></tr>
+    </tbody>
+  </table>
+  <p class="small muted" style="margin-top:2mm;">* Part directe 30 % + rachat/cession du véhicule à échéance. Scénario réaliste — ni garanti, ni plafond. Plus le véhicule est récent, plus la durée s'allonge et plus le cumul monte.</p>
+
+  <div class="card blue" style="margin-top:5mm;">
+    <h3 style="color:var(--blue-900);">La répartition de chaque course</h3>
+    <div class="grid3" style="margin-top:3mm; text-align:center;">
+      <div><div class="big" style="font-size:16pt;">40 %</div><p class="small">Chauffeur (cash)</p></div>
+      <div><div class="big" style="font-size:16pt;">30 %</div><p class="small"><strong>Vous, concessionnaire</strong></p></div>
+      <div><div class="big" style="font-size:16pt;">10 % + 20 %</div><p class="small">Fonds rachat + Plateforme</p></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:auto;">
+    <p class="small"><strong>La durée est calée sur la valeur de votre véhicule</strong> <span class="muted">(constatée à l'inspection d'entrée), pour vous garantir une marge d'environ 30 % sur toute la période. Occasion en bon état = 24 mois ; véhicule neuf = jusqu'à 60 mois.</span></p>
+  </div>
+  <div class="page-number"><span class="num">3</span><span class="total">/ 5</span></div>
+</div>
+
+<!-- ============ PAGE 4 — GARANTIES ============ -->
+<div class="page">
+  <div class="section-head"><span class="n">03</span><h2 style="margin:0;">Vos garanties &amp; conditions</h2></div>
+
+  <div class="card">
+    <h3 style="color:var(--blue);">Un chauffeur qui performe (sinon vos revenus sont protégés)</h3>
+    <p class="small" style="margin-top:2mm;">Chaque chauffeur s'engage sur un <strong>volume minimum de courses</strong> (moyenne mensuelle glissante). En cas de non-respect prolongé,
+    la cession peut être résiliée et le <strong>véhicule vous est rendu</strong>. Vous n'êtes jamais bloqué avec un chauffeur inactif.</p>
+  </div>
+
+  <div class="card">
+    <h3 style="color:var(--blue);">Assurance &amp; sécurité</h3>
+    <p class="small" style="margin-top:2mm;">Responsabilité civile via une <strong>police flotte groupe négociée par TamCar</strong> (mise en conformité de l'usage « transport de personnes »).
+    Suivi GPS de la course en temps réel. Vérification de l'usage assurance à l'inspection.</p>
+  </div>
+
+  <div class="card">
+    <h3 style="color:var(--blue);">Cession sécurisée &amp; arbitrage neutre</h3>
+    <p class="small" style="margin-top:2mm;">Le fonds de rachat est séquestré et suivi. En cas de départ du chauffeur, <strong>TamCar arbitre sur preuves</strong> (données de performance) —
+    ni vous ni le chauffeur ne pouvez déclencher une faute unilatéralement. Vous êtes protégé contre les abus.</p>
+  </div>
+
+  <div class="card blue">
+    <h3 style="color:var(--blue-900);">Frais de mise en service (ADR — remboursable)</h3>
+    <p class="small" style="margin-top:2mm;">Une <strong>avance de démarrage remboursable</strong> couvre l'inspection, l'habillage et les formalités : <strong>moto 50 000 F · tricycle 75 000 F · voiture 100 000 F</strong>.
+    Elle vous est <strong>remboursée</strong> sur les premiers mois via la quote-part plateforme du fonds rachat. Le traceur GPS est <strong>optionnel</strong> et à votre initiative.</p>
+  </div>
+
+  <div class="page-number"><span class="num">4</span><span class="total">/ 5</span></div>
+</div>
+
+<!-- ============ PAGE 5 — DÉMARRER ============ -->
+<div class="page hero" style="padding:18mm 18mm 26mm;">
+  <div class="brand" style="align-self:flex-start; background:rgba(255,255,255,.12);"><span class="logo">Tam<span>Car</span></span></div>
+  <h2 style="color:#fff; font-size:22pt; margin-top:8mm;">Démarrer en 3 étapes</h2>
+  <div style="margin-top:6mm;">
+    <div class="step"><span class="b" style="background:var(--gold); color:var(--blue-900);">1</span>
+      <h3 style="color:#fff;">Rendez-vous &amp; présentation</h3>
+      <p style="color:#E0ECFF;" class="small">Échange avec l'équipe TamCar : votre véhicule, la formule (cession ou propriété), vos revenus estimés. Démonstration des applications.</p>
+    </div>
+    <div class="step"><span class="b" style="background:var(--gold); color:var(--blue-900);">2</span>
+      <h3 style="color:#fff;">Inspection &amp; mise en conformité</h3>
+      <p style="color:#E0ECFF;" class="small">Inspection d'entrée du véhicule, vérification des documents (dont usage assurance), habillage TamCar, versement de l'ADR remboursable.</p>
+    </div>
+    <div class="step"><span class="b" style="background:var(--gold); color:var(--blue-900);">3</span>
+      <h3 style="color:#fff;">Affectation &amp; mise en service</h3>
+      <p style="color:#E0ECFF;" class="small">Affectation d'un chauffeur vérifié, activation dans l'app. Votre véhicule commence à rouler — et à vous rapporter.</p>
+    </div>
+  </div>
+
+  <div style="margin-top:auto; border-top:1px solid rgba(255,255,255,.25); padding-top:5mm;">
+    <p style="color:#fff; font-weight:700; font-size:13pt;">Terence Beni Raphaël QUENUM</p>
+    <p class="small" style="color:#BFDBFE;">Fondateur — TamCar (Tam Logistics SARL, en cours de constitution)</p>
+    <p class="small" style="color:#E0ECFF; margin-top:2mm;">📧 contact@tamcar.app &nbsp;·&nbsp; 🌍 tamcar.app &nbsp;·&nbsp; Cotonou / Porto-Novo, Bénin</p>
+  </div>
+  <p class="small" style="color:#BFDBFE; margin-top:4mm; font-style:italic; padding-right:30mm;">Simulations basées sur des hypothèses réalistes — ne constituent pas une garantie de rendement.</p>
+  <div class="page-number"><span class="num">5</span><span class="total" style="color:#BFDBFE;">/ 5</span></div>
+</div>
