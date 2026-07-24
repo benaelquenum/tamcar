@@ -17,6 +17,24 @@ type OfferRow = {
   searching_until: string;
 };
 
+type DriverSubRow = {
+  subscription_id: string;
+  client_first_name: string;
+  category: string;
+  origin_address: string;
+  dropoff_address: string;
+  days_of_week: number[] | null;
+  slot_out: string | null;
+  slot_return: string | null;
+  status: string;
+  rides_total: number;
+  rides_remaining: number;
+  starts_on: string;
+  expires_on: string;
+};
+
+const DAY_LABELS = ['', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+
 type PlanningRow = {
   subscription_ride_id: string;
   travel_date: string;
@@ -98,14 +116,16 @@ export default async function DriverTamPassPage({
 }) {
   const supabase = createServerSupabase();
 
-  const [{ data: offers }, { data: today }, { data: tomorrow }] =
+  const [{ data: offers }, { data: subs }, { data: today }, { data: tomorrow }] =
     await Promise.all([
       supabase.rpc('tampass_open_offers'),
+      supabase.rpc('tampass_driver_subscriptions'),
       supabase.rpc('tampass_driver_planning', { p_date: beninDate(0) }),
       supabase.rpc('tampass_driver_planning', { p_date: beninDate(1) }),
     ]);
 
   const offerRows = (offers as OfferRow[]) ?? [];
+  const subRows = (subs as DriverSubRow[]) ?? [];
 
   return (
     <main className="mx-auto max-w-md px-lg py-xl">
@@ -179,6 +199,62 @@ export default async function DriverTamPassPage({
                 </form>
               </div>
             ))}
+          </div>
+        </section>
+      )}
+
+      {/* Mes abonnés — pass dont je suis le chauffeur attitré */}
+      {subRows.length > 0 && (
+        <section className="mt-xl">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-emerald-700">
+            Mes abonnés ({subRows.length})
+          </h2>
+          <div className="mt-md space-y-sm">
+            {subRows.map((s) => {
+              const days =
+                s.days_of_week && s.days_of_week.length > 0
+                  ? s.days_of_week.map((d) => DAY_LABELS[d]).join(' · ')
+                  : '—';
+              return (
+                <div
+                  key={s.subscription_id}
+                  className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-md"
+                >
+                  <div className="flex items-baseline justify-between">
+                    <p className="text-base font-extrabold text-neutral-900">
+                      {s.client_first_name}
+                      <span className="ml-sm text-xs font-normal uppercase text-neutral-400">
+                        {s.category}
+                      </span>
+                    </p>
+                    <span
+                      className={`rounded-full px-md py-xs text-[11px] font-bold ${
+                        s.status === 'paused'
+                          ? 'bg-neutral-100 text-neutral-600'
+                          : 'bg-emerald-100 text-emerald-700'
+                      }`}
+                    >
+                      {s.status === 'paused' ? 'En pause' : 'Actif'}
+                    </span>
+                  </div>
+                  <p className="mt-xs text-sm text-neutral-700">
+                    {s.origin_address} → {s.dropoff_address}
+                  </p>
+                  <p className="text-xs text-neutral-500">
+                    {days}
+                    {s.slot_out ? ` · aller ${fmtTime(s.slot_out)}` : ''}
+                    {s.slot_return ? ` · retour ${fmtTime(s.slot_return)}` : ''}
+                  </p>
+                  <p className="mt-xs text-xs text-neutral-500">
+                    {s.rides_remaining}/{s.rides_total} trajets restants · jusqu&apos;au{' '}
+                    {new Date(s.expires_on + 'T00:00:00').toLocaleDateString('fr-FR', {
+                      day: 'numeric',
+                      month: 'short',
+                    })}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </section>
       )}

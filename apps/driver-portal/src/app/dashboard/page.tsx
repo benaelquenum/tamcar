@@ -8,6 +8,7 @@ import {
   CoinsIcon,
   HistoryIcon,
   LogOutIcon,
+  PassIcon,
   WalletIcon,
 } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
@@ -216,6 +217,12 @@ export default async function DriverDashboardPage() {
 
         {/* Raccourcis */}
         <section className="mt-lg space-y-sm">
+          <ShortcutLink
+            href="/tampass"
+            Icon={PassIcon}
+            title="TamPass — mes abonnés"
+            sub="Offres, abonnés attitrés et planning des trajets récurrents"
+          />
           <ShortcutLink
             href="/history"
             Icon={HistoryIcon}
