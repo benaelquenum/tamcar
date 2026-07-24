@@ -15,6 +15,8 @@ language sql stable security definer set search_path = public as $fn_unread$
     where m.read_at is null
       and m.sender_id <> auth.uid()
       and (r.client_id = auth.uid() or d.profile_id = auth.uid())
+      -- La bulle disparaît dès que la course est terminée ou annulée.
+      and r.status in ('requested', 'matched', 'arrived', 'in_progress')
   )
   select
     (select count(*)::int from mine) as unread_count,

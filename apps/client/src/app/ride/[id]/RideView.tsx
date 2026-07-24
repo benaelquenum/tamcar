@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/Logo';
-import { CarIcon, CheckIcon, PinIcon, StarIcon, AlertTriangleIcon, WhatsAppIcon } from '@/components/Icon';
+import { CarIcon, CheckIcon, PinIcon, StarIcon, AlertTriangleIcon, WhatsAppIcon, MessageIcon, PhoneIcon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { Map } from '@/components/Map';
 import { RatingModal } from '@/components/RatingModal';
@@ -261,6 +261,12 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
     chatOpenRef.current = chatOpen;
     if (chatOpen) setUnreadMessages(0);
   }, [chatOpen]);
+
+  // La bulle non-lus disparaît quand la course est terminée / annulée.
+  useEffect(() => {
+    const terminal = ['completed', 'cancelled_by_client', 'cancelled_by_driver', 'cancelled_by_admin', 'expired'];
+    if (terminal.includes(ride.status)) setUnreadMessages(0);
+  }, [ride.status]);
 
   // Appel entrant : à l'ouverture (via push) + en temps réel.
   useEffect(() => {
@@ -986,50 +992,46 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                     </p>
                   )}
                 </div>
-                <div className="flex flex-wrap items-center gap-xs">
+              </div>
+
+              {/* Boutons de contact — alignés, icônes SVG */}
+              <div className="mt-md flex items-stretch gap-xs">
+                <button
+                  type="button"
+                  onClick={() => setChatOpen(true)}
+                  className="relative flex flex-1 items-center justify-center gap-xs rounded-xl bg-white py-2 text-xs font-bold text-primary-700 shadow-sm ring-1 ring-primary-300 hover:bg-primary-50"
+                >
+                  <MessageIcon className="h-4 w-4" />
+                  Message
+                  {unreadMessages > 0 && (
+                    <span className="absolute -right-1.5 -top-1.5 grid h-4 min-w-[1rem] place-items-center rounded-full bg-error px-1 text-[9px] font-bold text-white shadow ring-2 ring-white">
+                      {unreadMessages > 9 ? '9+' : unreadMessages}
+                    </span>
+                  )}
+                </button>
+                {(ride.status === 'matched' || ride.status === 'arrived' || ride.status === 'in_progress') && (
                   <button
                     type="button"
-                    onClick={() => setChatOpen(true)}
-                    className="relative rounded-full bg-white px-md py-xs text-xs font-bold text-primary-700 shadow-md ring-1 ring-primary-500"
+                    onClick={startCall}
+                    disabled={callStarting}
+                    className="flex flex-1 items-center justify-center gap-xs rounded-xl bg-gradient-to-br from-primary-600 to-violet-600 py-2 text-xs font-bold text-white shadow-md transition hover:brightness-110 disabled:opacity-60"
                   >
-                    {t('ride.message')}
-                    {unreadMessages > 0 && (
-                      <span className="absolute -right-1.5 -top-1.5 grid h-4 min-w-[1rem] place-items-center rounded-full bg-error px-1 text-[9px] font-bold text-white shadow ring-2 ring-white">
-                        {unreadMessages > 9 ? '9+' : unreadMessages}
-                      </span>
-                    )}
+                    <PhoneIcon className="h-4 w-4" />
+                    {callStarting ? '…' : 'Appel TamCar'}
                   </button>
-                  {(ride.status === 'matched' || ride.status === 'arrived' || ride.status === 'in_progress') && (
-                    <button
-                      type="button"
-                      onClick={startCall}
-                      disabled={callStarting}
-                      className="inline-flex items-center gap-xs rounded-full bg-primary-500 px-md py-xs text-xs font-bold text-white shadow-md hover:brightness-110 disabled:opacity-60"
-                    >
-                      📞 {callStarting ? '…' : 'Appeler'}
-                    </button>
-                  )}
-                  {ride.driver_phone && (
-                    <>
-                      <a
-                        href={`tel:${ride.driver_phone}`}
-                        className="rounded-full bg-primary-500 px-md py-xs text-xs font-bold text-white shadow-md"
-                      >
-                        {t('ride.call')}
-                      </a>
-                      <a
-                        href={`https://wa.me/${ride.driver_phone.replace(/^\+/, '')}?text=${encodeURIComponent('Bonjour, je suis ton client TamCar.')}`}
-                        target="_blank"
-                        rel="noopener"
-                        className="inline-flex items-center gap-xs rounded-full bg-[#25D366] px-md py-xs text-xs font-bold text-white shadow-md hover:brightness-110"
-                        aria-label="Contacter par WhatsApp — appel vocal ou vidéo"
-                      >
-                        <WhatsAppIcon className="h-3.5 w-3.5" />
-                        WhatsApp
-                      </a>
-                    </>
-                  )}
-                </div>
+                )}
+                {ride.driver_phone && (
+                  <a
+                    href={`https://wa.me/${ride.driver_phone.replace(/^\+/, '')}?text=${encodeURIComponent('Bonjour, je suis ton client TamCar.')}`}
+                    target="_blank"
+                    rel="noopener"
+                    className="flex flex-1 items-center justify-center gap-xs rounded-xl bg-[#25D366] py-2 text-xs font-bold text-white shadow-sm hover:brightness-110"
+                    aria-label="Contacter par WhatsApp"
+                  >
+                    <WhatsAppIcon className="h-4 w-4" />
+                    WhatsApp
+                  </a>
+                )}
               </div>
               {ride.status === 'matched' && distanceToPickup != null && (
                 <div className="mt-sm flex justify-between text-xs text-neutral-600">
@@ -1427,26 +1429,34 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
 
       {/* Appel entrant */}
       {incomingCall && !call && (
-        <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-neutral-900/95 text-white">
-          <p className="text-xs font-bold uppercase tracking-widest text-primary-300">Appel entrant</p>
-          <p className="mt-md text-2xl font-extrabold">{ride.driver_full_name ?? 'Chauffeur'}</p>
-          <p className="mt-sm animate-pulse text-sm text-neutral-300">Appel TamCar…</p>
-          <div className="mt-2xl flex items-center gap-xl">
-            <button
-              type="button"
-              onClick={declineIncoming}
-              className="grid h-16 w-16 place-items-center rounded-full bg-error text-2xl shadow-lg"
-              aria-label="Refuser"
-            >
-              📵
+        <div className="fixed inset-0 z-[70] flex flex-col items-center justify-between bg-gradient-to-br from-primary-700 via-violet-700 to-primary-900 px-lg py-2xl text-white">
+          <span className="mt-lg rounded-full bg-white/15 px-md py-xs text-[11px] font-bold uppercase tracking-widest text-white/90">
+            Appel entrant · TamCar
+          </span>
+          <div className="flex flex-col items-center gap-lg">
+            <div className="relative">
+              <span className="absolute inset-0 animate-ping rounded-full bg-white/20" />
+              <div className="relative grid h-32 w-32 place-items-center rounded-full bg-white/15 text-4xl font-extrabold ring-4 ring-white/25 backdrop-blur">
+                {(ride.driver_full_name ?? 'Chauffeur').trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase()}
+              </div>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-extrabold">{ride.driver_full_name ?? 'Chauffeur'}</p>
+              <p className="mt-xs animate-pulse text-sm text-white/80">t&apos;appelle…</p>
+            </div>
+          </div>
+          <div className="mb-lg flex w-full items-end justify-around">
+            <button type="button" onClick={declineIncoming} className="flex flex-col items-center gap-xs" aria-label="Refuser">
+              <span className="grid h-18 w-18 place-items-center rounded-full bg-error shadow-lg transition active:scale-95" style={{ height: '4.5rem', width: '4.5rem' }}>
+                <PhoneIcon className="h-7 w-7 rotate-[135deg] text-white" />
+              </span>
+              <span className="text-[11px] font-semibold text-white/80">Refuser</span>
             </button>
-            <button
-              type="button"
-              onClick={answerIncoming}
-              className="grid h-16 w-16 place-items-center rounded-full bg-success text-2xl shadow-lg"
-              aria-label="Répondre"
-            >
-              📞
+            <button type="button" onClick={answerIncoming} className="flex flex-col items-center gap-xs" aria-label="Répondre">
+              <span className="grid h-18 w-18 place-items-center rounded-full bg-success shadow-lg transition active:scale-95" style={{ height: '4.5rem', width: '4.5rem' }}>
+                <PhoneIcon className="h-7 w-7 text-white" />
+              </span>
+              <span className="text-[11px] font-semibold text-white/80">Répondre</span>
             </button>
           </div>
         </div>
