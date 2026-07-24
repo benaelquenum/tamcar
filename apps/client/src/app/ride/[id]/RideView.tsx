@@ -296,7 +296,10 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
     const { data, error: callErr } = await supabaseBrowser.rpc('start_ride_call', { p_ride_id: ride.id });
     setCallStarting(false);
     const row = (Array.isArray(data) ? data[0] : data) as { id?: string } | null;
-    if (callErr || !row?.id) return;
+    if (callErr || !row?.id) {
+      alert(callErr?.message ?? 'Appel indisponible pour le moment.');
+      return;
+    }
     setCall({ callId: row.id, role: 'caller' });
   }
 
@@ -1014,7 +1017,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                     type="button"
                     onClick={startCall}
                     disabled={callStarting}
-                    className="flex flex-1 items-center justify-center gap-xs rounded-xl bg-primary-600 py-2 text-xs font-bold text-white shadow-md transition hover:bg-primary-700 disabled:opacity-60"
+                    className="flex flex-1 items-center justify-center gap-xs rounded-xl bg-primary-500 py-2 text-xs font-bold text-white shadow-md transition hover:bg-primary-700 disabled:opacity-60"
                   >
                     <PhoneIcon className="h-4 w-4" />
                     {callStarting ? '…' : 'Appel TamCar'}
@@ -1429,7 +1432,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
 
       {/* Appel entrant */}
       {incomingCall && !call && (
-        <div className="fixed inset-0 z-[70] flex flex-col items-center justify-between bg-gradient-to-br from-primary-700 via-violet-700 to-primary-900 px-lg py-2xl text-white">
+        <div className="fixed inset-0 z-[70] flex flex-col items-center justify-between bg-gradient-to-br from-primary-700 via-violet-500 to-primary-900 px-lg py-2xl text-white">
           <span className="mt-lg rounded-full bg-white/15 px-md py-xs text-[11px] font-bold uppercase tracking-widest text-white/90">
             Appel entrant · TamCar
           </span>

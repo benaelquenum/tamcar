@@ -201,7 +201,7 @@ export function CallRoom({ callId, role, otherName, onClose }: Props) {
   const statusLabel = error ? error : phase === 'active' ? fmtDuration(seconds) : role === 'caller' ? 'Sonnerie…' : 'Connexion…';
 
   return (
-    <div className="fixed inset-0 z-[70] flex flex-col items-center justify-between bg-gradient-to-br from-primary-700 via-violet-700 to-primary-900 px-lg py-2xl text-white">
+    <div className="fixed inset-0 z-[70] flex flex-col items-center justify-between bg-gradient-to-br from-primary-700 via-violet-500 to-primary-900 px-lg py-2xl text-white">
       <audio ref={remoteAudioRef} autoPlay playsInline />
 
       {/* En-tête */}
