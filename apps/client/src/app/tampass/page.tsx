@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { RouteIcon, CheckIcon, ClockIcon } from '@/components/Icon';
+import { PassIcon, CheckIcon, ClockIcon } from '@/components/Icon';
 import { createServerSupabase } from '@/lib/supabase-server';
 import {
   cancelRequestAction,
@@ -125,9 +125,15 @@ export default async function TamPassPage({
 
   return (
     <main className="mx-auto max-w-md px-lg py-xl">
+      <Link
+        href="/"
+        className="mb-md inline-flex items-center gap-xs text-xs font-semibold text-primary-600"
+      >
+        ← Accueil
+      </Link>
       <header className="flex items-center gap-md">
         <span className="grid h-11 w-11 place-items-center rounded-xl bg-primary-50 text-primary-500">
-          <RouteIcon className="h-6 w-6" />
+          <PassIcon className="h-6 w-6" />
         </span>
         <div>
           <h1 className="text-xl font-extrabold text-neutral-900">TamPass</h1>

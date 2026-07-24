@@ -9,9 +9,9 @@ import {
   GiftIcon,
   HistoryIcon,
   LifeBuoyIcon,
+  PassIcon,
   PinIcon,
   PlusIcon,
-  RouteIcon,
   WalletIcon,
   WaveIcon,
 } from '@/components/Icon';
@@ -241,7 +241,7 @@ export default async function HomePage() {
 
         {/* Quick actions row — remontées haut : accès direct aux fonctions courantes */}
         <section className="mt-lg grid grid-cols-4 gap-sm">
-          <QuickActionLink href="/tampass" Icon={RouteIcon} label="TamPass" tint="cyan" />
+          <QuickActionLink href="/tampass" Icon={PassIcon} label="TamPass" tint="cyan" />
           <QuickActionLink href="/history" Icon={HistoryIcon} label={t('home.history')} tint="primary" />
           <QuickActionLink href="/parrainer" Icon={GiftIcon} label={t('home.refer')} tint="violet" />
           <QuickAction Icon={LifeBuoyIcon} label={t('home.help')} tint="cyan" />

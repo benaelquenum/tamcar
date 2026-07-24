@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Logo } from '@/components/Logo';
 import { CheckIcon } from '@/components/Icon';
+import { PasswordInput } from '@/components/PasswordInput';
 import { requestPasswordResetAction, signInAction } from './actions';
 
 type SearchParams = {
@@ -108,14 +109,12 @@ function SignInForm({ error, next }: { error?: string; next: string }) {
         />
       </Field>
       <Field label="Mot de passe">
-        <input
+        <PasswordInput
           name="password"
-          type="password"
           required
           minLength={6}
           autoComplete="current-password"
           placeholder="Au moins 6 caractères"
-          className="w-full rounded-lg bg-neutral-100 px-lg py-md text-base text-neutral-900 ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
         />
       </Field>
 

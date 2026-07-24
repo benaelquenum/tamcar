@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { Logo } from '@/components/Logo';
+import { PasswordInput } from '@/components/PasswordInput';
 import { getCurrentUser } from '@/lib/session';
 import { updatePasswordAction } from './actions';
 
@@ -48,14 +49,13 @@ export default async function ResetPasswordPage({ searchParams }: Props) {
             <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
               Nouveau mot de passe
             </span>
-            <input
+            <PasswordInput
               name="password"
-              type="password"
               required
               minLength={6}
               autoComplete="new-password"
               placeholder="Au moins 6 caractères"
-              className="mt-xs w-full rounded-lg bg-neutral-100 px-lg py-md text-base text-neutral-900 ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              wrapperClassName="mt-xs"
             />
           </label>
 
@@ -63,14 +63,13 @@ export default async function ResetPasswordPage({ searchParams }: Props) {
             <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
               Confirmer le mot de passe
             </span>
-            <input
+            <PasswordInput
               name="password_confirm"
-              type="password"
               required
               minLength={6}
               autoComplete="new-password"
               placeholder="Retape le même mot de passe"
-              className="mt-xs w-full rounded-lg bg-neutral-100 px-lg py-md text-base text-neutral-900 ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              wrapperClassName="mt-xs"
             />
           </label>
 

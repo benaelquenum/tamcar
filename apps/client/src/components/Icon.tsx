@@ -58,6 +58,25 @@ export function PlusIcon({ className = 'h-4 w-4', strokeWidth = 2.5 }: IconProps
   );
 }
 
+export function PassIcon({ className = 'h-5 w-5', strokeWidth = 2 }: IconProps) {
+  // Carte d'abonnement (ticket/pass) avec encoches latérales + étoile récurrente
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1.5a1.5 1.5 0 0 0 0 3V14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1.5a1.5 1.5 0 0 0 0-3V8Z" />
+      <path d="M9 19h6" />
+      <path d="M12 8.7l.9 1.8 2 .3-1.45 1.4.35 2-1.8-.95-1.8.95.35-2L9.1 10.8l2-.3z" />
+    </svg>
+  );
+}
+
 export function RouteIcon({ className = 'h-5 w-5', strokeWidth = 2 }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={`${base} ${className}`}>

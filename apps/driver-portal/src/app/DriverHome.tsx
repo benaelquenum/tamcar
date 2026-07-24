@@ -36,6 +36,21 @@ type PendingRide = {
   is_below_driver_category?: boolean | null;
 };
 
+type TamPassOffer = {
+  subscription_id: string;
+  origin_address: string;
+  dropoff_address: string;
+  category: string;
+  days_count: number;
+  slot_out: string | null;
+  slot_return: string | null;
+  rides_total: number;
+  weeks: number;
+  driver_estimate_fcfa: number;
+  distance_from_driver_km: number | null;
+  searching_until: string;
+};
+
 type Props = {
   driverName: string;
   initialIsOnline: boolean;
@@ -52,6 +67,10 @@ function formatDistance(meters: number): string {
     : `${(meters / 1000).toFixed(1)} km`;
 }
 
+function formatSlot(t: string | null): string {
+  return t ? t.slice(0, 5).replace(':', 'h') : '';
+}
+
 export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
   const [isOnline, setIsOnline] = useState(initialIsOnline);
   const [busy, setBusy] = useState(false);
@@ -61,6 +80,36 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
   const [accepting, startAccept] = useTransition();
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
   const [crossCatConfirm, setCrossCatConfirm] = useState<PendingRide | null>(null);
+  const [offers, setOffers] = useState<TamPassOffer[]>([]);
+  const [acceptingOfferId, setAcceptingOfferId] = useState<string | null>(null);
+
+  // Offres TamPass ouvertes : visibles même hors ligne (revenu récurrent).
+  // On rafraîchit à l'ouverture puis toutes les 30 s, indépendamment du push.
+  const refreshOffers = useCallback(async () => {
+    if (!hasVehicle) return;
+    const { data } = await supabaseBrowser.rpc('tampass_open_offers');
+    setOffers((data as TamPassOffer[]) ?? []);
+  }, [hasVehicle]);
+
+  useEffect(() => {
+    refreshOffers();
+    const t = setInterval(refreshOffers, 30_000);
+    return () => clearInterval(t);
+  }, [refreshOffers]);
+
+  async function acceptOffer(id: string) {
+    setAcceptingOfferId(id);
+    const { error: err } = await supabaseBrowser.rpc('tampass_accept_offer', {
+      p_subscription_id: id,
+    });
+    setAcceptingOfferId(null);
+    if (err) {
+      setError(err.message);
+      await refreshOffers();
+      return;
+    }
+    await refreshOffers();
+  }
 
   // Récupère la position GPS actuelle en rejetant les fixes imprécis
   // (accuracy > 50 m). Retry une fois avant fallback.
@@ -392,6 +441,53 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
             {error && (
               <div className="mb-md rounded-md bg-error/10 p-md text-sm text-error">
                 {error}
+              </div>
+            )}
+
+            {/* Offres TamPass ouvertes — revenu récurrent, visibles même hors ligne */}
+            {offers.length > 0 && (
+              <div className="mb-lg">
+                <h2 className="mb-sm text-xs font-bold uppercase tracking-wider text-primary-600">
+                  Offres TamPass — premier arrivé, premier servi
+                </h2>
+                <div className="space-y-sm">
+                  {offers.map((o) => (
+                    <div
+                      key={o.subscription_id}
+                      className="rounded-xl border-2 border-primary-200 bg-primary-50 p-md"
+                    >
+                      <div className="flex items-baseline justify-between">
+                        <p className="text-lg font-extrabold text-primary-700">
+                          ~{formatFcfa(o.driver_estimate_fcfa)} FCFA
+                        </p>
+                        <span className="text-[11px] font-bold uppercase text-neutral-500">
+                          {o.category} · {o.weeks} sem.
+                        </span>
+                      </div>
+                      <p className="mt-xs text-sm text-neutral-800">
+                        {o.origin_address} → {o.dropoff_address}
+                      </p>
+                      <p className="text-xs text-neutral-500">
+                        {o.rides_total} trajets · {o.days_count} j/sem
+                        {o.slot_out ? ` · aller ${formatSlot(o.slot_out)}` : ''}
+                        {o.slot_return ? ` · retour ${formatSlot(o.slot_return)}` : ''}
+                        {o.distance_from_driver_km != null
+                          ? ` · à ${o.distance_from_driver_km} km`
+                          : ''}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => acceptOffer(o.subscription_id)}
+                        disabled={acceptingOfferId === o.subscription_id}
+                        className="mt-md w-full rounded-lg bg-gradient-to-r from-primary-500 to-primary-700 py-md text-sm font-bold text-white shadow-glow transition hover:brightness-110 active:scale-[0.98] disabled:opacity-50"
+                      >
+                        {acceptingOfferId === o.subscription_id
+                          ? 'Acceptation…'
+                          : 'Devenir le chauffeur attitré'}
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
