@@ -51,7 +51,7 @@ export default async function ChauffeursPage() {
       </Link>
       <h1 className="text-xl font-extrabold text-neutral-900">Mes chauffeurs</h1>
       <p className="text-sm text-neutral-500">
-        Recontactez un chauffeur que vous avez déjà eu et demandez-lui une course.
+        Recontacte un chauffeur que tu as déjà eu et demande-lui une course.
       </p>
 
       {/* État de la demande en cours */}
@@ -64,7 +64,7 @@ export default async function ChauffeursPage() {
             {req.pickup_address} → {req.dropoff_address} · {fmtFcfa(req.price_total_fcfa)} FCFA
           </p>
           <p className="mt-xs text-xs text-neutral-500">
-            En attente de sa réponse (10 min max). Vous serez notifié.
+            En attente de sa réponse (10 min max). Tu seras notifié.
           </p>
           <form action={cancelOneshotAction} className="mt-md">
             <input type="hidden" name="request_id" value={req.request_id} />
@@ -81,7 +81,7 @@ export default async function ChauffeursPage() {
       {req && req.status === 'accepted' && req.ride_id && (
         <section className="mt-lg rounded-2xl border-2 border-emerald-300 bg-emerald-50 p-lg">
           <p className="text-sm font-bold text-emerald-700">
-            {req.driver_name} a accepté votre course !
+            {req.driver_name} a accepté ta course !
           </p>
           <Link
             href={`/ride/${req.ride_id}`}
@@ -97,10 +97,10 @@ export default async function ChauffeursPage() {
           <p className="text-sm font-semibold text-amber-800">
             {req.status === 'declined'
               ? `${req.driver_name} n'est pas disponible.`
-              : 'Votre demande a expiré sans réponse.'}
+              : 'Ta demande a expiré sans réponse.'}
           </p>
           <p className="mt-xs text-xs text-amber-700">
-            Essayez un autre chauffeur ci-dessous, ou commandez une course classique.
+            Essaie un autre chauffeur ci-dessous, ou commande une course classique.
           </p>
         </section>
       )}
@@ -113,8 +113,8 @@ export default async function ChauffeursPage() {
         <div className="mt-md space-y-sm">
           {recent.length === 0 && (
             <p className="rounded-xl bg-neutral-50 p-lg text-sm text-neutral-500">
-              Vous n&apos;avez pas encore de course terminée. Après votre première
-              course, vos chauffeurs apparaîtront ici.
+              Tu n&apos;as pas encore de course terminée. Après ta première
+              course, tes chauffeurs apparaîtront ici.
             </p>
           )}
           {recent.map((d) => (

@@ -183,9 +183,9 @@ export default function NouveauTamPassPage() {
   async function buy() {
     setError(null);
     if (!origin || !dropoff || !route)
-      return setError('Renseignez le trajet (départ et destination).');
-    if (days.length === 0) return setError('Choisissez au moins un jour.');
-    if (!slotOut) return setError('Choisissez un créneau de départ.');
+      return setError('Renseigne le trajet (départ et destination).');
+    if (days.length === 0) return setError('Choisis au moins un jour.');
+    if (!slotOut) return setError('Choisis un créneau de départ.');
 
     setBuying(true);
     const { error: err } = await supabaseBrowser.rpc(
@@ -215,7 +215,7 @@ export default function NouveauTamPassPage() {
     router.push(
       '/tampass?ok=' +
         encodeURIComponent(
-          'Recherche de votre chauffeur lancée — vous serez notifié dès qu’il est trouvé (3 h max).',
+          'Recherche de ton chauffeur lancée — tu seras notifié dès qu’il est trouvé (3 h max).',
         ),
     );
   }
@@ -233,8 +233,8 @@ export default function NouveauTamPassPage() {
           Créer mon TamPass
         </h1>
         <p className="text-sm text-neutral-500">
-          Vous définissez tout : trajet, jours, heures, durée. Plus vous
-          voyagez, plus la remise monte.
+          Tu définis tout : trajet, jours, heures, durée. Plus tu
+          voyages, plus la remise monte.
         </p>
       </header>
 
@@ -409,7 +409,7 @@ export default function NouveauTamPassPage() {
           </>
         ) : (
           <p className="text-sm text-neutral-500">
-            Renseignez le trajet pour voir le prix.
+            Renseigne le trajet pour voir le prix.
           </p>
         )}
       </section>
@@ -430,8 +430,8 @@ export default function NouveauTamPassPage() {
       </button>
 
       <p className="mt-md text-center text-[11px] text-neutral-400">
-        Rien à payer maintenant : nous cherchons d&apos;abord votre chauffeur
-        (proximité puis note, jusqu&apos;à 3 h). Vous confirmez ensuite en
+        Rien à payer maintenant : on cherche d&apos;abord ton chauffeur
+        (proximité puis note, jusqu&apos;à 3 h). Tu confirmes ensuite en
         payant par wallet TamCar Crédit — trajets garantis, sinon recrédités
         + 500 F offerts.
       </p>

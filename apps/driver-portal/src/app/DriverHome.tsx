@@ -492,11 +492,11 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
               </div>
             )}
 
-            {/* Demandes de course directe (one-shot) — un client vous redemande */}
+            {/* Demandes de course directe (one-shot) — un client te redemande */}
             {oneshots.length > 0 && (
               <div className="mb-lg">
                 <h2 className="mb-sm text-xs font-bold uppercase tracking-wider text-emerald-700">
-                  Demandes directes — un client vous redemande
+                  Demandes directes — un client te redemande
                 </h2>
                 <div className="space-y-sm">
                   {oneshots.map((o) => (
