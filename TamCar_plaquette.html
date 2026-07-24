@@ -281,22 +281,22 @@
   .cover.finale { padding: 15mm; }
   .cover.finale .finale-hd {
     display: flex; align-items: baseline; gap: 4mm;
-    padding-bottom: 3mm; border-bottom: 2px solid rgba(255,255,255,.35);
-    margin-bottom: 5mm;
+    padding-bottom: 2mm; border-bottom: 2px solid rgba(255,255,255,.35);
+    margin-bottom: 3mm;
   }
-  .cover.finale .finale-hd .section-num { color: #FDE68A; font-size: 32pt; font-weight: 800; }
-  .cover.finale .finale-hd .section-name { color: #FFFFFF; font-size: 20pt; font-weight: 700; }
+  .cover.finale .finale-hd .section-num { color: #FDE68A; font-size: 24pt; font-weight: 800; }
+  .cover.finale .finale-hd .section-name { color: #FFFFFF; font-size: 16pt; font-weight: 700; }
   .cover.finale .finale-lead {
-    color: rgba(255,255,255,.92); font-size: 13pt; line-height: 1.55;
-    max-width: 165mm; margin-bottom: 6mm;
+    color: rgba(255,255,255,.92); font-size: 10.5pt; line-height: 1.4;
+    max-width: 165mm; margin-bottom: 3mm;
   }
   .cover.finale .finale-lead strong { color: #FDE68A; font-weight: 700; }
-  .cover.finale .finale-timeline { padding-left: 12mm; position: relative; margin-bottom: 6mm; }
+  .cover.finale .finale-timeline { padding-left: 12mm; position: relative; margin-bottom: 3mm; }
   .cover.finale .finale-timeline::before {
     content: ""; position: absolute; left: 5mm; top: 3mm; bottom: 3mm;
     width: 1.5mm; background: rgba(255,255,255,.3);
   }
-  .cover.finale .finale-timeline .step { position: relative; margin-bottom: 5mm; }
+  .cover.finale .finale-timeline .step { position: relative; margin-bottom: 3mm; }
   .cover.finale .finale-timeline .step-num {
     position: absolute; left: -12mm; top: 0;
     width: 10mm; height: 10mm; border-radius: 50%;
@@ -681,8 +681,8 @@
     La durée de la cession est <strong>indexée sur la valeur du véhicule</strong> apporté
     par le concessionnaire, constatée par inspection d'entrée. Objectif : garantir
     au concessionnaire une <strong>marge de 30 %</strong> sur toute la période, base
-    hypothèse chauffeur à 10 courses/jour (voitures, tricycles) et 15 courses/jour
-    (motos). Intervalles fermés — pas de chevauchement.
+    hypothèse d'un volume plancher de ~15 000 FCFA/jour (voitures) · ~9 000 (tricycles) ·
+    ~4 500 (motos). Intervalles fermés — pas de chevauchement.
   </p>
   <table class="matrix-table">
     <thead>
@@ -834,7 +834,7 @@
       </ul>
       <hr style="border:none; border-top:1px solid rgba(255,255,255,.25); margin:4mm 0;">
       <p style="font-size:9pt; font-weight:600; color:#FFF;">SIMULATION TICKET 1 M FCFA · 5 ANS</p>
-      <div style="font-size:24pt; font-weight:800; color:#EAB308; line-height:1.1;">+498 %</div>
+      <div style="font-size:24pt; font-weight:800; color:#EAB308; line-height:1.1;">+459 %</div>
       <p style="font-size:8pt; opacity:.85; color:#FFF;">retour cumulé projeté (hypothèses conservatrices) <sup>[2]</sup></p>
     </div>
   </div>
@@ -865,11 +865,12 @@
       et hors valorisation des parts sociales.
     </p>
     <p style="margin-bottom:0;">
-      <strong>[2] Investisseur ticket 1 M FCFA</strong> — scénario réaliste sur 5 ans :
-      dividendes cumulés nets d'impôt ~980 000 FCFA (distribution de 40 % du résultat net,
+      <strong>[2] Investisseur ticket 1 M FCFA</strong> — scénario réaliste sur 5 ans,
+      recalé sur un prix moyen de course de 1 500 FCFA (volume plateforme ~0,6× vs 2 500) :
+      dividendes cumulés nets d'impôt ~590 000 FCFA (distribution de 40 % du résultat net,
       IS 30 % sur les années bénéficiaires et retenue IRCM de 10 % déjà déduits) +
       valorisation des parts × 5 (1 M FCFA → 5 M FCFA en cas de cession) =
-      <strong>retour cumulé +498 %</strong>. Détail complet en page 9.
+      <strong>retour cumulé +459 %</strong>. Détail complet en page 9.
     </p>
   </div>
 
@@ -916,22 +917,22 @@
       <div class="scenario-title" style="color:#DC2626;">Scénario prudent</div>
       <div class="scenario-tag pessimist">PIRE CAS</div>
     </div>
-    <p class="small muted">5 courses/jour × 25 jours actifs × <strong>prix moyen par course 1 200 FCFA</strong> = <strong>150 000 FCFA / mois</strong> de volume</p>
+    <p class="small muted">5 courses/jour × 26 jours actifs × <strong>prix moyen par course 1 200 FCFA</strong> = <strong>156 000 FCFA / mois</strong> de volume</p>
     <table style="margin-top:2mm;">
       <thead>
         <tr><th>Bénéficiaire</th><th class="right">%</th><th class="right">Mensuel</th><th class="right">Annuel</th><th class="right">24 mois</th></tr>
       </thead>
       <tbody>
-        <tr><td>Chauffeur (cash 40 %)</td><td class="right">40 %</td><td class="right">60 000</td><td class="right">720 000</td><td class="right">1 440 000</td></tr>
-        <tr><td>Fonds rachat brut</td><td class="right">10 %</td><td class="right">15 000</td><td class="right">180 000</td><td class="right">360 000</td></tr>
-        <tr><td><strong>Concessionnaire (part directe)</strong></td><td class="right">30 %</td><td class="right"><strong>45 000</strong></td><td class="right"><strong>540 000</strong></td><td class="right"><strong>1 080 000</strong></td></tr>
-        <tr><td>Plateforme TamCar</td><td class="right">20 %</td><td class="right">30 000</td><td class="right">360 000</td><td class="right">720 000</td></tr>
-        <tr class="total"><td>Total volume (FCFA)</td><td class="right">100 %</td><td class="right">150 000</td><td class="right">1 800 000</td><td class="right">3 600 000</td></tr>
+        <tr><td>Chauffeur (cash 40 %)</td><td class="right">40 %</td><td class="right">62 400</td><td class="right">748 800</td><td class="right">1 497 600</td></tr>
+        <tr><td>Fonds rachat brut</td><td class="right">10 %</td><td class="right">15 600</td><td class="right">187 200</td><td class="right">374 400</td></tr>
+        <tr><td><strong>Concessionnaire (part directe)</strong></td><td class="right">30 %</td><td class="right"><strong>46 800</strong></td><td class="right"><strong>561 600</strong></td><td class="right"><strong>1 123 200</strong></td></tr>
+        <tr><td>Plateforme TamCar</td><td class="right">20 %</td><td class="right">31 200</td><td class="right">374 400</td><td class="right">748 800</td></tr>
+        <tr class="total"><td>Total volume (FCFA)</td><td class="right">100 %</td><td class="right">156 000</td><td class="right">1 872 000</td><td class="right">3 744 000</td></tr>
       </tbody>
     </table>
     <div class="concess-total">
-      <strong>Concessionnaire — total encaissé sur 24 mois : ~1,35 M FCFA</strong>
-      (1,08 M part directe + 270 000 rachat séquestre chauffeur à échéance)
+      <strong>Concessionnaire — total encaissé sur 24 mois : ~1,40 M FCFA</strong>
+      (1,12 M part directe + 281 000 rachat séquestre chauffeur à échéance)
     </div>
   </div>
 
@@ -966,22 +967,22 @@
       <div class="scenario-title" style="color:var(--green);">Scénario optimiste</div>
       <div class="scenario-tag optimist">MEILLEUR CAS</div>
     </div>
-    <p class="small muted">15 courses/jour × 28 jours actifs × <strong>prix moyen par course 3 000 FCFA</strong> = <strong>1 260 000 FCFA / mois</strong> de volume</p>
+    <p class="small muted">15 courses/jour × 26 jours actifs × <strong>prix moyen par course 3 000 FCFA</strong> = <strong>1 170 000 FCFA / mois</strong> de volume</p>
     <table style="margin-top:2mm;">
       <thead>
         <tr><th>Bénéficiaire</th><th class="right">%</th><th class="right">Mensuel</th><th class="right">Annuel</th><th class="right">24 mois</th></tr>
       </thead>
       <tbody>
-        <tr><td>Chauffeur (cash 40 %)</td><td class="right">40 %</td><td class="right">504 000</td><td class="right">6 048 000</td><td class="right">12 096 000</td></tr>
-        <tr><td>Fonds rachat brut</td><td class="right">10 %</td><td class="right">126 000</td><td class="right">1 512 000</td><td class="right">3 024 000</td></tr>
-        <tr><td><strong>Concessionnaire (part directe)</strong></td><td class="right">30 %</td><td class="right"><strong>378 000</strong></td><td class="right"><strong>4 536 000</strong></td><td class="right"><strong>9 072 000</strong></td></tr>
-        <tr><td>Plateforme TamCar</td><td class="right">20 %</td><td class="right">252 000</td><td class="right">3 024 000</td><td class="right">6 048 000</td></tr>
-        <tr class="total"><td>Total volume (FCFA)</td><td class="right">100 %</td><td class="right">1 260 000</td><td class="right">15 120 000</td><td class="right">30 240 000</td></tr>
+        <tr><td>Chauffeur (cash 40 %)</td><td class="right">40 %</td><td class="right">468 000</td><td class="right">5 616 000</td><td class="right">11 232 000</td></tr>
+        <tr><td>Fonds rachat brut</td><td class="right">10 %</td><td class="right">117 000</td><td class="right">1 404 000</td><td class="right">2 808 000</td></tr>
+        <tr><td><strong>Concessionnaire (part directe)</strong></td><td class="right">30 %</td><td class="right"><strong>351 000</strong></td><td class="right"><strong>4 212 000</strong></td><td class="right"><strong>8 424 000</strong></td></tr>
+        <tr><td>Plateforme TamCar</td><td class="right">20 %</td><td class="right">234 000</td><td class="right">2 808 000</td><td class="right">5 616 000</td></tr>
+        <tr class="total"><td>Total volume (FCFA)</td><td class="right">100 %</td><td class="right">1 170 000</td><td class="right">14 040 000</td><td class="right">28 080 000</td></tr>
       </tbody>
     </table>
     <div class="concess-total">
-      <strong>Concessionnaire — total encaissé sur 24 mois : ~11,34 M FCFA</strong>
-      (9,07 M part directe + 2,27 M rachat séquestre chauffeur à échéance)
+      <strong>Concessionnaire — total encaissé sur 24 mois : ~10,53 M FCFA</strong>
+      (8,42 M part directe + 2,11 M rachat séquestre chauffeur à échéance)
     </div>
   </div>
 
@@ -1020,16 +1021,16 @@
       <div class="scenario-tag" style="background:#F97316;">CESSION 24 MOIS</div>
     </div>
     <p class="small muted">Moto neuve de référence : <strong>600 000 FCFA</strong>.
-    Plancher de performance : <strong>15 courses/jour</strong> — une moto enchaîne les
-    courses courtes bien plus vite qu'une voiture.</p>
+    Plancher de performance : <strong>~4 500 FCFA/jour</strong> de volume (≈ 15 courses courtes) —
+    une moto enchaîne les courses courtes bien plus vite qu'une voiture.</p>
     <table style="margin-top:2mm;">
       <thead>
         <tr><th>Scénario</th><th>Hypothèses</th><th class="right">Volume/mois</th><th class="right">Chauffeur cash/mois</th><th class="right">Concess. total 24 mois*</th></tr>
       </thead>
       <tbody>
-        <tr><td style="color:#DC2626; font-weight:700;">Prudent</td><td class="small">12 courses/j × 25 j × 300 FCFA</td><td class="right">90 000</td><td class="right">36 000</td><td class="right">~800 000</td></tr>
+        <tr><td style="color:#DC2626; font-weight:700;">Prudent</td><td class="small">12 courses/j × 26 j × 300 FCFA</td><td class="right">93 600</td><td class="right">37 440</td><td class="right">~820 000</td></tr>
         <tr><td style="color:#2563EB; font-weight:700;">Réaliste</td><td class="small">15 courses/j × 26 j × 300 FCFA</td><td class="right">117 000</td><td class="right">46 800</td><td class="right"><strong>~990 000</strong></td></tr>
-        <tr><td style="color:#059669; font-weight:700;">Optimiste</td><td class="small">20 courses/j × 28 j × 350 FCFA</td><td class="right">196 000</td><td class="right">78 400</td><td class="right">~1 560 000</td></tr>
+        <tr><td style="color:#059669; font-weight:700;">Optimiste</td><td class="small">20 courses/j × 26 j × 350 FCFA</td><td class="right">182 000</td><td class="right">72 800</td><td class="right">~1 460 000</td></tr>
       </tbody>
     </table>
     <p class="small muted" style="margin-top:2mm; margin-bottom:0;">
@@ -1045,16 +1046,16 @@
       <div class="scenario-tag" style="background:#A855F7;">CESSION 24 MOIS</div>
     </div>
     <p class="small muted">Tricycle neuf de référence : <strong>1 500 000 FCFA</strong>.
-    Plancher de performance : <strong>10 courses/jour</strong>. Le transport de
+    Plancher de performance : <strong>~9 000 FCFA/jour</strong> de volume (≈ 10 courses). Le transport de
     marchandises (« TamCar Cargo ») est une extension prévue en Phase 2.</p>
     <table style="margin-top:2mm;">
       <thead>
         <tr><th>Scénario</th><th>Hypothèses</th><th class="right">Volume/mois</th><th class="right">Chauffeur cash/mois</th><th class="right">Concess. total 24 mois*</th></tr>
       </thead>
       <tbody>
-        <tr><td style="color:#DC2626; font-weight:700;">Prudent</td><td class="small">8 courses/j × 25 j × 800 FCFA</td><td class="right">160 000</td><td class="right">64 000</td><td class="right">~1 440 000</td></tr>
+        <tr><td style="color:#DC2626; font-weight:700;">Prudent</td><td class="small">8 courses/j × 26 j × 800 FCFA</td><td class="right">166 400</td><td class="right">66 560</td><td class="right">~1 500 000</td></tr>
         <tr><td style="color:#2563EB; font-weight:700;">Réaliste</td><td class="small">10 courses/j × 26 j × 900 FCFA</td><td class="right">234 000</td><td class="right">93 600</td><td class="right"><strong>~2 110 000</strong></td></tr>
-        <tr><td style="color:#059669; font-weight:700;">Optimiste</td><td class="small">14 courses/j × 28 j × 1 000 FCFA</td><td class="right">392 000</td><td class="right">156 800</td><td class="right">~3 530 000</td></tr>
+        <tr><td style="color:#059669; font-weight:700;">Optimiste</td><td class="small">14 courses/j × 26 j × 1 000 FCFA</td><td class="right">364 000</td><td class="right">145 600</td><td class="right">~3 280 000</td></tr>
       </tbody>
     </table>
     <p class="small muted" style="margin-top:2mm; margin-bottom:0;">
@@ -1141,8 +1142,8 @@
       </thead>
       <tbody>
         <tr><td>1 an</td><td class="right">0</td><td class="right">1 000 000</td><td class="right">1 000 000</td><td class="right">±0 %</td></tr>
-        <tr><td>3 ans</td><td class="right">~405 000</td><td class="right">~3 000 000</td><td class="right">~3 405 000</td><td class="right">+241 %</td></tr>
-        <tr class="total"><td>5 ans</td><td class="right">~980 000</td><td class="right">~5 000 000</td><td class="right"><strong>~5 980 000</strong></td><td class="right"><strong>+498 %</strong></td></tr>
+        <tr><td>3 ans</td><td class="right">~245 000</td><td class="right">~3 000 000</td><td class="right">~3 245 000</td><td class="right">+225 %</td></tr>
+        <tr class="total"><td>5 ans</td><td class="right">~590 000</td><td class="right">~5 000 000</td><td class="right"><strong>~5 590 000</strong></td><td class="right"><strong>+459 %</strong></td></tr>
       </tbody>
     </table>
   </div>
@@ -1204,10 +1205,12 @@
     </div>
     <div class="card">
       <h3>Plancher de performance chauffeur</h3>
-      <p class="small">Le chauffeur doit maintenir un minimum de
-      <strong>10 courses/jour</strong> (voitures, tricycles) ou <strong>15 courses/jour</strong>
-      (motos), en moyenne mensuelle glissante. Non-respect prolongé →
-      résiliation possible, véhicule rendu au concessionnaire.</p>
+      <p class="small">Le chauffeur doit maintenir un minimum de <strong>volume de courses</strong>,
+      en moyenne mensuelle glissante : <strong>~15 000 FCFA/jour</strong> (voitures) ·
+      <strong>~9 000 FCFA/jour</strong> (tricycles) · <strong>~4 500 FCFA/jour</strong> (motos).
+      Exprimé en volume (et non en nombre de courses) : un chauffeur qui fait moins de courses
+      mais plus longues remplit son plancher. Non-respect prolongé → résiliation possible,
+      véhicule rendu au concessionnaire.</p>
     </div>
     <div class="card">
       <h3>Anti-concurrence</h3>
@@ -1295,6 +1298,7 @@
     Un processus clair et sécurisé en 3 phases. La formalisation de la société
     intervient <strong>dès l'entame</strong>, ce qui rend l'engagement contraignant
     dès la signature du Protocole d'Accord. Le retrait est conditionné.
+    Le calendrier M1-M2-M3 est <strong>indicatif</strong> : il peut être plus court, jamais plus long.
   </p>
 
   <div class="timeline finale-timeline">
@@ -1302,9 +1306,8 @@
       <div class="step-num">1</div>
       <div class="step-title">Rendez-vous individuel avec Terence · M1</div>
       <p class="small">
-        Rendez-vous individuel avec <strong>Terence</strong>, le fondateur, pour présentation
-        détaillée du projet et du dossier d'investissement. Réponse à toutes les questions,
-        démonstration en direct de l'application client et de l'application chauffeur.
+        Présentation détaillée du projet et du dossier avec <strong>Terence</strong>, le fondateur.
+        Démonstration en direct des applications client et chauffeur, réponse à toutes les questions.
       </p>
     </div>
 
@@ -1312,10 +1315,9 @@
       <div class="step-num">2</div>
       <div class="step-title">Signature du Protocole d'Accord et consignation des fonds · M2</div>
       <p class="small">
-        Signature du <strong>Protocole d'Accord contraignant</strong> qui formalise votre
-        engagement : catégorie (concessionnaire ou investisseur), montant d'apport,
-        calendrier de versement. Ouverture d'un <strong>compte séquestre bancaire</strong>
-        au nom de « Tam Logistics en formation ». Chaque associé y verse son apport.
+        Signature du <strong>Protocole d'Accord contraignant</strong> (catégorie, montant, calendrier)
+        et ouverture d'un <strong>compte séquestre bancaire</strong> « Tam Logistics en formation »
+        où chaque associé verse son apport.
       </p>
     </div>
 
@@ -1323,10 +1325,9 @@
       <div class="step-num">3</div>
       <div class="step-title">Constitution officielle et lancement · M3</div>
       <p class="small">
-        Nomination du commissaire aux apports (évaluation de l'apport IP), Assemblée
-        Générale constitutive de <strong>Tam Logistics SARL</strong>, signature des
-        statuts et du pacte devant notaire, immatriculation RCCM. Les fonds séquestre
-        alimentent la trésorerie — la plateforme est officiellement opérationnelle.
+        Commissaire aux apports (évaluation IP), AG constitutive de <strong>Tam Logistics SARL</strong>,
+        statuts et pacte devant notaire, immatriculation RCCM. Les fonds séquestre alimentent la
+        trésorerie — la plateforme est opérationnelle.
       </p>
     </div>
   </div>
