@@ -19,7 +19,10 @@
     color: var(--ink); background: #F1F5F9; line-height: 1.5; font-size: 11pt;
   }
   .page {
-    width: 210mm; min-height: 297mm; padding: 15mm;
+    /* Marge basse renforcée (26mm) : réserve une bande pour le numéro de page
+       (cercle 12mm à bottom:10mm → occupe jusqu'à ~22mm) afin qu'aucun
+       contenu n'entre dans le numéro. */
+    width: 210mm; min-height: 297mm; padding: 15mm 15mm 26mm;
     margin: 6mm auto; background: var(--bg);
     box-shadow: 0 4px 20px rgba(0,0,0,.08);
     page-break-after: always;
@@ -275,7 +278,7 @@
   .matrix-table tr.highlight td { background: #FEF3E2; font-weight: 700; color: #92400E; }
 
   /* PAGE 9 FINALE — fond bleu style couverture */
-  .cover.finale { padding: 15mm; }
+  .cover.finale { padding: 15mm 15mm 26mm; }
   .cover.finale .finale-hd {
     display: flex; align-items: baseline; gap: 4mm;
     padding-bottom: 3mm; border-bottom: 2px solid rgba(255,255,255,.35);
