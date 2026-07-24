@@ -3,10 +3,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 
-// STUN public gratuit. TURN à ajouter pour fiabiliser la 4G (CGNAT).
+// STUN (découverte IP) + TURN (relais quand le pair-à-pair direct échoue,
+// typiquement WiFi ↔ 4G / CGNAT). TURN public openrelay = dépannage/tests ;
+// pour la prod, mettre TON propre TURN (Metered/Twilio/coturn auto-hébergé).
 const ICE_SERVERS: RTCIceServer[] = [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
 ];
 
 type Role = 'caller' | 'callee';
