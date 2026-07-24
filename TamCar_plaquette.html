@@ -278,7 +278,7 @@
   .matrix-table tr.highlight td { background: #FEF3E2; font-weight: 700; color: #92400E; }
 
   /* PAGE 9 FINALE — fond bleu style couverture */
-  .cover.finale { padding: 15mm 15mm 26mm; }
+  .cover.finale { padding: 15mm; }
   .cover.finale .finale-hd {
     display: flex; align-items: baseline; gap: 4mm;
     padding-bottom: 3mm; border-bottom: 2px solid rgba(255,255,255,.35);
@@ -799,7 +799,7 @@
       <p style="font-size:9pt; font-weight:600;">CONDITIONS</p>
       <ul style="list-style:none; padding:0; margin:2mm 0;">
         <li style="padding:1.5mm 0; font-size:9pt;">✔ 1 véhicule minimum (Moto, Kloboto, Essentiel, Confort)</li>
-        <li style="padding:1.5mm 0; font-size:9pt;">✔ Souscription 500 000 FCFA (50 parts)</li>
+        <li style="padding:1.5mm 0; font-size:9pt;">✔ Souscription 500 000 FCFA par véhicule apporté (50 parts/véhicule) — 2 véhicules = 1 M FCFA, etc.</li>
         <li style="padding:1.5mm 0; font-size:9pt;">✔ ADR par véhicule : 50 000 (moto) · 75 000 (tricycle) · 100 000 FCFA (voiture) — remboursable</li>
       </ul>
       <hr style="border:none; border-top:1px solid rgba(255,255,255,.25); margin:4mm 0;">
@@ -811,7 +811,7 @@
       </ul>
       <hr style="border:none; border-top:1px solid rgba(255,255,255,.25); margin:4mm 0;">
       <p style="font-size:9pt; font-weight:600;">SIMULATION 2 ANS · 1 VÉHICULE ESSENTIEL</p>
-      <div style="font-size:24pt; font-weight:800; color:#EAB308; line-height:1.1;">~ 5,85 M FCFA</div>
+      <div style="font-size:24pt; font-weight:800; color:#EAB308; line-height:1.1;">~ 3,5 M FCFA</div>
       <p style="font-size:8pt; opacity:.85;">revenus estimés (scénario réaliste) <sup>[1]</sup></p>
     </div>
 
@@ -858,10 +858,10 @@
     <strong>Comment sont obtenus ces chiffres</strong>
     <p style="margin-top:2mm;">
       <strong>[1] Concessionnaire 2 ans</strong> — Scénario réaliste : 10 courses/j × 26 j ×
-      prix moyen par course 2 500 FCFA = 650 000 FCFA/mois de volume.
-      Part directe : 30 % × 15,6 M = 4,68 M FCFA cumulés.
-      Rachat séquestre chauffeur à échéance : ~1,17 M FCFA.
-      <strong>Total = 5,85 M FCFA sur 24 mois</strong>. Hors ADR remboursée (100 000 FCFA)
+      prix moyen par course 1 500 FCFA = 390 000 FCFA/mois de volume.
+      Part directe : 30 % × 9,36 M = 2,81 M FCFA cumulés.
+      Rachat séquestre chauffeur à échéance : ~0,70 M FCFA.
+      <strong>Total = 3,51 M FCFA sur 24 mois</strong>. Hors ADR remboursée (100 000 FCFA)
       et hors valorisation des parts sociales.
     </p>
     <p style="margin-bottom:0;">
@@ -903,7 +903,7 @@
     <p style="margin-top:2mm; margin-bottom:0;">
       La durée de la cession varie entre <strong>24 et 60 mois</strong> selon l'état
       initial du véhicule (voir matrice page 4). Les <strong>véhicules 24 mois</strong>
-      (occasion en bon état) seront <strong>les plus nombreux dans la flotte pilote</strong>.
+      (occasion en bon état) <strong>pourraient être les plus nombreux dans la flotte pilote</strong>.
       Ils représentent également le <strong>« pire cas » en durée de retour</strong>
       pour le concessionnaire : plus le véhicule est neuf, plus les revenus cumulés
       seront élevés.
@@ -941,22 +941,22 @@
       <div class="scenario-title" style="color:var(--blue);">Scénario réaliste</div>
       <div class="scenario-tag realist">HYPOTHÈSE PIVOT</div>
     </div>
-    <p class="small muted">10 courses/jour × 26 jours actifs × <strong>prix moyen par course 2 500 FCFA</strong> = <strong>650 000 FCFA / mois</strong> de volume</p>
+    <p class="small muted">10 courses/jour × 26 jours actifs × <strong>prix moyen par course 1 500 FCFA</strong> = <strong>390 000 FCFA / mois</strong> de volume</p>
     <table style="margin-top:2mm;">
       <thead>
         <tr><th>Bénéficiaire</th><th class="right">%</th><th class="right">Mensuel</th><th class="right">Annuel</th><th class="right">24 mois</th></tr>
       </thead>
       <tbody>
-        <tr><td>Chauffeur (cash 40 %)</td><td class="right">40 %</td><td class="right">260 000</td><td class="right">3 120 000</td><td class="right">6 240 000</td></tr>
-        <tr><td>Fonds rachat brut</td><td class="right">10 %</td><td class="right">65 000</td><td class="right">780 000</td><td class="right">1 560 000</td></tr>
-        <tr><td><strong>Concessionnaire (part directe)</strong></td><td class="right">30 %</td><td class="right"><strong>195 000</strong></td><td class="right"><strong>2 340 000</strong></td><td class="right"><strong>4 680 000</strong></td></tr>
-        <tr><td>Plateforme TamCar</td><td class="right">20 %</td><td class="right">130 000</td><td class="right">1 560 000</td><td class="right">3 120 000</td></tr>
-        <tr class="total"><td>Total volume (FCFA)</td><td class="right">100 %</td><td class="right">650 000</td><td class="right">7 800 000</td><td class="right">15 600 000</td></tr>
+        <tr><td>Chauffeur (cash 40 %)</td><td class="right">40 %</td><td class="right">156 000</td><td class="right">1 872 000</td><td class="right">3 744 000</td></tr>
+        <tr><td>Fonds rachat brut</td><td class="right">10 %</td><td class="right">39 000</td><td class="right">468 000</td><td class="right">936 000</td></tr>
+        <tr><td><strong>Concessionnaire (part directe)</strong></td><td class="right">30 %</td><td class="right"><strong>117 000</strong></td><td class="right"><strong>1 404 000</strong></td><td class="right"><strong>2 808 000</strong></td></tr>
+        <tr><td>Plateforme TamCar</td><td class="right">20 %</td><td class="right">78 000</td><td class="right">936 000</td><td class="right">1 872 000</td></tr>
+        <tr class="total"><td>Total volume (FCFA)</td><td class="right">100 %</td><td class="right">390 000</td><td class="right">4 680 000</td><td class="right">9 360 000</td></tr>
       </tbody>
     </table>
     <div class="concess-total">
-      <strong>Concessionnaire — total encaissé sur 24 mois : ~5,85 M FCFA</strong>
-      (4,68 M part directe + 1,17 M rachat séquestre chauffeur à échéance)
+      <strong>Concessionnaire — total encaissé sur 24 mois : ~3,51 M FCFA</strong>
+      (2,81 M part directe + 0,70 M rachat séquestre chauffeur à échéance)
     </div>
   </div>
 
