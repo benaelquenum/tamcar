@@ -1,5 +1,6 @@
 import { createServerSupabase } from '@/lib/supabase-server';
 import { archiveDealer } from './actions';
+import { ConfirmSubmit } from '@/components/ConfirmSubmit';
 import { CreateDealerForm } from './CreateDealerForm';
 
 type DealerRow = {
@@ -94,12 +95,12 @@ export default async function AdminDealersPage() {
                       <form action={archiveDealer} className="inline">
                         <input type="hidden" name="id" value={d.dealer_id} />
                         <input type="hidden" name="reason" value="Archivé depuis l'admin" />
-                        <button
-                          type="submit"
+                        <ConfirmSubmit
+                          message={`Archiver le concessionnaire ${d.full_name} ?`}
                           className="rounded-md bg-error/10 px-md py-xs text-xs font-bold text-error hover:bg-error/20"
                         >
                           Archiver
-                        </button>
+                        </ConfirmSubmit>
                       </form>
                     </td>
                   </tr>

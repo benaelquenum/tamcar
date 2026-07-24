@@ -11,6 +11,7 @@ import {
 } from '@/lib/appointment';
 import { markNoShow, rejectAppointment } from './actions';
 import { ApproveDriverForm } from './ApproveDriverForm';
+import { ConfirmSubmit } from '@/components/ConfirmSubmit';
 
 export default async function AppointmentDetailPage({ params }: { params: { id: string } }) {
   const supabase = createServerSupabase();
@@ -135,12 +136,12 @@ export default async function AppointmentDetailPage({ params }: { params: { id: 
                 minLength={3}
                 className="w-full rounded-md bg-neutral-100 px-md py-sm text-sm text-neutral-900 ring-1 ring-neutral-200"
               />
-              <button
-                type="submit"
+              <ConfirmSubmit
+                message="Refuser définitivement cette candidature après entretien ?"
                 className="mt-md w-full rounded-md bg-error py-sm text-sm font-bold text-white hover:brightness-110"
               >
                 Refuser après entretien
-              </button>
+              </ConfirmSubmit>
             </form>
 
             <form action={markNoShow} className="rounded-xl border border-neutral-200 bg-white p-md">
@@ -152,12 +153,12 @@ export default async function AppointmentDetailPage({ params }: { params: { id: 
                 Le candidat n&apos;est pas venu. Le créneau reste bloqué pour l&apos;historique mais
                 pas ré-utilisable.
               </p>
-              <button
-                type="submit"
+              <ConfirmSubmit
+                message="Marquer ce candidat comme absent au RDV (no-show) ?"
                 className="mt-md w-full rounded-md bg-neutral-800 py-sm text-sm font-bold text-white hover:brightness-110"
               >
                 Marquer no-show
-              </button>
+              </ConfirmSubmit>
             </form>
           </section>
         </>

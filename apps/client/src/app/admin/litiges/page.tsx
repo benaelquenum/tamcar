@@ -1,6 +1,7 @@
 import { createServerSupabase } from '@/lib/supabase-server';
 import { AlertTriangleIcon, CheckIcon, CrosshairIcon } from '@/components/Icon';
 import { resolveDispute, resolveStrikeDispute } from './actions';
+import { ConfirmSubmit } from '@/components/ConfirmSubmit';
 
 type DisputeRow = {
   ride_id: string;
@@ -193,12 +194,12 @@ export default async function AdminLitigesPage() {
                       placeholder="Note (optionnelle)"
                       className="rounded-md border border-neutral-200 bg-white px-md py-xs text-xs"
                     />
-                    <button
-                      type="submit"
+                    <ConfirmSubmit
+                      message="Révoquer le strike et rembourser le chauffeur ? Action définitive."
                       className="rounded-md bg-primary-500 px-md py-sm text-xs font-bold text-white hover:bg-primary-600"
                     >
                       Révoquer strike + rembourser chauffeur
-                    </button>
+                    </ConfirmSubmit>
                   </form>
 
                   <form action={resolveStrikeDispute} className="flex flex-col gap-xs">
@@ -213,12 +214,12 @@ export default async function AdminLitigesPage() {
                       placeholder="Note (optionnelle)"
                       className="rounded-md border border-neutral-200 bg-white px-md py-xs text-xs"
                     />
-                    <button
-                      type="submit"
+                    <ConfirmSubmit
+                      message="Maintenir le strike ? La contestation du chauffeur est rejetée."
                       className="rounded-md bg-neutral-800 px-md py-sm text-xs font-bold text-white hover:bg-neutral-700"
                     >
                       Maintenir le strike
-                    </button>
+                    </ConfirmSubmit>
                   </form>
                 </div>
               ) : (
@@ -235,12 +236,12 @@ export default async function AdminLitigesPage() {
                       placeholder="Note (optionnelle)"
                       className="rounded-md border border-neutral-200 bg-white px-md py-xs text-xs"
                     />
-                    <button
-                      type="submit"
+                    <ConfirmSubmit
+                      message="Confirmer la faute du chauffeur et rembourser le client ? Action définitive."
                       className="rounded-md bg-primary-500 px-md py-sm text-xs font-bold text-white hover:bg-primary-600"
                     >
                       Confirmer faute chauffeur
-                    </button>
+                    </ConfirmSubmit>
                   </form>
 
                   <form action={resolveDispute} className="flex flex-col gap-xs">
@@ -255,12 +256,12 @@ export default async function AdminLitigesPage() {
                       placeholder="Note (optionnelle)"
                       className="rounded-md border border-neutral-200 bg-white px-md py-xs text-xs"
                     />
-                    <button
-                      type="submit"
+                    <ConfirmSubmit
+                      message="Confirmer la faute du client (statu quo, pas de remboursement) ?"
                       className="rounded-md bg-neutral-800 px-md py-sm text-xs font-bold text-white hover:bg-neutral-700"
                     >
                       Confirmer faute client
-                    </button>
+                    </ConfirmSubmit>
                   </form>
                 </div>
               )}

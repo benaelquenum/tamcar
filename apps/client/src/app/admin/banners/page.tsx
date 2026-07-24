@@ -1,5 +1,6 @@
 import { createServerSupabase } from '@/lib/supabase-server';
 import { createBanner, deleteBanner, toggleBannerActive } from './actions';
+import { ConfirmSubmit } from '@/components/ConfirmSubmit';
 
 type Banner = {
   id: string;
@@ -215,12 +216,12 @@ function BannerAdminCard({ banner }: { banner: Banner }) {
           </form>
           <form action={deleteBanner}>
             <input type="hidden" name="id" value={banner.id} />
-            <button
-              type="submit"
+            <ConfirmSubmit
+              message="Supprimer définitivement cette bannière ?"
               className="w-full rounded-md bg-error py-xs text-xs font-bold text-white hover:brightness-110"
             >
               Supprimer
-            </button>
+            </ConfirmSubmit>
           </form>
         </div>
       </div>

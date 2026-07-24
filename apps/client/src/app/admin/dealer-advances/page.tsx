@@ -1,5 +1,6 @@
 import { createServerSupabase } from '@/lib/supabase-server';
 import { forfeitAdvance, refundAdvance } from './actions';
+import { ConfirmSubmit } from '@/components/ConfirmSubmit';
 
 type AdvanceRow = {
   id: string;
@@ -245,12 +246,12 @@ function AdvanceRow({
               placeholder="Raison de la résiliation"
               className="w-full rounded-md bg-neutral-100 px-md py-xs text-xs text-neutral-900 ring-1 ring-neutral-200"
             />
-            <button
-              type="submit"
+            <ConfirmSubmit
+              message="Résilier cette avance (prorata temporis) ? Le solde restant est acquis à TamCar."
               className="mt-xs w-full rounded-md bg-error py-xs text-xs font-bold text-white hover:brightness-110"
             >
               Résilier (prorata temporis)
-            </button>
+            </ConfirmSubmit>
           </form>
         </div>
       )}

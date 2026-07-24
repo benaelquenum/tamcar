@@ -2,6 +2,7 @@ import { createServerSupabase } from '@/lib/supabase-server';
 import { AlertTriangleIcon, TargetIcon2 } from '@/components/Icon';
 import { suspendDriver, unsuspendDriver, archiveDriver } from './actions';
 import { CreateDriverForm } from './CreateDriverForm';
+import { ConfirmSubmit } from '@/components/ConfirmSubmit';
 
 type DriverRow = {
   driver_id: string;
@@ -225,12 +226,12 @@ export default async function AdminDriversPage() {
                           <form action={suspendDriver} className="inline">
                             <input type="hidden" name="id" value={d.driver_id} />
                             <input type="hidden" name="reason" value="Suspendu depuis l'admin" />
-                            <button
-                              type="submit"
+                            <ConfirmSubmit
+                              message={`Suspendre ${d.full_name} ? Le chauffeur ne pourra plus prendre de courses.`}
                               className="rounded-md bg-warning/10 px-md py-xs text-xs font-bold text-warning hover:bg-warning/20"
                             >
                               Suspendre
-                            </button>
+                            </ConfirmSubmit>
                           </form>
                         )}
                         {d.status === 'suspended' && (
@@ -247,12 +248,12 @@ export default async function AdminDriversPage() {
                         <form action={archiveDriver} className="inline">
                           <input type="hidden" name="id" value={d.driver_id} />
                           <input type="hidden" name="reason" value="Archivé depuis l'admin" />
-                          <button
-                            type="submit"
+                          <ConfirmSubmit
+                            message={`Archiver ${d.full_name} ? Action définitive : le chauffeur sort des listes actives.`}
                             className="rounded-md bg-neutral-800 px-md py-xs text-xs font-bold text-white hover:brightness-110"
                           >
                             Archiver
-                          </button>
+                          </ConfirmSubmit>
                         </form>
                       </div>
                     </td>

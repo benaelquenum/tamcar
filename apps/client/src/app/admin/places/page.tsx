@@ -1,6 +1,7 @@
 import { createServerSupabase } from '@/lib/supabase-server';
 import { CheckIcon } from '@/components/Icon';
 import { approvePlace, rejectPlace } from './actions';
+import { ConfirmSubmit } from '@/components/ConfirmSubmit';
 
 type PlaceRow = {
   id: string;
@@ -146,12 +147,12 @@ export default async function AdminPlacesPage() {
                         </form>
                         <form action={rejectPlace} className="inline">
                           <input type="hidden" name="id" value={p.id} />
-                          <button
-                            type="submit"
+                          <ConfirmSubmit
+                            message="Rejeter ce lieu suggéré ?"
                             className="rounded-md bg-error px-md py-xs text-xs font-bold text-white hover:brightness-110"
                           >
                             Rejeter
-                          </button>
+                          </ConfirmSubmit>
                         </form>
                       </div>
                     </td>
