@@ -20,6 +20,7 @@ import { Avatar } from '@/components/Avatar';
 import { firstNameOf, getCurrentProfile } from '@/lib/session';
 import { createServerSupabase } from '@/lib/supabase-server';
 import { SUPPORT_PHONE } from '@/lib/support';
+import { UnreadMessagesChip } from '@/components/UnreadMessagesChip';
 
 type BannerRow = {
   id: string;
@@ -298,6 +299,7 @@ export default async function HomePage() {
 
         <div className="h-2xl" />
       </div>
+      <UnreadMessagesChip />
     </main>
   );
 }
