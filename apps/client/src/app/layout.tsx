@@ -3,6 +3,7 @@ import { Sora } from 'next/font/google';
 import './globals.css';
 import { EnableNotifications } from '@/components/EnableNotifications';
 import { InstallPwaBanner } from '@/components/InstallPwaBanner';
+import { TopProgressBar } from '@/components/TopProgressBar';
 
 const sora = Sora({
   subsets: ['latin'],
@@ -44,6 +45,7 @@ export default function RootLayout({
   return (
     <html lang="fr" className={sora.variable}>
       <body className="font-sans antialiased">
+        <TopProgressBar />
         <EnableNotifications />
         <InstallPwaBanner />
         {children}
