@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/Logo';
@@ -207,6 +207,8 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
   const [stops, setStops] = useState<RideStopRow[]>([]);
   const [addStopOpen, setAddStopOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  const [unreadMessages, setUnreadMessages] = useState(0);
+  const chatOpenRef = useRef(chatOpen);
   const [driverOtherRide, setDriverOtherRide] = useState<{
     other_ride_id: string;
     other_dropoff_address: string;
@@ -215,6 +217,46 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
     other_duration_min: number | null;
     is_busy: boolean;
   } | null>(null);
+
+  // Bulle « messages non lus » sur le bouton chat : compte initial + temps réel.
+  useEffect(() => {
+    let mounted = true;
+    const myId = ride.client_id;
+
+    (async () => {
+      const { data } = await supabaseBrowser.rpc('ride_messages_history', { p_ride_id: ride.id });
+      if (!mounted || !Array.isArray(data)) return;
+      const n = (data as { sender_id: string; read_at: string | null }[]).filter(
+        (m) => m.sender_id !== myId && !m.read_at,
+      ).length;
+      setUnreadMessages(chatOpenRef.current ? 0 : n);
+    })();
+
+    const channel = supabaseBrowser
+      .channel(`ride_unread:${ride.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'ride_messages', filter: `ride_id=eq.${ride.id}` },
+        (payload) => {
+          const raw = payload.new as { sender_id: string };
+          if (raw.sender_id !== myId && !chatOpenRef.current) {
+            setUnreadMessages((c) => c + 1);
+          }
+        },
+      )
+      .subscribe();
+
+    return () => {
+      mounted = false;
+      supabaseBrowser.removeChannel(channel);
+    };
+  }, [ride.id, ride.client_id]);
+
+  // Ouvrir le chat = tout est lu.
+  useEffect(() => {
+    chatOpenRef.current = chatOpen;
+    if (chatOpen) setUnreadMessages(0);
+  }, [chatOpen]);
 
   async function openCancelConfirm() {
     setCancelPreview(null);
@@ -899,9 +941,14 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                   <button
                     type="button"
                     onClick={() => setChatOpen(true)}
-                    className="rounded-full bg-white px-md py-xs text-xs font-bold text-primary-700 shadow-md ring-1 ring-primary-500"
+                    className="relative rounded-full bg-white px-md py-xs text-xs font-bold text-primary-700 shadow-md ring-1 ring-primary-500"
                   >
                     {t('ride.message')}
+                    {unreadMessages > 0 && (
+                      <span className="absolute -right-1.5 -top-1.5 grid h-4 min-w-[1rem] place-items-center rounded-full bg-error px-1 text-[9px] font-bold text-white shadow ring-2 ring-white">
+                        {unreadMessages > 9 ? '9+' : unreadMessages}
+                      </span>
+                    )}
                   </button>
                   {ride.driver_phone && (
                     <>

@@ -75,6 +75,8 @@ function formatDistance(m: number | null | undefined): string {
 export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverRideForView; myUserId: string }) {
   const [ride, setRide] = useState<DriverRideForView>(initialRide);
   const [chatOpen, setChatOpen] = useState(false);
+  const [unreadMessages, setUnreadMessages] = useState(0);
+  const chatOpenRef = useRef(chatOpen);
   const [driverPos, setDriverPos] = useState<[number, number] | null>(null);
   const [routeGeo, setRouteGeo] = useState<GeoJSON.LineString | null>(null);
   const [distanceToTarget, setDistanceToTarget] = useState<number | null>(null);
@@ -94,6 +96,44 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
     if (ride.status === 'in_progress') return [ride.dropoff_lng, ride.dropoff_lat];
     return [ride.pickup_lng, ride.pickup_lat];
   }, [ride.status, ride.pickup_lat, ride.pickup_lng, ride.dropoff_lat, ride.dropoff_lng]);
+
+  // Bulle « messages non lus » sur le bouton chat : compte initial + temps réel.
+  useEffect(() => {
+    let mounted = true;
+
+    (async () => {
+      const { data } = await supabaseBrowser.rpc('ride_messages_history', { p_ride_id: ride.id });
+      if (!mounted || !Array.isArray(data)) return;
+      const n = (data as { sender_id: string; read_at: string | null }[]).filter(
+        (m) => m.sender_id !== myUserId && !m.read_at,
+      ).length;
+      setUnreadMessages(chatOpenRef.current ? 0 : n);
+    })();
+
+    const channel = supabaseBrowser
+      .channel(`ride_unread:${ride.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'ride_messages', filter: `ride_id=eq.${ride.id}` },
+        (payload) => {
+          const raw = payload.new as { sender_id: string };
+          if (raw.sender_id !== myUserId && !chatOpenRef.current) {
+            setUnreadMessages((c) => c + 1);
+          }
+        },
+      )
+      .subscribe();
+
+    return () => {
+      mounted = false;
+      supabaseBrowser.removeChannel(channel);
+    };
+  }, [ride.id, myUserId]);
+
+  useEffect(() => {
+    chatOpenRef.current = chatOpen;
+    if (chatOpen) setUnreadMessages(0);
+  }, [chatOpen]);
 
   // Get my position + heartbeat.
   // Filtre les fixes imprécis (accuracy > 50 m) et lisse sur 3 samples
@@ -473,9 +513,14 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
                 <button
                   type="button"
                   onClick={() => setChatOpen(true)}
-                  className="rounded-full bg-white px-md py-xs text-xs font-bold text-primary-700 shadow-md ring-1 ring-primary-500"
+                  className="relative rounded-full bg-white px-md py-xs text-xs font-bold text-primary-700 shadow-md ring-1 ring-primary-500"
                 >
                   Message
+                  {unreadMessages > 0 && (
+                    <span className="absolute -right-1.5 -top-1.5 grid h-4 min-w-[1rem] place-items-center rounded-full bg-error px-1 text-[9px] font-bold text-white shadow ring-2 ring-white">
+                      {unreadMessages > 9 ? '9+' : unreadMessages}
+                    </span>
+                  )}
                 </button>
                 {ride.client_phone && (
                   <>
