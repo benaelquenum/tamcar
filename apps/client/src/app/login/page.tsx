@@ -214,7 +214,7 @@ function SignUpForm({ error }: { error?: string }) {
         />
       </Field>
 
-      <Field label="Téléphone (optionnel)">
+      <Field label="Numéro WhatsApp">
         <div className="flex items-center overflow-hidden rounded-lg bg-neutral-100 ring-1 ring-neutral-200 focus-within:ring-2 focus-within:ring-primary-500">
           <span className="border-r border-neutral-200 bg-neutral-100 px-md py-md text-base font-semibold text-neutral-600">
             +229
@@ -222,6 +222,7 @@ function SignUpForm({ error }: { error?: string }) {
           <input
             name="phone"
             type="tel"
+            required
             autoComplete="tel-national"
             inputMode="numeric"
             placeholder="01 67 59 18 17"
@@ -229,6 +230,9 @@ function SignUpForm({ error }: { error?: string }) {
             style={{ fontVariantNumeric: 'tabular-nums' }}
           />
         </div>
+        <p className="mt-xs text-[11px] text-neutral-500">
+          Ton chauffeur pourra te joindre sur WhatsApp pendant la course.
+        </p>
       </Field>
 
       <Field label="Mot de passe">

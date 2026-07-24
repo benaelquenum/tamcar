@@ -17,6 +17,7 @@ import { StopsPanel } from './StopsPanel';
 import { ReturnChangeModal } from './ReturnChangeModal';
 import { SosButton } from '@/components/SosButton';
 import { RideChat } from '@/components/RideChat';
+import { playMessageSound } from '@/lib/message-sound';
 
 type RideStatus =
   | 'requested'
@@ -117,8 +118,9 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
         { event: 'INSERT', schema: 'public', table: 'ride_messages', filter: `ride_id=eq.${ride.id}` },
         (payload) => {
           const raw = payload.new as { sender_id: string };
-          if (raw.sender_id !== myUserId && !chatOpenRef.current) {
-            setUnreadMessages((c) => c + 1);
+          if (raw.sender_id !== myUserId) {
+            playMessageSound();
+            if (!chatOpenRef.current) setUnreadMessages((c) => c + 1);
           }
         },
       )

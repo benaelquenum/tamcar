@@ -16,6 +16,7 @@ import { StopsListClient } from './StopsListClient';
 import { isAccurateEnough, SmoothingBuffer } from '@/lib/geo-precision';
 import { SosButton } from '@/components/SosButton';
 import { RideChat } from '@/components/RideChat';
+import { playMessageSound } from '@/lib/message-sound';
 import { useT } from '@/lib/i18n-client';
 
 type RideStopRow = {
@@ -239,8 +240,9 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
         { event: 'INSERT', schema: 'public', table: 'ride_messages', filter: `ride_id=eq.${ride.id}` },
         (payload) => {
           const raw = payload.new as { sender_id: string };
-          if (raw.sender_id !== myId && !chatOpenRef.current) {
-            setUnreadMessages((c) => c + 1);
+          if (raw.sender_id !== myId) {
+            playMessageSound();
+            if (!chatOpenRef.current) setUnreadMessages((c) => c + 1);
           }
         },
       )
