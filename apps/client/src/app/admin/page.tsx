@@ -64,6 +64,7 @@ type WalletRow = { id: string; profile_id: string; kind: string; balance_fcfa: n
 type TxRow = { type: string; amount_fcfa: number; ride_id: string | null; created_at: string };
 type SosRow = { id: string; status: string; role: string; reason: string | null; created_at: string; lat: number; lng: number };
 type ActiveDriverRow = { driver_id: string; full_name: string; category: string | null; is_online: boolean; rating_avg: number | null };
+type UnpaidInsuranceRow = { driver_id: string; full_name: string; period: string; amount_fcfa: number; collected_fcfa: number; status: string; months_overdue: number };
 type CandidatureRow = { id: string; status: string; created_at: string };
 type DealerAdvanceRow = { id: string; amount_fcfa: number; refunded_fcfa: number; status: string };
 type ReferralRow = { redeemed_by: string; reward_fcfa: number; created_at: string };
@@ -262,6 +263,10 @@ export default async function AdminHome() {
   // admin_active_drivers n'est pas encore appliquée, on dégrade en liste vide).
   const { data: activeDriversData } = await supabase.rpc('admin_active_drivers');
   const reassignDrivers = (activeDriversData ?? []) as ActiveDriverRow[];
+
+  // Assurances conducteur impayées (fetch tolérant idem).
+  const { data: unpaidInsData } = await supabase.rpc('admin_unpaid_insurance');
+  const unpaidInsurance = (unpaidInsData ?? []) as UnpaidInsuranceRow[];
 
   return (
     <div className="space-y-lg">
@@ -543,6 +548,45 @@ export default async function AdminHome() {
                     </ConfirmSubmit>
                   </form>
                 </div>
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {/* ===== Assurances conducteur impayées ===== */}
+      {unpaidInsurance.length > 0 && (
+        <Section title="Assurances conducteur impayées">
+          <p className="mb-sm text-xs text-neutral-500">
+            Chauffeurs dont l&apos;assurance n&apos;a pas pu être prélevée (solde revenus
+            insuffisant). Le reliquat est retenté chaque mois.
+          </p>
+          <div className="space-y-xs">
+            {unpaidInsurance.slice(0, 15).map((u) => (
+              <div
+                key={`${u.driver_id}-${u.period}`}
+                className={`flex items-center gap-md rounded-lg border p-md ${
+                  u.months_overdue >= 1
+                    ? 'border-error/30 bg-error/5'
+                    : 'border-neutral-200 bg-white'
+                }`}
+              >
+                <span className="text-lg">🛡️</span>
+                <div className="flex-1 min-w-0">
+                  <p className="truncate text-sm font-bold text-neutral-900">{u.full_name}</p>
+                  <p className="text-[11px] text-neutral-600">
+                    {new Date(u.period).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })} ·{' '}
+                    {fmt(u.collected_fcfa)} / {fmt(u.amount_fcfa)} F collectés
+                    {u.months_overdue >= 1 && ` · ${u.months_overdue} mois de retard`}
+                  </p>
+                </div>
+                <span
+                  className={`flex-none rounded-full px-md py-xs text-[10px] font-bold ${
+                    u.status === 'partial' ? 'bg-warning/20 text-warning' : 'bg-neutral-100 text-neutral-500'
+                  }`}
+                >
+                  {u.status === 'partial' ? 'Partiel' : 'En attente'}
+                </span>
               </div>
             ))}
           </div>
