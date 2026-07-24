@@ -14,7 +14,7 @@ import {
   TargetIcon,
 } from '@/components/Icon';
 import { Map } from '@/components/Map';
-import { UnreadMessagesChip } from '@/components/UnreadMessagesChip';
+import { MessagesFab } from '@/components/MessagesFab';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { isAccurateEnough } from '@/lib/geo-precision';
 import { acceptRideAction } from './actions';
@@ -700,7 +700,7 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
           </div>
         </div>
       )}
-      <UnreadMessagesChip />
+      <MessagesFab />
     </main>
   );
 }

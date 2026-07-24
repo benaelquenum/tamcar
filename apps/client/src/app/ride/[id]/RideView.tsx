@@ -1014,7 +1014,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                     type="button"
                     onClick={startCall}
                     disabled={callStarting}
-                    className="flex flex-1 items-center justify-center gap-xs rounded-xl bg-gradient-to-br from-primary-600 to-violet-600 py-2 text-xs font-bold text-white shadow-md transition hover:brightness-110 disabled:opacity-60"
+                    className="flex flex-1 items-center justify-center gap-xs rounded-xl bg-primary-600 py-2 text-xs font-bold text-white shadow-md transition hover:bg-primary-700 disabled:opacity-60"
                   >
                     <PhoneIcon className="h-4 w-4" />
                     {callStarting ? '…' : 'Appel TamCar'}
