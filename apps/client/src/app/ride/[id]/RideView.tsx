@@ -1247,6 +1247,17 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                 {retrying ? '…' : 'Réessayer'}
               </button>
             </div>
+
+            <Link
+              href="/chauffeurs"
+              className="mt-md flex items-center justify-center rounded-xl border-2 border-primary-500 bg-white py-md text-sm font-bold text-primary-700 hover:bg-primary-50"
+            >
+              Reprendre un chauffeur déjà eu →
+            </Link>
+            <p className="mt-xs text-center text-[11px] text-neutral-400">
+              Recontactez un chauffeur de vos courses passées et demandez-lui
+              directement une course.
+            </p>
           </div>
         </div>
       )}
