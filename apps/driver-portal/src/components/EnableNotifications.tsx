@@ -7,10 +7,32 @@ export function EnableNotifications() {
   const [state, setState] = useState<NotificationPermission | 'unsupported' | 'loading'>('loading');
 
   useEffect(() => {
-    currentPermission().then(setState);
+    (async () => {
+      const perm = await currentPermission();
+      if (perm === 'granted') {
+        // Auto-réenregistrement : la permission navigateur peut être accordée
+        // ALORS QUE l'appareil n'est pas (ou plus) enregistré en base pour le
+        // profil connecté (réinstallation, purge serveur, changement de compte).
+        // On resynchronise silencieusement à chaque ouverture.
+        await subscribeToPush();
+      }
+      setState(perm);
+    })();
   }, []);
 
   if (state === 'loading' || state === 'unsupported' || state === 'granted') return null;
+
+  // Permission bloquée : le navigateur refusera tout re-prompt — il faut
+  // débloquer dans les réglages. On l'affiche clairement.
+  if (state === 'denied') {
+    return (
+      <div className="fixed inset-x-lg top-md z-50 mx-auto max-w-md rounded-xl bg-error px-lg py-md text-center text-xs font-bold text-white shadow-lg ring-2 ring-white/30">
+        ⚠️ Alertes de course bloquées — autorise les notifications pour ce site
+        dans les réglages de ton navigateur (Paramètres → Notifications), sinon
+        tu ne verras aucune course.
+      </div>
+    );
+  }
 
   async function handleEnable() {
     setState('loading');

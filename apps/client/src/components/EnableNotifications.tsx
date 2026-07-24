@@ -7,10 +7,29 @@ export function EnableNotifications() {
   const [state, setState] = useState<NotificationPermission | 'unsupported' | 'loading'>('loading');
 
   useEffect(() => {
-    currentPermission().then(setState);
+    (async () => {
+      const perm = await currentPermission();
+      if (perm === 'granted') {
+        // Resynchronise l'abonnement en base à chaque ouverture : la
+        // permission peut être accordée alors que l'appareil n'est plus
+        // enregistré pour le profil connecté (réinstall, purge, changement
+        // de compte).
+        await subscribeToPush();
+      }
+      setState(perm);
+    })();
   }, []);
 
   if (state === 'loading' || state === 'unsupported' || state === 'granted') return null;
+
+  if (state === 'denied') {
+    return (
+      <div className="fixed inset-x-lg top-md z-50 mx-auto max-w-md rounded-xl bg-error px-lg py-md text-center text-xs font-bold text-white shadow-lg ring-2 ring-white/30">
+        ⚠️ Notifications bloquées — autorise-les pour ce site dans les réglages
+        de ton navigateur (Paramètres → Notifications).
+      </div>
+    );
+  }
 
   async function handleEnable() {
     setState('loading');
