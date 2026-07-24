@@ -23,6 +23,7 @@ const STATUS_COLOR: Record<string, string> = {
   completed: 'bg-success/10 text-success',
   cancelled_by_client: 'bg-neutral-200 text-neutral-600',
   cancelled_by_driver: 'bg-neutral-200 text-neutral-600',
+  cancelled_by_admin: 'bg-neutral-300 text-neutral-700',
   expired: 'bg-error/10 text-error',
 };
 

@@ -24,6 +24,7 @@ const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   completed: { label: 'Terminée', color: 'bg-success/10 text-success' },
   cancelled_by_client: { label: 'Annulée', color: 'bg-neutral-200 text-neutral-600' },
   cancelled_by_driver: { label: 'Annulée', color: 'bg-neutral-200 text-neutral-600' },
+  cancelled_by_admin: { label: 'Annulée par TamCar', color: 'bg-neutral-200 text-neutral-600' },
   expired: { label: 'Expirée', color: 'bg-error/10 text-error' },
 };
 

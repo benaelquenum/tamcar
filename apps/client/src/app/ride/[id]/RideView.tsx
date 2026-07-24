@@ -39,6 +39,7 @@ type RideStatus =
   | 'completed'
   | 'cancelled_by_client'
   | 'cancelled_by_driver'
+  | 'cancelled_by_admin'
   | 'expired';
 
 export type RideForView = {
@@ -110,6 +111,7 @@ const STATUS_META: Record<RideStatus, { title: string; sub: string; color: strin
   },
   cancelled_by_client: { title: 'Course annulée', sub: '', color: 'bg-neutral-600' },
   cancelled_by_driver: { title: 'Annulée par le chauffeur', sub: '', color: 'bg-neutral-600' },
+  cancelled_by_admin: { title: 'Annulée par TamCar', sub: 'Le support a annulé cette course.', color: 'bg-neutral-600' },
   expired: { title: 'Aucun chauffeur trouvé', sub: 'Réessaie plus tard.', color: 'bg-error' },
 };
 

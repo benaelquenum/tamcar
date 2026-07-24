@@ -1,5 +1,12 @@
 import Link from 'next/link';
 import { createServerSupabase } from '@/lib/supabase-server';
+import { ConfirmSubmit } from '@/components/ConfirmSubmit';
+import {
+  acknowledgeSosAction,
+  resolveSosAction,
+  reassignRideAction,
+  cancelRideAction,
+} from './ops-actions';
 
 function fmt(n: number | null | undefined): string {
   if (n == null) return '—';
@@ -47,6 +54,8 @@ type RideRow = {
   ended_at: string | null;
   requested_at: string;
   updated_at: string;
+  pickup_address: string | null;
+  dropoff_address: string | null;
 };
 
 type ProfileRow = { id: string; role: string; full_name: string; created_at: string };
@@ -54,6 +63,7 @@ type DriverRow = { id: string; profile_id: string; application_type: string; is_
 type WalletRow = { id: string; profile_id: string; kind: string; balance_fcfa: number };
 type TxRow = { type: string; amount_fcfa: number; ride_id: string | null; created_at: string };
 type SosRow = { id: string; status: string; role: string; reason: string | null; created_at: string; lat: number; lng: number };
+type ActiveDriverRow = { driver_id: string; full_name: string; category: string | null; is_online: boolean; rating_avg: number | null };
 type CandidatureRow = { id: string; status: string; created_at: string };
 type DealerAdvanceRow = { id: string; amount_fcfa: number; refunded_fcfa: number; status: string };
 type ReferralRow = { redeemed_by: string; reward_fcfa: number; created_at: string };
@@ -80,7 +90,7 @@ export default async function AdminHome() {
   ] = await Promise.all([
     supabase
       .from('rides_view')
-      .select('id, status, price_total_fcfa, platform_share_fcfa, driver_share_fcfa, dealer_share_fcfa, distance_km, vehicle_id, driver_id, client_id, cancel_reason, completion_recomputed_price_fcfa, stops_waiting_fee_fcfa, matched_at, ended_at, requested_at, updated_at')
+      .select('id, status, price_total_fcfa, platform_share_fcfa, driver_share_fcfa, dealer_share_fcfa, distance_km, vehicle_id, driver_id, client_id, cancel_reason, completion_recomputed_price_fcfa, stops_waiting_fee_fcfa, matched_at, ended_at, requested_at, updated_at, pickup_address, dropoff_address')
       .gte('requested_at', monthISO)
       .order('requested_at', { ascending: false })
       .limit(1500),
@@ -239,9 +249,19 @@ export default async function AdminHome() {
 
   // SOS
   const openSos = S.filter((s) => s.status === 'open');
+  const activeSos = S.filter((s) => s.status !== 'resolved');
 
-  // Rides bloquées
-  const stuckRides = R.filter((r) => r.status === 'in_progress' && r.matched_at && r.matched_at < since(4));
+  // Rides bloquées : en cours depuis >4h, OU cherchées sans chauffeur depuis >20min
+  const stuckRides = R.filter(
+    (r) =>
+      (r.status === 'in_progress' && r.matched_at && r.matched_at < since(4)) ||
+      (r.status === 'requested' && r.requested_at < since(0.34)),
+  );
+
+  // Chauffeurs actifs pour la réassignation (fetch tolérant : si la migration
+  // admin_active_drivers n'est pas encore appliquée, on dégrade en liste vide).
+  const { data: activeDriversData } = await supabase.rpc('admin_active_drivers');
+  const reassignDrivers = (activeDriversData ?? []) as ActiveDriverRow[];
 
   return (
     <div className="space-y-lg">
@@ -390,29 +410,139 @@ export default async function AdminHome() {
         </div>
       </Section>
 
-      {/* ===== SOS ouverts (détail) ===== */}
-      {openSos.length > 0 && (
-        <Section title="Alertes SOS ouvertes">
-          <div className="space-y-xs">
-            {openSos.slice(0, 5).map((s) => (
-              <div key={s.id} className="flex items-center gap-md rounded-lg border border-error/30 bg-error/5 p-md">
-                <span className="text-xl">🚨</span>
-                <div className="flex-1">
-                  <p className="text-sm font-bold text-neutral-900">
-                    {s.role === 'client' ? 'Client' : 'Chauffeur'} · {s.reason || 'Sans raison'}
-                  </p>
-                  <p className="text-[11px] text-neutral-600">
-                    {new Date(s.created_at).toLocaleString('fr-FR')} · {s.lat.toFixed(4)}, {s.lng.toFixed(4)}
-                  </p>
+      {/* ===== SOS actifs (détail + actions) ===== */}
+      {activeSos.length > 0 && (
+        <Section title="Alertes SOS actives">
+          <div className="space-y-sm">
+            {activeSos.slice(0, 10).map((s) => (
+              <div key={s.id} className="rounded-lg border border-error/30 bg-error/5 p-md">
+                <div className="flex items-start gap-md">
+                  <span className="text-xl">🚨</span>
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-neutral-900">
+                      {s.role === 'client' ? 'Client' : 'Chauffeur'} · {s.reason || 'Sans raison'}
+                      {s.status === 'acknowledged' && (
+                        <span className="ml-sm rounded-full bg-warning/20 px-sm py-0.5 text-[10px] font-bold text-warning">
+                          Pris en charge
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-[11px] text-neutral-600">
+                      {new Date(s.created_at).toLocaleString('fr-FR')} · {s.lat.toFixed(4)}, {s.lng.toFixed(4)}
+                    </p>
+                  </div>
+                  <a
+                    href={`https://www.google.com/maps?q=${s.lat},${s.lng}`}
+                    target="_blank"
+                    rel="noopener"
+                    className="flex-none rounded-md bg-error px-md py-xs text-xs font-bold text-white"
+                  >
+                    Localiser
+                  </a>
                 </div>
-                <a
-                  href={`https://www.google.com/maps?q=${s.lat},${s.lng}`}
-                  target="_blank"
-                  rel="noopener"
-                  className="rounded-md bg-error px-md py-xs text-xs font-bold text-white"
-                >
-                  Localiser
-                </a>
+                <div className="mt-sm flex flex-wrap items-end gap-sm">
+                  {s.status === 'open' && (
+                    <form action={acknowledgeSosAction}>
+                      <input type="hidden" name="id" value={s.id} />
+                      <ConfirmSubmit
+                        message="Marquer cette alerte comme prise en charge ?"
+                        className="rounded-md bg-warning/15 px-md py-xs text-xs font-bold text-warning hover:bg-warning/25"
+                      >
+                        Prendre en charge
+                      </ConfirmSubmit>
+                    </form>
+                  )}
+                  <form action={resolveSosAction} className="flex flex-1 items-end gap-sm">
+                    <input type="hidden" name="id" value={s.id} />
+                    <input
+                      type="text"
+                      name="note"
+                      placeholder="Note de résolution (optionnelle)"
+                      className="min-w-0 flex-1 rounded-md border border-neutral-200 bg-white px-md py-xs text-xs"
+                    />
+                    <ConfirmSubmit
+                      message="Clôturer cette alerte SOS comme résolue ?"
+                      className="flex-none rounded-md bg-success px-md py-xs text-xs font-bold text-white hover:brightness-110"
+                    >
+                      Résoudre
+                    </ConfirmSubmit>
+                  </form>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {/* ===== Courses bloquées (réassigner / annuler) ===== */}
+      {stuckRides.length > 0 && (
+        <Section title="Courses bloquées">
+          <p className="mb-sm text-xs text-neutral-500">
+            En cours depuis &gt; 4 h, ou en recherche de chauffeur depuis &gt; 20 min.
+          </p>
+          <div className="space-y-sm">
+            {stuckRides.slice(0, 10).map((r) => (
+              <div key={r.id} className="rounded-lg border border-warning/40 bg-warning/5 p-md">
+                <div className="flex items-start justify-between gap-md">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-neutral-900">
+                      {r.pickup_address || '—'} → {r.dropoff_address || '—'}
+                    </p>
+                    <p className="text-[11px] text-neutral-600">
+                      {r.status === 'requested' ? 'Sans chauffeur' : 'En cours'} ·{' '}
+                      {new Date(r.requested_at).toLocaleString('fr-FR')} · {fmt(r.price_total_fcfa)} F
+                    </p>
+                  </div>
+                  <Link
+                    href={`/admin/rides?focus=${r.id}`}
+                    className="flex-none text-[11px] font-semibold text-primary-600 underline"
+                  >
+                    Détail
+                  </Link>
+                </div>
+                <div className="mt-sm flex flex-wrap items-end gap-sm">
+                  <form action={reassignRideAction} className="flex items-end gap-sm">
+                    <input type="hidden" name="ride_id" value={r.id} />
+                    <select
+                      name="driver_id"
+                      required
+                      defaultValue=""
+                      className="rounded-md border border-neutral-200 bg-white px-md py-xs text-xs"
+                    >
+                      <option value="" disabled>
+                        {reassignDrivers.length ? 'Réassigner à…' : 'Aucun chauffeur actif'}
+                      </option>
+                      {reassignDrivers.map((d) => (
+                        <option key={d.driver_id} value={d.driver_id}>
+                          {d.full_name}
+                          {d.category ? ` · ${d.category}` : ''}
+                          {d.is_online ? ' · en ligne' : ''}
+                        </option>
+                      ))}
+                    </select>
+                    <ConfirmSubmit
+                      message="Réassigner cette course au chauffeur choisi ?"
+                      className="rounded-md bg-primary-500 px-md py-xs text-xs font-bold text-white hover:brightness-110"
+                    >
+                      Réassigner
+                    </ConfirmSubmit>
+                  </form>
+                  <form action={cancelRideAction} className="flex flex-1 items-end gap-sm">
+                    <input type="hidden" name="ride_id" value={r.id} />
+                    <input
+                      type="text"
+                      name="reason"
+                      placeholder="Motif d'annulation (optionnel)"
+                      className="min-w-0 flex-1 rounded-md border border-neutral-200 bg-white px-md py-xs text-xs"
+                    />
+                    <ConfirmSubmit
+                      message="Annuler cette course ? Le client et le chauffeur seront notifiés."
+                      className="flex-none rounded-md bg-error px-md py-xs text-xs font-bold text-white hover:brightness-110"
+                    >
+                      Annuler
+                    </ConfirmSubmit>
+                  </form>
+                </div>
               </div>
             ))}
           </div>
