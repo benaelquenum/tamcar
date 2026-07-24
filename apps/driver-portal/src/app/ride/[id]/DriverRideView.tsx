@@ -17,6 +17,7 @@ import { StopsPanel } from './StopsPanel';
 import { ReturnChangeModal } from './ReturnChangeModal';
 import { SosButton } from '@/components/SosButton';
 import { RideChat } from '@/components/RideChat';
+import { CallRoom } from '@/components/CallRoom';
 
 type RideStatus =
   | 'requested'
@@ -77,6 +78,9 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
   const [chatOpen, setChatOpen] = useState(false);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const chatOpenRef = useRef(chatOpen);
+  const [call, setCall] = useState<{ callId: string; role: 'caller' | 'callee' } | null>(null);
+  const [incomingCall, setIncomingCall] = useState<{ callId: string } | null>(null);
+  const [callStarting, setCallStarting] = useState(false);
   const [driverPos, setDriverPos] = useState<[number, number] | null>(null);
   const [routeGeo, setRouteGeo] = useState<GeoJSON.LineString | null>(null);
   const [distanceToTarget, setDistanceToTarget] = useState<number | null>(null);
@@ -134,6 +138,50 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
     chatOpenRef.current = chatOpen;
     if (chatOpen) setUnreadMessages(0);
   }, [chatOpen]);
+
+  // Appel entrant : à l'ouverture (via push) + en temps réel.
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabaseBrowser.rpc('my_incoming_call', { p_ride_id: ride.id });
+      const row = Array.isArray(data) ? (data[0] as { call_id: string } | undefined) : null;
+      if (row?.call_id) setIncomingCall({ callId: row.call_id });
+    })();
+    const channel = supabaseBrowser
+      .channel(`ride_calls:${ride.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'ride_calls', filter: `ride_id=eq.${ride.id}` },
+        (payload) => {
+          const raw = payload.new as { id: string; callee_id: string; status: string };
+          if (raw.callee_id === myUserId && raw.status === 'ringing') setIncomingCall({ callId: raw.id });
+        },
+      )
+      .subscribe();
+    return () => { supabaseBrowser.removeChannel(channel); };
+  }, [ride.id, myUserId]);
+
+  async function startCall() {
+    if (callStarting) return;
+    setCallStarting(true);
+    const { data, error: callErr } = await supabaseBrowser.rpc('start_ride_call', { p_ride_id: ride.id });
+    setCallStarting(false);
+    const row = (Array.isArray(data) ? data[0] : data) as { id?: string } | null;
+    if (callErr || !row?.id) return;
+    setCall({ callId: row.id, role: 'caller' });
+  }
+
+  async function answerIncoming() {
+    if (!incomingCall) return;
+    await supabaseBrowser.rpc('answer_ride_call', { p_call_id: incomingCall.callId });
+    setCall({ callId: incomingCall.callId, role: 'callee' });
+    setIncomingCall(null);
+  }
+
+  async function declineIncoming() {
+    if (!incomingCall) return;
+    await supabaseBrowser.rpc('end_ride_call', { p_call_id: incomingCall.callId, p_status: 'declined' });
+    setIncomingCall(null);
+  }
 
   // Get my position + heartbeat.
   // Filtre les fixes imprécis (accuracy > 50 m) et lisse sur 3 samples
@@ -522,6 +570,16 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
                     </span>
                   )}
                 </button>
+                {(ride.status === 'matched' || ride.status === 'arrived' || ride.status === 'in_progress') && (
+                  <button
+                    type="button"
+                    onClick={startCall}
+                    disabled={callStarting}
+                    className="inline-flex items-center gap-xs rounded-full bg-primary-500 px-md py-xs text-xs font-bold text-white shadow-md hover:brightness-110 disabled:opacity-60"
+                  >
+                    📞 {callStarting ? '…' : 'Appeler'}
+                  </button>
+                )}
                 {ride.client_phone && (
                   <>
                     <a
@@ -715,6 +773,42 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
           rideId={ride.id}
           ratedName={ride.client_full_name ?? 'Client'}
           onSubmitted={() => setHasRated(true)}
+        />
+      )}
+
+      {/* Appel entrant */}
+      {incomingCall && !call && (
+        <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-neutral-900/95 text-white">
+          <p className="text-xs font-bold uppercase tracking-widest text-primary-300">Appel entrant</p>
+          <p className="mt-md text-2xl font-extrabold">{ride.client_full_name ?? 'Client'}</p>
+          <p className="mt-sm animate-pulse text-sm text-neutral-300">Appel TamCar…</p>
+          <div className="mt-2xl flex items-center gap-xl">
+            <button
+              type="button"
+              onClick={declineIncoming}
+              className="grid h-16 w-16 place-items-center rounded-full bg-error text-2xl shadow-lg"
+              aria-label="Refuser"
+            >
+              📵
+            </button>
+            <button
+              type="button"
+              onClick={answerIncoming}
+              className="grid h-16 w-16 place-items-center rounded-full bg-success text-2xl shadow-lg"
+              aria-label="Répondre"
+            >
+              📞
+            </button>
+          </div>
+        </div>
+      )}
+
+      {call && (
+        <CallRoom
+          callId={call.callId}
+          role={call.role}
+          otherName={ride.client_full_name ?? 'Client'}
+          onClose={() => setCall(null)}
         />
       )}
     </main>
