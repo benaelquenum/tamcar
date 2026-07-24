@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, useTransition } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/Logo';
 import {
   AlertTriangleIcon,
@@ -34,6 +35,18 @@ type PendingRide = {
   requested_category?: string | null;
   downgrade_accepted_at?: string | null;
   is_below_driver_category?: boolean | null;
+};
+
+type OneshotReq = {
+  request_id: string;
+  client_first_name: string;
+  pickup_address: string;
+  dropoff_address: string;
+  category: string;
+  distance_km: number | null;
+  duration_min: number | null;
+  price_total_fcfa: number | null;
+  expires_at: string;
 };
 
 type TamPassOffer = {
@@ -72,6 +85,7 @@ function formatSlot(t: string | null): string {
 }
 
 export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
+  const router = useRouter();
   const [isOnline, setIsOnline] = useState(initialIsOnline);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -82,6 +96,8 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
   const [crossCatConfirm, setCrossCatConfirm] = useState<PendingRide | null>(null);
   const [offers, setOffers] = useState<TamPassOffer[]>([]);
   const [acceptingOfferId, setAcceptingOfferId] = useState<string | null>(null);
+  const [oneshots, setOneshots] = useState<OneshotReq[]>([]);
+  const [respondingId, setRespondingId] = useState<string | null>(null);
 
   // Offres TamPass ouvertes : visibles même hors ligne (revenu récurrent).
   // On rafraîchit à l'ouverture puis toutes les 30 s, indépendamment du push.
@@ -91,11 +107,38 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
     setOffers((data as TamPassOffer[]) ?? []);
   }, [hasVehicle]);
 
+  // Demandes de course directe (one-shot) adressées à ce chauffeur.
+  const refreshOneshots = useCallback(async () => {
+    if (!hasVehicle) return;
+    const { data } = await supabaseBrowser.rpc('driver_oneshot_requests');
+    setOneshots((data as OneshotReq[]) ?? []);
+  }, [hasVehicle]);
+
   useEffect(() => {
     refreshOffers();
-    const t = setInterval(refreshOffers, 30_000);
+    refreshOneshots();
+    const t = setInterval(() => {
+      refreshOffers();
+      refreshOneshots();
+    }, 20_000);
     return () => clearInterval(t);
-  }, [refreshOffers]);
+  }, [refreshOffers, refreshOneshots]);
+
+  async function respondOneshot(id: string, accept: boolean) {
+    setRespondingId(id);
+    const { error: err } = await supabaseBrowser.rpc('respond_driver_oneshot', {
+      p_request_id: id,
+      p_accept: accept,
+    });
+    setRespondingId(null);
+    if (err) {
+      setError(err.message);
+      await refreshOneshots();
+      return;
+    }
+    await refreshOneshots();
+    if (accept) router.refresh();
+  }
 
   async function acceptOffer(id: string) {
     setAcceptingOfferId(id);
@@ -441,6 +484,60 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
             {error && (
               <div className="mb-md rounded-md bg-error/10 p-md text-sm text-error">
                 {error}
+              </div>
+            )}
+
+            {/* Demandes de course directe (one-shot) — un client vous redemande */}
+            {oneshots.length > 0 && (
+              <div className="mb-lg">
+                <h2 className="mb-sm text-xs font-bold uppercase tracking-wider text-emerald-700">
+                  Demandes directes — un client vous redemande
+                </h2>
+                <div className="space-y-sm">
+                  {oneshots.map((o) => (
+                    <div
+                      key={o.request_id}
+                      className="rounded-xl border-2 border-emerald-300 bg-emerald-50 p-md"
+                    >
+                      <div className="flex items-baseline justify-between">
+                        <p className="text-base font-extrabold text-neutral-900">
+                          {o.client_first_name}
+                        </p>
+                        <p className="text-sm font-bold text-emerald-700">
+                          {o.price_total_fcfa != null
+                            ? `${formatFcfa(o.price_total_fcfa)} FCFA`
+                            : ''}
+                        </p>
+                      </div>
+                      <p className="mt-xs text-sm text-neutral-800">
+                        {o.pickup_address} → {o.dropoff_address}
+                      </p>
+                      <p className="text-xs text-neutral-500">
+                        {o.category}
+                        {o.distance_km != null ? ` · ${o.distance_km} km` : ''}
+                        {o.duration_min != null ? ` · ${o.duration_min} min` : ''}
+                      </p>
+                      <div className="mt-md flex gap-sm">
+                        <button
+                          type="button"
+                          onClick={() => respondOneshot(o.request_id, false)}
+                          disabled={respondingId === o.request_id}
+                          className="flex-1 rounded-lg border-2 border-neutral-300 bg-white py-md text-sm font-semibold text-neutral-600 hover:bg-neutral-50 disabled:opacity-50"
+                        >
+                          Refuser
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => respondOneshot(o.request_id, true)}
+                          disabled={respondingId === o.request_id}
+                          className="flex-[2] rounded-lg bg-gradient-to-r from-primary-500 to-primary-700 py-md text-sm font-bold text-white shadow-glow transition hover:brightness-110 active:scale-[0.98] disabled:opacity-50"
+                        >
+                          {respondingId === o.request_id ? '…' : 'Accepter la course'}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 

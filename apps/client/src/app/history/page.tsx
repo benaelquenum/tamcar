@@ -84,6 +84,16 @@ export default async function HistoryPage({ searchParams }: { searchParams: { ju
           Tes {list.length} dernière{list.length > 1 ? 's' : ''} course{list.length > 1 ? 's' : ''}.
         </p>
 
+        <Link
+          href="/chauffeurs"
+          className="mt-lg flex items-center justify-between rounded-xl border-2 border-primary-500 bg-white p-md text-primary-700 transition hover:bg-primary-50"
+        >
+          <span className="text-sm font-bold">Reprendre un chauffeur déjà eu →</span>
+          <span className="text-[11px] font-semibold text-neutral-500">
+            Demande directe
+          </span>
+        </Link>
+
         <ScheduledRidesList initial={scheduledList} justScheduled={justScheduled} />
 
         {list.length === 0 ? (
