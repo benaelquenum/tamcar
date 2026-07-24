@@ -103,7 +103,9 @@ export function AddressAutocomplete({
 
       // 2. Fallback : Google Places (New) si configuré — meilleur sur POI Bénin.
       //    Sinon Mapbox comme avant.
-      let combined = localFeatures;
+      let combined: Array<
+        GeocodeFeature & { origin: 'tamcar' | 'google' | 'mapbox'; verified?: boolean }
+      > = localFeatures;
       if (localFeatures.length < 5) {
         const seenIds = new Set(localFeatures.map((f) => f.id));
         if (googlePlacesConfigured()) {

@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Logo } from '@/components/Logo';
 import { TERMS_VERSION } from '@/lib/terms';
 
@@ -9,7 +10,9 @@ export default function ConfidentialitePage() {
   return (
     <main className="mx-auto max-w-2xl px-lg py-xl">
       <header className="flex flex-col items-center gap-sm pb-lg">
-        <Logo className="h-10 w-auto" />
+        <Link href="/" aria-label="Retour à l’accueil" className="transition hover:opacity-80">
+          <Logo className="h-10 w-auto" />
+        </Link>
         <h1 className="text-center text-2xl font-extrabold text-neutral-900">
           Politique de confidentialité
         </h1>

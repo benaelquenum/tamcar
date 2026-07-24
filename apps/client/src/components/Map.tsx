@@ -230,7 +230,7 @@ export function Map({
       }
     }
     // Retirer ceux qui ne sont plus dans la liste
-    for (const [id, marker] of driverMarkersRef.current.entries()) {
+    for (const [id, marker] of Array.from(driverMarkersRef.current.entries())) {
       if (!seen.has(id)) {
         marker.remove();
         driverMarkersRef.current.delete(id);

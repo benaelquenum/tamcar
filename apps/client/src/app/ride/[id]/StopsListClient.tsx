@@ -185,7 +185,7 @@ export function StopsListClient({
     if (!draggingId || !containerRef.current) return;
     const rows = containerRef.current.querySelectorAll<HTMLDivElement>('[data-stop-id]');
     let overId: string | null = null;
-    for (const row of rows) {
+    for (const row of Array.from(rows)) {
       const r = row.getBoundingClientRect();
       if (e.clientY >= r.top && e.clientY <= r.bottom) {
         overId = row.dataset.stopId ?? null;

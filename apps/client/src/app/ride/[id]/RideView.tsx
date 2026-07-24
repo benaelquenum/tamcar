@@ -113,6 +113,15 @@ const STATUS_META: Record<RideStatus, { title: string; sub: string; color: strin
   expired: { title: 'Aucun chauffeur trouvé', sub: 'Réessaie plus tard.', color: 'bg-error' },
 };
 
+type AlternativeOffer = {
+  category: string;
+  new_price_fcfa: number;
+  delta_fcfa: number;
+  drivers_online_nearby: number;
+  nearest_driver_distance_m: number | null;
+  eta_min: number | null;
+};
+
 function formatFcfa(n: number | undefined | null): string {
   if (n == null) return '—';
   return n.toLocaleString('fr-FR').replace(/,/g, ' ');
@@ -190,14 +199,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
   const [myLocation, setMyLocation] = useState<[number, number] | null>(null);
   const [searchTimedOut, setSearchTimedOut] = useState(false);
   const [retrying, setRetrying] = useState(false);
-  const [alternativeOffers, setAlternativeOffers] = useState<Array<{
-    category: string;
-    new_price_fcfa: number;
-    delta_fcfa: number;
-    drivers_online_nearby: number;
-    nearest_driver_distance_m: number | null;
-    eta_min: number | null;
-  }> | null>(null);
+  const [alternativeOffers, setAlternativeOffers] = useState<AlternativeOffer[] | null>(null);
   const [switching, setSwitching] = useState(false);
   const [switchError, setSwitchError] = useState<string | null>(null);
   const [stops, setStops] = useState<RideStopRow[]>([]);
@@ -467,7 +469,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
       // On ne montre le modal que si au moins une alternative a des chauffeurs dispos
       const withDrivers = data.filter((o) => o.drivers_online_nearby > 0);
       if (withDrivers.length === 0) return;
-      setAlternativeOffers(data as typeof alternativeOffers);
+      setAlternativeOffers(data as AlternativeOffer[]);
     }, remaining);
     return () => clearTimeout(timer);
   }, [ride.status, ride.requested_at, ride.downgrade_accepted_at, ride.id, alternativeOffers]);

@@ -234,16 +234,11 @@ export default function CommandePage() {
   }, [pickup]);
 
   async function handleMapClick(lngLat: [number, number]) {
-    // Debug clic carte — visible dans F12 console si Terence a un souci
-    // eslint-disable-next-line no-console
-    console.log('[map click]', { lngLat, pickingMode });
     if (!pickingMode) return;
 
     const target = pickingMode; // capture avant l'await pour éviter une race si l'user annule
     setCandidate(lngLat);
     const feature = await reverseGeocode(lngLat[0], lngLat[1]);
-    // eslint-disable-next-line no-console
-    console.log('[reverseGeocode result]', feature);
     const place: SelectedAddress = feature
       ? { place_name: feature.place_name, center: feature.center }
       : {
@@ -348,7 +343,7 @@ export default function CommandePage() {
         {pickingMode && (
           <div className="mt-md flex items-center justify-between gap-md rounded-xl bg-primary-50 p-md text-sm ring-1 ring-primary-200">
             <span className="font-semibold text-neutral-900">
-              Touchez la carte pour poser votre point de{' '}
+              Touche la carte pour poser ton point de{' '}
               {pickingMode === 'pickup' ? 'départ' : pickingMode === 'dropoff' ? 'destination' : 'lieu à proposer'}.
             </span>
             <button
@@ -508,7 +503,7 @@ export default function CommandePage() {
                   />
                 </label>
                 <p className="mt-xs text-[11px] text-neutral-600">
-                  Réservation min. 15 min à l&apos;avance, jusqu&apos;à 30 jours.
+                  Réservation min. 20 min à l&apos;avance, jusqu&apos;à 30 jours.
                 </p>
               </section>
             )}

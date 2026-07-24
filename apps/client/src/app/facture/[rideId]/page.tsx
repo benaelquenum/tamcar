@@ -84,8 +84,8 @@ export default async function FacturePage({ params }: { params: { rideId: string
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo.png" alt="TamCar" style={{ height: 60, width: 'auto' }} />
             <p className="mt-md text-xs text-neutral-600">
-              TamCar SARL<br />
-              Porto-Novo, Bénin<br />
+              Tam Logistics SARL (en cours de constitution)<br />
+              Cotonou, Bénin<br />
               contact@tamcar.app
             </p>
           </div>
@@ -198,9 +198,10 @@ export default async function FacturePage({ params }: { params: { rideId: string
         {/* Mention légale */}
         <footer className="mt-2xl border-t border-neutral-200 pt-md">
           <p className="text-[10px] text-neutral-500">
-            TamCar SARL — VTC formalisé au Bénin. Prix fixes garantis, sans surge.
-            Cette facture atteste d&apos;une prestation de transport effectivement réalisée.
-            Aucune TVA applicable (régime de la microentreprise, art. 12 CGI Bénin).
+            TamCar (Tam Logistics SARL, en cours de constitution) — VTC au Bénin.
+            Prix fixes garantis, sans surge. Cette facture atteste d&apos;une prestation
+            de transport effectivement réalisée. Transport de personnes non soumis à la
+            TVA (art. 225 CGI Bénin, sauf option).
           </p>
           <p className="mt-xs text-[10px] text-neutral-400">
             Pour toute réclamation : contact@tamcar.app — Ref : {invoiceNumber}

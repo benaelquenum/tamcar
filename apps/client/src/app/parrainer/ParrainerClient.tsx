@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { CheckIcon } from '@/components/Icon';
 
-export function ParrainerClient({ code }: { code: string }) {
+export function ParrainerClient({ code, reward }: { code: string; reward: number }) {
   const [copied, setCopied] = useState(false);
 
   async function copy() {
@@ -15,7 +15,10 @@ export function ParrainerClient({ code }: { code: string }) {
   }
 
   async function share() {
-    const text = `Utilise mon code ${code} sur TamCar et on gagne chacun 500 F crédits. https://tamcar-client.vercel.app/parrainer`;
+    const origin =
+      typeof window !== 'undefined' ? window.location.origin : 'https://tamcar.app';
+    const url = `${origin}/login?ref=${encodeURIComponent(code)}`;
+    const text = `Utilise mon code ${code} sur TamCar et on gagne chacun ${reward} F crédits. ${url}`;
     try {
       if (navigator.share) {
         await navigator.share({ title: 'Rejoins-moi sur TamCar', text });

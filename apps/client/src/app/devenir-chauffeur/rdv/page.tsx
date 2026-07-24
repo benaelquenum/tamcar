@@ -37,11 +37,14 @@ export default async function RdvPage() {
     day_label: s.day_label,
   }));
 
+  // L'e-mail vit sur auth.users, pas sur le profil — on le récupère pour préremplir.
+  const { data: { user } } = await supabase.auth.getUser();
+
   const prefill = {
     first_name: profile.full_name?.split(' ')[0] ?? '',
     last_name: profile.full_name?.split(' ').slice(1).join(' ') ?? '',
     phone: profile.phone ?? '',
-    email: profile.email ?? '',
+    email: user?.email ?? '',
   };
 
   return (

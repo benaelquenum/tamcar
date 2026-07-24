@@ -61,7 +61,7 @@ export default async function ParrainerPage() {
           >
             {code.code}
           </p>
-          <ParrainerClient code={code.code} />
+          <ParrainerClient code={code.code} reward={code.reward_fcfa} />
         </section>
 
         {mineOwned.length > 0 && (

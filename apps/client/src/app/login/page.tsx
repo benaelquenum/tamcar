@@ -105,12 +105,14 @@ export default function LoginPage({
         )}
 
         <p className="mt-xl text-center text-xs text-neutral-400">
-          <Link href="/cgu" className="underline hover:text-neutral-600">
+          <Link href="/cgu" target="_blank" rel="noopener noreferrer" className="underline hover:text-neutral-600">
             CGU
           </Link>
           {' · '}
           <Link
             href="/confidentialite"
+            target="_blank"
+            rel="noopener noreferrer"
             className="underline hover:text-neutral-600"
           >
             Politique de confidentialité

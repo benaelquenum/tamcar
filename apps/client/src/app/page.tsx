@@ -19,6 +19,7 @@ import {
 import { Avatar } from '@/components/Avatar';
 import { firstNameOf, getCurrentProfile } from '@/lib/session';
 import { createServerSupabase } from '@/lib/supabase-server';
+import { SUPPORT_PHONE } from '@/lib/support';
 
 type BannerRow = {
   id: string;
@@ -250,7 +251,17 @@ export default async function HomePage() {
           <QuickActionLink href="/chauffeurs" Icon={UserIcon} label="Chauffeur" tint="primary" />
           <QuickActionLink href="/history" Icon={HistoryIcon} label={t('home.history')} tint="primary" />
           <QuickActionLink href="/parrainer" Icon={GiftIcon} label={t('home.refer')} tint="violet" />
-          <QuickAction Icon={LifeBuoyIcon} label={t('home.help')} tint="cyan" />
+          <a
+            href={`https://wa.me/${SUPPORT_PHONE.replace(/^\+/, '')}?text=${encodeURIComponent("Bonjour, j'ai besoin d'aide sur TamCar.")}`}
+            target="_blank"
+            rel="noreferrer"
+            className="relative flex flex-col items-center gap-xs rounded-xl border border-neutral-200 bg-white p-md text-center shadow-sm transition hover:shadow-md"
+          >
+            <span className="grid h-10 w-10 place-items-center rounded-lg bg-cyan-500/10 text-cyan-500">
+              <LifeBuoyIcon className="h-5 w-5" />
+            </span>
+            <span className="text-xs font-semibold text-neutral-900">{t('home.help')}</span>
+          </a>
         </section>
 
         {/* Bannières de communication */}
