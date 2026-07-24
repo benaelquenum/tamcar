@@ -123,6 +123,32 @@ Deno.serve(async (req: Request) => {
         console.error('apply_fedapay_declined error:', error.message);
         return new Response('DB error: ' + error.message, { status: 500 });
       }
+    } else if (eventName === 'payout.sent' || eventName === 'payout.succeeded') {
+      // Décaissement chauffeur réussi → débit définitif du wallet.
+      const { data } = await supabase
+        .from('driver_payouts')
+        .select('id')
+        .eq('fedapay_payout_id', fedaId)
+        .maybeSingle();
+      if (data?.id) {
+        await supabase.rpc('confirm_driver_payout', {
+          p_payout_id: data.id,
+          p_fedapay_payout_id: fedaId,
+        });
+      }
+    } else if (eventName === 'payout.failed' || eventName === 'payout.canceled') {
+      // Décaissement échoué → remboursement du wallet chauffeur.
+      const { data } = await supabase
+        .from('driver_payouts')
+        .select('id')
+        .eq('fedapay_payout_id', fedaId)
+        .maybeSingle();
+      if (data?.id) {
+        await supabase.rpc('fail_driver_payout', {
+          p_payout_id: data.id,
+          p_reason: 'Décaissement FedaPay échoué',
+        });
+      }
     } else {
       console.log('Event ignored:', eventName);
     }

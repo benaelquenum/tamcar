@@ -45,14 +45,35 @@ export function WalletModal({ open, onClose, kind, availableBalance }: Props) {
 
     setError(null);
     startTransition(async () => {
-      const rpc = kind === 'topup' ? 'topup_tamcar_credit' : 'withdraw_tamcar_revenus';
-      const { error: rpcErr } = await supabaseBrowser.rpc(rpc, {
-        amount_fcfa: amount,
-        provider,
-      });
-      if (rpcErr) {
-        setError(rpcErr.message);
-        return;
+      if (kind === 'topup') {
+        const { error: rpcErr } = await supabaseBrowser.rpc('topup_tamcar_credit', {
+          amount_fcfa: amount,
+          provider,
+        });
+        if (rpcErr) { setError(rpcErr.message); return; }
+      } else {
+        // Retrait réel : réserve (débite) le wallet puis déclenche le payout FedaPay.
+        const { data, error: reqErr } = await supabaseBrowser.rpc('request_driver_payout', {
+          p_amount_fcfa: amount,
+          p_provider: provider,
+        });
+        if (reqErr) { setError(reqErr.message); return; }
+        const payout = (Array.isArray(data) ? data[0] : data) as { id?: string } | null;
+        if (!payout?.id) { setError('Retrait impossible pour le moment.'); return; }
+
+        const { data: fnData, error: fnErr } = await supabaseBrowser.functions.invoke('fedapay-payout', {
+          body: { payout_id: payout.id },
+        });
+        if (fnErr) {
+          setError('Retrait en cours de traitement — vérifie ton historique dans quelques minutes.');
+          return;
+        }
+        const status = (fnData as { status?: string } | null)?.status;
+        if (status === 'failed') {
+          setError('Retrait refusé par l\'opérateur — le montant a été recrédité.');
+          return;
+        }
+        // 'processing' ou 'sent' → confirmé par webhook
       }
       setSuccess(true);
       setTimeout(() => {
@@ -73,7 +94,7 @@ export function WalletModal({ open, onClose, kind, availableBalance }: Props) {
             <p className="mt-xs text-xs text-neutral-600">
               {kind === 'topup'
                 ? 'Simulation Mobile Money (intégration API réelle à venir).'
-                : `Vers ton Mobile Money · Simulation (intégration réelle à venir).`}
+                : 'Vers ton Mobile Money · virement FedaPay. Le solde est débité puis recrédité si le virement échoue.'}
             </p>
           </div>
           <button
