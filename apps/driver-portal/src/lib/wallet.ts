@@ -9,6 +9,9 @@ export type WalletTxType =
   | 'rachat_credit'
   | 'cancellation_fee'
   | 'cancellation_reimbursement'
+  | 'change_return_in'
+  | 'change_return_out'
+  | 'dealer_share_credit'
   | 'adjustment';
 
 export type Wallet = {
@@ -58,6 +61,9 @@ const TX_LABEL: Record<WalletTxType, string> = {
   rachat_credit: 'Fonds rachat course',
   cancellation_fee: 'Frais annulation',
   cancellation_reimbursement: 'Compensation annulation',
+  change_return_in: 'Monnaie reçue',
+  change_return_out: 'Monnaie rendue au client',
+  dealer_share_credit: 'Part concessionnaire',
   adjustment: 'Ajustement admin',
 };
 

@@ -126,7 +126,7 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
 
   async function respondOneshot(id: string, accept: boolean) {
     setRespondingId(id);
-    const { error: err } = await supabaseBrowser.rpc('respond_driver_oneshot', {
+    const { data, error: err } = await supabaseBrowser.rpc('respond_driver_oneshot', {
       p_request_id: id,
       p_accept: accept,
     });
@@ -136,8 +136,13 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
       await refreshOneshots();
       return;
     }
+    // Acceptée → une course 'matched' a été créée : on file dessus.
+    const rideId = (data as { ride_id?: string | null } | null)?.ride_id;
+    if (accept && rideId) {
+      router.push(`/ride/${rideId}`);
+      return;
+    }
     await refreshOneshots();
-    if (accept) router.refresh();
   }
 
   async function acceptOffer(id: string) {
@@ -602,7 +607,7 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
 
                 {pending.length === 0 ? (
                   <div className="rounded-xl bg-neutral-100 p-lg text-center text-sm text-neutral-600">
-                    Aucune course dans un rayon de 5 km. On te notifie dès qu&apos;il y en a une.
+                    Aucune course dans un rayon de 10 km. On te notifie dès qu&apos;il y en a une.
                   </div>
                 ) : (
                   <div className="max-h-[52vh] space-y-sm overflow-y-auto pr-xs">

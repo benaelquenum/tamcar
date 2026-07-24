@@ -19,6 +19,20 @@ export default async function HomePage() {
     .eq('profile_id', profile.id)
     .single();
 
+  // Reprise de course : si le chauffeur a une course active (acceptée, en cours),
+  // on le renvoie directement dessus au lieu de le laisser sur l'accueil.
+  if (driverRow) {
+    const { data: activeRide } = await supabase
+      .from('rides_view')
+      .select('id, status')
+      .eq('driver_id', driverRow.id)
+      .in('status', ['matched', 'arrived', 'in_progress'])
+      .order('matched_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (activeRide?.id) redirect(`/ride/${activeRide.id}`);
+  }
+
   if (!driverRow) {
     // Cas edge : profil "driver" en base mais aucune fiche drivers. On informe.
     return (

@@ -237,7 +237,7 @@ export function Map({
         driverMarkersRef.current.set(drv.driver_id, marker);
       }
     }
-    for (const [id, marker] of driverMarkersRef.current.entries()) {
+    for (const [id, marker] of Array.from(driverMarkersRef.current.entries())) {
       if (!seen.has(id)) {
         marker.remove();
         driverMarkersRef.current.delete(id);
@@ -272,7 +272,7 @@ export function Map({
         pickupMarkersRef.current.set(p.ride_id, marker);
       }
     }
-    for (const [id, marker] of pickupMarkersRef.current.entries()) {
+    for (const [id, marker] of Array.from(pickupMarkersRef.current.entries())) {
       if (!seen.has(id)) {
         marker.remove();
         pickupMarkersRef.current.delete(id);

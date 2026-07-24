@@ -539,12 +539,12 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
               <button
                 type="button"
                 onClick={nextAction.onClick}
-                disabled={pending || nextAction.disabled}
+                disabled={pending}
                 className={`flex w-full items-center justify-center gap-sm rounded-xl py-md text-base font-bold shadow-md transition hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 ${nextAction.color}`}
               >
                 {pending ? '…' : (
                   <>
-                    {ride.status === 'completed' ? <CheckIcon className="h-5 w-5" strokeWidth={3} /> : (nextAction.disabled ? null : <ArrowRightIcon />)}
+                    {ride.status === 'completed' ? <CheckIcon className="h-5 w-5" strokeWidth={3} /> : <ArrowRightIcon />}
                     {nextAction.label}
                   </>
                 )}
@@ -660,6 +660,16 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
           myUserId={myUserId}
           otherName={ride.client_full_name ?? 'Client'}
           onClose={() => setChatOpen(false)}
+        />
+      )}
+
+      {ratingOpen && !hasRated && (
+        <RatingModal
+          open={ratingOpen}
+          onClose={() => setRatingOpen(false)}
+          rideId={ride.id}
+          ratedName={ride.client_full_name ?? 'Client'}
+          onSubmitted={() => setHasRated(true)}
         />
       )}
     </main>

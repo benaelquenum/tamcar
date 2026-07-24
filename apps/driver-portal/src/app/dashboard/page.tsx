@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Logo } from '@/components/Logo';
 import {
+  AlertTriangleIcon,
   ArrowRightIcon,
   CarIcon,
   ChartIcon,
@@ -228,6 +229,12 @@ export default async function DriverDashboardPage() {
             Icon={HistoryIcon}
             title="Historique des courses"
             sub="Détail de chaque course et ce qu'elle t'a rapporté"
+          />
+          <ShortcutLink
+            href="/strikes"
+            Icon={AlertTriangleIcon}
+            title="Mes signalements"
+            sub="Avertissements reçus et contestations"
           />
           <ShortcutLink
             href="/wallet"
