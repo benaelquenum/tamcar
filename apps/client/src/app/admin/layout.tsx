@@ -23,7 +23,7 @@ export default async function AdminLayout({
       <header className="border-b border-neutral-200 bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-lg py-md">
           <div className="flex items-center gap-md">
-            <Link href="/" aria-label="Retour app client">
+            <Link href="/admin" aria-label="Tableau de bord admin">
               <Logo className="h-8 w-auto" />
             </Link>
             <span className="rounded-full bg-neutral-900 px-md py-xs text-xs font-bold uppercase tracking-wider text-white">

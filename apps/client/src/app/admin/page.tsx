@@ -105,9 +105,9 @@ export default async function AdminHome() {
       .order('created_at', { ascending: false })
       .limit(50),
     supabase
-      .from('driver_applications')
-      .select('id, status, created_at')
-      .order('created_at', { ascending: false })
+      .from('driver_appointments')
+      .select('id, status')
+      .in('status', ['scheduled', 'confirmed'])
       .limit(200),
     supabase
       .from('dealer_advances')
@@ -202,8 +202,8 @@ export default async function AdminHome() {
       return { name: (pid && profileName.get(pid)) || '—', gain };
     });
 
-  // Candidatures pending
-  const pendingCandidatures = C.filter((c) => c.status === 'pending' || c.status === 'submitted').length;
+  // RDV candidats à traiter (scheduled / confirmed) — déjà filtrés en base
+  const pendingCandidatures = C.length;
 
   // Clients
   const clients = P.filter((p) => p.role === 'client');
@@ -428,6 +428,8 @@ export default async function AdminHome() {
           <ShortcutCard href="/admin/vehicles" title="Véhicules" description="Enregistrement, activation, affectation chauffeur." />
           <ShortcutCard href="/admin/candidatures" title="Candidatures & RDV" description="Validation dossiers chauffeurs, KYC, planning." />
           <ShortcutCard href="/admin/dealer-advances" title="Avances Concessionnaires" description="Ligne de crédit ADR par partenaire." />
+          <ShortcutCard href="/admin/litiges" title="Litiges" description="Arbitrage des annulations et contestations." />
+          <ShortcutCard href="/admin/promos" title="Codes promo" description="Création et suivi des codes promotionnels." />
           <ShortcutCard href="/admin/banners" title="Bannières" description="Communications marketing home client." />
           <ShortcutCard href="/admin/places" title="Lieux (POI)" description="Modération des lieux proposés." />
         </div>
