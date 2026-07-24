@@ -67,6 +67,7 @@ export default async function DriverDashboardPage() {
     { data: rides },
     { data: vehicle },
     { data: progressData },
+    { data: insuranceData },
   ] = await Promise.all([
     supabase.rpc('my_wallets'),
     supabase
@@ -84,6 +85,7 @@ export default async function DriverDashboardPage() {
           .single()
       : Promise.resolve({ data: null }),
     supabase.rpc('driver_today_progress', { p_driver_id: driver.id }),
+    supabase.rpc('my_insurance_status'),
   ]);
 
   const w = (wallets ?? []) as WalletRow[];
@@ -101,6 +103,13 @@ export default async function DriverDashboardPage() {
 
   const isProprietaire = driver.application_type === 'proprietaire';
   const vehicleInfo = vehicle as { brand: string; model: string; plate_number: string; category: string; color: string | null } | null;
+
+  type InsuranceRow = { period: string; amount_fcfa: number; collected_fcfa: number; status: string };
+  const insurance = (insuranceData ?? []) as InsuranceRow[];
+  const insuranceMonthly = insurance[0]?.amount_fcfa ?? 2000;
+  const insuranceOutstanding = insurance.reduce((s, r) => s + Math.max(0, r.amount_fcfa - r.collected_fcfa), 0);
+  const currentMonthKey = startOfMonth().toISOString().slice(0, 7);
+  const insuranceThisMonth = insurance.find((r) => r.period.slice(0, 7) === currentMonthKey) ?? null;
 
   type ProgressRow = {
     rides_today: number;
@@ -195,6 +204,53 @@ export default async function DriverDashboardPage() {
             <PeriodStat label="Ce mois" value={monthGains} count={monthRides.length} />
             <PeriodStat label="Total" value={totalGains} count={totalRides} highlight />
           </div>
+        </section>
+
+        {/* Assurance conducteur */}
+        <section className="mt-lg rounded-xl border border-neutral-200 bg-white p-lg shadow-sm">
+          <div className="flex items-start justify-between gap-md">
+            <div>
+              <h2 className="flex items-center gap-xs text-xs font-bold uppercase tracking-wider text-neutral-500">
+                🛡️ Assurance conducteur
+              </h2>
+              <p className="mt-xs text-sm text-neutral-700">
+                <strong style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {formatFcfa(insuranceMonthly)} F
+                </strong>{' '}
+                / mois, prélevés automatiquement sur tes revenus.
+              </p>
+            </div>
+            {insuranceThisMonth ? (
+              <span
+                className={`flex-none rounded-full px-md py-xs text-[10px] font-bold ${
+                  insuranceThisMonth.status === 'paid'
+                    ? 'bg-success/15 text-success'
+                    : insuranceThisMonth.status === 'partial'
+                      ? 'bg-warning/15 text-warning'
+                      : 'bg-neutral-100 text-neutral-500'
+                }`}
+              >
+                {insuranceThisMonth.status === 'paid'
+                  ? 'Ce mois : payé'
+                  : insuranceThisMonth.status === 'partial'
+                    ? 'Ce mois : partiel'
+                    : 'Ce mois : en attente'}
+              </span>
+            ) : (
+              <span className="flex-none rounded-full bg-neutral-100 px-md py-xs text-[10px] font-bold text-neutral-500">
+                À venir
+              </span>
+            )}
+          </div>
+          {insuranceOutstanding > 0 && (
+            <p className="mt-md rounded-md bg-warning/10 p-sm text-[11px] text-warning">
+              Reste à couvrir :{' '}
+              <strong style={{ fontVariantNumeric: 'tabular-nums' }}>
+                {formatFcfa(insuranceOutstanding)} F
+              </strong>{' '}
+              — prélevé dès que tes revenus le permettent.
+            </p>
+          )}
         </section>
 
         {/* Véhicule */}

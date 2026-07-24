@@ -12,6 +12,7 @@ export type WalletTxType =
   | 'change_return_in'
   | 'change_return_out'
   | 'dealer_share_credit'
+  | 'insurance_premium'
   | 'adjustment';
 
 export type Wallet = {
@@ -64,6 +65,7 @@ const TX_LABEL: Record<WalletTxType, string> = {
   change_return_in: 'Monnaie reçue',
   change_return_out: 'Monnaie rendue au client',
   dealer_share_credit: 'Part concessionnaire',
+  insurance_premium: 'Assurance conducteur',
   adjustment: 'Ajustement admin',
 };
 
