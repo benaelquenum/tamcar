@@ -66,10 +66,10 @@ export default async function RdvPage() {
         </header>
 
         <h1 className="mt-xl text-3xl font-extrabold leading-tight text-neutral-900">
-          Prends ton rendez-vous
+          Prenez votre rendez-vous
         </h1>
         <p className="mt-xs text-sm text-neutral-600">
-          Choisis ta formule et un créneau. Tu recevras un numéro de visiteur pour
+          Choisissez votre formule et un créneau. Vous recevrez un numéro de visiteur pour
           l&apos;accueil.
         </p>
 

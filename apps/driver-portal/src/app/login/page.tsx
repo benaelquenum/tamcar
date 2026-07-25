@@ -49,7 +49,7 @@ export default function LoginPage({
                 </span>
               </h1>
               <p className="mt-xs text-sm text-neutral-600">
-                Connecte-toi avec ton email et ton mot de passe TamCar.
+                Connectez-vous avec votre email et votre mot de passe TamCar.
               </p>
             </div>
 
@@ -57,14 +57,14 @@ export default function LoginPage({
 
             <div className="mt-xl border-t border-neutral-200 pt-lg">
               <p className="text-center text-xs text-neutral-500">
-                Mot de passe oublié ? Reçois un lien pour en définir un nouveau.
+                Mot de passe oublié ? Recevez un lien pour en définir un nouveau.
               </p>
               <form action={requestPasswordResetAction} className="mt-md">
                 <input
                   type="email"
                   name="email"
                   required
-                  placeholder="Ton email chauffeur"
+                  placeholder="Votre email chauffeur"
                   className="w-full rounded-lg bg-neutral-100 px-lg py-md text-sm text-neutral-900 ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
                 <button
@@ -81,12 +81,12 @@ export default function LoginPage({
         <div className="flex-1" />
 
         <p className="mt-xl text-center text-xs text-neutral-500">
-          Tu n&apos;es pas encore chauffeur TamCar ?{' '}
+          Vous n&apos;êtes pas encore chauffeur TamCar ?{' '}
           <a
             href={`${clientUrl}/devenir-chauffeur`}
             className="font-semibold text-primary-500 hover:underline"
           >
-            Prends rendez-vous
+            Prenez rendez-vous
           </a>
         </p>
       </div>
@@ -104,7 +104,7 @@ function SignInForm({ error, next }: { error?: string; next: string }) {
           type="email"
           required
           autoComplete="email"
-          placeholder="tu@exemple.bj"
+          placeholder="vous@exemple.bj"
           className="w-full rounded-lg bg-neutral-100 px-lg py-md text-base text-neutral-900 ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
         />
       </Field>
@@ -155,8 +155,8 @@ function ResetSentPanel({ email }: { email: string }) {
         <div className="flex-1">
           <p className="font-bold text-neutral-900">Lien envoyé !</p>
           <p className="mt-xs text-sm text-neutral-600">
-            Ouvre ta boîte mail (<strong>{email}</strong>). Clique sur le lien
-            pour définir un nouveau mot de passe. Après quoi tu pourras te
+            Ouvrez votre boîte mail (<strong>{email}</strong>). Cliquez sur le lien
+            pour définir un nouveau mot de passe. Après quoi vous pourrez vous
             connecter avec ce nouveau mot de passe.
           </p>
         </div>

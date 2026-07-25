@@ -27,9 +27,9 @@ export function EnableNotifications() {
   if (state === 'denied') {
     return (
       <div className="fixed inset-x-lg top-md z-50 mx-auto max-w-md rounded-xl bg-error px-lg py-md text-center text-xs font-bold text-white shadow-lg ring-2 ring-white/30">
-        ⚠️ Alertes de course bloquées — autorise les notifications pour ce site
-        dans les réglages de ton navigateur (Paramètres → Notifications), sinon
-        tu ne verras aucune course.
+        ⚠️ Alertes de course bloquées — autorisez les notifications pour ce site
+        dans les réglages de votre navigateur (Paramètres → Notifications), sinon
+        vous ne verrez aucune course.
       </div>
     );
   }

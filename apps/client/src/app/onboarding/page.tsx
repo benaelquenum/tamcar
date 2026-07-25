@@ -53,8 +53,8 @@ export default async function OnboardingPage({
             &nbsp;!
           </h1>
           <p className="mt-md text-base text-neutral-600">
-            Un dernier détail : dis-nous comment on doit t&apos;appeler
-            pour personnaliser tes trajets.
+            Un dernier détail : dites-nous comment on doit vous appeler
+            pour personnaliser vos trajets.
           </p>
         </div>
 
@@ -113,7 +113,7 @@ export default async function OnboardingPage({
         </form>
 
         <p className="mt-xl text-center text-xs text-neutral-400">
-          Ces infos restent privées et servent uniquement à personnaliser ton
+          Ces infos restent privées et servent uniquement à personnaliser votre
           expérience TamCar.
         </p>
       </div>

@@ -68,7 +68,7 @@ export function SosButton({ rideId }: Props) {
             </div>
             <p className="font-bold text-neutral-900">Alerte envoyée</p>
             <p className="mt-xs text-xs text-neutral-600">
-              Le support TamCar reçoit ta position et te rappellera au plus vite.
+              Le support TamCar reçoit votre position et vous rappellera au plus vite.
             </p>
           </div>
         ) : (
@@ -77,7 +77,7 @@ export function SosButton({ rideId }: Props) {
               <div className="mx-auto mb-md grid h-14 w-14 place-items-center rounded-full bg-error/15 text-error">!</div>
               <h2 className="text-lg font-extrabold text-neutral-900">Envoyer une alerte SOS ?</h2>
               <p className="mt-xs text-xs text-neutral-600">
-                Ta position GPS est transmise à l&apos;équipe TamCar qui te rappellera au plus vite.
+                Votre position GPS est transmise à l&apos;équipe TamCar qui vous rappellera au plus vite.
               </p>
             </div>
             <textarea

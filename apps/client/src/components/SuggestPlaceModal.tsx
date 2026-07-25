@@ -52,7 +52,7 @@ export function SuggestPlaceModal({ open, onClose, initialName = '', center, onS
 
     if (rpcError) {
       const msg = rpcError.message.includes('Auth required')
-        ? 'Connecte-toi pour proposer un lieu.'
+        ? 'Connectez-vous pour proposer un lieu.'
         : rpcError.message;
       setError(msg);
       return;
@@ -80,7 +80,7 @@ export function SuggestPlaceModal({ open, onClose, initialName = '', center, onS
               Proposer un lieu
             </h2>
             <p className="mt-xs text-sm text-neutral-600">
-              Ton ajout sera visible dès que l&apos;équipe TamCar l&apos;aura validé.
+              Votre ajout sera visible dès que l&apos;équipe TamCar l&apos;aura validé.
             </p>
           </div>
           <button
@@ -100,7 +100,7 @@ export function SuggestPlaceModal({ open, onClose, initialName = '', center, onS
             </span>
             <p className="font-bold text-neutral-900">Merci !</p>
             <p className="mt-xs text-sm text-neutral-600">
-              Ton lieu est envoyé en modération.
+              Votre lieu est envoyé en modération.
             </p>
           </div>
         ) : (

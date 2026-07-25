@@ -52,7 +52,7 @@ export default function ConditionsPage({
 
         <div className="mt-lg rounded-xl border border-primary-100 bg-primary-50 p-lg">
           <p className="flex items-center gap-xs text-sm font-extrabold text-primary-700">
-            <span aria-hidden>🎁</span> Tes avantages chauffeur
+            <span aria-hidden>🎁</span> Vos avantages chauffeur
           </p>
           <p className="mt-xs text-[13px] leading-relaxed text-neutral-700">
             En roulant avec TamCar, vous vous constituez une{' '}

@@ -162,8 +162,8 @@ export function AddressAutocomplete({
         setGeolocating(false);
         const msg =
           err.code === err.PERMISSION_DENIED
-            ? 'Autorise la géolocalisation dans ton navigateur pour utiliser cette fonction.'
-            : 'Impossible de récupérer ta position (GPS indisponible).';
+            ? 'Autorisez la géolocalisation dans votre navigateur pour utiliser cette fonction.'
+            : 'Impossible de récupérer votre position (GPS indisponible).';
         setGeoError(msg);
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 },

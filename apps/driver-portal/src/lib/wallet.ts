@@ -35,19 +35,19 @@ export type WalletTransaction = {
 export const WALLET_KIND_META: Record<WalletKind, { label: string; sub: string; gradient: string; icon: string }> = {
   tamcar_credit: {
     label: 'TamCar Crédit',
-    sub: 'Solde pour payer tes courses',
+    sub: 'Solde pour payer vos courses',
     gradient: 'from-primary-500 to-primary-700',
     icon: '💳',
   },
   tamcar_revenus: {
     label: 'TamCar Revenus',
-    sub: 'Cash gagné sur tes courses',
+    sub: 'Cash gagné sur vos courses',
     gradient: 'from-violet-500 to-primary-700',
     icon: '💼',
   },
   tamcar_rachat: {
     label: 'Fonds rachat véhicule',
-    sub: 'Cession échelonnée · 24 mois pour posséder ta voiture',
+    sub: 'Cession échelonnée · 24 mois pour posséder votre voiture',
     gradient: 'from-gold to-warning',
     icon: '🔑',
   },

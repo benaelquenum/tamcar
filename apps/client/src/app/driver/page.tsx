@@ -22,8 +22,8 @@ export default function DriverPortalRedirect() {
           L&apos;espace chauffeur a déménagé
         </h1>
         <p className="mt-md text-sm text-neutral-600">
-          Utilise désormais le portail dédié pour te connecter, prendre des courses et suivre
-          tes gains.
+          Utilisez désormais le portail dédié pour vous connecter, prendre des courses et suivre
+          vos gains.
         </p>
         <a
           href={driverPortalUrl}
@@ -33,9 +33,9 @@ export default function DriverPortalRedirect() {
           <ArrowRightIcon className="h-4 w-4" />
         </a>
         <p className="mt-lg text-[11px] text-neutral-500">
-          Tu n&apos;es pas encore chauffeur ?{' '}
+          Vous n&apos;êtes pas encore chauffeur ?{' '}
           <Link href="/devenir-chauffeur" className="font-semibold text-primary-500 hover:underline">
-            Prends rendez-vous
+            Prenez rendez-vous
           </Link>
         </p>
       </div>

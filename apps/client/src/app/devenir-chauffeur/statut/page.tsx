@@ -52,7 +52,7 @@ export default async function StatutPage() {
         {/* Visitor number en gros */}
         <section className="mt-lg rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 p-lg text-white shadow-glow">
           <p className="text-[10px] font-bold uppercase tracking-wider text-primary-100">
-            Ton numéro visiteur
+            Votre numéro visiteur
           </p>
           <p
             className="mt-xs text-5xl font-extrabold leading-none"
@@ -61,7 +61,7 @@ export default async function StatutPage() {
             {app.visitor_number}
           </p>
           <p className="mt-md text-xs opacity-90">
-            Présente ce numéro à l&apos;accueil TamCar le jour du RDV.
+            Présentez ce numéro à l&apos;accueil TamCar le jour du RDV.
           </p>
         </section>
 
@@ -105,7 +105,7 @@ export default async function StatutPage() {
             </span>
             <p className="font-bold text-neutral-900">Bienvenue chez TamCar !</p>
             <p className="mt-xs text-xs text-neutral-600">
-              Ton profil chauffeur est actif. Tu peux te connecter à ton espace chauffeur.
+              Votre profil chauffeur est actif. Vous pouvez vous connecter à votre espace chauffeur.
             </p>
             <a
               href={process.env.NEXT_PUBLIC_DRIVER_URL || 'http://localhost:3002'}
@@ -130,7 +130,7 @@ export default async function StatutPage() {
         {/* Récap */}
         <section className="mt-2xl rounded-xl border border-neutral-200 bg-white p-lg shadow-sm">
           <h2 className="mb-md text-xs font-bold uppercase tracking-wider text-neutral-500">
-            Récap de ta demande
+            Récap de votre demande
           </h2>
           <dl className="space-y-sm text-sm">
             <Row label="Formule" value={typeMeta.label} />

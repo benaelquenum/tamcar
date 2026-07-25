@@ -70,8 +70,8 @@ export default async function AdminLitigesPage() {
             Contestation chauffeur
           </p>
           <p className="mt-xs text-xs text-neutral-800">
-            Un chauffeur conteste un strike reçu. Si tu révoques → strike retiré,
-            client à nouveau débité. Si tu maintiens → strike conservé.
+            Un chauffeur conteste un strike reçu. Si vous révoquez → strike retiré,
+            client à nouveau débité. Si vous maintenez → strike conservé.
           </p>
         </div>
       </div>

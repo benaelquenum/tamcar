@@ -42,7 +42,7 @@ export default function VerifyPage({
 
         <div className="mt-3xl">
           <h1 className="text-4xl font-extrabold leading-[1.05] tracking-tight text-neutral-900">
-            Ton code
+            Votre code
           </h1>
           <p className="mt-md text-base text-neutral-600">
             Un SMS avec un code à 6 chiffres a été envoyé au
@@ -52,7 +52,7 @@ export default function VerifyPage({
             </strong>
           </p>
           <p className="mt-sm text-xs text-neutral-500">
-            La livraison peut prendre 10-30 secondes. Vérifie tes messages.
+            La livraison peut prendre 10-30 secondes. Vérifiez vos messages.
           </p>
         </div>
 

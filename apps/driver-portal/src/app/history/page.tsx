@@ -25,7 +25,7 @@ const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   in_progress: { label: 'En cours', color: 'bg-success/20 text-success' },
   completed: { label: 'Terminée', color: 'bg-success/10 text-success' },
   cancelled_by_client: { label: 'Annulée client', color: 'bg-neutral-200 text-neutral-600' },
-  cancelled_by_driver: { label: 'Tu as annulé', color: 'bg-neutral-200 text-neutral-600' },
+  cancelled_by_driver: { label: 'Vous avez annulé', color: 'bg-neutral-200 text-neutral-600' },
 };
 
 function formatFcfa(n: number): string {
@@ -94,7 +94,7 @@ export default async function DriverHistoryPage() {
 
         {list.length === 0 ? (
           <div className="mt-xl rounded-xl bg-neutral-100 p-2xl text-center text-sm text-neutral-600">
-            Aucune course encore. Passe en ligne pour recevoir tes premières courses.
+            Aucune course encore. Passez en ligne pour recevoir vos premières courses.
           </div>
         ) : (
           <div className="mt-lg space-y-sm">

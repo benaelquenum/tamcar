@@ -186,7 +186,7 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
     setBusy(true);
     const p = await getMyPosition();
     if (!p) {
-      setError('Impossible de récupérer ta position GPS.');
+      setError('Impossible de récupérer votre position GPS.');
       setBusy(false);
       return;
     }
@@ -482,8 +482,8 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
 
             {!hasVehicle && (
               <div className="mb-md rounded-md bg-error/10 p-md text-sm text-error">
-                Aucun véhicule assigné. Contacte l&apos;équipe TamCar pour
-                associer une voiture à ton compte.
+                Aucun véhicule assigné. Contactez l&apos;équipe TamCar pour
+                associer une voiture à votre compte.
               </div>
             )}
 
@@ -497,7 +497,7 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
             {oneshots.length > 0 && (
               <div className="mb-lg">
                 <h2 className="mb-sm text-xs font-bold uppercase tracking-wider text-emerald-700">
-                  Demandes directes — un client te redemande
+                  Demandes directes — un client vous redemande
                 </h2>
                 <div className="space-y-sm">
                   {oneshots.map((o) => (
@@ -608,7 +608,7 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
 
                 {pending.length === 0 ? (
                   <div className="rounded-xl bg-neutral-100 p-lg text-center text-sm text-neutral-600">
-                    Aucune course dans un rayon de 10 km. On te notifie dès qu&apos;il y en a une.
+                    Aucune course dans un rayon de 10 km. On vous notifie dès qu&apos;il y en a une.
                   </div>
                 ) : (
                   <div className="max-h-[52vh] space-y-sm overflow-y-auto pr-xs">
@@ -629,7 +629,7 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
             {!isOnline && hasVehicle && (
               <div className="rounded-xl bg-primary-50 p-lg text-center">
                 <p className="text-sm text-primary-900">
-                  Passe en ligne pour voir les courses disponibles autour de toi.
+                  Passez en ligne pour voir les courses disponibles autour de vous.
                 </p>
               </div>
             )}
@@ -659,7 +659,7 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
               <p className="mt-xs text-sm text-neutral-600">
                 Cette course est classée{' '}
                 <strong>{catLabel(crossCatConfirm.requested_category || '')}</strong>,
-                mais tu conduis un véhicule de catégorie supérieure. Tu peux la prendre
+                mais vous conduisez un véhicule de catégorie supérieure. Vous pouvez la prendre
                 au tarif de la catégorie du client.
               </p>
             </div>
@@ -672,7 +672,7 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
                 </span>
               </div>
               <div className="mt-xs flex items-baseline justify-between">
-                <span className="text-[11px] text-neutral-600">Ta part</span>
+                <span className="text-[11px] text-neutral-600">Votre part</span>
                 <span className="text-sm font-bold text-primary-700" style={{ fontVariantNumeric: 'tabular-nums' }}>
                   {crossCatConfirm.driver_share_fcfa.toLocaleString('fr-FR').replace(/,/g, ' ')} F
                 </span>
@@ -761,7 +761,7 @@ function RideCard({
           >
             {formatFcfa(ride.driver_share_fcfa)}
           </p>
-          <p className="text-[9px] text-neutral-500">FCFA cash pour toi</p>
+          <p className="text-[9px] text-neutral-500">FCFA cash pour vous</p>
         </div>
       </div>
       <div className="mt-sm flex flex-wrap items-center gap-x-md gap-y-xs text-[11px] text-neutral-600">

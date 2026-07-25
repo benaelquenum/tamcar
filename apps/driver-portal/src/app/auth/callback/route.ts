@@ -44,7 +44,7 @@ export async function GET(request: Request) {
       await supabase.auth.signOut();
       return NextResponse.redirect(
         `${origin}/login?error=${encodeURIComponent(
-          "Ce compte n'a pas de statut chauffeur. Prends d'abord un rendez-vous.",
+          "Ce compte n'a pas de statut chauffeur. Prenez d'abord un rendez-vous.",
         )}`,
       );
     }

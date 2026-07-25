@@ -457,7 +457,7 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
                     {ride.status === 'expired' && 'Course expirée'}
                   </p>
                   <p className="mt-xs text-xs text-neutral-700">
-                    Cette course ne va pas se dérouler. Retourne à l&apos;accueil pour
+                    Cette course ne va pas se dérouler. Retournez à l&apos;accueil pour
                     recevoir de nouvelles courses.
                   </p>
                 </div>
@@ -479,7 +479,7 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
                     {statusLabel}
                   </p>
                   <div className="text-right">
-                    <p className="text-xs uppercase text-neutral-500">Tu gagnes</p>
+                    <p className="text-xs uppercase text-neutral-500">Vous gagnez</p>
                     <p
                       className="text-2xl font-extrabold text-primary-700"
                       style={{ fontVariantNumeric: 'tabular-nums' }}
@@ -504,7 +504,7 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
               />
               <div className="flex-1 min-w-0">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
-                  Ton client
+                  Votre client
                 </p>
                 <p className="truncate text-sm font-extrabold text-neutral-900">
                   {ride.client_full_name ?? 'Client'}
@@ -537,7 +537,7 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
               </button>
               {ride.client_phone && (
                 <a
-                  href={`https://wa.me/${ride.client_phone.replace(/^\+/, '')}?text=${encodeURIComponent('Bonjour, je suis ton chauffeur TamCar.')}`}
+                  href={`https://wa.me/${ride.client_phone.replace(/^\+/, '')}?text=${encodeURIComponent('Bonjour, je suis votre chauffeur TamCar.')}`}
                   target="_blank"
                   rel="noopener"
                   className="flex flex-1 items-center justify-center gap-xs rounded-xl bg-[#25D366] py-2 text-xs font-bold text-white shadow-sm hover:brightness-110"
@@ -559,7 +559,7 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
                 {/* Cible + distance/durée */}
                 <div className="mb-md rounded-xl bg-primary-50 p-md">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-primary-700">
-                    {ride.status === 'in_progress' ? 'Destination client' : 'Va chercher le client'}
+                    {ride.status === 'in_progress' ? 'Destination client' : 'Allez chercher le client'}
                   </p>
                   <p className="mt-xs flex items-start gap-xs text-sm font-semibold text-neutral-900">
                     <PinIcon
@@ -638,13 +638,13 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
                 </svg>
               </div>
               <h2 className="text-lg font-extrabold text-neutral-900">
-                Tu n&apos;es pas au point de départ
+                Vous n&apos;êtes pas au point de départ
               </h2>
               <p
                 className="mt-xs text-sm text-neutral-600"
                 style={{ fontVariantNumeric: 'tabular-nums' }}
               >
-                Tu es à{' '}
+                Vous êtes à{' '}
                 <strong className="text-neutral-900">
                   {arrivalConfirm.distance < 1000
                     ? `${Math.round(arrivalConfirm.distance)} m`
@@ -654,7 +654,7 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
               </p>
               <p className="mt-md rounded-md bg-error/10 p-sm text-[11px] text-error">
                 Marquer &quot;arrivé&quot; maintenant sera signalé à l&apos;équipe TamCar
-                pour vérification. Confirme uniquement si tu es vraiment à côté du client.
+                pour vérification. Confirmez uniquement si vous êtes vraiment à côté du client.
               </p>
             </div>
             <div className="flex gap-md">
@@ -796,7 +796,7 @@ function CompletionRequestModal({
               className="mt-xs text-[11px] text-neutral-600"
               style={{ fontVariantNumeric: 'tabular-nums' }}
             >
-              Tes revenus : <strong>{newDriverCash.toLocaleString('fr-FR').replace(/,/g, ' ')} F</strong> cash + <strong>{newRachat.toLocaleString('fr-FR').replace(/,/g, ' ')} F</strong> rachat
+              Vos revenus : <strong>{newDriverCash.toLocaleString('fr-FR').replace(/,/g, ' ')} F</strong> cash + <strong>{newRachat.toLocaleString('fr-FR').replace(/,/g, ' ')} F</strong> rachat
               {' '}({priceDelta < 0 ? '−' : '+'}{Math.abs(priceDelta).toLocaleString('fr-FR').replace(/,/g, ' ')} F vs initial)
             </p>
           </div>

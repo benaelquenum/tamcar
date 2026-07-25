@@ -42,8 +42,8 @@ export default async function HomePage() {
             Compte en cours de finalisation
           </h1>
           <p className="mt-md text-sm text-neutral-600">
-            Ton compte chauffeur n&apos;a pas encore de fiche opérationnelle. Contacte l&apos;équipe
-            TamCar pour finaliser ton onboarding.
+            Votre compte chauffeur n&apos;a pas encore de fiche opérationnelle. Contactez l&apos;équipe
+            TamCar pour finaliser votre onboarding.
           </p>
         </div>
       </main>

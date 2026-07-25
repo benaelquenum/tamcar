@@ -26,7 +26,7 @@ export function RatingModal({ open, onClose, rideId, ratedName, onSubmitted, man
 
   async function submit() {
     if (stars < 1) {
-      setError('Choisis au moins une étoile.');
+      setError('Choisissez au moins une étoile.');
       return;
     }
     setSubmitting(true);
@@ -68,8 +68,8 @@ export function RatingModal({ open, onClose, rideId, ratedName, onSubmitted, man
           </h2>
           <p className="mt-xs text-sm text-neutral-600">
             {mandatory
-              ? 'Ta note libère l\'écran d\'accueil.'
-              : 'Ta note aide TamCar à améliorer le service.'}
+              ? 'Votre note libère l\'écran d\'accueil.'
+              : 'Votre note aide TamCar à améliorer le service.'}
           </p>
         </div>
 

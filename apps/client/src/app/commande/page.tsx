@@ -48,8 +48,8 @@ function promoReasonLabel(reason: string): string {
     case 'not_started': return 'Ce code n\'est pas encore actif';
     case 'expired': return 'Ce code a expiré';
     case 'exhausted': return 'Ce code a atteint sa limite d\'utilisations';
-    case 'already_used_by_you': return 'Tu as déjà utilisé ce code';
-    case 'empty': return 'Entre un code';
+    case 'already_used_by_you': return 'Vous avez déjà utilisé ce code';
+    case 'empty': return 'Entrez un code';
     default: return 'Code invalide';
   }
 }
@@ -333,8 +333,8 @@ export default function CommandePage() {
               <p className="font-bold">Hors zone de service</p>
               <p className="mt-xs text-xs">
                 TamCar couvre actuellement <strong>{SERVICE_ZONE_LABEL}</strong> uniquement.
-                {pickupOut && ' Ton point de départ est hors zone.'}
-                {dropoffOut && ' Ta destination est hors zone.'}
+                {pickupOut && ' Votre point de départ est hors zone.'}
+                {dropoffOut && ' Votre destination est hors zone.'}
               </p>
             </section>
           );
@@ -343,7 +343,7 @@ export default function CommandePage() {
         {pickingMode && (
           <div className="mt-md flex items-center justify-between gap-md rounded-xl bg-primary-50 p-md text-sm ring-1 ring-primary-200">
             <span className="font-semibold text-neutral-900">
-              Touche la carte pour poser ton point de{' '}
+              Touchez la carte pour poser votre point de{' '}
               {pickingMode === 'pickup' ? 'départ' : pickingMode === 'dropoff' ? 'destination' : 'lieu à proposer'}.
             </span>
             <button
@@ -386,8 +386,8 @@ export default function CommandePage() {
                 <p className="font-bold">{t('commande.out_of_zone_title')}</p>
                 <p className="mt-xs text-xs">
                   {t('commande.out_of_zone_body', { zone: SERVICE_ZONE_LABEL })}
-                  {pickupOut && ' Ton point de départ est hors zone.'}
-                  {dropoffOut && ' Ta destination est hors zone.'}
+                  {pickupOut && ' Votre point de départ est hors zone.'}
+                  {dropoffOut && ' Votre destination est hors zone.'}
                 </p>
               </section>
             )}

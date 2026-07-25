@@ -83,14 +83,14 @@ export default function LoginPage({
             {/* Mot de passe oublié — reset propre */}
             <div className="mt-xl border-t border-neutral-200 pt-lg">
               <p className="text-center text-xs text-neutral-500">
-                Mot de passe oublié ? Reçois un lien pour en définir un nouveau.
+                Mot de passe oublié ? Recevez un lien pour en définir un nouveau.
               </p>
               <form action={requestPasswordResetAction} className="mt-md">
                 <input
                   type="email"
                   name="email"
                   required
-                  placeholder="Ton email"
+                  placeholder="Votre email"
                   className="w-full rounded-lg bg-neutral-100 px-lg py-md text-sm text-neutral-900 ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
                 <button
@@ -122,12 +122,12 @@ export default function LoginPage({
         <div className="flex-1" />
 
         <p className="mt-xl text-center text-[11px] text-neutral-400">
-          Tu veux devenir chauffeur ?{' '}
+          Vous voulez devenir chauffeur ?{' '}
           <Link
             href="/devenir-chauffeur"
             className="font-semibold text-primary-500 hover:underline"
           >
-            Prends rendez-vous
+            Prenez rendez-vous
           </Link>
         </p>
       </div>
@@ -145,7 +145,7 @@ function SignInForm({ error, next }: { error?: string; next: string }) {
           type="email"
           required
           autoComplete="email"
-          placeholder="tu@exemple.bj"
+          placeholder="vous@exemple.bj"
           className="w-full rounded-lg bg-neutral-100 px-lg py-md text-base text-neutral-900 ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
         />
       </Field>
@@ -209,7 +209,7 @@ function SignUpForm({ error }: { error?: string }) {
           type="email"
           required
           autoComplete="email"
-          placeholder="tu@exemple.bj"
+          placeholder="vous@exemple.bj"
           className="w-full rounded-lg bg-neutral-100 px-lg py-md text-base text-neutral-900 ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
         />
       </Field>
@@ -231,7 +231,7 @@ function SignUpForm({ error }: { error?: string }) {
           />
         </div>
         <p className="mt-xs text-[11px] text-neutral-500">
-          Ton chauffeur pourra te joindre sur WhatsApp pendant la course.
+          Votre chauffeur pourra vous joindre sur WhatsApp pendant la course.
         </p>
       </Field>
 
@@ -310,8 +310,8 @@ function ResetSentPanel({ email }: { email: string }) {
         <div className="flex-1">
           <p className="font-bold text-neutral-900">Lien envoyé !</p>
           <p className="mt-xs text-sm text-neutral-600">
-            Ouvre ta boîte mail (<strong>{email}</strong>). Clique sur le lien
-            pour définir un nouveau mot de passe. Puis reconnecte-toi avec ce
+            Ouvrez votre boîte mail (<strong>{email}</strong>). Cliquez sur le lien
+            pour définir un nouveau mot de passe. Puis reconnectez-vous avec ce
             nouveau mot de passe.
           </p>
         </div>
@@ -336,8 +336,8 @@ function EmailSentPanel({ email }: { email: string }) {
         <div className="flex-1">
           <p className="font-bold text-neutral-900">Lien envoyé !</p>
           <p className="mt-xs text-sm text-neutral-600">
-            Ouvre ta boîte mail (<strong>{email}</strong>) et clique sur le lien
-            pour te connecter. Vérifie les spams si tu ne le vois pas au bout
+            Ouvrez votre boîte mail (<strong>{email}</strong>) et cliquez sur le lien
+            pour vous connecter. Vérifiez les spams si vous ne le voyez pas au bout
             de 2 min.
           </p>
         </div>

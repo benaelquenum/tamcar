@@ -36,7 +36,7 @@ export function CancelAppointmentButton({ appointmentId }: { appointmentId: stri
   return (
     <div className="rounded-xl border border-error/30 bg-error/5 p-md">
       <p className="text-sm font-semibold text-neutral-900">
-        Confirmes-tu l&apos;annulation ? Ton créneau sera libéré.
+        Confirmez-vous l&apos;annulation ? Votre créneau sera libéré.
       </p>
       <div className="mt-md flex gap-sm">
         <button

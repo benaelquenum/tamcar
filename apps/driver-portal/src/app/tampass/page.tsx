@@ -88,7 +88,7 @@ function PlanningList({ rows, empty }: { rows: PlanningRow[]; empty: string }) {
                   : 'bg-primary-50 text-primary-700'
               }`}
             >
-              {r.is_final ? 'Confirmé pour toi' : 'Ton abonné'}
+              {r.is_final ? 'Confirmé pour vous' : 'Votre abonné'}
             </span>
           </div>
           <p className="mt-xs text-sm text-neutral-700">
@@ -141,8 +141,8 @@ export default async function DriverTamPassPage({
           TamPass
         </h1>
         <p className="text-sm text-neutral-500">
-          Tes abonnés et trajets récurrents. Sois en position 15 min avant le
-          créneau — le trajet t&apos;est prioritaire.
+          Vos abonnés et trajets récurrents. Soyez en position 15 min avant le
+          créneau — le trajet vous est prioritaire.
         </p>
       </header>
 

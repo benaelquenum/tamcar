@@ -144,7 +144,7 @@ export function AccountForm({
           Photo de profil
         </span>
         <p className="mt-xs text-[11px] text-neutral-500">
-          Visible par ton chauffeur pendant la course.
+          Visible par votre chauffeur pendant la course.
         </p>
         <div className="mt-md flex items-center gap-md">
           <Avatar src={avatarUrl} name={fullName} size={72} />
@@ -200,7 +200,7 @@ export function AccountForm({
           {userPhone || '—'}
         </div>
         <p className="mt-xs text-[10px] text-neutral-500">
-          Verrouillé : c&apos;est ta clé de connexion.
+          Verrouillé : c&apos;est votre clé de connexion.
         </p>
       </Field>
 

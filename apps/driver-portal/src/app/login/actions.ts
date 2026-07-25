@@ -53,7 +53,7 @@ export async function signInAction(formData: FormData) {
       redirect(
         '/login?error=' +
           encodeURIComponent(
-            "Ce compte n'a pas le statut chauffeur. Prends d'abord un rendez-vous sur le site TamCar.",
+            "Ce compte n'a pas le statut chauffeur. Prenez d'abord un rendez-vous sur le site TamCar.",
           ),
       );
     }

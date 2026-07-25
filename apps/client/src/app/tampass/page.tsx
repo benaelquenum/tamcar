@@ -178,7 +178,7 @@ export default async function TamPassPage({
         <div>
           <h1 className="text-xl font-extrabold text-neutral-900">TamPass</h1>
           <p className="text-xs text-neutral-500">
-            Ton trajet quotidien, garanti et prépayé.
+            Votre trajet quotidien, garanti et prépayé.
           </p>
         </div>
       </header>
@@ -205,11 +205,11 @@ export default async function TamPassPage({
               </span>
               <div>
                 <p className="font-bold text-neutral-900">
-                  Recherche de ton chauffeur…
+                  Recherche de votre chauffeur…
                 </p>
                 <p className="text-xs text-neutral-600">
-                  Les chauffeurs proches sont notifiés (jusqu&apos;à 3 h). Tu
-                  recevras une notification dès qu&apos;un chauffeur accepte.
+                  Les chauffeurs proches sont notifiés (jusqu&apos;à 3 h). Vous
+                  recevrez une notification dès qu&apos;un chauffeur accepte.
                 </p>
               </div>
             </div>
@@ -241,7 +241,7 @@ export default async function TamPassPage({
               Chauffeur trouvé !
             </p>
             <p className="mt-sm text-lg font-extrabold text-neutral-900">
-              {sub.preferred_driver_name ?? 'Ton chauffeur'}
+              {sub.preferred_driver_name ?? 'Votre chauffeur'}
               {sub.preferred_driver_rating != null && (
                 <span className="ml-sm text-sm font-bold text-amber-500">
                   ★ {Number(sub.preferred_driver_rating).toFixed(1)}
@@ -428,7 +428,7 @@ export default async function TamPassPage({
           {/* Pitch + formules */}
           <section className="mt-lg rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 p-lg text-white">
             <p className="text-lg font-extrabold leading-snug">
-              Ton trajet de tous les jours, au même créneau, avec ton
+              Votre trajet de tous les jours, au même créneau, avec votre
               chauffeur habituel.
             </p>
             <ul className="mt-md space-y-xs text-sm opacity-95">
@@ -449,10 +449,10 @@ export default async function TamPassPage({
 
           <section className="mt-xl rounded-xl border border-neutral-200 bg-white p-lg">
             <p className="text-sm font-bold text-neutral-900">
-              Tu définis tout, la remise suit ta fréquence
+              Vous définissez tout, la remise suit votre fréquence
             </p>
             <p className="mt-xs text-xs text-neutral-500">
-              Trajet, jours, heures, durée — c&apos;est toi qui choisis.
+              Trajet, jours, heures, durée — c&apos;est vous qui choisissez.
             </p>
             <div className="mt-md grid grid-cols-3 gap-sm text-center">
               <div className="rounded-lg bg-neutral-50 p-md">

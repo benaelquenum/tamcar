@@ -14,7 +14,7 @@ const sora = Sora({
 
 export const metadata: Metadata = {
   title: 'TamCar Pro — Espace chauffeur',
-  description: "Espace chauffeur TamCar : accepte des courses, suis tes gains, gère ton portefeuille.",
+  description: "Espace chauffeur TamCar : acceptez des courses, suivez vos gains, gérez votre portefeuille.",
   manifest: '/manifest.webmanifest',
   applicationName: 'TamCar Pro',
   appleWebApp: {

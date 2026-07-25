@@ -54,14 +54,14 @@ export default async function DevenirChauffeurPage() {
         </header>
 
         <h1 className="mt-xl text-4xl font-extrabold leading-[1.05] tracking-tight text-neutral-900">
-          Deviens chauffeur
+          Devenez chauffeur
           <br />
           <span className="bg-gradient-to-r from-primary-500 to-primary-700 bg-clip-text text-transparent">
             TamCar
           </span>
         </h1>
         <p className="mt-md text-base text-neutral-600">
-          Deux formules au choix. Toi seul décides.
+          Deux formules au choix. Vous seul décidez.
         </p>
 
         <section className="mt-xl space-y-md">
@@ -71,8 +71,8 @@ export default async function DevenirChauffeurPage() {
             sub={APPLICATION_TYPE_META.cession.sub}
             perks={[
               '40 % du prix de chaque course en cash immédiat',
-              'Bonus +5 % dès ta 16e course du jour',
-              '10 % en plus dans ton fonds rachat, voiture à toi en 24 mois',
+              'Bonus +5 % dès votre 16e course du jour',
+              '10 % en plus dans votre fonds rachat, voiture à vous en 24 mois',
               'Assurance et grosses réparations couvertes pendant les 24 mois',
             ]}
             icon={<CarIcon />}
@@ -82,9 +82,9 @@ export default async function DevenirChauffeurPage() {
             title={APPLICATION_TYPE_META.proprietaire.label}
             sub={APPLICATION_TYPE_META.proprietaire.sub}
             perks={[
-              '80 % du prix de chaque course pour toi',
+              '80 % du prix de chaque course pour vous',
               'Bonus 10 % par course, plafonné 100 FCFA',
-              'Ta voiture, tes règles, entretien à ta charge',
+              'Votre voiture, vos règles, entretien à votre charge',
               'Aucun engagement de durée',
             ]}
             icon={<WalletIcon />}
@@ -113,13 +113,13 @@ export default async function DevenirChauffeurPage() {
         {existingApp && existingApp.status === 'completed_rejected' && existingApp.rejection_reason && (
           <div className="mt-lg rounded-xl bg-error/10 p-lg">
             <p className="text-sm font-bold text-error">
-              Ton précédent rendez-vous s&apos;est soldé par un refus
+              Votre précédent rendez-vous s&apos;est soldé par un refus
             </p>
             <p className="mt-xs text-xs text-neutral-600">
               Raison : {existingApp.rejection_reason}
             </p>
             <p className="mt-md text-xs text-neutral-600">
-              Tu peux reprendre un rendez-vous en corrigeant les points signalés.
+              Vous pouvez reprendre un rendez-vous en corrigeant les points signalés.
             </p>
           </div>
         )}
@@ -133,7 +133,7 @@ export default async function DevenirChauffeurPage() {
           </Link>
           {!profile && (
             <p className="mt-md text-center text-xs text-neutral-500">
-              Tu devras te connecter en premier (email ou téléphone).
+              Vous devrez vous connecter en premier (email ou téléphone).
             </p>
           )}
         </div>

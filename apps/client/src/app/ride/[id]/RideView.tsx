@@ -87,17 +87,17 @@ type NearbyDriverRow = { driver_id: string; lat: number; lng: number; category?:
 const STATUS_META: Record<RideStatus, { title: string; sub: string; color: string }> = {
   requested: {
     title: 'Recherche d\'un chauffeur',
-    sub: 'On cherche un chauffeur près de toi…',
+    sub: 'On cherche un chauffeur près de vous…',
     color: 'bg-primary-500',
   },
   matched: {
     title: 'Chauffeur en route',
-    sub: 'Ton chauffeur arrive au point de départ.',
+    sub: 'Votre chauffeur arrive au point de départ.',
     color: 'bg-primary-500',
   },
   arrived: {
     title: 'Chauffeur arrivé',
-    sub: 'Rejoins-le au point de départ.',
+    sub: 'Rejoignez-le au point de départ.',
     color: 'bg-primary-700',
   },
   in_progress: {
@@ -113,7 +113,7 @@ const STATUS_META: Record<RideStatus, { title: string; sub: string; color: strin
   cancelled_by_client: { title: 'Course annulée', sub: '', color: 'bg-neutral-600' },
   cancelled_by_driver: { title: 'Annulée par le chauffeur', sub: '', color: 'bg-neutral-600' },
   cancelled_by_admin: { title: 'Annulée par TamCar', sub: 'Le support a annulé cette course.', color: 'bg-neutral-600' },
-  expired: { title: 'Aucun chauffeur trouvé', sub: 'Réessaie plus tard.', color: 'bg-error' },
+  expired: { title: 'Aucun chauffeur trouvé', sub: 'Réessayez plus tard.', color: 'bg-error' },
 };
 
 type AlternativeOffer = {
@@ -896,14 +896,14 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-bold text-neutral-900">
-                    Ton chauffeur termine une autre course
+                    Votre chauffeur termine une autre course
                   </p>
                   <p className="mt-xs text-xs text-neutral-700">
-                    Il finit son trajet actuel puis vient te chercher
+                    Il finit son trajet actuel puis vient vous chercher
                     {driverOtherRide.other_duration_min
-                      ? ` (${driverOtherRide.other_duration_min} min max avant qu'il ne parte vers toi)`
+                      ? ` (${driverOtherRide.other_duration_min} min max avant qu'il ne parte vers vous)`
                       : ''}
-                    . Tu peux annuler <strong>sans frais</strong> tant qu&apos;il n&apos;est pas
+                    . Vous pouvez annuler <strong>sans frais</strong> tant qu&apos;il n&apos;est pas
                     libre.
                   </p>
                 </div>
@@ -964,7 +964,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                 </button>
                 {ride.driver_phone && (
                   <a
-                    href={`https://wa.me/${ride.driver_phone.replace(/^\+/, '')}?text=${encodeURIComponent('Bonjour, je suis ton client TamCar.')}`}
+                    href={`https://wa.me/${ride.driver_phone.replace(/^\+/, '')}?text=${encodeURIComponent('Bonjour, je suis votre client TamCar.')}`}
                     target="_blank"
                     rel="noopener"
                     className="flex flex-1 items-center justify-center gap-xs rounded-xl bg-[#25D366] py-2 text-xs font-bold text-white shadow-sm hover:brightness-110"
@@ -1109,13 +1109,13 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                 </svg>
               </div>
               <h2 className="text-lg font-extrabold text-neutral-900">
-                Tu n&apos;es pas encore à destination
+                Vous n&apos;êtes pas encore à destination
               </h2>
               <p
                 className="mt-xs text-sm text-neutral-600"
                 style={{ fontVariantNumeric: 'tabular-nums' }}
               >
-                Tu es à{' '}
+                Vous êtes à{' '}
                 <strong className="text-neutral-900">
                   {completeConfirm.distanceM < 1000
                     ? `${completeConfirm.distanceM} m`
@@ -1147,7 +1147,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                 </span>
               </div>
               <p className="mt-sm text-[11px] text-neutral-600">
-                Ta demande sera envoyée au chauffeur. Il a{' '}
+                Votre demande sera envoyée au chauffeur. Il a{' '}
                 <strong>20 secondes</strong> pour l&apos;accepter — sans réponse, la
                 course est terminée automatiquement au nouveau prix.
               </p>
@@ -1281,7 +1281,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                 Aucun chauffeur disponible
               </h2>
               <p className="mt-xs text-sm text-neutral-600">
-                Tu peux relancer la recherche ou annuler la course.
+                Vous pouvez relancer la recherche ou annuler la course.
               </p>
             </div>
             <div className="flex gap-md">
@@ -1348,7 +1348,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
           open={true}
           onClose={() => undefined}
           rideId={ride.id}
-          ratedName={firstNameOf(ride.driver_full_name) || 'ton chauffeur'}
+          ratedName={firstNameOf(ride.driver_full_name) || 'votre chauffeur'}
           mandatory={true}
           onSubmitted={() => {
             setHasRated(true);
@@ -1412,17 +1412,17 @@ function CancelConfirmPanel({
   const explanationLine = (() => {
     switch (reason) {
       case 'free_no_match':
-        return 'Ta demande n\'a pas encore été prise. Annulation gratuite.';
+        return 'Votre demande n\'a pas encore été prise. Annulation gratuite.';
       case 'free_within_30s':
-        return 'Tu es dans la fenêtre de 30 secondes de rétractation. Annulation gratuite.';
+        return 'Vous êtes dans la fenêtre de 30 secondes de rétractation. Annulation gratuite.';
       case 'free_driver_busy':
-        return 'Ton chauffeur termine une autre course, il n\'a pas encore démarré vers toi. Annulation gratuite.';
+        return 'Votre chauffeur termine une autre course, il n\'a pas encore démarré vers vous. Annulation gratuite.';
       case 'free_driver_fault':
         return 'Annulation gratuite — la faute du chauffeur est confirmée par nos données.';
       case 'driver_on_way':
-        return 'Le chauffeur roule déjà vers toi pour te prendre en charge.';
+        return 'Le chauffeur roule déjà vers vous pour vous prendre en charge.';
       case 'driver_arrived':
-        return 'Le chauffeur est arrivé au point de prise en charge et t\'attend.';
+        return 'Le chauffeur est arrivé au point de prise en charge et vous attend.';
       case 'ride_started':
         return 'La course a démarré. L\'annulation représente 50 % du prix estimé.';
       default:
@@ -1490,15 +1490,15 @@ function CancelConfirmPanel({
           </p>
           <p className="mt-xs text-[11px] text-neutral-700">
             Nos données ne confirment pas cette raison automatiquement. Les frais
-            s&apos;appliquent, mais ton annulation sera examinée par notre équipe. Si le
-            chauffeur est en tort, tu seras remboursé.
+            s&apos;appliquent, mais votre annulation sera examinée par notre équipe. Si le
+            chauffeur est en tort, vous serez remboursé.
           </p>
         </div>
       )}
 
       {etaMin != null && etaMin > 0 && !isDriverFault && (
         <p className="mt-md text-center text-sm text-neutral-700">
-          Ton chauffeur est à <strong>{etaMin} min</strong> de ta position — tu peux
+          Votre chauffeur est à <strong>{etaMin} min</strong> de votre position — vous pouvez
           l&apos;attendre.
         </p>
       )}
@@ -1517,9 +1517,9 @@ function CancelConfirmPanel({
             </span>
           </div>
           <p className="mt-xs text-[11px] text-neutral-600">
-            Ce montant sera débité de ton portefeuille <strong>TamCar Crédit</strong>. Si
-            ton solde est insuffisant, ton compte passera en négatif — la différence sera
-            prélevée automatiquement à ton prochain rechargement.
+            Ce montant sera débité de votre portefeuille <strong>TamCar Crédit</strong>. Si
+            votre solde est insuffisant, votre compte passera en négatif — la différence sera
+            prélevée automatiquement à votre prochain rechargement.
           </p>
         </div>
       )}
@@ -1601,7 +1601,7 @@ function CompletionWaitingModal({
             Demande envoyée au chauffeur
           </h2>
           <p className="mt-xs text-sm text-neutral-600">
-            Ton chauffeur reçoit la demande de fin de course. Réponse automatique
+            Votre chauffeur reçoit la demande de fin de course. Réponse automatique
             dans{' '}
             <strong style={{ fontVariantNumeric: 'tabular-nums' }}>
               {remaining} s
@@ -1621,7 +1621,7 @@ function CompletionWaitingModal({
             >
               {distanceFromDropoffM != null && (
                 <>
-                  Tu es à <strong>{distanceFromDropoffM} m</strong> de la
+                  Vous êtes à <strong>{distanceFromDropoffM} m</strong> de la
                   destination.{' '}
                 </>
               )}

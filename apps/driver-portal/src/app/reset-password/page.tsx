@@ -15,7 +15,7 @@ export default async function ResetPasswordPage({ searchParams }: Props) {
     redirect(
       '/login?error=' +
         encodeURIComponent(
-          'Ta session de récupération a expiré. Redemande un lien.',
+          'Votre session de récupération a expiré. Redemandez un lien.',
         ),
     );
   }
@@ -36,10 +36,10 @@ export default async function ResetPasswordPage({ searchParams }: Props) {
 
         <div className="mt-2xl">
           <h1 className="text-2xl font-extrabold leading-tight text-neutral-900">
-            Définis ton nouveau mot de passe
+            Définissez votre nouveau mot de passe
           </h1>
           <p className="mt-xs text-sm text-neutral-600">
-            Choisis un mot de passe d&apos;au moins 6 caractères. Tu l&apos;utiliseras
+            Choisissez un mot de passe d&apos;au moins 6 caractères. Vous l&apos;utiliserez
             à chaque connexion.
           </p>
         </div>
@@ -68,7 +68,7 @@ export default async function ResetPasswordPage({ searchParams }: Props) {
               required
               minLength={6}
               autoComplete="new-password"
-              placeholder="Retape le même mot de passe"
+              placeholder="Retapez le même mot de passe"
               wrapperClassName="mt-xs"
             />
           </label>

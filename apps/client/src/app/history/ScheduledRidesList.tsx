@@ -66,7 +66,7 @@ export function ScheduledRidesList({ initial, justScheduled }: { initial: Schedu
             Réservation enregistrée
           </p>
           <p className="mt-xs text-xs">
-            Un chauffeur te sera assigné automatiquement 15 min avant le départ.
+            Un chauffeur vous sera assigné automatiquement 15 min avant le départ.
           </p>
         </div>
       )}

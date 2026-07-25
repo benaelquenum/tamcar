@@ -25,8 +25,8 @@ export function EnableNotifications() {
   if (state === 'denied') {
     return (
       <div className="fixed inset-x-lg top-md z-50 mx-auto max-w-md rounded-xl bg-error px-lg py-md text-center text-xs font-bold text-white shadow-lg ring-2 ring-white/30">
-        ⚠️ Notifications bloquées — autorise-les pour ce site dans les réglages
-        de ton navigateur (Paramètres → Notifications).
+        ⚠️ Notifications bloquées — autorisez-les pour ce site dans les réglages
+        de votre navigateur (Paramètres → Notifications).
       </div>
     );
   }

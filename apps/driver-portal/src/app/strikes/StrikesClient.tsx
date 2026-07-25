@@ -42,7 +42,7 @@ export function StrikesClient({ strikes }: { strikes: Strike[] }) {
 
   async function submitDispute(rideId: string) {
     if (reason.trim().length < 10) {
-      setError('Explique en au moins 10 caractères.');
+      setError('Expliquez en au moins 10 caractères.');
       return;
     }
     setSubmitting(true);
@@ -93,7 +93,7 @@ export function StrikesClient({ strikes }: { strikes: Strike[] }) {
             {activeCount}
           </p>
           <p className="mt-xs text-xs text-neutral-600">
-            À 5 strikes sur 30 jours, ton compte est suspendu automatiquement.
+            À 5 strikes sur 30 jours, votre compte est suspendu automatiquement.
           </p>
         </section>
 
@@ -101,7 +101,7 @@ export function StrikesClient({ strikes }: { strikes: Strike[] }) {
           <div className="mt-xl rounded-xl bg-primary-50 p-lg text-center">
             <ThumbsUpIcon className="mx-auto h-6 w-6 text-primary-700" strokeWidth={2.2} />
             <p className="mt-xs text-sm font-semibold text-primary-900">
-              Aucun signalement. Continue comme ça.
+              Aucun signalement. Continuez comme ça.
             </p>
           </div>
         ) : (
@@ -161,7 +161,7 @@ export function StrikesClient({ strikes }: { strikes: Strike[] }) {
                     {s.dispute_reason && (
                       <div className="mt-md rounded-lg bg-neutral-50 p-sm ring-1 ring-neutral-200">
                         <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
-                          Ta contestation
+                          Votre contestation
                         </p>
                         <p className="mt-xs text-xs text-neutral-800">{s.dispute_reason}</p>
                       </div>
@@ -185,7 +185,7 @@ export function StrikesClient({ strikes }: { strikes: Strike[] }) {
                       <div className="mt-md space-y-sm">
                         <label className="block">
                           <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-600">
-                            Explique ce qui s&apos;est passé
+                            Expliquez ce qui s&apos;est passé
                           </span>
                           <textarea
                             value={reason}

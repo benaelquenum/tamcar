@@ -82,7 +82,7 @@ export default async function HistoryPage({ searchParams }: { searchParams: { ju
 
         <h1 className="mt-lg text-2xl font-extrabold text-neutral-900">Historique</h1>
         <p className="mt-xs text-sm text-neutral-600">
-          Tes {list.length} dernière{list.length > 1 ? 's' : ''} course{list.length > 1 ? 's' : ''}.
+          Vos {list.length} dernière{list.length > 1 ? 's' : ''} course{list.length > 1 ? 's' : ''}.
         </p>
 
         <Link

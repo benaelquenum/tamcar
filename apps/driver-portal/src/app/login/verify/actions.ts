@@ -48,7 +48,7 @@ export async function verify(formData: FormData) {
       redirect(
         '/login?error=' +
           encodeURIComponent(
-            'Ce compte n\'a pas de statut chauffeur. Prends d\'abord un rendez-vous.',
+            'Ce compte n\'a pas de statut chauffeur. Prenez d\'abord un rendez-vous.',
           ),
       );
     }

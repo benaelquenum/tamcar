@@ -77,7 +77,7 @@ export function InstallPwaBanner() {
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold">Installer TamCar</p>
           <p className="text-[11px] text-white/85">
-            Icône sur ton écran d&apos;accueil · plein écran · plus rapide.
+            Icône sur votre écran d&apos;accueil · plein écran · plus rapide.
           </p>
         </div>
         <div className="flex items-center gap-xs">

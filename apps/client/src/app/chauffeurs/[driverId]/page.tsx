@@ -143,7 +143,7 @@ export default function RequestDriverPage() {
       <section className="mt-lg space-y-md">
         <AddressAutocomplete
           label="Départ"
-          placeholder="Ta position"
+          placeholder="Votre position"
           value={origin}
           onChange={setOrigin}
           markerColor="#2563EB"
@@ -151,7 +151,7 @@ export default function RequestDriverPage() {
         />
         <AddressAutocomplete
           label="Destination"
-          placeholder="Où vas-tu ?"
+          placeholder="Où allez-vous ?"
           value={dropoff}
           onChange={setDropoff}
           markerColor="#7C3AED"

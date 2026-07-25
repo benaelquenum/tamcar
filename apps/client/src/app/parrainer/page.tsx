@@ -43,17 +43,17 @@ export default async function ParrainerPage() {
 
         <section className="mt-xl">
           <h1 className="text-2xl font-extrabold text-neutral-900">
-            Parraine un ami, gagne {code.reward_fcfa} F
+            Parrainez un ami, gagnez {code.reward_fcfa} F
           </h1>
           <p className="mt-xs text-sm text-neutral-600">
-            Quand ton ami saisit ton code à sa première commande, vous recevez chacun{' '}
+            Quand votre ami saisit votre code à sa première commande, vous recevez chacun{' '}
             <strong>{code.reward_fcfa} F</strong> sur votre wallet TamCar Crédit.
           </p>
         </section>
 
         <section className="mt-lg rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 p-lg text-white shadow-glow">
           <p className="text-[10px] font-bold uppercase tracking-wider text-primary-100">
-            Ton code parrainage
+            Votre code parrainage
           </p>
           <p
             className="mt-xs select-all text-4xl font-extrabold tracking-widest"
@@ -84,7 +84,7 @@ export default async function ParrainerPage() {
 
         <section className="mt-lg rounded-xl border-2 border-dashed border-neutral-200 bg-white p-lg">
           <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
-            Un ami t&apos;a donné un code ?
+            Un ami vous a donné un code ?
           </p>
           <RedeemForm />
         </section>

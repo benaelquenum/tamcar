@@ -36,6 +36,6 @@ export async function updatePasswordAction(formData: FormData) {
   await supabase.auth.signOut();
   redirect(
     '/login?tab=signin&error=' +
-      encodeURIComponent('Mot de passe mis à jour, reconnecte-toi.'),
+      encodeURIComponent('Mot de passe mis à jour, reconnectez-vous.'),
   );
 }

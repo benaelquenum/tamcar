@@ -117,7 +117,7 @@ export function RideChat({ rideId, myUserId, otherName, onClose }: Props) {
       <div ref={scrollRef} className="flex-1 overflow-y-auto bg-neutral-50 p-md">
         {messages.length === 0 ? (
           <p className="mt-2xl text-center text-xs text-neutral-500">
-            Aucun message. Écris le premier ci-dessous.
+            Aucun message. Écrivez le premier ci-dessous.
           </p>
         ) : (
           <ul className="space-y-sm">
@@ -157,7 +157,7 @@ export function RideChat({ rideId, myUserId, otherName, onClose }: Props) {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ton message…"
+            placeholder="Votre message…"
             maxLength={500}
             className="flex-1 rounded-full border border-neutral-200 bg-white px-md py-sm text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           />

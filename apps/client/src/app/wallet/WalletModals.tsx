@@ -104,7 +104,7 @@ export function WalletModal({ open, onClose, kind, availableBalance }: Props) {
           return;
         }
         if (finalStatus !== 'success') {
-          setError('Paiement en attente de confirmation — vérifie ton portefeuille dans quelques minutes.');
+          setError('Paiement en attente de confirmation — vérifiez votre portefeuille dans quelques minutes.');
           return;
         }
         setSuccess(true);
@@ -144,7 +144,7 @@ export function WalletModal({ open, onClose, kind, availableBalance }: Props) {
             <p className="mt-xs text-xs text-neutral-600">
               {kind === 'topup'
                 ? 'Paiement sécurisé via FedaPay (MTN, Moov, carte).'
-                : 'Vers ton Mobile Money · Simulation (intégration réelle à venir).'}
+                : 'Vers votre Mobile Money · Simulation (intégration réelle à venir).'}
             </p>
           </div>
           <button
@@ -166,7 +166,7 @@ export function WalletModal({ open, onClose, kind, availableBalance }: Props) {
               {formatFcfa(amount)} FCFA
             </p>
             <p className="mt-xs text-sm text-neutral-600">
-              {kind === 'topup' ? 'Crédit ajouté à ton compte' : 'Retrait effectué'}
+              {kind === 'topup' ? 'Crédit ajouté à votre compte' : 'Retrait effectué'}
             </p>
           </div>
         ) : (

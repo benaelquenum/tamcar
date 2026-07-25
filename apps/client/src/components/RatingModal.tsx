@@ -28,7 +28,7 @@ export function RatingModal({ open, onClose, rideId, ratedName, onSubmitted, man
 
   async function submit() {
     if (stars < 1) {
-      setError('Choisis au moins une étoile.');
+      setError('Choisissez au moins une étoile.');
       return;
     }
     setSubmitting(true);

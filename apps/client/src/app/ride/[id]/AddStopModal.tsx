@@ -155,12 +155,12 @@ export function AddStopModal({
 
         <p className="mb-md text-[11px] text-neutral-600">
           {mode === 'stopover'
-            ? 'Le chauffeur y passe puis reprend le trajet vers ta destination initiale. 3 min d\'attente gratuites, puis 40 F/min.'
-            : 'Ce lieu devient ta nouvelle destination finale. L\'ancienne destination n\'est plus desservie.'}
+            ? 'Le chauffeur y passe puis reprend le trajet vers votre destination initiale. 3 min d\'attente gratuites, puis 40 F/min.'
+            : 'Ce lieu devient votre nouvelle destination finale. L\'ancienne destination n\'est plus desservie.'}
         </p>
 
         <AddressAutocomplete
-          label={mode === 'stopover' ? 'Où veux-tu passer ?' : 'Nouvelle destination'}
+          label={mode === 'stopover' ? 'Où voulez-vous passer ?' : 'Nouvelle destination'}
           placeholder="Cherche une adresse ou un lieu…"
           value={selected}
           onChange={handleSelectStop}
@@ -200,7 +200,7 @@ export function AddStopModal({
             </div>
             <p className="mt-md text-[10px] text-neutral-500">
               Le nouveau prix sera calculé par TamCar selon la distance additionnelle
-              et la catégorie de ton véhicule.
+              et la catégorie de votre véhicule.
             </p>
           </div>
         )}

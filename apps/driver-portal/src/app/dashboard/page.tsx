@@ -179,7 +179,7 @@ export default async function DriverDashboardPage() {
                   Cash disponible
                 </p>
                 <p className="mt-xs text-xs text-primary-100/90">
-                  Retire sur Mobile Money depuis ton portefeuille
+                  Retirez sur Mobile Money depuis votre portefeuille
                 </p>
               </div>
               <span className="text-3xl" aria-hidden>💵</span>
@@ -218,7 +218,7 @@ export default async function DriverDashboardPage() {
                 <strong style={{ fontVariantNumeric: 'tabular-nums' }}>
                   {formatFcfa(insuranceMonthly)} F
                 </strong>{' '}
-                / mois, prélevés automatiquement sur tes revenus.
+                / mois, prélevés automatiquement sur vos revenus.
               </p>
             </div>
             {insuranceThisMonth ? (
@@ -249,7 +249,7 @@ export default async function DriverDashboardPage() {
               <strong style={{ fontVariantNumeric: 'tabular-nums' }}>
                 {formatFcfa(insuranceOutstanding)} F
               </strong>{' '}
-              — prélevé dès que tes revenus le permettent.
+              — prélevé dès que vos revenus le permettent.
             </p>
           )}
         </section>
@@ -268,7 +268,7 @@ export default async function DriverDashboardPage() {
               {vehicleInfo.color && <Row label="Couleur" value={vehicleInfo.color} />}
             </dl>
             <p className="mt-md rounded-md bg-warning/10 p-sm text-[11px] text-warning">
-              Info non modifiable en ligne. Contacte TamCar pour toute mise à jour.
+              Info non modifiable en ligne. Contactez TamCar pour toute mise à jour.
             </p>
           </section>
         )}
@@ -291,7 +291,7 @@ export default async function DriverDashboardPage() {
             href="/history"
             Icon={HistoryIcon}
             title="Historique des courses"
-            sub="Détail de chaque course et ce qu'elle t'a rapporté"
+            sub="Détail de chaque course et ce qu'elle vous a rapporté"
           />
           <ShortcutLink
             href="/strikes"
@@ -309,7 +309,7 @@ export default async function DriverDashboardPage() {
             href="/"
             Icon={CoinsIcon}
             title="Prendre des courses"
-            sub="Retour à l'écran chauffeur pour te connecter"
+            sub="Retour à l'écran chauffeur pour vous connecter"
           />
         </section>
 
@@ -404,7 +404,7 @@ function TodayProgress({
         ) : progress.fcfa_below_min > 0 ? (
           <>
             Encore <strong className="text-neutral-900">{formatFcfa(progress.fcfa_below_min)} F</strong> de
-            volume pour atteindre ton minimum quotidien de {formatFcfa(progress.min_target)} F.
+            volume pour atteindre votre minimum quotidien de {formatFcfa(progress.min_target)} F.
           </>
         ) : (
           <>

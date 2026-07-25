@@ -356,7 +356,7 @@ export function StopsListClient({
 
       {canEdit && modifiable.length > 0 && (
         <p className="mt-xs text-center text-[10px] text-neutral-500">
-          ★ pour en faire ta destination · ⋮⋮ + glisse pour réordonner · × pour retirer
+          ★ pour en faire votre destination · ⋮⋮ + glissez pour réordonner · × pour retirer
         </p>
       )}
       {err && <p className="mt-xs text-[10px] text-error">{err}</p>}

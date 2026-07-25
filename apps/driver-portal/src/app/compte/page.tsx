@@ -56,7 +56,7 @@ export default async function ComptePage() {
             <Row label="Email" value={user.email ?? '—'} />
           </dl>
           <p className="mt-md rounded-md bg-warning/10 p-sm text-[11px] text-warning">
-            Pour modifier ces informations, contacte l&apos;équipe TamCar.
+            Pour modifier ces informations, contactez l&apos;équipe TamCar.
           </p>
         </section>
 
@@ -72,13 +72,13 @@ export default async function ComptePage() {
             href="/history"
             Icon={HistoryIcon}
             title="Historique des courses"
-            sub="Ce que chaque course t'a rapporté"
+            sub="Ce que chaque course vous a rapporté"
           />
           <ShortcutLink
             href="/strikes"
             Icon={CarIcon}
             title="Signalements"
-            sub="Voir tes strikes et les contester"
+            sub="Voir vos strikes et les contester"
           />
           <ShortcutLink
             href="/"

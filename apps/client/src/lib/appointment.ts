@@ -37,7 +37,7 @@ export const STATUS_META: Record<AppointmentStatus, { label: string; color: stri
   scheduled: {
     label: 'Rendez-vous pris',
     color: 'bg-primary-500 text-white',
-    sub: 'Ton créneau est réservé. Viens avec tes documents.',
+    sub: 'Votre créneau est réservé. Venez avec vos documents.',
   },
   confirmed: {
     label: 'Confirmé',
@@ -47,34 +47,34 @@ export const STATUS_META: Record<AppointmentStatus, { label: string; color: stri
   no_show: {
     label: 'Absent au RDV',
     color: 'bg-neutral-500 text-white',
-    sub: 'Tu peux reprendre un nouveau rendez-vous quand tu veux.',
+    sub: 'Vous pouvez reprendre un nouveau rendez-vous quand vous voulez.',
   },
   completed_approved: {
     label: 'Validé',
     color: 'bg-success text-white',
-    sub: 'Ton profil chauffeur est actif. Bienvenue !',
+    sub: 'Votre profil chauffeur est actif. Bienvenue !',
   },
   completed_rejected: {
     label: 'Refusé',
     color: 'bg-error text-white',
-    sub: 'Consulte la raison ci-dessous et postule à nouveau si tu veux.',
+    sub: 'Consultez la raison ci-dessous et postulez à nouveau si vous voulez.',
   },
   cancelled_by_user: {
     label: 'Annulé',
     color: 'bg-neutral-400 text-white',
-    sub: 'Tu peux reprendre un rendez-vous quand tu veux.',
+    sub: 'Vous pouvez reprendre un rendez-vous quand vous voulez.',
   },
 };
 
 export const APPLICATION_TYPE_META: Record<DriverApplicationType, { label: string; sub: string; split: string }> = {
   cession: {
     label: 'Formule Cession',
-    sub: 'TamCar te fournit la voiture, tu la possèdes en 24 mois (36 si neuve)',
+    sub: 'TamCar vous fournit la voiture, vous la possédez en 24 mois (36 si neuve)',
     split: '40% cash · 10% rachat · 30% concession · 20% plateforme · bonus 5% dès la 16e course/jour',
   },
   proprietaire: {
     label: 'Formule Propriétaire',
-    sub: 'Tu viens avec ta propre voiture et roules librement',
+    sub: 'Vous venez avec votre propre voiture et roulez librement',
     split: '80% cash · 20% plateforme · bonus 10% plafonné 100 F/course',
   },
 };

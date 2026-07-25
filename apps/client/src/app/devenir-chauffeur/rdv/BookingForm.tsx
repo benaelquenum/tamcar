@@ -84,7 +84,7 @@ export function BookingForm({
       {/* Formule */}
       <section>
         <p className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-          1. Choisis ta formule
+          1. Choisissez votre formule
         </p>
         <div className="mt-md space-y-sm">
           {(['cession', 'proprietaire'] as const).map((t) => {
@@ -126,7 +126,7 @@ export function BookingForm({
       {/* Coordonnées */}
       <section>
         <p className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-          2. Tes coordonnées
+          2. Vos coordonnées
         </p>
         <div className="mt-md grid grid-cols-2 gap-sm">
           <Input
@@ -160,7 +160,7 @@ export function BookingForm({
             value={email}
             onChange={setEmail}
             type="email"
-            placeholder="tu@exemple.com"
+            placeholder="vous@exemple.com"
           />
         </div>
       </section>
@@ -168,7 +168,7 @@ export function BookingForm({
       {/* Créneau */}
       <section>
         <p className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-          3. Choisis un créneau
+          3. Choisissez un créneau
         </p>
         <p className="mt-xs text-[10px] text-neutral-500">
           Lun–Ven, tranches de 30 min. Un créneau non affiché est déjà pris.
@@ -176,7 +176,7 @@ export function BookingForm({
 
         {slotsByDay.length === 0 ? (
           <div className="mt-md rounded-xl bg-warning/10 p-lg text-center text-sm text-neutral-900">
-            Aucun créneau disponible actuellement. Reviens plus tard ou contacte l&apos;équipe.
+            Aucun créneau disponible actuellement. Revenez plus tard ou contactez l&apos;équipe.
           </div>
         ) : (
           <div className="mt-md space-y-md">
