@@ -1,3 +1,4 @@
+<html lang="fr">
 <meta charset="utf-8">
 <title>TamCar — Concessionnaire partenaire</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -24,7 +25,7 @@
   h2{ font-size:18pt; font-weight:800; color:var(--blue-dark); margin-bottom:3mm; }
   h3{ font-size:12pt; font-weight:700; color:var(--ink); }
   p{ font-size:10.5pt; line-height:1.55; color:#334155; }
-  .lead{ font-size:12.5pt; line-height:1.5; color:#475569; }
+  .lead{ font-size:12.5pt; line-height:1.5; color:#475569; text-align:justify; -webkit-hyphens:auto; hyphens:auto; }
   .brand-logo{ height:14mm; width:auto; }
   .brand-badge{ display:inline-flex; align-items:center; padding:2mm 4mm; border-radius:4mm; background:rgba(255,255,255,.12); }
   .tag{ display:inline-block; padding:1.5mm 4mm; border-radius:999px; background:var(--blue-light); color:var(--blue-dark); font-size:9pt; font-weight:800; letter-spacing:.5pt; text-transform:uppercase; }
@@ -47,6 +48,12 @@
   .muted{ color:var(--muted); }
   .kpi{ font-size:22pt; font-weight:800; color:var(--gold); }
   .small{ font-size:9pt; }
+  /* Justification du corps de texte (paragraphes), césure FR pour éviter les trous */
+  .card p, .step p{ text-align:justify; -webkit-hyphens:auto; hyphens:auto; }
+  /* On préserve les légendes centrées de la carte répartition */
+  .card.blue .grid3 p{ text-align:center; -webkit-hyphens:none; hyphens:none; }
+  /* Cartes étroites en 3 colonnes (étapes) : aligné à gauche (justif = trous) */
+  .grid3 > .card p{ text-align:left; -webkit-hyphens:none; hyphens:none; }
 </style>
 
 <!-- ============ PAGE 1 — COUVERTURE ============ -->
