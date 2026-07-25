@@ -279,7 +279,7 @@ export default async function DriverDashboardPage() {
             href="/bien-etre"
             Icon={GiftIcon}
             title="Bien-être chauffeur"
-            sub="Ta voiture, ton épargne retraite, ta santé — ce que TamCar t'apporte"
+            sub="Votre véhicule, votre épargne retraite, votre santé — ce que TamCar vous apporte"
           />
           <ShortcutLink
             href="/tampass"

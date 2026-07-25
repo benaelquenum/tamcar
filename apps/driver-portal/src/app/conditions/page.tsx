@@ -55,11 +55,10 @@ export default function ConditionsPage({
             <span aria-hidden>🎁</span> Tes avantages chauffeur
           </p>
           <p className="mt-xs text-[13px] leading-relaxed text-neutral-700">
-            En roulant avec TamCar, tu te constitues une{' '}
-            <strong>épargne retraite qui t&apos;appartient</strong> : chaque
-            jour, <strong>1 000 F de tes gains</strong> sont mis de côté pour toi
-            (soit ~624 000 F sur 2 ans). Santé et protection famille sont
-            disponibles en option.
+            En roulant avec TamCar, vous vous constituez une{' '}
+            <strong>épargne retraite qui vous appartient</strong> : chaque jour,{' '}
+            <strong>1 000 F de vos gains</strong> sont mis de côté pour vous
+            (soit ~600 000 F sur 2 ans). Votre santé est couverte en option.
           </p>
           <Link
             href="/bien-etre"
