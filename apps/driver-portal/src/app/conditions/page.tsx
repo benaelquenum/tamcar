@@ -50,6 +50,25 @@ export default function ConditionsPage({
           </Link>
         </div>
 
+        <div className="mt-lg rounded-xl border border-primary-100 bg-primary-50 p-lg">
+          <p className="flex items-center gap-xs text-sm font-extrabold text-primary-700">
+            <span aria-hidden>🎁</span> Tes avantages chauffeur
+          </p>
+          <p className="mt-xs text-[13px] leading-relaxed text-neutral-700">
+            En roulant avec TamCar, tu te constitues une{' '}
+            <strong>épargne retraite qui t&apos;appartient</strong> : chaque
+            jour, <strong>1 000 F de tes gains</strong> sont mis de côté pour toi
+            (soit ~624 000 F sur 2 ans). Santé et protection famille sont
+            disponibles en option.
+          </p>
+          <Link
+            href="/bien-etre"
+            className="mt-sm inline-block text-[13px] font-bold text-primary-700 underline"
+          >
+            Découvrir mes avantages →
+          </Link>
+        </div>
+
         <form action={acceptTermsAction} className="mt-xl">
           <input type="hidden" name="next" value={next} />
           <label className="flex items-start gap-md rounded-xl bg-neutral-100 p-lg">

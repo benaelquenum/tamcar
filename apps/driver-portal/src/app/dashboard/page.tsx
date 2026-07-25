@@ -7,6 +7,7 @@ import {
   CarIcon,
   ChartIcon,
   CoinsIcon,
+  GiftIcon,
   HistoryIcon,
   LogOutIcon,
   PassIcon,
@@ -274,6 +275,12 @@ export default async function DriverDashboardPage() {
 
         {/* Raccourcis */}
         <section className="mt-lg space-y-sm">
+          <ShortcutLink
+            href="/bien-etre"
+            Icon={GiftIcon}
+            title="Bien-être chauffeur"
+            sub="Ta voiture, ton épargne retraite, ta santé — ce que TamCar t'apporte"
+          />
           <ShortcutLink
             href="/tampass"
             Icon={PassIcon}

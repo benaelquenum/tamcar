@@ -12,6 +12,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--prefix", "apps/client"],
       "port": 3001
+    },
+    {
+      "name": "tamcar-driver",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "apps/driver-portal"],
+      "port": 3002
     }
   ]
 }
