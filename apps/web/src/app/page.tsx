@@ -149,11 +149,11 @@ function Trust() {
           />
           <TrustPoint
             title="Voitures récentes"
-            body="Notre flotte est fournie par des concessionnaires partenaires. Entretien professionnel, sécurité vérifiée."
+            body="Notre flotte est fournie par des partenaires véhicules. Entretien professionnel, sécurité vérifiée."
           />
           <TrustPoint
             title="Local et à l'écoute"
-            body="TamCar est béninoise. Nos concessionnaires partenaires sont actionnaires — on partage l'ambition d'un service qui dure."
+            body="TamCar est béninoise. Nos partenaires véhicules sont actionnaires — on partage l'ambition d'un service qui dure."
           />
           <TrustPoint
             title="Appel gratuit dans l'app"

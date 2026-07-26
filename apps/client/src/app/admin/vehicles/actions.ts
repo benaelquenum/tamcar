@@ -18,7 +18,7 @@ export async function createVehicle(formData: FormData) {
 
   if (!plate || !brand || !model) throw new Error('Plaque, marque, modèle obligatoires');
   if (formula === 'cession' && !dealer_partner_id) {
-    throw new Error('Formule cession : concessionnaire obligatoire');
+    throw new Error('Formule cession : partenaire véhicule obligatoire');
   }
   if (formula === 'proprietaire' && !owner_profile_id) {
     throw new Error('Formule propriétaire : chauffeur propriétaire obligatoire');

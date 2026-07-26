@@ -102,7 +102,7 @@ export default async function AdminDealerAdvancesPage() {
 
       {advances.length === 0 && (
         <div className="rounded-xl bg-white p-2xl text-center text-sm text-neutral-600 shadow-sm">
-          Aucune ADR enregistrée. Une ADR est créée à l&apos;approbation d&apos;un candidat concessionnaire.
+          Aucune ADR enregistrée. Une ADR est créée à l&apos;approbation d&apos;un candidat partenaire véhicule.
         </div>
       )}
     </div>

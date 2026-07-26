@@ -18,14 +18,14 @@ export function CreateDealerForm() {
   return (
     <section className="mb-2xl rounded-xl border border-neutral-200 bg-white p-lg shadow-sm">
       <h2 className="mb-md text-sm font-bold uppercase tracking-wider text-neutral-500">
-        Enregistrer un concessionnaire
+        Enregistrer un partenaire véhicule
       </h2>
 
       {state.ok && state.credentials && (
         <div className="mb-md rounded-xl border-2 border-primary-500 bg-primary-50 p-lg">
           <p className="flex items-center gap-xs text-sm font-bold text-primary-900">
             <CheckIcon className="h-4 w-4" strokeWidth={3} />
-            Concessionnaire <strong className="mx-xs">{state.credentials.company_name}</strong> (contact {state.credentials.full_name}) enregistré.
+            Partenaire véhicule <strong className="mx-xs">{state.credentials.company_name}</strong> (contact {state.credentials.full_name}) enregistré.
           </p>
           <p className="mt-md text-xs font-semibold text-neutral-700">
             Identifiants à transmettre :
@@ -36,7 +36,7 @@ export function CreateDealerForm() {
             <RowKV label="Mot de passe temporaire" value={state.credentials.password} copyable />
           </dl>
           <p className="mt-md text-[11px] text-neutral-600">
-            Le concessionnaire se connecte sur{' '}
+            Le partenaire véhicule se connecte sur{' '}
             <a href="https://tamcar-client.vercel.app/login" className="underline">tamcar-client.vercel.app</a>
             {' '}avec ces identifiants pour accéder à son portail /dealer.
           </p>
@@ -54,7 +54,7 @@ export function CreateDealerForm() {
         <Field label="Nom complet du contact *" name="full_name" required />
         <Field label="Raison sociale *" name="company_name" required />
         <Field label="RCCM" name="rccm" />
-        <Field label="Part concessionnaire (%)" name="share_pct" type="number" step="0.5" defaultValue="25" />
+        <Field label="Part partenaire véhicule (%)" name="share_pct" type="number" step="0.5" defaultValue="25" />
         <div className="md:col-span-2">
           <SubmitButton />
         </div>
@@ -91,7 +91,7 @@ function SubmitButton() {
       disabled={pending}
       className="rounded-lg bg-gradient-to-r from-primary-500 to-primary-700 px-lg py-sm text-sm font-bold text-white shadow-glow disabled:opacity-50"
     >
-      {pending ? 'Création…' : 'Enregistrer le concessionnaire'}
+      {pending ? 'Création…' : 'Enregistrer le partenaire véhicule'}
     </button>
   );
 }

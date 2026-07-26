@@ -38,7 +38,7 @@ export default async function AdminDealersPage() {
   return (
     <div>
       <div className="mb-xl flex items-baseline justify-between">
-        <h1 className="text-2xl font-extrabold text-neutral-900">Concessionnaires</h1>
+        <h1 className="text-2xl font-extrabold text-neutral-900">Partenaires véhicules</h1>
         <p className="text-sm text-neutral-600">
           <strong className="text-neutral-900">{active.length}</strong> actifs ·{' '}
           <strong className="text-neutral-500">{archived.length}</strong> archivés
@@ -49,11 +49,11 @@ export default async function AdminDealersPage() {
 
       <section>
         <h2 className="mb-md text-lg font-bold text-neutral-900">
-          Concessionnaires actifs
+          Partenaires véhicules actifs
         </h2>
         {active.length === 0 ? (
           <div className="rounded-xl bg-white p-2xl text-center text-sm text-neutral-600 shadow-sm">
-            Aucun concessionnaire actif.
+            Aucun partenaire véhicule actif.
           </div>
         ) : (
           <div className="overflow-hidden rounded-xl bg-white shadow-sm">
@@ -96,7 +96,7 @@ export default async function AdminDealersPage() {
                         <input type="hidden" name="id" value={d.dealer_id} />
                         <input type="hidden" name="reason" value="Archivé depuis l'admin" />
                         <ConfirmSubmit
-                          message={`Archiver le concessionnaire ${d.full_name} ?`}
+                          message={`Archiver le partenaire véhicule ${d.full_name} ?`}
                           className="rounded-md bg-error/10 px-md py-xs text-xs font-bold text-error hover:bg-error/20"
                         >
                           Archiver

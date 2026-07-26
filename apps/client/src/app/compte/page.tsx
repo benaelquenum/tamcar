@@ -46,7 +46,7 @@ export default async function ComptePage() {
             <p className="text-xs font-semibold uppercase tracking-wider text-primary-700">
               {profile.role === 'client' && 'Compte client'}
               {profile.role === 'admin' && 'Compte administrateur'}
-              {profile.role === 'dealer' && 'Compte concessionnaire'}
+              {profile.role === 'dealer' && 'Compte partenaire véhicule'}
             </p>
           </div>
         </section>

@@ -21,7 +21,7 @@ export default async function DealerLayout({
       <header className="border-b border-neutral-200 bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-lg py-md">
           <div className="flex items-center gap-md">
-            <Link href="/dealer" aria-label="Accueil concessionnaire">
+            <Link href="/dealer" aria-label="Accueil partenaire véhicule">
               <Logo className="h-8 w-auto" />
             </Link>
             <span className="rounded-full bg-primary-500 px-md py-xs text-xs font-bold uppercase tracking-wider text-white">

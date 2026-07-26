@@ -75,7 +75,7 @@ function CredentialsPanel({
     <div className="mb-md rounded-xl border-2 border-primary-500 bg-primary-50 p-lg">
       <p className="flex items-center gap-xs text-sm font-bold text-primary-900">
         <CheckIcon className="h-4 w-4" strokeWidth={3} />
-        {kind === 'chauffeur' ? 'Chauffeur' : 'Concessionnaire'} <strong className="mx-xs">{c.full_name}</strong> enregistré.
+        {kind === 'chauffeur' ? 'Chauffeur' : 'Partenaire véhicule'} <strong className="mx-xs">{c.full_name}</strong> enregistré.
       </p>
       <p className="mt-md text-xs font-semibold text-neutral-700">
         Identifiants à transmettre au {kind} :

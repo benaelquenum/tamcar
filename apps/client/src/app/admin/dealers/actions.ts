@@ -74,7 +74,7 @@ async function createDealerImpl(formData: FormData): Promise<{ email: string; pa
     rccm: rccm || null,
     dealer_share_pct: share_pct,
   }, { onConflict: 'profile_id' });
-  if (dpErr) throw new Error(`Création concessionnaire : ${dpErr.message}`);
+  if (dpErr) throw new Error(`Création partenaire véhicule : ${dpErr.message}`);
 
   revalidatePath('/admin/dealers');
   return { email, password, phone: phone || '', full_name, company_name };

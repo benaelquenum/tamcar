@@ -403,7 +403,7 @@ export default async function AdminHome() {
       </Section>
 
       {/* ===== ADR ===== */}
-      <Section title="ADR — Avances concessionnaires">
+      <Section title="ADR — Avances partenaires véhicules">
         <div className="grid grid-cols-2 gap-md lg:grid-cols-4">
           <Stat label="Total avancé" value={`${fmt(adrTotal)} F`} sub={`${A.length} lignes`} />
           <Stat label="Total remboursé" value={`${fmt(adrRefunded)} F`}
@@ -598,10 +598,10 @@ export default async function AdminHome() {
         <div className="grid grid-cols-1 gap-md sm:grid-cols-2 lg:grid-cols-3">
           <ShortcutCard href="/admin/rides" title="Courses" description="Historique complet, statuts, prix, wallet transactions." />
           <ShortcutCard href="/admin/drivers" title="Chauffeurs" description="Enregistrement, formule, gains cumulés, suspend/archive." />
-          <ShortcutCard href="/admin/dealers" title="Concessionnaires" description="Enregistrement, part, actionnariat, CA cumulé." />
+          <ShortcutCard href="/admin/dealers" title="Partenaires véhicules" description="Enregistrement, part, actionnariat, CA cumulé." />
           <ShortcutCard href="/admin/vehicles" title="Véhicules" description="Enregistrement, activation, affectation chauffeur." />
           <ShortcutCard href="/admin/candidatures" title="Candidatures & RDV" description="Validation dossiers chauffeurs, KYC, planning." />
-          <ShortcutCard href="/admin/dealer-advances" title="Avances Concessionnaires" description="Ligne de crédit ADR par partenaire." />
+          <ShortcutCard href="/admin/dealer-advances" title="Avances Partenaires véhicules" description="Ligne de crédit ADR par partenaire." />
           <ShortcutCard href="/admin/litiges" title="Litiges" description="Arbitrage des annulations et contestations." />
           <ShortcutCard href="/admin/promos" title="Codes promo" description="Création et suivi des codes promotionnels." />
           <ShortcutCard href="/admin/banners" title="Bannières" description="Communications marketing home client." />

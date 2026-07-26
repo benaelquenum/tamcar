@@ -78,7 +78,7 @@ export function ApproveDriverForm({ app }: Props) {
       </h2>
       <p className="mb-md text-xs text-neutral-600">
         Formule : <strong>{typeMeta.label}</strong>. Renseigne la photo, le véhicule et le
-        concessionnaire ; le driver + wallets sont créés automatiquement.
+        partenaire véhicule ; le driver + wallets sont créés automatiquement.
       </p>
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-md md:grid-cols-2">
@@ -126,7 +126,7 @@ export function ApproveDriverForm({ app }: Props) {
           </div>
         </FieldSet>
 
-        <FieldSet legend="Concessionnaire / Propriétaire" wide>
+        <FieldSet legend="Partenaire véhicule / Propriétaire" wide>
           <Input
             name="dealer_company_name"
             label="Raison sociale"
@@ -187,10 +187,10 @@ export function ApproveDriverForm({ app }: Props) {
               />
               <div>
                 <p className="text-sm font-bold text-neutral-900">
-                  ADR de 100 000 F versée par le concessionnaire
+                  ADR de 100 000 F versée par le partenaire véhicule
                 </p>
                 <p className="mt-xs text-[11px] text-neutral-600">
-                  Le concessionnaire remet 100 000 F cash / Mobile Money à la signature.
+                  Le partenaire véhicule remet 100 000 F cash / Mobile Money à la signature.
                   Cette ADR sera automatiquement remboursée sur son wallet à M+12 via le split
                   du fonds rachat (30% année 1, 20% année 2).
                 </p>

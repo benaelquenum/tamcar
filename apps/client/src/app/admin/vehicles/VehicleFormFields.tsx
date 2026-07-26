@@ -22,7 +22,7 @@ export function VehicleFormFields({
     <>
       <label className="block">
         <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
-          Concessionnaire (cession)
+          Partenaire véhicule (cession)
         </span>
         <select
           name="dealer_partner_id"
@@ -46,7 +46,7 @@ export function VehicleFormFields({
           Chauffeur propriétaire
           {!dealerChosen && !ownerChosen && (
             <span className="ml-xs font-normal normal-case tracking-normal text-neutral-400">
-              (activé car aucun concessionnaire sélectionné)
+              (activé car aucun partenaire véhicule sélectionné)
             </span>
           )}
         </span>
@@ -86,13 +86,13 @@ export function VehicleFormFields({
           : 'bg-warning/10 text-warning'
         }`}>
           {dealerChosen && (
-            <>Formule <strong>Cession</strong> — le véhicule appartient au concessionnaire sélectionné. Le split 40/10/30/20 s&apos;applique.</>
+            <>Formule <strong>Cession</strong> — le véhicule appartient au partenaire véhicule sélectionné. Le split 40/10/30/20 s&apos;applique.</>
           )}
           {!dealerChosen && ownerChosen && (
             <>Formule <strong>Propriétaire</strong> — le véhicule appartient au chauffeur. Split 80/20 (80 % chauffeur).</>
           )}
           {!dealerChosen && !ownerChosen && (
-            <>Sélectionne <strong>soit un concessionnaire</strong> (formule Cession), <strong>soit un chauffeur propriétaire</strong> (formule Propriétaire).</>
+            <>Sélectionne <strong>soit un partenaire véhicule</strong> (formule Cession), <strong>soit un chauffeur propriétaire</strong> (formule Propriétaire).</>
           )}
         </div>
       </div>

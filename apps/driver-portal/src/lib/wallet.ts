@@ -64,7 +64,7 @@ const TX_LABEL: Record<WalletTxType, string> = {
   cancellation_reimbursement: 'Compensation annulation',
   change_return_in: 'Monnaie reçue',
   change_return_out: 'Monnaie rendue au client',
-  dealer_share_credit: 'Part concessionnaire',
+  dealer_share_credit: 'Part partenaire véhicule',
   insurance_premium: 'Assurance conducteur',
   adjustment: 'Ajustement admin',
 };

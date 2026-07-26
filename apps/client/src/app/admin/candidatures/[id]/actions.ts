@@ -57,7 +57,7 @@ export async function approveAppointment(formData: FormData) {
   });
   if (error) throw new Error(error.message);
 
-  // Créer l'ADR pour ce concessionnaire (formule Cession uniquement)
+  // Créer l'ADR pour ce partenaire véhicule (formule Cession uniquement)
   const adrPaid = String(formData.get('adr_paid') || '') === 'on';
   if (adrPaid) {
     const { data: app } = await supabase

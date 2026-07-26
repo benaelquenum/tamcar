@@ -83,7 +83,7 @@ export default async function DealerDashboard() {
     return (
       <div className="rounded-xl bg-white p-lg shadow-sm">
         <p className="text-sm text-neutral-700">
-          Aucun profil concessionnaire trouvé. Contacte TamCar pour l&apos;activation.
+          Aucun profil partenaire véhicule trouvé. Contacte TamCar pour l&apos;activation.
         </p>
       </div>
     );
@@ -113,7 +113,7 @@ export default async function DealerDashboard() {
       <div>
         <h1 className="text-2xl font-extrabold text-neutral-900">{dealer.company_name}</h1>
         <p className="mt-xs text-sm text-neutral-600">
-          Concessionnaire TamCar · Part {dealer.dealer_share_pct} %
+          Partenaire véhicule TamCar · Part {dealer.dealer_share_pct} %
           {dealer.is_shareholder && ` · Actionnaire SARL ${dealer.shareholder_pct ?? '—'} %`}
         </p>
       </div>

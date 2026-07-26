@@ -65,7 +65,7 @@ export default async function HomePage() {
     redirect('/onboarding');
   }
 
-  // Redirect concessionnaire vers son portail dédié
+  // Redirect partenaire véhicule vers son portail dédié
   if (profile && profile.role === 'dealer') {
     redirect('/dealer');
   }
