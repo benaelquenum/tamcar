@@ -55,6 +55,8 @@ const TAMCAR_THEME = {
   roads_label_minor: '#6C6B65', roads_label_minor_halo: '#FFFFFF',
   city_label: '#26251F', city_label_halo: '#FFFFFF',
   subplace_label: '#4A4941', subplace_label_halo: '#FFFFFF',
+  // Police TamCar : Sora (glyphes SDF auto-hébergés dans /public/fonts/Sora).
+  regular: 'Sora', bold: 'Sora', italic: 'Sora',
 };
 
 let protocolRegistered = false;
@@ -75,7 +77,7 @@ export function maplibreStyle(): string | StyleSpecification {
     ensurePmtilesProtocol();
     return {
       version: 8,
-      glyphs: `${PM_ASSETS}/fonts/{fontstack}/{range}.pbf`,
+      glyphs: '/fonts/{fontstack}/{range}.pbf',
       sprite: `${PM_ASSETS}/sprites/v4/light`,
       sources: {
         protomaps: {
