@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { createServerSupabase } from '@/lib/supabase-server';
 import { createAdminSupabase } from '@/lib/supabase-admin';
 import { deriveEmail, ensureUniqueEmail } from '@/lib/derive-email';
+import { getCurrentProfile } from '@/lib/session';
 
 function generatePassword(): string {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -89,6 +90,40 @@ async function createDriverImpl(formData: FormData): Promise<{ email: string; pa
 
   revalidatePath('/admin/drivers');
   return { email, password, phone: phone || '', full_name };
+}
+
+export type ResetPwState = { ok: boolean; error?: string; password?: string };
+
+/**
+ * Réinitialise le mot de passe d'un chauffeur (API admin service_role).
+ * Garde admin explicite : les server actions sont invocables hors du layout,
+ * donc on revérifie le rôle avant de toucher à l'auth d'un autre utilisateur.
+ * Champ password vide → un mot de passe est généré et renvoyé à l'admin.
+ */
+export async function resetDriverPassword(
+  _prev: ResetPwState | undefined,
+  formData: FormData,
+): Promise<ResetPwState> {
+  try {
+    const me = await getCurrentProfile();
+    if (!me || me.role !== 'admin') throw new Error('Non autorisé');
+
+    const profileId = String(formData.get('profile_id') || '').trim();
+    let password = String(formData.get('password') || '').trim();
+    if (!profileId) throw new Error('Chauffeur introuvable');
+    if (password && password.length < 6) {
+      throw new Error('Mot de passe trop court (6 caractères minimum)');
+    }
+    if (!password) password = generatePassword();
+
+    const admin = createAdminSupabase();
+    const { error } = await admin.auth.admin.updateUserById(profileId, { password });
+    if (error) throw new Error(error.message);
+
+    return { ok: true, password };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : 'Erreur inconnue' };
+  }
 }
 
 export async function suspendDriver(formData: FormData) {

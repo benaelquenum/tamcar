@@ -2,6 +2,7 @@ import { createServerSupabase } from '@/lib/supabase-server';
 import { AlertTriangleIcon, TargetIcon2 } from '@/components/Icon';
 import { suspendDriver, unsuspendDriver, archiveDriver } from './actions';
 import { CreateDriverForm } from './CreateDriverForm';
+import { ResetPasswordControl } from './ResetPasswordControl';
 import { ConfirmSubmit } from '@/components/ConfirmSubmit';
 
 type DriverRow = {
@@ -222,6 +223,7 @@ export default async function AdminDriversPage() {
                     </td>
                     <td className="px-md py-md text-right">
                       <div className="flex flex-wrap justify-end gap-xs">
+                        <ResetPasswordControl profileId={d.profile_id} name={d.full_name} />
                         {d.status === 'active' && (
                           <form action={suspendDriver} className="inline">
                             <input type="hidden" name="id" value={d.driver_id} />
