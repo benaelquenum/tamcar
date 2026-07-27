@@ -488,14 +488,14 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
     return () => { supabaseBrowser.removeChannel(channel); };
   }, [ride.id, refetchStops]);
 
-  // Timeout recherche : 2 minutes max en status 'requested'
+  // Timeout recherche : 1 minute max en status 'requested'
   useEffect(() => {
     if (ride.status !== 'requested') {
       setSearchTimedOut(false);
       return;
     }
     const start = new Date(ride.requested_at).getTime();
-    const deadline = start + 120_000;
+    const deadline = start + 60_000;
     const remaining = Math.max(0, deadline - Date.now());
     if (remaining === 0) {
       setSearchTimedOut(true);
@@ -505,14 +505,14 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
     return () => clearTimeout(timer);
   }, [ride.status, ride.requested_at]);
 
-  // Alternatives cross-catégorie : après 60 s sans match dans la catégorie initiale,
+  // Alternatives cross-catégorie : après 30 s sans match dans la catégorie initiale,
   // on propose au client toutes les alternatives disponibles (avec nb chauffeurs proches).
   useEffect(() => {
     if (ride.status !== 'requested') return;
     if (ride.downgrade_accepted_at) return; // déjà switché
     if (alternativeOffers !== null) return;  // déjà proposé
     const start = new Date(ride.requested_at).getTime();
-    const deadline = start + 60_000;
+    const deadline = start + 30_000;
     const remaining = Math.max(0, deadline - Date.now());
     const timer = setTimeout(async () => {
       const { data, error } = await supabaseBrowser.rpc('preview_alternative_offers', {
@@ -1149,7 +1149,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
               </div>
               <p className="mt-sm text-[11px] text-neutral-600">
                 Votre demande sera envoyée au chauffeur. Il a{' '}
-                <strong>20 secondes</strong> pour l&apos;accepter — sans réponse, la
+                <strong>10 secondes</strong> pour l&apos;accepter — sans réponse, la
                 course est terminée automatiquement au nouveau prix.
               </p>
             </div>
@@ -1571,7 +1571,7 @@ function CompletionWaitingModal({
   distanceFromDropoffM: number | null | undefined;
   autoAcceptAt: string | null | undefined;
 }) {
-  const [remaining, setRemaining] = useState(20);
+  const [remaining, setRemaining] = useState(10);
   useEffect(() => {
     if (!autoAcceptAt) return;
     const deadline = new Date(autoAcceptAt).getTime();
