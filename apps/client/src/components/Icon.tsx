@@ -390,3 +390,30 @@ export function PhoneIcon({ className = 'h-4 w-4' }: IconProps) {
     </svg>
   );
 }
+
+export function CameraIcon({ className = 'h-5 w-5', strokeWidth = 2 }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={`${base} ${className}`}>
+      <path d="M4 7h3l1.5-2h7L17 7h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1Z" />
+      <circle cx="12" cy="13" r="3.2" />
+    </svg>
+  );
+}
+
+export function VideoIcon({ className = 'h-5 w-5', strokeWidth = 2 }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={`${base} ${className}`}>
+      <rect x="3" y="6" width="12" height="12" rx="2" />
+      <path d="m21 8-6 4 6 4V8Z" />
+    </svg>
+  );
+}
+
+export function MicIcon({ className = 'h-5 w-5', strokeWidth = 2 }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={`${base} ${className}`}>
+      <rect x="9" y="3" width="6" height="11" rx="3" />
+      <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+    </svg>
+  );
+}

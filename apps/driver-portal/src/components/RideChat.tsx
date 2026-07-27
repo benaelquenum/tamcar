@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+import { CameraIcon, VideoIcon, MicIcon, ClockIcon } from './Icon';
 
 type MsgKind = 'text' | 'photo' | 'audio' | 'video';
 
@@ -256,8 +257,8 @@ export function RideChat({ rideId, myUserId, otherName, onClose }: Props) {
                     {m.kind === 'text' ? (
                       <p className="text-sm">{m.content}</p>
                     ) : expired ? (
-                      <p className={`text-sm italic ${mine ? 'text-white/70' : 'text-neutral-400'}`}>
-                        ⏱ Média expiré
+                      <p className={`flex items-center gap-xs text-sm italic ${mine ? 'text-white/70' : 'text-neutral-400'}`}>
+                        <ClockIcon className="h-4 w-4" /> Média expiré
                       </p>
                     ) : (
                       <button
@@ -265,9 +266,9 @@ export function RideChat({ rideId, myUserId, otherName, onClose }: Props) {
                         onClick={() => viewMedia(m)}
                         className="flex items-center gap-xs text-sm font-semibold underline-offset-2 hover:underline"
                       >
-                        {m.kind === 'photo' && <>📷 Photo · voir</>}
-                        {m.kind === 'video' && <>🎥 Vidéo · voir</>}
-                        {m.kind === 'audio' && <>🎤 Note vocale{m.media_duration_s ? ` · ${m.media_duration_s}s` : ''}</>}
+                        {m.kind === 'photo' && <><CameraIcon className="h-4 w-4" /> Photo · voir</>}
+                        {m.kind === 'video' && <><VideoIcon className="h-4 w-4" /> Vidéo · voir</>}
+                        {m.kind === 'audio' && <><MicIcon className="h-4 w-4" /> Note vocale{m.media_duration_s ? ` · ${m.media_duration_s}s` : ''}</>}
                       </button>
                     )}
                     <p className={`mt-xs text-right text-[9px] ${mine ? 'text-white/70' : 'text-neutral-400'}`}>
@@ -304,11 +305,11 @@ export function RideChat({ rideId, myUserId, otherName, onClose }: Props) {
         ) : (
           <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex items-center gap-xs">
             <button type="button" onClick={() => photoInputRef.current?.click()} disabled={sending}
-              aria-label="Photo" className="grid h-9 w-9 flex-none place-items-center rounded-full bg-neutral-100 text-lg disabled:opacity-50">📷</button>
+              aria-label="Photo" className="grid h-9 w-9 flex-none place-items-center rounded-full bg-neutral-100 text-neutral-700 disabled:opacity-50"><CameraIcon className="h-5 w-5" /></button>
             <button type="button" onClick={() => videoInputRef.current?.click()} disabled={sending}
-              aria-label="Vidéo" className="grid h-9 w-9 flex-none place-items-center rounded-full bg-neutral-100 text-lg disabled:opacity-50">🎥</button>
+              aria-label="Vidéo" className="grid h-9 w-9 flex-none place-items-center rounded-full bg-neutral-100 text-neutral-700 disabled:opacity-50"><VideoIcon className="h-5 w-5" /></button>
             <button type="button" onClick={startVoice} disabled={sending}
-              aria-label="Note vocale" className="grid h-9 w-9 flex-none place-items-center rounded-full bg-neutral-100 text-lg disabled:opacity-50">🎤</button>
+              aria-label="Note vocale" className="grid h-9 w-9 flex-none place-items-center rounded-full bg-neutral-100 text-neutral-700 disabled:opacity-50"><MicIcon className="h-5 w-5" /></button>
             <input
               type="text"
               value={input}
@@ -340,7 +341,7 @@ export function RideChat({ rideId, myUserId, otherName, onClose }: Props) {
           )}
           {viewing.kind === 'audio' && (
             <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-2xl bg-white p-lg text-center">
-              <p className="mb-md text-sm font-bold text-neutral-900">🎤 Note vocale</p>
+              <p className="mb-md flex items-center justify-center gap-xs text-sm font-bold text-neutral-900"><MicIcon className="h-4 w-4" /> Note vocale</p>
               <audio src={viewing.url} controls autoPlay className="w-full" />
               <button type="button" onClick={() => setViewing(null)} className="mt-md text-xs font-bold text-primary-700 underline">Fermer</button>
             </div>
