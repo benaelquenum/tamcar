@@ -11,6 +11,7 @@ import { RatingModal } from '@/components/RatingModal';
 import { getRoute } from '@/lib/mapbox';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { isAccurateEnough, SmoothingBuffer } from '@/lib/geo-precision';
+import { titleCaseName } from '@/lib/name';
 import { SUPPORT_PHONE, SUPPORT_PHONE_DISPLAY } from '@/lib/support';
 import { markArrivedAction, startRideAction } from './actions';
 import { StopsPanel } from './StopsPanel';
@@ -499,7 +500,7 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
             <div className="mb-md flex items-center gap-md rounded-xl bg-neutral-100 p-md">
               <Avatar
                 src={ride.client_avatar_url}
-                name={ride.client_full_name ?? undefined}
+                name={titleCaseName(ride.client_full_name) || undefined}
                 size={44}
               />
               <div className="flex-1 min-w-0">
@@ -507,7 +508,7 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
                   Votre client
                 </p>
                 <p className="truncate text-sm font-extrabold text-neutral-900">
-                  {ride.client_full_name ?? 'Client'}
+                  {titleCaseName(ride.client_full_name) || 'Client'}
                 </p>
                 {ride.client_phone && (
                   <p
@@ -708,7 +709,7 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
         <RideChat
           rideId={ride.id}
           myUserId={myUserId}
-          otherName={ride.client_full_name ?? 'Client'}
+          otherName={titleCaseName(ride.client_full_name) || 'Client'}
           onClose={() => setChatOpen(false)}
         />
       )}
@@ -718,7 +719,7 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
           open={ratingOpen}
           onClose={() => setRatingOpen(false)}
           rideId={ride.id}
-          ratedName={ride.client_full_name ?? 'Client'}
+          ratedName={titleCaseName(ride.client_full_name) || 'Client'}
           onSubmitted={() => setHasRated(true)}
         />
       )}

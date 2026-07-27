@@ -11,6 +11,7 @@ import { RatingModal } from '@/components/RatingModal';
 import { getRoute } from '@/lib/mapbox';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { SUPPORT_PHONE, SUPPORT_PHONE_DISPLAY } from '@/lib/support';
+import { titleCaseName } from '@/lib/name';
 import { AddStopModal } from './AddStopModal';
 import { StopsListClient } from './StopsListClient';
 import { isAccurateEnough, SmoothingBuffer } from '@/lib/geo-precision';
@@ -919,12 +920,12 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
               <div className="flex items-center gap-md">
                 <Avatar
                   src={ride.driver_avatar_url}
-                  name={ride.driver_full_name ?? undefined}
+                  name={titleCaseName(ride.driver_full_name) || undefined}
                   size={48}
                 />
                 <div className="flex-1">
                   <p className="text-sm font-bold text-neutral-900">
-                    {firstNameOf(ride.driver_full_name) || 'Chauffeur'}
+                    {titleCaseName(firstNameOf(ride.driver_full_name)) || 'Chauffeur'}
                     {typeof ride.driver_rating_avg === 'number' && ride.driver_rating_avg > 0 && (
                       <span className="ml-xs inline-flex items-center gap-xs text-xs font-semibold text-neutral-600">
                         <StarIcon className="h-3 w-3 text-gold-500" />
@@ -1348,7 +1349,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
           open={true}
           onClose={() => undefined}
           rideId={ride.id}
-          ratedName={firstNameOf(ride.driver_full_name) || 'votre chauffeur'}
+          ratedName={titleCaseName(firstNameOf(ride.driver_full_name)) || 'votre chauffeur'}
           mandatory={true}
           onSubmitted={() => {
             setHasRated(true);
@@ -1364,7 +1365,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
         <RideChat
           rideId={ride.id}
           myUserId={ride.client_id}
-          otherName={ride.driver_full_name ?? 'Chauffeur'}
+          otherName={titleCaseName(ride.driver_full_name) || 'Chauffeur'}
           onClose={() => setChatOpen(false)}
         />
       )}
