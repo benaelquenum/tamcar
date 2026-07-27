@@ -37,6 +37,26 @@ export const MAP_ENGINE: 'mapbox' | 'maplibre' =
 // Phase 1b pour zéro dépendance externe résiduelle.
 const PM_ASSETS = 'https://protomaps.github.io/basemaps-assets';
 
+// Thème « TamCar Clair » — fond blanc chaud, eau calme, or réservé aux
+// autoroutes, verts unifiés, bâtiments discrets, noms de rues contrastés.
+// (Base = thème Protomaps « light », on surcharge les couleurs.)
+const TAMCAR_THEME = {
+  ...namedTheme('light'),
+  background: '#E8E9E4', earth: '#F4F3EF', water: '#B4D2E8',
+  park_a: '#DDE7CE', park_b: '#D5E0C3', wood_a: '#DBE5CB', wood_b: '#D2DDC0',
+  scrub_a: '#DFE7D0', scrub_b: '#D7E0C6',
+  sand: '#EFE9D6', beach: '#F0EAD6', buildings: '#E7E4DC', pedestrian: '#ECEAE3',
+  minor_service_casing: '#EAE7DF', minor_casing: '#E7E3DA', link_casing: '#E9C878',
+  minor_service: '#FFFFFF', minor_a: '#FFFFFF', minor_b: '#FFFFFF', link: '#FBE7B0',
+  major_casing_early: '#E3DED2', major_casing_late: '#E3DED2', major: '#FFFFFF',
+  highway_casing_early: '#E7C165', highway_casing_late: '#E7C165', highway: '#F7D98C',
+  other: '#ECEAE3', boundaries: '#CBC5B8', railway: '#D9D5CC',
+  roads_label_major: '#474641', roads_label_major_halo: '#FFFFFF',
+  roads_label_minor: '#6C6B65', roads_label_minor_halo: '#FFFFFF',
+  city_label: '#26251F', city_label_halo: '#FFFFFF',
+  subplace_label: '#4A4941', subplace_label_halo: '#FFFFFF',
+};
+
 let protocolRegistered = false;
 export function ensurePmtilesProtocol(): void {
   if (protocolRegistered || typeof window === 'undefined') return;
@@ -64,7 +84,7 @@ export function maplibreStyle(): string | StyleSpecification {
           attribution: '© OpenStreetMap',
         },
       },
-      layers: protomapsLayers('protomaps', namedTheme('light'), { lang: 'fr' }),
+      layers: protomapsLayers('protomaps', TAMCAR_THEME, { lang: 'fr' }),
     } satisfies StyleSpecification;
   }
   return MAP_STYLE_URL as string;
