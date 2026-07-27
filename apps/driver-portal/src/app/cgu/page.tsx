@@ -76,8 +76,8 @@ export default function CguPage() {
         <Section n="5" title="Zone de service et disponibilité">
           <p>
             Le service est disponible dans les zones ouvertes par TamCar,
-            actuellement le Grand Nokoué (Cotonou, Abomey-Calavi, Porto-Novo),
-            Ouidah et le corridor Ouidah–Cotonou–Porto-Novo. TamCar s’efforce d’assurer la
+            actuellement le Grand Nokoué (Cotonou, Abomey-Calavi, Sèmè-Podji,
+            Porto-Novo), Ouidah et le corridor Ouidah–Cotonou–Porto-Novo. TamCar s’efforce d’assurer la
             disponibilité de la Plateforme mais ne garantit ni un accès
             ininterrompu (maintenance, incidents techniques, réseaux), ni la
             disponibilité d’un Chauffeur à tout moment et en tout lieu.

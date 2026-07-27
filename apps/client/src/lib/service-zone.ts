@@ -9,8 +9,9 @@
 const OUIDAH: [number, number] = [6.363, 2.085];
 const PAHOU: [number, number] = [6.383, 2.2];
 const COTONOU: [number, number] = [6.365, 2.435];
+const SEME_PODJI: [number, number] = [6.365, 2.625];
 const PORTO_NOVO: [number, number] = [6.497, 2.605];
-const CENTERS: [number, number][] = [OUIDAH, PAHOU, COTONOU, PORTO_NOVO];
+const CENTERS: [number, number][] = [OUIDAH, PAHOU, COTONOU, SEME_PODJI, PORTO_NOVO];
 const ZONE_RADIUS_M = 15000;
 
 function distanceMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
