@@ -13,8 +13,9 @@ export type BannerItem = {
 };
 
 /**
- * Affiche une bannière unique, ou un carrousel auto-défilant si plusieurs.
- * Pleine largeur. Image de fond optionnelle sinon dégradé. Clic → link_url.
+ * Bannière = l'IMAGE téléversée, telle quelle (conçue à l'avance par l'admin).
+ * Une seule image, ou carrousel auto-défilant si plusieurs. Clic → link_url.
+ * Les bannières sans image sont ignorées.
  */
 export function BannerCarousel({
   banners,
@@ -25,8 +26,9 @@ export function BannerCarousel({
   intervalMs?: number;
   className?: string;
 }) {
+  const items = banners.filter((b) => b.image_url);
   const [index, setIndex] = useState(0);
-  const n = banners.length;
+  const n = items.length;
 
   useEffect(() => {
     if (n <= 1) return;
@@ -35,31 +37,15 @@ export function BannerCarousel({
   }, [n, intervalMs]);
 
   if (n === 0) return null;
-  const b = banners[Math.min(index, n - 1)];
-  const gradient = b.gradient || 'from-primary-500 to-primary-700';
+  const b = items[Math.min(index, n - 1)];
 
   const inner = (
-    <div
-      className={`relative flex min-h-32 w-full flex-col justify-between overflow-hidden rounded-2xl bg-gradient-to-br ${gradient} p-lg text-white shadow-glow`}
-    >
-      {b.image_url && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={b.image_url}
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover opacity-30"
-        />
-      )}
-      <div className="relative">
-        <h3 className="text-base font-extrabold leading-tight">{b.title}</h3>
-        {b.subtitle && <p className="mt-xs text-xs text-white/85">{b.subtitle}</p>}
-      </div>
-      {b.cta_text && (
-        <span className="relative mt-md inline-flex w-fit items-center gap-xs rounded-full bg-white/25 px-md py-xs text-[11px] font-bold backdrop-blur-sm">
-          {b.cta_text} →
-        </span>
-      )}
-    </div>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={b.image_url as string}
+      alt={b.title || 'Bannière'}
+      className="block w-full rounded-2xl object-cover shadow-sm"
+    />
   );
 
   return (
@@ -73,7 +59,7 @@ export function BannerCarousel({
       )}
       {n > 1 && (
         <div className="mt-sm flex justify-center gap-xs">
-          {banners.map((_, k) => (
+          {items.map((_, k) => (
             <button
               key={k}
               type="button"

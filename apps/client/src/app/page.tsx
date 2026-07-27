@@ -151,6 +151,11 @@ export default async function HomePage() {
           )}
         </header>
 
+        {/* Bannière de communication — image seule, juste sous la barre de menus */}
+        {banners.length > 0 && (
+          <BannerCarousel banners={banners} className="mt-md" />
+        )}
+
         {/* Onglet notification course active */}
         {activeRide && <ActiveRideBanner ride={activeRide} t={t} />}
 
@@ -266,13 +271,6 @@ export default async function HomePage() {
             <span className="text-xs font-semibold text-neutral-900">{t('home.help')}</span>
           </a>
         </section>
-
-        {/* Bannières de communication */}
-        {banners.length > 0 && (
-          <section className="mt-xl">
-            <BannerCarousel banners={banners} />
-          </section>
-        )}
 
         {/* Devenir chauffeur */}
         <section className="mt-lg">

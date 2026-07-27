@@ -162,6 +162,10 @@ export default async function DriverDashboardPage() {
           <div className="w-11" />
         </header>
 
+        {driverBanners.length > 0 && (
+          <BannerCarousel banners={driverBanners} className="mt-md" />
+        )}
+
         <section className="mt-lg flex items-center gap-md">
           <Avatar src={profile.avatar_url} name={profile.full_name} size={56} />
           <div>
@@ -172,12 +176,6 @@ export default async function DriverDashboardPage() {
             </p>
           </div>
         </section>
-
-        {driverBanners.length > 0 && (
-          <div className="mt-lg">
-            <BannerCarousel banners={driverBanners} />
-          </div>
-        )}
 
         {/* Jauge courses du jour (Formule A uniquement) */}
         {!isProprietaire && (
