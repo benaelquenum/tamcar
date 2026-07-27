@@ -106,10 +106,12 @@ end;
 $$;
 
 -- ------------------------------------------------------------
--- 3. _grant_goodwill_credit : 200 F au client, plafonné 2 / 7 jours.
+-- 3. _grant_goodwill_credit : +200 F au client, plafonné 2 / 7 jours,
+--    FINANCÉ par le chauffeur fautif (−200 F sur ses revenus).
 -- ------------------------------------------------------------
 create or replace function public._grant_goodwill_credit(
   p_client_id uuid,
+  p_driver_id uuid,
   p_ride_id uuid
 )
 returns void
@@ -117,6 +119,8 @@ language plpgsql security definer set search_path = public as $$
 declare
   v_recent int;
   v_wallet_id uuid;
+  v_driver_profile uuid;
+  v_driver_wallet uuid;
 begin
   if p_client_id is null then return; end if;
 
@@ -129,22 +133,40 @@ begin
       and wt.created_at > now() - interval '7 days';
   if v_recent >= 2 then return; end if; -- plafond anti-abus
 
+  -- Crédit client +200 F (TamCar Crédit)
   insert into public.wallets (profile_id, kind, balance_fcfa)
     values (p_client_id, 'tamcar_credit', 0)
     on conflict (profile_id, kind) do nothing;
   select id into v_wallet_id
     from public.wallets where profile_id = p_client_id and kind = 'tamcar_credit';
-
   update public.wallets
     set balance_fcfa = balance_fcfa + 200, updated_at = now()
     where id = v_wallet_id;
   insert into public.wallet_transactions (wallet_id, type, amount_fcfa, ride_id, status)
     values (v_wallet_id, 'goodwill_credit', 200, p_ride_id, 'success');
+
+  -- Le chauffeur fautif FINANCE l'excuse : −200 F sur ses revenus
+  -- (solde négatif autorisé — il régularise sur ses courses suivantes).
+  if p_driver_id is not null then
+    select profile_id into v_driver_profile from public.drivers where id = p_driver_id;
+    if v_driver_profile is not null then
+      insert into public.wallets (profile_id, kind, balance_fcfa)
+        values (v_driver_profile, 'tamcar_revenus', 0)
+        on conflict (profile_id, kind) do nothing;
+      select id into v_driver_wallet
+        from public.wallets where profile_id = v_driver_profile and kind = 'tamcar_revenus';
+      update public.wallets
+        set balance_fcfa = balance_fcfa - 200, updated_at = now()
+        where id = v_driver_wallet;
+      insert into public.wallet_transactions (wallet_id, type, amount_fcfa, ride_id, status)
+        values (v_driver_wallet, 'cancellation_fee', 200, p_ride_id, 'success');
+    end if;
+  end if;
 end;
 $$;
 
 comment on function public._grant_goodwill_credit is
-  'Crédite 200 F de TamCar Crédit au client (excuse abandon chauffeur), plafonné à 2 sur 7 jours glissants.';
+  'Crédite 200 F de TamCar Crédit au client (excuse abandon chauffeur), plafonné à 2 sur 7 jours glissants, financé par le chauffeur fautif (−200 F sur ses revenus).';
 
 -- ------------------------------------------------------------
 -- 4. cancel_ride_by_client v3.2 : ajoute le crédit d'excuse flagrant (Option B)
@@ -220,7 +242,7 @@ begin
       or (p_user_reason = 'wait_too_long'
           and v_secs_matched > public._driver_eta_secs(r.driver_distance_at_match_m) + 600); -- ETA + 10 min
     if v_flagrant then
-      perform public._grant_goodwill_credit(r.client_id, ride_id);
+      perform public._grant_goodwill_credit(r.client_id, r.driver_id, ride_id);
     end if;
   end if;
 
@@ -306,8 +328,9 @@ begin
     where id = r.driver_id;
   perform public._apply_driver_strike(r.driver_id, ride_id, 'Annulation volontaire du chauffeur');
 
-  -- Crédit d'excuse au client (abandon flagrant par définition), plafonné.
-  perform public._grant_goodwill_credit(r.client_id, ride_id);
+  -- Crédit d'excuse au client (abandon flagrant par définition), plafonné,
+  -- financé par le chauffeur (−200 F).
+  perform public._grant_goodwill_credit(r.client_id, r.driver_id, ride_id);
 
   return result;
 end;
