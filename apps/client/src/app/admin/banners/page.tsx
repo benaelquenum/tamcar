@@ -90,13 +90,17 @@ export default async function AdminBannersPage() {
           </label>
           <label className="block">
             <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
-              URL image (optionnel)
+              Image de la bannière (téléverser)
             </span>
             <input
-              name="image_url"
-              placeholder="https://…"
-              className="mt-xs w-full rounded-md bg-neutral-100 px-md py-sm text-sm text-neutral-900 ring-1 ring-neutral-200"
+              type="file"
+              name="image_file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              className="mt-xs w-full cursor-pointer rounded-md bg-neutral-100 text-sm text-neutral-700 ring-1 ring-neutral-200 file:mr-md file:cursor-pointer file:border-0 file:bg-primary-500 file:px-md file:py-sm file:text-xs file:font-bold file:text-white hover:file:brightness-110"
             />
+            <span className="mt-xs block text-[10px] text-neutral-400">
+              PNG, JPG, WEBP ou GIF · 5 Mo max. L&apos;image que tu as conçue s&apos;affichera telle quelle.
+            </span>
           </label>
           <label className="block">
             <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
