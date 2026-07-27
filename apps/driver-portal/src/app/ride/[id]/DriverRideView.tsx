@@ -78,6 +78,7 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
   const [ride, setRide] = useState<DriverRideForView>(initialRide);
   const [chatOpen, setChatOpen] = useState(false);
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [cancelling, setCancelling] = useState(false);
   const chatOpenRef = useRef(chatOpen);
   const [driverPos, setDriverPos] = useState<[number, number] | null>(null);
   const [routeGeo, setRouteGeo] = useState<GeoJSON.LineString | null>(null);
@@ -309,6 +310,26 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
     });
     if (error) setErr(error.message);
     setAcceptingCompletion(false);
+  }
+
+  async function handleDriverCancel() {
+    if (cancelling) return;
+    const ok = window.confirm(
+      "Annuler cette course ?\n\nC'est une annulation de ta part : elle compte comme un signalement (strike) et le client reçoit une compensation. Répétée, elle peut suspendre ton compte.",
+    );
+    if (!ok) return;
+    setCancelling(true);
+    setErr(null);
+    const { error } = await supabaseBrowser.rpc('cancel_ride_by_driver', {
+      ride_id: ride.id,
+      p_reason: null,
+    });
+    setCancelling(false);
+    if (error) {
+      setErr(error.message);
+      return;
+    }
+    router.push('/');
   }
 
   function transition(fn: (id: string) => Promise<void>) {
@@ -599,6 +620,17 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
                     {nextAction.label}
                   </>
                 )}
+              </button>
+            )}
+
+            {(ride.status === 'matched' || ride.status === 'arrived') && (
+              <button
+                type="button"
+                onClick={handleDriverCancel}
+                disabled={pending || cancelling}
+                className="mt-sm w-full rounded-xl border-2 border-error/30 py-md text-sm font-bold text-error transition hover:bg-error/5 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {cancelling ? '…' : 'Annuler la course'}
               </button>
             )}
 

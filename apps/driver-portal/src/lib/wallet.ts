@@ -13,6 +13,7 @@ export type WalletTxType =
   | 'change_return_out'
   | 'dealer_share_credit'
   | 'insurance_premium'
+  | 'goodwill_credit'
   | 'adjustment';
 
 export type Wallet = {
@@ -66,6 +67,7 @@ const TX_LABEL: Record<WalletTxType, string> = {
   change_return_out: 'Monnaie rendue au client',
   dealer_share_credit: 'Part partenaire véhicule',
   insurance_premium: 'Assurance conducteur',
+  goodwill_credit: 'Crédit d\'excuse',
   adjustment: 'Ajustement admin',
 };
 
@@ -75,6 +77,7 @@ const CREDIT_TYPES = new Set<WalletTxType>([
   'revenue_share_credit',
   'rachat_credit',
   'cancellation_reimbursement',
+  'goodwill_credit',
 ]);
 
 export function txLabel(t: WalletTxType): string {

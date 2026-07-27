@@ -9,6 +9,7 @@ export type WalletTxType =
   | 'rachat_credit'
   | 'cancellation_fee'
   | 'cancellation_reimbursement'
+  | 'goodwill_credit'
   | 'adjustment';
 
 export type Wallet = {
@@ -58,6 +59,7 @@ const TX_LABEL: Record<WalletTxType, string> = {
   rachat_credit: 'Fonds rachat course',
   cancellation_fee: 'Frais annulation',
   cancellation_reimbursement: 'Compensation annulation',
+  goodwill_credit: 'Crédit d\'excuse',
   adjustment: 'Ajustement admin',
 };
 
@@ -67,6 +69,7 @@ const CREDIT_TYPES = new Set<WalletTxType>([
   'revenue_share_credit',
   'rachat_credit',
   'cancellation_reimbursement',
+  'goodwill_credit',
 ]);
 
 export function txLabel(t: WalletTxType): string {
