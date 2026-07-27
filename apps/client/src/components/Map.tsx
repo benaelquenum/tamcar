@@ -1,14 +1,19 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import maplibregl, { type StyleSpecification } from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 import { COTONOU_CENTER, MAPBOX_TOKEN } from '@/lib/mapbox';
+import { MAP_ENGINE, maplibreConfigured, maplibreStyle } from '@/lib/map-config';
 
-if (typeof window !== 'undefined' && MAPBOX_TOKEN) {
-  mapboxgl.accessToken = MAPBOX_TOKEN;
-}
+// Moteur de rendu : MapLibre (Phase 1) ou Mapbox si NEXT_PUBLIC_MAP_ENGINE=mapbox.
+// Les deux exposent la même API (Map/Marker/LngLatBounds/addSource/addLayer…) ;
+// on type via MapLibre et on caste le module Mapbox dessus.
+const GL: typeof maplibregl =
+  MAP_ENGINE === 'mapbox' ? (mapboxgl as unknown as typeof maplibregl) : maplibregl;
 
 export type DriverPin = {
   driver_id: string;
@@ -91,26 +96,36 @@ export function Map({
   pickupPulse = false,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
-  const pickupMarkerRef = useRef<mapboxgl.Marker | null>(null);
-  const dropoffMarkerRef = useRef<mapboxgl.Marker | null>(null);
-  const candidateMarkerRef = useRef<mapboxgl.Marker | null>(null);
-  const driverMarkersRef = useRef<Map<string, mapboxgl.Marker>>(
+  const mapRef = useRef<maplibregl.Map | null>(null);
+  const pickupMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const dropoffMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const candidateMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const driverMarkersRef = useRef<Map<string, maplibregl.Marker>>(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     new (globalThis as any).Map(),
   );
-  const assignedMarkerRef = useRef<mapboxgl.Marker | null>(null);
-  const clientMarkerRef = useRef<mapboxgl.Marker | null>(null);
+  const assignedMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const clientMarkerRef = useRef<maplibregl.Marker | null>(null);
   const onMapClickRef = useRef(onMapClick);
   onMapClickRef.current = onMapClick;
 
   // Init map une fois
   useEffect(() => {
-    if (!containerRef.current || mapRef.current || !MAPBOX_TOKEN) return;
+    if (!containerRef.current || mapRef.current) return;
 
-    const map = new mapboxgl.Map({
+    let style: string | StyleSpecification;
+    if (MAP_ENGINE === 'mapbox') {
+      if (!MAPBOX_TOKEN) return;
+      mapboxgl.accessToken = MAPBOX_TOKEN;
+      style = 'mapbox://styles/mapbox/streets-v12';
+    } else {
+      if (!maplibreConfigured()) return;
+      style = maplibreStyle();
+    }
+
+    const map = new GL.Map({
       container: containerRef.current,
-      style: 'mapbox://styles/mapbox/streets-v12',
+      style,
       center: COTONOU_CENTER,
       zoom: 11,
       attributionControl: false,
@@ -142,7 +157,7 @@ export function Map({
     candidateMarkerRef.current?.remove();
     candidateMarkerRef.current = null;
     if (candidate) {
-      candidateMarkerRef.current = new mapboxgl.Marker({ color: '#EAB308' })
+      candidateMarkerRef.current = new GL.Marker({ color: '#EAB308' })
         .setLngLat(candidate)
         .addTo(mapRef.current);
       mapRef.current.flyTo({ center: candidate, zoom: 15, duration: 400 });
@@ -164,11 +179,11 @@ export function Map({
         '<div class="tc-pulse delay-1"></div>' +
         '<div class="tc-pulse delay-2"></div>' +
         '<div class="tc-pickup-dot"></div>';
-      pickupMarkerRef.current = new mapboxgl.Marker({ element: el, anchor: 'center' })
+      pickupMarkerRef.current = new GL.Marker({ element: el, anchor: 'center' })
         .setLngLat(pickup)
         .addTo(mapRef.current);
     } else {
-      pickupMarkerRef.current = new mapboxgl.Marker({ color: '#2563EB' })
+      pickupMarkerRef.current = new GL.Marker({ color: '#2563EB' })
         .setLngLat(pickup)
         .addTo(mapRef.current);
     }
@@ -180,7 +195,7 @@ export function Map({
     dropoffMarkerRef.current?.remove();
     dropoffMarkerRef.current = null;
     if (dropoff) {
-      dropoffMarkerRef.current = new mapboxgl.Marker({ color: '#8B5CF6' })
+      dropoffMarkerRef.current = new GL.Marker({ color: '#8B5CF6' })
         .setLngLat(dropoff)
         .addTo(mapRef.current);
     }
@@ -191,7 +206,7 @@ export function Map({
     const map = mapRef.current;
     if (!map || !autoFit) return;
     if (pickup && dropoff) {
-      const bounds = new mapboxgl.LngLatBounds();
+      const bounds = new GL.LngLatBounds();
       bounds.extend(pickup);
       bounds.extend(dropoff);
       map.fitBounds(bounds, { padding: 60, maxZoom: 14, duration: 800 });
@@ -223,7 +238,7 @@ export function Map({
         const el = document.createElement('div');
         el.className = pinClassForCategory(drv.category);
         el.innerHTML = svgForCategory(drv.category);
-        const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
+        const marker = new GL.Marker({ element: el, anchor: 'center' })
           .setLngLat([drv.lng, drv.lat])
           .addTo(map);
         driverMarkersRef.current.set(drv.driver_id, marker);
@@ -248,7 +263,7 @@ export function Map({
       const el = document.createElement('div');
       el.className = pinClassForCategory(assignedDriver.category) + ' assigned';
       el.innerHTML = svgForCategory(assignedDriver.category);
-      assignedMarkerRef.current = new mapboxgl.Marker({ element: el, anchor: 'center' })
+      assignedMarkerRef.current = new GL.Marker({ element: el, anchor: 'center' })
         .setLngLat([assignedDriver.lng, assignedDriver.lat])
         .addTo(map);
     }
@@ -270,7 +285,7 @@ export function Map({
         '<div class="tc-client-pulse"></div>' +
         '<div class="tc-client-pulse delay-1"></div>' +
         '<div class="tc-client-dot"></div>';
-      clientMarkerRef.current = new mapboxgl.Marker({ element: el, anchor: 'center' })
+      clientMarkerRef.current = new GL.Marker({ element: el, anchor: 'center' })
         .setLngLat(clientLocation)
         .addTo(map);
     } else {
@@ -305,17 +320,19 @@ export function Map({
     else map.once('load', apply);
   }, [route]);
 
-  if (!MAPBOX_TOKEN) {
+  const notConfigured =
+    MAP_ENGINE === 'mapbox' ? !MAPBOX_TOKEN : !maplibreConfigured();
+  if (notConfigured) {
     return (
       <div
         className={`grid place-items-center rounded-xl bg-neutral-100 p-xl text-center ${className || ''}`}
       >
         <div>
-          <p className="text-sm font-semibold text-neutral-900">
-            Mapbox non configuré
-          </p>
+          <p className="text-sm font-semibold text-neutral-900">Carte non configurée</p>
           <p className="mt-xs text-xs text-neutral-600">
-            Ajoute NEXT_PUBLIC_MAPBOX_TOKEN dans .env.local puis restart le dev server.
+            {MAP_ENGINE === 'mapbox'
+              ? 'Ajoute NEXT_PUBLIC_MAPBOX_TOKEN dans .env.local puis relance le serveur.'
+              : 'Ajoute NEXT_PUBLIC_MAP_PMTILES_URL (ou NEXT_PUBLIC_MAP_STYLE_URL) puis relance le serveur.'}
           </p>
         </div>
       </div>
