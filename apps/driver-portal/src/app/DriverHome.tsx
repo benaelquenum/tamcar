@@ -428,6 +428,7 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
       <div className="absolute inset-0">
         <Map
           selfLocation={position}
+          selfBeacon
           pendingPickups={pending.map((r) => ({
             ride_id: r.id,
             lat: r.pickup_lat,

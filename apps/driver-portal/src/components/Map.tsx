@@ -100,6 +100,18 @@ function makePuckEl(category?: string, self = false): HTMLDivElement {
   return el;
 }
 
+// Pion « moi » hors course : un point + un signal qui émane de lui (radar).
+function makeBeaconEl(): HTMLDivElement {
+  const el = document.createElement('div');
+  el.className = 'tc-self-beacon';
+  el.innerHTML =
+    '<span class="tc-beacon-ring"></span>' +
+    '<span class="tc-beacon-ring d1"></span>' +
+    '<span class="tc-beacon-ring d2"></span>' +
+    '<span class="tc-beacon-dot"></span>';
+  return el;
+}
+
 // Cap (°) entre 2 points [lng,lat] — 0 = nord, sens horaire.
 function bearingDeg(a: [number, number], b: [number, number]): number {
   const toR = (x: number) => (x * Math.PI) / 180;
@@ -146,6 +158,8 @@ type Props = {
   selfCategory?: string;
   /** Position live du client (vue chauffeur) — pion cyan pulsant. */
   clientLocation?: [number, number] | null;
+  /** Rendu du pion « moi » en beacon (point + signal) au lieu de la pastille véhicule. */
+  selfBeacon?: boolean;
 };
 
 export function Map({
@@ -163,6 +177,7 @@ export function Map({
   selfLocation,
   selfCategory,
   clientLocation,
+  selfBeacon,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -398,7 +413,8 @@ export function Map({
     const target: [number, number] = selfLocation;
 
     if (!selfMarkerRef.current) {
-      selfMarkerRef.current = new GL.Marker({ element: makePuckEl(selfCategory, true), anchor: 'center' })
+      const el = selfBeacon ? makeBeaconEl() : makePuckEl(selfCategory, true);
+      selfMarkerRef.current = new GL.Marker({ element: el, anchor: 'center' })
         .setLngLat(target)
         .addTo(map);
       selfPosRef.current = target;
@@ -435,7 +451,7 @@ export function Map({
     return () => {
       if (selfRafRef.current != null) { cancelAnimationFrame(selfRafRef.current); selfRafRef.current = null; }
     };
-  }, [selfLocation, selfCategory]);
+  }, [selfLocation, selfCategory, selfBeacon]);
 
   // Pion client live (vue chauffeur) — point cyan pulsant.
   useEffect(() => {
