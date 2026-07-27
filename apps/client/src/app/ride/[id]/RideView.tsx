@@ -205,6 +205,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
   const [searchTimedOut, setSearchTimedOut] = useState(false);
   const [retrying, setRetrying] = useState(false);
   const [alternativeOffers, setAlternativeOffers] = useState<AlternativeOffer[] | null>(null);
+  const [timeoutOffers, setTimeoutOffers] = useState<AlternativeOffer[] | null>(null);
   const [switching, setSwitching] = useState(false);
   const [switchError, setSwitchError] = useState<string | null>(null);
   const [stops, setStops] = useState<RideStopRow[]>([]);
@@ -506,6 +507,23 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
     return () => clearTimeout(timer);
   }, [ride.status, ride.requested_at]);
 
+  // Au timeout : on récupère les catégories alternatives disponibles (avec
+  // prix) pour les proposer directement dans la modale « aucun chauffeur ».
+  useEffect(() => {
+    if (!searchTimedOut || ride.status !== 'requested') {
+      setTimeoutOffers(null);
+      return;
+    }
+    let cancelled = false;
+    supabaseBrowser
+      .rpc('preview_alternative_offers', { p_ride_id: ride.id })
+      .then(({ data, error }) => {
+        if (cancelled || error || !Array.isArray(data)) return;
+        setTimeoutOffers(data as AlternativeOffer[]);
+      });
+    return () => { cancelled = true; };
+  }, [searchTimedOut, ride.status, ride.id]);
+
   // Alternatives cross-catégorie : après 30 s sans match dans la catégorie initiale,
   // on propose au client toutes les alternatives disponibles (avec nb chauffeurs proches).
   useEffect(() => {
@@ -542,6 +560,8 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
       return;
     }
     setAlternativeOffers(null);
+    setTimeoutOffers(null);
+    setSearchTimedOut(false);
     setSwitching(false);
     await refetchDetails();
   }
@@ -1202,8 +1222,8 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
         <SosButton rideId={ride.id} />
       )}
 
-      {/* Modal suggestions cross-catégorie : après 60 s sans match */}
-      {alternativeOffers && ride.status === 'requested' && (
+      {/* Modal suggestions cross-catégorie : après 30 s sans match */}
+      {alternativeOffers && !searchTimedOut && ride.status === 'requested' && (
         <div
           className="fixed inset-0 z-50 flex items-end justify-center bg-neutral-900/75 backdrop-blur-sm sm:items-center"
           onClick={() => !switching && setAlternativeOffers(null)}
@@ -1302,6 +1322,69 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                 Vous pouvez relancer la recherche ou annuler la course.
               </p>
             </div>
+
+            {/* Alternatives disponibles (autres catégories) + coûts + lancer */}
+            {timeoutOffers && timeoutOffers.some((o) => o.drivers_online_nearby > 0) && (
+              <div className="mb-md">
+                <p className="text-center text-xs font-bold uppercase tracking-wider text-neutral-500">
+                  Essayez une autre catégorie
+                </p>
+                <p className="mb-sm text-center text-[11px] text-neutral-400">
+                  Touchez une catégorie pour lancer la course.
+                </p>
+                <ul className="space-y-sm">
+                  {timeoutOffers
+                    .filter((o) => o.drivers_online_nearby > 0)
+                    .sort((a, b) => a.new_price_fcfa - b.new_price_fcfa)
+                    .map((o) => {
+                      const isSaving = o.delta_fcfa < 0;
+                      return (
+                        <li key={o.category}>
+                          <button
+                            type="button"
+                            onClick={() => void handleSwitchCategory(o.category)}
+                            disabled={switching}
+                            className="flex w-full items-center justify-between gap-md rounded-xl border-2 border-neutral-200 bg-white p-md text-left hover:border-primary-500 disabled:opacity-50"
+                          >
+                            <div className="min-w-0">
+                              <p className="text-base font-bold text-neutral-900">{catLabel(o.category)}</p>
+                              <p className="text-[11px] text-neutral-600" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                                {o.drivers_online_nearby} chauffeur{o.drivers_online_nearby > 1 ? 's' : ''} dispo
+                                {o.eta_min != null ? ` · ~${o.eta_min} min` : ''}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-sm">
+                              <div className="text-right">
+                                <p className="text-lg font-extrabold text-neutral-900" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                                  {formatFcfa(o.new_price_fcfa)} F
+                                </p>
+                                <p
+                                  className={`text-[11px] font-semibold ${isSaving ? 'text-primary-700' : 'text-neutral-500'}`}
+                                  style={{ fontVariantNumeric: 'tabular-nums' }}
+                                >
+                                  {isSaving
+                                    ? `−${formatFcfa(Math.abs(o.delta_fcfa))} F`
+                                    : o.delta_fcfa > 0
+                                      ? `+${formatFcfa(o.delta_fcfa)} F`
+                                      : 'même prix'}
+                                </p>
+                              </div>
+                              <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-primary-500 text-white">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                                  <line x1="5" y1="12" x2="19" y2="12" />
+                                  <polyline points="12 5 19 12 12 19" />
+                                </svg>
+                              </span>
+                            </div>
+                          </button>
+                        </li>
+                      );
+                    })}
+                </ul>
+                {switchError && <p className="mt-sm text-center text-xs text-error">{switchError}</p>}
+              </div>
+            )}
+
             <div className="flex gap-md">
               <button
                 type="button"
