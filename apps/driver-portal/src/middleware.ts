@@ -1,10 +1,13 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { TERMS_VERSION } from '@/lib/terms';
 
 /**
  * Middleware combiné :
  * 1. Rafraîchit la session Supabase (refresh token auto)
  * 2. Bloque les routes protégées si pas d'auth → redirect /login?next=<path>
+ * 3. Gate CGU : tant que la version courante n'est pas acceptée, TOUTE requête
+ *    protégée est renvoyée vers /conditions (impossible de contourner l'étape).
  */
 
 const PUBLIC_PREFIXES = [
@@ -58,6 +61,23 @@ export async function middleware(request: NextRequest) {
     const loginUrl = new URL('/login', request.url);
     if (pathname !== '/') loginUrl.searchParams.set('next', pathname);
     return NextResponse.redirect(loginUrl);
+  }
+
+  // Gate CGU (à chaque requête) : utilisateur connecté qui n'a pas accepté la
+  // version courante → forcé sur /conditions. Fail-open en cas d'erreur.
+  const isTermsExempt = isPublic || pathname.startsWith('/conditions');
+  if (user && !isTermsExempt) {
+    const { count, error: termsError } = await supabase
+      .from('terms_acceptances')
+      .select('id', { count: 'exact', head: true })
+      .eq('profile_id', user.id)
+      .eq('doc', 'cgu')
+      .eq('version', TERMS_VERSION);
+    if (!termsError && !count) {
+      const url = new URL('/conditions', request.url);
+      if (pathname !== '/') url.searchParams.set('next', pathname);
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;
