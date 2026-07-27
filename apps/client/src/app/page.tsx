@@ -21,6 +21,7 @@ import { firstNameOf, getCurrentProfile } from '@/lib/session';
 import { createServerSupabase } from '@/lib/supabase-server';
 import { SUPPORT_PHONE } from '@/lib/support';
 import { UnreadMessagesChip } from '@/components/UnreadMessagesChip';
+import { BannerCarousel } from '@/components/BannerCarousel';
 
 type BannerRow = {
   id: string;
@@ -94,6 +95,7 @@ export default async function HomePage() {
       .from('home_banners')
       .select('id, title, subtitle, image_url, link_url, cta_text, gradient')
       .eq('is_active', true)
+      .eq('audience', 'client')
       .order('display_order', { ascending: true })
       .limit(6),
   ]);
@@ -268,13 +270,7 @@ export default async function HomePage() {
         {/* Bannières de communication */}
         {banners.length > 0 && (
           <section className="mt-xl">
-            <div className="-mx-lg overflow-x-auto pb-xs">
-              <div className="flex gap-md px-lg">
-                {banners.map((b) => (
-                  <BannerCard key={b.id} banner={b} />
-                ))}
-              </div>
-            </div>
+            <BannerCarousel banners={banners} />
           </section>
         )}
 
@@ -301,43 +297,6 @@ export default async function HomePage() {
       </div>
       <UnreadMessagesChip />
     </main>
-  );
-}
-
-function BannerCard({ banner }: { banner: BannerRow }) {
-  const gradient = banner.gradient || 'from-primary-500 to-primary-700';
-  const inner = (
-    <div
-      className={`relative flex min-h-32 w-72 flex-none flex-col justify-between overflow-hidden rounded-2xl bg-gradient-to-br ${gradient} p-lg text-white shadow-glow`}
-    >
-      {banner.image_url && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={banner.image_url}
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover opacity-30"
-        />
-      )}
-      <div className="relative">
-        <h3 className="text-base font-extrabold leading-tight">{banner.title}</h3>
-        {banner.subtitle && (
-          <p className="mt-xs text-xs text-white/85">{banner.subtitle}</p>
-        )}
-      </div>
-      {banner.cta_text && (
-        <span className="relative mt-md inline-flex w-fit items-center gap-xs rounded-full bg-white/25 px-md py-xs text-[11px] font-bold backdrop-blur-sm">
-          {banner.cta_text}
-          <ArrowRightIcon className="h-3 w-3" />
-        </span>
-      )}
-    </div>
-  );
-  return banner.link_url ? (
-    <a href={banner.link_url} className="flex-none">
-      {inner}
-    </a>
-  ) : (
-    <div className="flex-none">{inner}</div>
   );
 }
 

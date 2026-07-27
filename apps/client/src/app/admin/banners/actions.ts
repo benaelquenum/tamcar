@@ -11,6 +11,8 @@ export async function createBanner(formData: FormData) {
   const cta_text = String(formData.get('cta_text') || '').trim();
   const gradient = String(formData.get('gradient') || 'from-primary-500 to-primary-700').trim();
   const display_order = parseInt(String(formData.get('display_order') || '0'), 10);
+  const audienceRaw = String(formData.get('audience') || 'client').trim();
+  const audience = ['client', 'driver', 'dealer'].includes(audienceRaw) ? audienceRaw : 'client';
 
   if (!title) throw new Error('Titre obligatoire');
   const supabase = createServerSupabase();
@@ -22,11 +24,13 @@ export async function createBanner(formData: FormData) {
     cta_text: cta_text || null,
     gradient,
     display_order,
+    audience,
     is_active: true,
   });
   if (error) throw new Error(error.message);
   revalidatePath('/admin/banners');
   revalidatePath('/');
+  revalidatePath('/dealer');
 }
 
 export async function toggleBannerActive(formData: FormData) {
@@ -38,6 +42,7 @@ export async function toggleBannerActive(formData: FormData) {
   if (error) throw new Error(error.message);
   revalidatePath('/admin/banners');
   revalidatePath('/');
+  revalidatePath('/dealer');
 }
 
 export async function deleteBanner(formData: FormData) {
@@ -48,4 +53,5 @@ export async function deleteBanner(formData: FormData) {
   if (error) throw new Error(error.message);
   revalidatePath('/admin/banners');
   revalidatePath('/');
+  revalidatePath('/dealer');
 }

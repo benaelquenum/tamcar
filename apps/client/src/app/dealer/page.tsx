@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCurrentProfile } from '@/lib/session';
 import { createServerSupabase } from '@/lib/supabase-server';
+import { BannerCarousel, type BannerItem } from '@/components/BannerCarousel';
 
 type MyDealer = {
   dealer_id: string;
@@ -59,7 +60,8 @@ export default async function DealerDashboard() {
   if (!profile) redirect('/login');
   const supabase = createServerSupabase();
 
-  const [{ data: me }, { data: vehicles }, { data: rides }] = await Promise.all([
+  const [{ data: me }, { data: vehicles }, { data: rides }, { data: bannerRows }] =
+    await Promise.all([
     supabase
       .from('dealer_admin_view')
       .select('*')
@@ -76,8 +78,16 @@ export default async function DealerDashboard() {
       .eq('status', 'completed')
       .order('ended_at', { ascending: false })
       .limit(200),
+    supabase
+      .from('home_banners')
+      .select('id, title, subtitle, image_url, link_url, cta_text, gradient')
+      .eq('is_active', true)
+      .eq('audience', 'dealer')
+      .order('display_order', { ascending: true })
+      .limit(6),
   ]);
 
+  const dealerBanners = (bannerRows ?? []) as BannerItem[];
   const dealer = me as MyDealer | null;
   if (!dealer) {
     return (
@@ -110,6 +120,7 @@ export default async function DealerDashboard() {
 
   return (
     <div className="space-y-lg">
+      {dealerBanners.length > 0 && <BannerCarousel banners={dealerBanners} />}
       <div>
         <h1 className="text-2xl font-extrabold text-neutral-900">{dealer.company_name}</h1>
         <p className="mt-xs text-sm text-neutral-600">

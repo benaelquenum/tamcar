@@ -14,7 +14,14 @@ type Banner = {
   is_active: boolean;
   active_from: string | null;
   active_until: string | null;
+  audience: 'client' | 'driver' | 'dealer';
 };
+
+const AUDIENCES: Array<{ value: 'client' | 'driver' | 'dealer'; label: string }> = [
+  { value: 'client', label: 'Client' },
+  { value: 'driver', label: 'Chauffeur' },
+  { value: 'dealer', label: 'Partenaire véhicule' },
+];
 
 const GRADIENTS: Array<{ value: string; label: string }> = [
   { value: 'from-primary-500 to-primary-700', label: 'Bleu TamCar' },
@@ -44,6 +51,22 @@ export default async function AdminBannersPage() {
           Nouvelle bannière
         </h2>
         <form action={createBanner} className="grid grid-cols-1 gap-md md:grid-cols-2">
+          <label className="block md:col-span-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+              Audience (où s&apos;affiche la bannière)
+            </span>
+            <select
+              name="audience"
+              defaultValue="client"
+              className="mt-xs w-full rounded-md bg-neutral-100 px-md py-sm text-sm font-semibold text-neutral-900 ring-1 ring-neutral-200"
+            >
+              {AUDIENCES.map((a) => (
+                <option key={a.value} value={a.value}>
+                  Bannière {a.label}
+                </option>
+              ))}
+            </select>
+          </label>
           <label className="block">
             <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
               Titre
@@ -133,22 +156,27 @@ export default async function AdminBannersPage() {
         </form>
       </section>
 
-      <section>
-        <h2 className="mb-md text-sm font-bold uppercase tracking-wider text-neutral-500">
-          Bannières existantes ({banners.length})
-        </h2>
-        {banners.length === 0 ? (
-          <div className="rounded-xl bg-white p-2xl text-center text-sm text-neutral-600 shadow-sm">
-            Aucune bannière. Crée-en une avec le formulaire ci-dessus.
-          </div>
-        ) : (
-          <div className="space-y-md">
-            {banners.map((b) => (
-              <BannerAdminCard key={b.id} banner={b} />
-            ))}
-          </div>
-        )}
-      </section>
+      {AUDIENCES.map((a) => {
+        const list = banners.filter((b) => b.audience === a.value);
+        return (
+          <section key={a.value} className="mb-2xl">
+            <h2 className="mb-md text-sm font-bold uppercase tracking-wider text-primary-700">
+              Bannière {a.label} ({list.length})
+            </h2>
+            {list.length === 0 ? (
+              <div className="rounded-xl bg-white p-lg text-center text-sm text-neutral-500 shadow-sm">
+                Aucune bannière {a.label.toLowerCase()}. Crée-en une ci-dessus en choisissant l&apos;audience «&nbsp;{a.label}&nbsp;».
+              </div>
+            ) : (
+              <div className="space-y-md">
+                {list.map((b) => (
+                  <BannerAdminCard key={b.id} banner={b} />
+                ))}
+              </div>
+            )}
+          </section>
+        );
+      })}
     </div>
   );
 }

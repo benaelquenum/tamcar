@@ -17,6 +17,7 @@ import { Avatar } from '@/components/Avatar';
 import { getCurrentProfile } from '@/lib/session';
 import { createServerSupabase } from '@/lib/supabase-server';
 import { logout } from '@/app/login/actions';
+import { BannerCarousel, type BannerItem } from '@/components/BannerCarousel';
 
 type WalletRow = { kind: 'tamcar_credit' | 'tamcar_revenus' | 'tamcar_rachat'; balance_fcfa: number };
 type RideRow = {
@@ -69,6 +70,7 @@ export default async function DriverDashboardPage() {
     { data: vehicle },
     { data: progressData },
     { data: insuranceData },
+    { data: bannerRows },
   ] = await Promise.all([
     supabase.rpc('my_wallets'),
     supabase
@@ -87,7 +89,16 @@ export default async function DriverDashboardPage() {
       : Promise.resolve({ data: null }),
     supabase.rpc('driver_today_volume', { p_driver_id: driver.id }),
     supabase.rpc('my_insurance_status'),
+    supabase
+      .from('home_banners')
+      .select('id, title, subtitle, image_url, link_url, cta_text, gradient')
+      .eq('is_active', true)
+      .eq('audience', 'driver')
+      .order('display_order', { ascending: true })
+      .limit(6),
   ]);
+
+  const driverBanners = (bannerRows ?? []) as BannerItem[];
 
   const w = (wallets ?? []) as WalletRow[];
   const revenus = w.find((x) => x.kind === 'tamcar_revenus')?.balance_fcfa ?? 0;
@@ -161,6 +172,12 @@ export default async function DriverDashboardPage() {
             </p>
           </div>
         </section>
+
+        {driverBanners.length > 0 && (
+          <div className="mt-lg">
+            <BannerCarousel banners={driverBanners} />
+          </div>
+        )}
 
         {/* Jauge courses du jour (Formule A uniquement) */}
         {!isProprietaire && (
