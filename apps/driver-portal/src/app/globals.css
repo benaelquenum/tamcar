@@ -111,6 +111,50 @@ body {
 }
 
 /* ============================================================
+   Pastille chauffeur (pion « moi » / véhicule assigné) : disque bleu
+   marque, silhouette véhicule, pointe de cap orientable, halo « moi ».
+   ============================================================ */
+.tc-veh-puck {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #2563EB;
+  border: 2.5px solid #fff;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.32);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  cursor: pointer;
+}
+.tc-veh-puck svg { width: 24px; height: 24px; }
+.tc-veh-nub-rot {
+  position: absolute;
+  inset: 0;
+  transition: transform 0.6s ease;
+  pointer-events: none;
+}
+.tc-veh-nub {
+  position: absolute;
+  left: 50%;
+  top: -9px;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-bottom: 9px solid #2563EB;
+}
+.tc-veh-puck.me .tc-veh-halo {
+  position: absolute;
+  inset: -9px;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.28);
+  animation: tc-pulse 1.8s ease-out infinite;
+  pointer-events: none;
+}
+
+/* ============================================================
    Pins course en attente côté chauffeur (pulse orange/rouge très visible)
    Objectif : reconnaître au premier coup d'œil l'origine d'une demande.
    ============================================================ */

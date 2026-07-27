@@ -256,6 +256,16 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
     };
   }, [isOnline, getMyPosition]);
 
+  // Position affichée dès l'arrivée sur la carte, même hors ligne, pour que
+  // le chauffeur se repère immédiatement (pion « moi »).
+  useEffect(() => {
+    let cancelled = false;
+    getMyPosition().then((p) => {
+      if (p && !cancelled) setPosition((prev) => prev ?? p);
+    });
+    return () => { cancelled = true; };
+  }, [getMyPosition]);
+
   // Realtime : nouveaux INSERTs rides dans le pool → refresh immédiat
   useEffect(() => {
     if (!isOnline) return;
@@ -417,7 +427,7 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
       {/* Carte plein écran */}
       <div className="absolute inset-0">
         <Map
-          pickup={position ?? undefined}
+          selfLocation={position}
           pendingPickups={pending.map((r) => ({
             ride_id: r.id,
             lat: r.pickup_lat,

@@ -66,6 +66,61 @@ function pinClassForCategory(cat?: string): string {
   return 'tc-driver-pin';
 }
 
+// Pin départ (vert, pastille pleine) — ancré en bas (pointe sur le lieu).
+const DEPART_PIN_SVG =
+  '<svg width="30" height="39" viewBox="0 0 32 42" style="display:block;filter:drop-shadow(0 3px 4px rgba(0,0,0,.28))">' +
+  '<path d="M16 1C8.8 1 3 6.8 3 14c0 9 13 26 13 26s13-17 13-26C29 6.8 23.2 1 16 1Z" fill="#16A34A"/>' +
+  '<circle cx="16" cy="14" r="6.5" fill="#fff"/><circle cx="16" cy="14" r="3" fill="#16A34A"/></svg>';
+// Pin destination (rouge, drapeau à damier).
+const DEST_PIN_SVG =
+  '<svg width="30" height="39" viewBox="0 0 32 42" style="display:block;filter:drop-shadow(0 3px 4px rgba(0,0,0,.28))">' +
+  '<path d="M16 1C8.8 1 3 6.8 3 14c0 9 13 26 13 26s13-17 13-26C29 6.8 23.2 1 16 1Z" fill="#DC2626"/>' +
+  '<g transform="translate(10.5,7)">' +
+  '<rect x="0" y="0" width="2" height="15" rx="1" fill="#fff"/><rect x="2" y="1" width="11" height="8" fill="#fff"/>' +
+  '<rect x="2" y="1" width="2.75" height="2" fill="#DC2626"/><rect x="7.5" y="1" width="2.75" height="2" fill="#DC2626"/>' +
+  '<rect x="4.75" y="3" width="2.75" height="2" fill="#DC2626"/><rect x="10.25" y="3" width="2.75" height="2" fill="#DC2626"/>' +
+  '<rect x="2" y="5" width="2.75" height="2" fill="#DC2626"/><rect x="7.5" y="5" width="2.75" height="2" fill="#DC2626"/></g></svg>';
+
+function makePinEl(svg: string): HTMLDivElement {
+  const el = document.createElement('div');
+  el.style.lineHeight = '0';
+  el.innerHTML = svg;
+  return el;
+}
+
+// Pastille chauffeur : disque bleu + silhouette véhicule + pointe de cap
+// orientable (+ halo si c'est « moi »).
+function makePuckEl(category?: string, self = false): HTMLDivElement {
+  const el = document.createElement('div');
+  el.className = 'tc-veh-puck' + (self ? ' me' : '');
+  el.innerHTML =
+    (self ? '<span class="tc-veh-halo"></span>' : '') +
+    '<span class="tc-veh-nub-rot"><span class="tc-veh-nub"></span></span>' +
+    svgForCategory(category);
+  return el;
+}
+
+// Cap (°) entre 2 points [lng,lat] — 0 = nord, sens horaire.
+function bearingDeg(a: [number, number], b: [number, number]): number {
+  const toR = (x: number) => (x * Math.PI) / 180;
+  const toD = (x: number) => (x * 180) / Math.PI;
+  const y = Math.sin(toR(b[0] - a[0])) * Math.cos(toR(b[1]));
+  const x =
+    Math.cos(toR(a[1])) * Math.sin(toR(b[1])) -
+    Math.sin(toR(a[1])) * Math.cos(toR(b[1])) * Math.cos(toR(b[0] - a[0]));
+  return (toD(Math.atan2(y, x)) + 360) % 360;
+}
+function metersBetween(a: [number, number], b: [number, number]): number {
+  const R = 6371000;
+  const toR = (x: number) => (x * Math.PI) / 180;
+  const dLat = toR(b[1] - a[1]);
+  const dLng = toR(b[0] - a[0]);
+  const s =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toR(a[1])) * Math.cos(toR(b[1])) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
+
 type Props = {
   pickup?: [number, number] | null;
   dropoff?: [number, number] | null;
@@ -85,6 +140,10 @@ type Props = {
   autoFit?: boolean;
   /** Anime le pin pickup (cercles pulse) — actif pendant la recherche d'un chauffeur */
   pickupPulse?: boolean;
+  /** Position du chauffeur lui-même → pion « moi » (pastille bleue + halo). */
+  selfLocation?: [number, number] | null;
+  /** Catégorie du véhicule du chauffeur (silhouette du pion « moi »). */
+  selfCategory?: string;
 };
 
 export function Map({
@@ -99,6 +158,8 @@ export function Map({
   assignedDriver,
   autoFit = true,
   pickupPulse = false,
+  selfLocation,
+  selfCategory,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -114,6 +175,10 @@ export function Map({
     new (globalThis as any).Map(),
   );
   const assignedMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const selfMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const selfPosRef = useRef<[number, number] | null>(null);
+  const selfTargetRef = useRef<[number, number] | null>(null);
+  const selfRafRef = useRef<number | null>(null);
   const onMapClickRef = useRef(onMapClick);
   onMapClickRef.current = onMapClick;
 
@@ -191,7 +256,7 @@ export function Map({
         .setLngLat(pickup)
         .addTo(mapRef.current);
     } else {
-      pickupMarkerRef.current = new GL.Marker({ color: '#2563EB' })
+      pickupMarkerRef.current = new GL.Marker({ element: makePinEl(DEPART_PIN_SVG), anchor: 'bottom' })
         .setLngLat(pickup)
         .addTo(mapRef.current);
     }
@@ -203,7 +268,7 @@ export function Map({
     dropoffMarkerRef.current?.remove();
     dropoffMarkerRef.current = null;
     if (dropoff) {
-      dropoffMarkerRef.current = new GL.Marker({ color: '#8B5CF6' })
+      dropoffMarkerRef.current = new GL.Marker({ element: makePinEl(DEST_PIN_SVG), anchor: 'bottom' })
         .setLngLat(dropoff)
         .addTo(mapRef.current);
     }
@@ -310,6 +375,63 @@ export function Map({
         .addTo(map);
     }
   }, [assignedDriver]);
+
+  // Pion « MOI » (position du chauffeur) : pastille bleue à halo, qui glisse
+  // en douceur. Recentre la carte à la première apparition (repérage immédiat).
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    if (!selfLocation) {
+      if (selfRafRef.current != null) { cancelAnimationFrame(selfRafRef.current); selfRafRef.current = null; }
+      selfMarkerRef.current?.remove();
+      selfMarkerRef.current = null;
+      selfPosRef.current = null;
+      selfTargetRef.current = null;
+      return;
+    }
+
+    const target: [number, number] = selfLocation;
+
+    if (!selfMarkerRef.current) {
+      selfMarkerRef.current = new GL.Marker({ element: makePuckEl(selfCategory, true), anchor: 'center' })
+        .setLngLat(target)
+        .addTo(map);
+      selfPosRef.current = target;
+      selfTargetRef.current = target;
+      map.flyTo({ center: target, zoom: Math.max(map.getZoom(), 14), duration: 500 });
+      return;
+    }
+
+    const prev = selfTargetRef.current;
+    if (prev && prev[0] === target[0] && prev[1] === target[1]) return;
+    selfTargetRef.current = target;
+
+    const from = selfPosRef.current ?? target;
+    if (metersBetween(from, target) > 3) {
+      const rot = selfMarkerRef.current.getElement().querySelector('.tc-veh-nub-rot') as HTMLElement | null;
+      if (rot) rot.style.transform = `rotate(${bearingDeg(from, target)}deg)`;
+    }
+
+    if (selfRafRef.current != null) cancelAnimationFrame(selfRafRef.current);
+    const startT = performance.now();
+    const DUR = 900;
+    const step = (now: number) => {
+      const p = Math.min(1, (now - startT) / DUR);
+      const e = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+      const lng = from[0] + (target[0] - from[0]) * e;
+      const lat = from[1] + (target[1] - from[1]) * e;
+      selfMarkerRef.current?.setLngLat([lng, lat]);
+      selfPosRef.current = [lng, lat];
+      if (p < 1) selfRafRef.current = requestAnimationFrame(step);
+      else selfRafRef.current = null;
+    };
+    selfRafRef.current = requestAnimationFrame(step);
+
+    return () => {
+      if (selfRafRef.current != null) { cancelAnimationFrame(selfRafRef.current); selfRafRef.current = null; }
+    };
+  }, [selfLocation, selfCategory]);
 
   // Draw / clear route
   useEffect(() => {

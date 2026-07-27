@@ -440,7 +440,8 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
         <Map
           pickup={[ride.pickup_lng, ride.pickup_lat]}
           dropoff={ride.status === 'in_progress' ? [ride.dropoff_lng, ride.dropoff_lat] : undefined}
-          assignedDriver={driverPos ? { driver_id: 'me', lng: driverPos[0], lat: driverPos[1], category: ride.vehicle_category ?? undefined } : null}
+          selfLocation={driverPos}
+          selfCategory={ride.vehicle_category ?? undefined}
           route={routeGeo}
           autoFit={false}
           className="h-full w-full"
