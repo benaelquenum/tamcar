@@ -202,6 +202,8 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
     coords: [number, number];
   } | null>(null);
   const [myLocation, setMyLocation] = useState<[number, number] | null>(null);
+  const [liveDriverCoord, setLiveDriverCoord] = useState<[number, number] | null>(null);
+  const trackChannelRef = useRef<ReturnType<typeof supabaseBrowser.channel> | null>(null);
   const [searchTimedOut, setSearchTimedOut] = useState(false);
   const [retrying, setRetrying] = useState(false);
   const [alternativeOffers, setAlternativeOffers] = useState<AlternativeOffer[] | null>(null);
@@ -470,6 +472,8 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
     () => (ride.driver_lng != null && ride.driver_lat != null ? [ride.driver_lng, ride.driver_lat] : null),
     [ride.driver_lat, ride.driver_lng],
   );
+  // La position live (broadcast temps réel) prime sur la position BDD (plus lente).
+  const effectiveDriverCoord = liveDriverCoord ?? driverCoord;
 
   // Charge les stops + refresh sur realtime updates
   const refetchStops = useCallback(async () => {
@@ -629,6 +633,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
           ts: pos.timestamp,
         });
         setMyLocation(smoothed);
+        trackChannelRef.current?.send({ type: 'broadcast', event: 'client-pos', payload: { lng: smoothed[0], lat: smoothed[1] } });
       },
       () => undefined,
       { enableHighAccuracy: true, maximumAge: 3000, timeout: 15000 },
@@ -789,6 +794,22 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
     return () => { supabaseBrowser.removeChannel(channel); };
   }, [ride.driver_id, refetchDetails]);
 
+  // Canal temps réel réciproque : reçoit la position live du chauffeur
+  // (haute fréquence) et diffuse celle du client → chacun voit l'autre
+  // bouger en direct. Éphémère (broadcast, aucune écriture BDD).
+  useEffect(() => {
+    const active = ['matched', 'arrived', 'in_progress'].includes(ride.status);
+    if (!active || !ride.driver_id) { setLiveDriverCoord(null); return; }
+    const ch = supabaseBrowser.channel(`ride-track:${ride.id}`, { config: { broadcast: { self: false } } });
+    ch.on('broadcast', { event: 'driver-pos' }, ({ payload }) => {
+      const p = payload as { lng?: number; lat?: number };
+      if (typeof p.lng === 'number' && typeof p.lat === 'number') setLiveDriverCoord([p.lng, p.lat]);
+    });
+    ch.subscribe();
+    trackChannelRef.current = ch;
+    return () => { supabaseBrowser.removeChannel(ch); trackChannelRef.current = null; };
+  }, [ride.id, ride.status, ride.driver_id]);
+
   // Check si le user a déjà noté cette ride (quand completed)
   useEffect(() => {
     if (ride.status !== 'completed') return;
@@ -841,7 +862,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
             ? nearbyDrivers.filter((d) => !ride.requested_category || d.category === ride.requested_category)
             : []
           }
-          assignedDriver={hasDriver && driverCoord ? { driver_id: ride.driver_id!, lng: driverCoord[0], lat: driverCoord[1], category: ride.vehicle_category ?? ride.requested_category ?? undefined } : null}
+          assignedDriver={hasDriver && effectiveDriverCoord ? { driver_id: ride.driver_id!, lng: effectiveDriverCoord[0], lat: effectiveDriverCoord[1], category: ride.vehicle_category ?? ride.requested_category ?? undefined } : null}
           clientLocation={myLocation}
           route={routeGeo}
           pickupPulse={isWaiting}

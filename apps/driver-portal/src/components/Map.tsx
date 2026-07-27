@@ -144,6 +144,8 @@ type Props = {
   selfLocation?: [number, number] | null;
   /** Catégorie du véhicule du chauffeur (silhouette du pion « moi »). */
   selfCategory?: string;
+  /** Position live du client (vue chauffeur) — pion cyan pulsant. */
+  clientLocation?: [number, number] | null;
 };
 
 export function Map({
@@ -160,6 +162,7 @@ export function Map({
   pickupPulse = false,
   selfLocation,
   selfCategory,
+  clientLocation,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -179,6 +182,7 @@ export function Map({
   const selfPosRef = useRef<[number, number] | null>(null);
   const selfTargetRef = useRef<[number, number] | null>(null);
   const selfRafRef = useRef<number | null>(null);
+  const clientMarkerRef = useRef<maplibregl.Marker | null>(null);
   const onMapClickRef = useRef(onMapClick);
   onMapClickRef.current = onMapClick;
 
@@ -432,6 +436,30 @@ export function Map({
       if (selfRafRef.current != null) { cancelAnimationFrame(selfRafRef.current); selfRafRef.current = null; }
     };
   }, [selfLocation, selfCategory]);
+
+  // Pion client live (vue chauffeur) — point cyan pulsant.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (!clientLocation) {
+      clientMarkerRef.current?.remove();
+      clientMarkerRef.current = null;
+      return;
+    }
+    if (!clientMarkerRef.current) {
+      const el = document.createElement('div');
+      el.className = 'tc-client-live';
+      el.innerHTML =
+        '<div class="tc-client-pulse"></div>' +
+        '<div class="tc-client-pulse delay-1"></div>' +
+        '<div class="tc-client-dot"></div>';
+      clientMarkerRef.current = new GL.Marker({ element: el, anchor: 'center' })
+        .setLngLat(clientLocation)
+        .addTo(map);
+    } else {
+      clientMarkerRef.current.setLngLat(clientLocation);
+    }
+  }, [clientLocation]);
 
   // Draw / clear route
   useEffect(() => {

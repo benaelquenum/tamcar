@@ -81,6 +81,8 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
   const [cancelling, setCancelling] = useState(false);
   const chatOpenRef = useRef(chatOpen);
   const [driverPos, setDriverPos] = useState<[number, number] | null>(null);
+  const [clientLive, setClientLive] = useState<[number, number] | null>(null);
+  const trackChannelRef = useRef<ReturnType<typeof supabaseBrowser.channel> | null>(null);
   const [routeGeo, setRouteGeo] = useState<GeoJSON.LineString | null>(null);
   const [distanceToTarget, setDistanceToTarget] = useState<number | null>(null);
   const [durationToTarget, setDurationToTarget] = useState<number | null>(null);
@@ -178,6 +180,7 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
       if (!p || cancelled) return;
       setDriverPos(p);
       supabaseBrowser.rpc('driver_update_location', { current_lng: p[0], current_lat: p[1] });
+      trackChannelRef.current?.send({ type: 'broadcast', event: 'driver-pos', payload: { lng: p[0], lat: p[1] } });
 
       // Route jusqu'à la target
       const r = await getRoute(p, target);
@@ -195,6 +198,39 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
       clearInterval(interval);
     };
   }, [target, getMyPos]);
+
+  // Canal temps réel réciproque : diffuse la position du chauffeur et reçoit
+  // celle du client → le chauffeur le voit bouger. Éphémère (broadcast).
+  useEffect(() => {
+    const active = ['matched', 'arrived', 'in_progress'].includes(ride.status);
+    if (!active) { setClientLive(null); return; }
+    const ch = supabaseBrowser.channel(`ride-track:${ride.id}`, { config: { broadcast: { self: false } } });
+    ch.on('broadcast', { event: 'client-pos' }, ({ payload }) => {
+      const p = payload as { lng?: number; lat?: number };
+      if (typeof p.lng === 'number' && typeof p.lat === 'number') setClientLive([p.lng, p.lat]);
+    });
+    ch.subscribe();
+    trackChannelRef.current = ch;
+    return () => { supabaseBrowser.removeChannel(ch); trackChannelRef.current = null; };
+  }, [ride.id, ride.status]);
+
+  // Position haute fréquence (watch) : diffuse + fait glisser le pion « moi ».
+  // Le heartbeat 15 s garde la BDD + l'itinéraire à jour.
+  useEffect(() => {
+    if (!['matched', 'arrived', 'in_progress'].includes(ride.status)) return;
+    if (typeof navigator === 'undefined' || !navigator.geolocation) return;
+    const id = navigator.geolocation.watchPosition(
+      (pos) => {
+        if (!isAccurateEnough(pos)) return;
+        const c: [number, number] = [pos.coords.longitude, pos.coords.latitude];
+        setDriverPos(c);
+        trackChannelRef.current?.send({ type: 'broadcast', event: 'driver-pos', payload: { lng: c[0], lat: c[1] } });
+      },
+      () => undefined,
+      { enableHighAccuracy: true, maximumAge: 2000, timeout: 15000 },
+    );
+    return () => navigator.geolocation.clearWatch(id);
+  }, [ride.status]);
 
   // Auto-open rating modal quand completed
   useEffect(() => {
@@ -442,6 +478,7 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
           dropoff={ride.status === 'in_progress' ? [ride.dropoff_lng, ride.dropoff_lat] : undefined}
           selfLocation={driverPos}
           selfCategory={ride.vehicle_category ?? undefined}
+          clientLocation={clientLive}
           route={routeGeo}
           autoFit={false}
           className="h-full w-full"
