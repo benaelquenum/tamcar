@@ -61,6 +61,61 @@ function pinClassForCategory(cat?: string): string {
   return 'tc-driver-pin';
 }
 
+// Pin départ (vert, pastille pleine) — ancré en bas (pointe sur le lieu).
+const DEPART_PIN_SVG =
+  '<svg width="30" height="39" viewBox="0 0 32 42" style="display:block;filter:drop-shadow(0 3px 4px rgba(0,0,0,.28))">' +
+  '<path d="M16 1C8.8 1 3 6.8 3 14c0 9 13 26 13 26s13-17 13-26C29 6.8 23.2 1 16 1Z" fill="#16A34A"/>' +
+  '<circle cx="16" cy="14" r="6.5" fill="#fff"/><circle cx="16" cy="14" r="3" fill="#16A34A"/></svg>';
+// Pin destination (rouge, drapeau à damier).
+const DEST_PIN_SVG =
+  '<svg width="30" height="39" viewBox="0 0 32 42" style="display:block;filter:drop-shadow(0 3px 4px rgba(0,0,0,.28))">' +
+  '<path d="M16 1C8.8 1 3 6.8 3 14c0 9 13 26 13 26s13-17 13-26C29 6.8 23.2 1 16 1Z" fill="#DC2626"/>' +
+  '<g transform="translate(10.5,7)">' +
+  '<rect x="0" y="0" width="2" height="15" rx="1" fill="#fff"/><rect x="2" y="1" width="11" height="8" fill="#fff"/>' +
+  '<rect x="2" y="1" width="2.75" height="2" fill="#DC2626"/><rect x="7.5" y="1" width="2.75" height="2" fill="#DC2626"/>' +
+  '<rect x="4.75" y="3" width="2.75" height="2" fill="#DC2626"/><rect x="10.25" y="3" width="2.75" height="2" fill="#DC2626"/>' +
+  '<rect x="2" y="5" width="2.75" height="2" fill="#DC2626"/><rect x="7.5" y="5" width="2.75" height="2" fill="#DC2626"/></g></svg>';
+
+function makePinEl(svg: string): HTMLDivElement {
+  const el = document.createElement('div');
+  el.style.lineHeight = '0';
+  el.innerHTML = svg;
+  return el;
+}
+
+// Pastille chauffeur : disque bleu + silhouette véhicule + pointe de cap
+// orientable (+ halo si c'est « moi » côté chauffeur).
+function makePuckEl(category?: string, self = false): HTMLDivElement {
+  const el = document.createElement('div');
+  el.className = 'tc-veh-puck' + (self ? ' me' : '');
+  el.innerHTML =
+    (self ? '<span class="tc-veh-halo"></span>' : '') +
+    '<span class="tc-veh-nub-rot"><span class="tc-veh-nub"></span></span>' +
+    svgForCategory(category);
+  return el;
+}
+
+// Cap (°) entre 2 points [lng,lat] — 0 = nord, sens horaire.
+function bearingDeg(a: [number, number], b: [number, number]): number {
+  const toR = (x: number) => (x * Math.PI) / 180;
+  const toD = (x: number) => (x * 180) / Math.PI;
+  const y = Math.sin(toR(b[0] - a[0])) * Math.cos(toR(b[1]));
+  const x =
+    Math.cos(toR(a[1])) * Math.sin(toR(b[1])) -
+    Math.sin(toR(a[1])) * Math.cos(toR(b[1])) * Math.cos(toR(b[0] - a[0]));
+  return (toD(Math.atan2(y, x)) + 360) % 360;
+}
+function metersBetween(a: [number, number], b: [number, number]): number {
+  const R = 6371000;
+  const toR = (x: number) => (x * Math.PI) / 180;
+  const dLat = toR(b[1] - a[1]);
+  const dLng = toR(b[0] - a[0]);
+  const s =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toR(a[1])) * Math.cos(toR(b[1])) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
+
 type Props = {
   pickup?: [number, number] | null;
   dropoff?: [number, number] | null;
@@ -80,6 +135,8 @@ type Props = {
   autoFit?: boolean;
   /** Anime le pin pickup (cercles pulse) — actif pendant la recherche d'un chauffeur */
   pickupPulse?: boolean;
+  /** Change de valeur → recadre la carte sur les points pertinents (transition de phase). */
+  frameKey?: string | number;
 };
 
 export function Map({
@@ -94,6 +151,7 @@ export function Map({
   clientLocation,
   autoFit = true,
   pickupPulse = false,
+  frameKey,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -105,6 +163,9 @@ export function Map({
     new (globalThis as any).Map(),
   );
   const assignedMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const assignedPosRef = useRef<[number, number] | null>(null);
+  const assignedTargetRef = useRef<[number, number] | null>(null);
+  const assignedRafRef = useRef<number | null>(null);
   const clientMarkerRef = useRef<maplibregl.Marker | null>(null);
   const onMapClickRef = useRef(onMapClick);
   onMapClickRef.current = onMapClick;
@@ -183,7 +244,7 @@ export function Map({
         .setLngLat(pickup)
         .addTo(mapRef.current);
     } else {
-      pickupMarkerRef.current = new GL.Marker({ color: '#2563EB' })
+      pickupMarkerRef.current = new GL.Marker({ element: makePinEl(DEPART_PIN_SVG), anchor: 'bottom' })
         .setLngLat(pickup)
         .addTo(mapRef.current);
     }
@@ -195,7 +256,7 @@ export function Map({
     dropoffMarkerRef.current?.remove();
     dropoffMarkerRef.current = null;
     if (dropoff) {
-      dropoffMarkerRef.current = new GL.Marker({ color: '#8B5CF6' })
+      dropoffMarkerRef.current = new GL.Marker({ element: makePinEl(DEST_PIN_SVG), anchor: 'bottom' })
         .setLngLat(dropoff)
         .addTo(mapRef.current);
     }
@@ -216,6 +277,28 @@ export function Map({
       map.flyTo({ center: dropoff, zoom: 13, duration: 600 });
     }
   }, [pickup, dropoff, autoFit]);
+
+  // Recadrage par phase : quand frameKey change (nouvelle étape de course
+  // ou itinéraire fraîchement calculé), on englobe départ + chauffeur +
+  // destination + tracé, avec marge basse pour le bottom-sheet.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || frameKey == null) return;
+    const pts: [number, number][] = [];
+    if (pickup) pts.push(pickup);
+    if (assignedDriver) pts.push([assignedDriver.lng, assignedDriver.lat]);
+    if (dropoff) pts.push(dropoff);
+    if (route) for (const c of route.coordinates) pts.push([c[0], c[1]]);
+    if (pts.length === 0) return;
+    const bounds = new GL.LngLatBounds();
+    for (const p of pts) bounds.extend(p);
+    map.fitBounds(bounds, {
+      padding: { top: 90, bottom: 260, left: 56, right: 56 },
+      maxZoom: 16,
+      duration: 700,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [frameKey]);
 
   // Pins chauffeurs autour (petits, cyan pâle)
   useEffect(() => {
@@ -253,20 +336,64 @@ export function Map({
     }
   }, [driversNearby]);
 
-  // Marker chauffeur assigné (vert, plus grand)
+  // Marker chauffeur assigné : pastille bleue persistante qui GLISSE vers
+  // chaque nouvelle position (au lieu de sauter), pointe orientée cap.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    assignedMarkerRef.current?.remove();
-    assignedMarkerRef.current = null;
-    if (assignedDriver) {
-      const el = document.createElement('div');
-      el.className = pinClassForCategory(assignedDriver.category) + ' assigned';
-      el.innerHTML = svgForCategory(assignedDriver.category);
-      assignedMarkerRef.current = new GL.Marker({ element: el, anchor: 'center' })
-        .setLngLat([assignedDriver.lng, assignedDriver.lat])
-        .addTo(map);
+
+    if (!assignedDriver) {
+      if (assignedRafRef.current != null) { cancelAnimationFrame(assignedRafRef.current); assignedRafRef.current = null; }
+      assignedMarkerRef.current?.remove();
+      assignedMarkerRef.current = null;
+      assignedPosRef.current = null;
+      assignedTargetRef.current = null;
+      return;
     }
+
+    const target: [number, number] = [assignedDriver.lng, assignedDriver.lat];
+
+    // Première apparition : pose le marqueur directement.
+    if (!assignedMarkerRef.current) {
+      assignedMarkerRef.current = new GL.Marker({ element: makePuckEl(assignedDriver.category), anchor: 'center' })
+        .setLngLat(target)
+        .addTo(map);
+      assignedPosRef.current = target;
+      assignedTargetRef.current = target;
+      return;
+    }
+
+    // Même cible (re-render non lié à la position) : ne rien refaire.
+    const prev = assignedTargetRef.current;
+    if (prev && prev[0] === target[0] && prev[1] === target[1]) return;
+    assignedTargetRef.current = target;
+
+    const from = assignedPosRef.current ?? target;
+
+    // Oriente la pointe de cap si le déplacement est significatif.
+    if (metersBetween(from, target) > 3) {
+      const rot = assignedMarkerRef.current.getElement().querySelector('.tc-veh-nub-rot') as HTMLElement | null;
+      if (rot) rot.style.transform = `rotate(${bearingDeg(from, target)}deg)`;
+    }
+
+    if (assignedRafRef.current != null) cancelAnimationFrame(assignedRafRef.current);
+    const startT = performance.now();
+    const DUR = 900;
+    const step = (now: number) => {
+      const p = Math.min(1, (now - startT) / DUR);
+      const e = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2; // easeInOutQuad
+      const lng = from[0] + (target[0] - from[0]) * e;
+      const lat = from[1] + (target[1] - from[1]) * e;
+      assignedMarkerRef.current?.setLngLat([lng, lat]);
+      assignedPosRef.current = [lng, lat];
+      if (p < 1) assignedRafRef.current = requestAnimationFrame(step);
+      else assignedRafRef.current = null;
+    };
+    assignedRafRef.current = requestAnimationFrame(step);
+
+    return () => {
+      if (assignedRafRef.current != null) { cancelAnimationFrame(assignedRafRef.current); assignedRafRef.current = null; }
+    };
   }, [assignedDriver]);
 
   // Client live location marker (pulse cyan)

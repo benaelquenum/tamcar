@@ -179,6 +179,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
   const [nearbyDrivers, setNearbyDrivers] = useState<NearbyDriverRow[]>([]);
   const [distanceToPickup, setDistanceToPickup] = useState<number | null>(null);
   const [durationToPickup, setDurationToPickup] = useState<number | null>(null);
+  const [routeGeo, setRouteGeo] = useState<GeoJSON.LineString | null>(null);
   const [sheetExpanded, setSheetExpanded] = useState(false);
   const [hasRated, setHasRated] = useState<boolean | null>(null);
   const [ratingOpen, setRatingOpen] = useState(false);
@@ -779,21 +780,35 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
     })();
   }, [ride.id, ride.status]);
 
-  // Recalcul route chauffeur → pickup à chaque changement de position driver
+  // Itinéraire tracé + ETA, recalculés quand le chauffeur bouge (le tracé
+  // suit s'il dévie). matched/arrived : chauffeur → départ. in_progress :
+  // (position chauffeur ou départ) → destination.
   useEffect(() => {
-    if (!driverCoord || !isActive || ride.status === 'in_progress' || ride.status === 'completed') {
+    let origin: [number, number] | null = null;
+    let dest: [number, number] | null = null;
+    if (ride.status === 'matched' || ride.status === 'arrived') {
+      origin = driverCoord;
+      dest = pickupCoord;
+    } else if (ride.status === 'in_progress') {
+      origin = driverCoord ?? pickupCoord;
+      dest = dropoffCoord;
+    }
+    if (!origin || !dest) {
+      setRouteGeo(null);
       setDistanceToPickup(null);
       setDurationToPickup(null);
       return;
     }
+    const toPickup = ride.status === 'matched' || ride.status === 'arrived';
     let cancelled = false;
-    getRoute(driverCoord, pickupCoord).then((r) => {
-      if (cancelled || !r) return;
-      setDistanceToPickup(r.distance_km * 1000);
-      setDurationToPickup(r.duration_min);
+    getRoute(origin, dest).then((r) => {
+      if (cancelled) return;
+      setRouteGeo(r?.geometry ?? null);
+      setDistanceToPickup(toPickup && r ? r.distance_km * 1000 : null);
+      setDurationToPickup(toPickup && r ? r.duration_min : null);
     });
     return () => { cancelled = true; };
-  }, [driverCoord, pickupCoord, isActive, ride.status]);
+  }, [driverCoord, pickupCoord, dropoffCoord, ride.status]);
 
   return (
     <main className="fixed inset-0 overflow-hidden bg-white">
@@ -808,8 +823,10 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
           }
           assignedDriver={hasDriver && driverCoord ? { driver_id: ride.driver_id!, lng: driverCoord[0], lat: driverCoord[1], category: ride.vehicle_category ?? ride.requested_category ?? undefined } : null}
           clientLocation={myLocation}
+          route={routeGeo}
           pickupPulse={isWaiting}
           autoFit={isWaiting}
+          frameKey={`${ride.status}:${routeGeo ? 1 : 0}`}
           className="h-full w-full"
         />
       </div>
