@@ -16,12 +16,12 @@ import {
   WalletIcon,
   WaveIcon,
 } from '@/components/Icon';
-import { Avatar } from '@/components/Avatar';
 import { firstNameOf, getCurrentProfile } from '@/lib/session';
 import { createServerSupabase } from '@/lib/supabase-server';
 import { SUPPORT_PHONE } from '@/lib/support';
 import { UnreadMessagesChip } from '@/components/UnreadMessagesChip';
 import { BannerCarousel } from '@/components/BannerCarousel';
+import { ProfileMenu } from '@/components/ProfileMenu';
 
 type BannerRow = {
   id: string;
@@ -134,20 +134,11 @@ export default async function HomePage() {
         <header className="flex items-center justify-between">
           <Logo className="h-9 w-auto" />
           {profile && (
-            <Link
-              href="/compte"
-              aria-label="Mon compte"
-              className="flex items-center gap-sm rounded-full bg-white p-xs pr-md shadow-md ring-1 ring-neutral-200 transition hover:shadow-lg"
-            >
-              <Avatar
-                src={profile.avatar_url}
-                name={profile.full_name}
-                size={36}
-              />
-              <span className="hidden text-sm font-bold text-neutral-900 sm:inline">
-                {firstName ?? 'Compte'}
-              </span>
-            </Link>
+            <ProfileMenu
+              avatarUrl={profile.avatar_url}
+              fullName={profile.full_name}
+              firstName={firstName ?? ''}
+            />
           )}
         </header>
 
