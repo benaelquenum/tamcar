@@ -201,7 +201,9 @@ grant execute on function public.my_accepted_scheduled_rides to authenticated;
 
 -- ------------------------------------------------------------
 -- 5. Client : mes réservations v2 — inclut le chauffeur engagé
+--    (drop nécessaire : le type de retour change — 6 → 8 colonnes)
 -- ------------------------------------------------------------
+drop function if exists public.my_scheduled_rides();
 create or replace function public.my_scheduled_rides()
 returns table (
   id uuid,
