@@ -894,6 +894,9 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
           assignedDriver={hasDriver && effectiveDriverCoord ? { driver_id: ride.driver_id!, lng: effectiveDriverCoord[0], lat: effectiveDriverCoord[1], category: ride.vehicle_category ?? ride.requested_category ?? undefined } : null}
           clientLocation={myLocation}
           route={routeGeo}
+          stops={stops
+            .filter((s) => s.status !== 'cancelled')
+            .map((s, i) => ({ lat: s.lat, lng: s.lng, label: i + 1 }))}
           pickupPulse={isWaiting}
           autoFit={isWaiting}
           frameKey={`${ride.status}:${routeGeo ? 1 : 0}`}
