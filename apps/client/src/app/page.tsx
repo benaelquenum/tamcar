@@ -253,8 +253,8 @@ export default async function HomePage() {
           </Link>
         </section>
 
-        {/* Quick actions row — remontées haut : accès direct aux fonctions courantes */}
-        <section className="mt-lg grid grid-cols-5 gap-sm">
+        {/* Quick actions — sur 2 lignes (3 + 2) */}
+        <section className="mt-lg grid grid-cols-3 gap-sm">
           <QuickActionLink href="/tampass" Icon={PassIcon} label="TamPass" tint="cyan" />
           <QuickActionLink href="/chauffeurs" Icon={UserIcon} label="Chauffeur" tint="primary" />
           <QuickActionLink href="/history" Icon={HistoryIcon} label={t('home.history')} tint="primary" />

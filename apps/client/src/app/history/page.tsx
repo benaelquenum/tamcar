@@ -59,6 +59,8 @@ export default async function HistoryPage({ searchParams }: { searchParams: { ju
     scheduled_at: string;
     price_total_fcfa: number;
     requested_category: string | null;
+    driver_full_name: string | null;
+    driver_confirmed: boolean;
   }>;
   const justScheduled = searchParams.just_scheduled === '1';
 

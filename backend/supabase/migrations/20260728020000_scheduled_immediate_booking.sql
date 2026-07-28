@@ -16,7 +16,8 @@
 -- ============================================================
 
 alter table public.rides
-  add column if not exists booking_reminder_sent_at timestamptz;
+  add column if not exists booking_reminder_30_sent_at timestamptz,
+  add column if not exists booking_reminder_15_sent_at timestamptz;
 
 -- ------------------------------------------------------------
 -- 1. Chauffeur : liste des réservations à venir qu'il peut accepter
@@ -154,7 +155,10 @@ begin
   end if;
 
   update public.rides
-    set driver_id = null, booking_reminder_sent_at = null, updated_at = now()
+    set driver_id = null,
+        booking_reminder_30_sent_at = null,
+        booking_reminder_15_sent_at = null,
+        updated_at = now()
     where id = p_ride_id
     returning * into result;
 
@@ -239,25 +243,40 @@ returns void
 language plpgsql security definer set search_path = public as $$
 declare rec record;
 begin
+  -- H-30 : rappel aux DEUX + fenêtre d'annulation libre (15 min, jusqu'à H-15)
   for rec in
-    select r.id, d.profile_id
+    select r.id, r.client_id, d.profile_id as driver_profile_id
     from public.rides r
     join public.drivers d on d.id = r.driver_id
-    where r.status = 'scheduled'
-      and r.driver_id is not null
-      and r.booking_reminder_sent_at is null
-      and r.scheduled_at > now()
-      and r.scheduled_at <= now() + interval '30 minutes'
+    where r.status = 'scheduled' and r.driver_id is not null
+      and r.booking_reminder_30_sent_at is null
+      and r.scheduled_at > now() and r.scheduled_at <= now() + interval '30 minutes'
   loop
-    perform public._push_notify(
-      rec.profile_id,
-      'Course programmée bientôt',
-      'Ta réservation approche — prépare-toi à partir vers le client.',
-      '/ride/' || rec.id::text,
-      'booking-reminder:' || rec.id::text,
-      true
-    );
-    update public.rides set booking_reminder_sent_at = now() where id = rec.id;
+    perform public._push_notify(rec.driver_profile_id, 'Course dans 30 min',
+      'Ta réservation approche. Annulation libre encore 15 min.',
+      '/ride/' || rec.id::text, 'booking-30d:' || rec.id::text, true);
+    perform public._push_notify(rec.client_id, 'Course dans 30 min',
+      'Votre chauffeur est confirmé. Annulation gratuite encore 15 min.',
+      '/ride/' || rec.id::text, 'booking-30c:' || rec.id::text, true);
+    update public.rides set booking_reminder_30_sent_at = now() where id = rec.id;
+  end loop;
+
+  -- H-15 : nouveau rappel aux DEUX + nouvelle tolérance (5 min, jusqu'à H-10)
+  for rec in
+    select r.id, r.client_id, d.profile_id as driver_profile_id
+    from public.rides r
+    join public.drivers d on d.id = r.driver_id
+    where r.status = 'scheduled' and r.driver_id is not null
+      and r.booking_reminder_15_sent_at is null
+      and r.scheduled_at > now() and r.scheduled_at <= now() + interval '15 minutes'
+  loop
+    perform public._push_notify(rec.driver_profile_id, 'Course dans 15 min',
+      'Prépare-toi à partir. Annulation libre encore 5 min.',
+      '/ride/' || rec.id::text, 'booking-15d:' || rec.id::text, true);
+    perform public._push_notify(rec.client_id, 'Course dans 15 min',
+      'Départ imminent. Annulation gratuite encore 5 min.',
+      '/ride/' || rec.id::text, 'booking-15c:' || rec.id::text, true);
+    update public.rides set booking_reminder_15_sent_at = now() where id = rec.id;
   end loop;
 end;
 $$;
@@ -276,7 +295,7 @@ begin
   update public.rides r
     set status = 'matched', matched_at = now(), requested_at = now(), updated_at = now()
     where r.status = 'scheduled'
-      and r.scheduled_at <= now() + interval '15 minutes'
+      and r.scheduled_at <= now() + interval '10 minutes'
       and r.driver_id is not null
       and exists (select 1 from public.drivers d where d.id = r.driver_id and d.status = 'active');
   get diagnostics v_a = row_count;
@@ -285,7 +304,7 @@ begin
   update public.rides r
     set status = 'requested', driver_id = null, requested_at = now(), updated_at = now()
     where r.status = 'scheduled'
-      and r.scheduled_at <= now() + interval '15 minutes'
+      and r.scheduled_at <= now() + interval '10 minutes'
       and (r.driver_id is null
            or not exists (select 1 from public.drivers d where d.id = r.driver_id and d.status = 'active'));
   get diagnostics v_b = row_count;

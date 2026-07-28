@@ -12,7 +12,13 @@ type Scheduled = {
   scheduled_at: string;
   price_total_fcfa: number;
   requested_category: string | null;
+  driver_full_name: string | null;
+  driver_confirmed: boolean;
 };
+
+function firstName(name: string | null): string {
+  return name ? name.trim().split(/\s+/)[0] ?? '' : '';
+}
 
 function fmtDate(iso: string): string {
   const d = new Date(iso);
@@ -66,7 +72,7 @@ export function ScheduledRidesList({ initial, justScheduled }: { initial: Schedu
             Réservation enregistrée
           </p>
           <p className="mt-xs text-xs">
-            Un chauffeur vous sera assigné automatiquement 15 min avant le départ.
+            Un chauffeur va s&apos;engager sur votre réservation — vous êtes notifié dès qu&apos;il confirme.
           </p>
         </div>
       )}
@@ -92,6 +98,17 @@ export function ScheduledRidesList({ initial, justScheduled }: { initial: Schedu
             )}
             <p className="mt-sm truncate text-xs text-neutral-700">{r.pickup_address}</p>
             <p className="truncate text-xs text-neutral-500">→ {r.dropoff_address}</p>
+            {r.driver_confirmed ? (
+              <p className="mt-sm flex items-center gap-xs text-xs font-bold text-primary-700">
+                <CheckIcon className="h-3.5 w-3.5" strokeWidth={3} />
+                Chauffeur confirmé{firstName(r.driver_full_name) ? ` : ${firstName(r.driver_full_name)}` : ''}
+              </p>
+            ) : (
+              <p className="mt-sm flex items-center gap-xs text-xs font-semibold text-neutral-500">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-primary-500" />
+                Recherche d&apos;un chauffeur…
+              </p>
+            )}
             <button
               type="button"
               onClick={() => handleCancel(r.id)}

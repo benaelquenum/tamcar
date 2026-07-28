@@ -65,6 +65,28 @@ type TamPassOffer = {
   searching_until: string;
 };
 
+type ScheduledBooking = {
+  id: string;
+  pickup_address: string;
+  dropoff_address: string;
+  distance_from_driver_m: number | null;
+  distance_km: number | null;
+  duration_min: number | null;
+  price_total_fcfa: number;
+  scheduled_at: string;
+  requested_category: string;
+};
+
+type MyBooking = {
+  id: string;
+  pickup_address: string;
+  dropoff_address: string;
+  scheduled_at: string;
+  price_total_fcfa: number;
+  requested_category: string;
+  client_first_name: string;
+};
+
 type Props = {
   driverName: string;
   initialIsOnline: boolean;
@@ -85,6 +107,12 @@ function formatSlot(t: string | null): string {
   return t ? t.slice(0, 5).replace(':', 'h') : '';
 }
 
+function fmtSched(iso: string): string {
+  return new Date(iso).toLocaleString('fr-FR', {
+    weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
+  });
+}
+
 export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
   const router = useRouter();
   const [isOnline, setIsOnline] = useState(initialIsOnline);
@@ -99,6 +127,10 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
   const [acceptingOfferId, setAcceptingOfferId] = useState<string | null>(null);
   const [oneshots, setOneshots] = useState<OneshotReq[]>([]);
   const [respondingId, setRespondingId] = useState<string | null>(null);
+  const [scheduledPending, setScheduledPending] = useState<ScheduledBooking[]>([]);
+  const [myBookings, setMyBookings] = useState<MyBooking[]>([]);
+  const [acceptingSchedId, setAcceptingSchedId] = useState<string | null>(null);
+  const [cancellingSchedId, setCancellingSchedId] = useState<string | null>(null);
 
   // Offres TamPass ouvertes : visibles même hors ligne (revenu récurrent).
   // On rafraîchit à l'ouverture puis toutes les 30 s, indépendamment du push.
@@ -107,6 +139,38 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
     const { data } = await supabaseBrowser.rpc('tampass_open_offers');
     setOffers((data as TamPassOffer[]) ?? []);
   }, [hasVehicle]);
+
+  // Réservations à venir dispo (à accepter) — l'RPC ne renvoie rien hors ligne.
+  const refreshScheduled = useCallback(async () => {
+    const { data } = await supabaseBrowser.rpc('pending_scheduled_rides_for_driver', { radius_km: 12.0 });
+    setScheduledPending((data as ScheduledBooking[]) ?? []);
+  }, []);
+
+  // Mes réservations acceptées (engagées) — visibles même hors ligne.
+  const refreshMyBookings = useCallback(async () => {
+    const { data } = await supabaseBrowser.rpc('my_accepted_scheduled_rides');
+    setMyBookings((data as MyBooking[]) ?? []);
+  }, []);
+
+  async function acceptScheduled(id: string) {
+    if (acceptingSchedId) return;
+    setAcceptingSchedId(id);
+    setError(null);
+    const { error: err } = await supabaseBrowser.rpc('accept_scheduled_ride', { p_ride_id: id });
+    setAcceptingSchedId(null);
+    if (err) { setError(err.message); await refreshScheduled(); return; }
+    await Promise.all([refreshScheduled(), refreshMyBookings()]);
+  }
+
+  async function cancelScheduled(id: string) {
+    if (cancellingSchedId) return;
+    if (!confirm('Se désister de cette réservation ? Elle repartira à d\'autres chauffeurs.')) return;
+    setCancellingSchedId(id);
+    const { error: err } = await supabaseBrowser.rpc('cancel_scheduled_by_driver', { p_ride_id: id });
+    setCancellingSchedId(null);
+    if (err) { setError(err.message); return; }
+    await Promise.all([refreshScheduled(), refreshMyBookings()]);
+  }
 
   // Demandes de course directe (one-shot) adressées à ce chauffeur.
   const refreshOneshots = useCallback(async () => {
@@ -118,12 +182,16 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
   useEffect(() => {
     refreshOffers();
     refreshOneshots();
+    refreshScheduled();
+    refreshMyBookings();
     const t = setInterval(() => {
       refreshOffers();
       refreshOneshots();
+      refreshScheduled();
+      refreshMyBookings();
     }, 20_000);
     return () => clearInterval(t);
-  }, [refreshOffers, refreshOneshots]);
+  }, [refreshOffers, refreshOneshots, refreshScheduled, refreshMyBookings]);
 
   async function respondOneshot(id: string, accept: boolean) {
     setRespondingId(id);
@@ -552,6 +620,72 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
                           {respondingId === o.request_id ? '…' : 'Accepter la course'}
                         </button>
                       </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Mes réservations acceptées (engagées) — je peux me désister */}
+            {myBookings.length > 0 && (
+              <div className="mb-lg">
+                <h2 className="mb-sm text-xs font-bold uppercase tracking-wider text-violet-700">
+                  Mes réservations à venir
+                </h2>
+                <div className="space-y-sm">
+                  {myBookings.map((b) => (
+                    <div key={b.id} className="rounded-xl border-2 border-violet-300 bg-violet-50 p-md">
+                      <div className="flex items-baseline justify-between">
+                        <p className="text-sm font-extrabold text-violet-700">{fmtSched(b.scheduled_at)}</p>
+                        <p className="text-sm font-bold text-neutral-900" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                          {formatFcfa(b.price_total_fcfa)} FCFA
+                        </p>
+                      </div>
+                      <p className="mt-xs text-sm font-semibold text-neutral-900">{b.client_first_name}</p>
+                      <p className="text-xs text-neutral-700">{b.pickup_address} → {b.dropoff_address}</p>
+                      <button
+                        type="button"
+                        onClick={() => cancelScheduled(b.id)}
+                        disabled={cancellingSchedId === b.id}
+                        className="mt-md w-full rounded-lg bg-white py-xs text-[11px] font-bold text-neutral-600 ring-1 ring-neutral-300 hover:bg-neutral-50 disabled:opacity-50"
+                      >
+                        {cancellingSchedId === b.id ? '…' : 'Se désister'}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Réservations à venir disponibles — engagement immédiat */}
+            {scheduledPending.length > 0 && (
+              <div className="mb-lg">
+                <h2 className="mb-sm text-xs font-bold uppercase tracking-wider text-primary-600">
+                  Réservations à venir — engage-toi
+                </h2>
+                <div className="space-y-sm">
+                  {scheduledPending.map((s) => (
+                    <div key={s.id} className="rounded-xl border-2 border-primary-200 bg-primary-50 p-md">
+                      <div className="flex items-baseline justify-between">
+                        <p className="text-sm font-extrabold text-primary-700">{fmtSched(s.scheduled_at)}</p>
+                        <p className="text-sm font-bold text-neutral-900" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                          {formatFcfa(s.price_total_fcfa)} FCFA
+                        </p>
+                      </div>
+                      <p className="mt-xs text-sm text-neutral-800">{s.pickup_address} → {s.dropoff_address}</p>
+                      <p className="text-xs text-neutral-500">
+                        {s.requested_category}
+                        {s.distance_from_driver_m != null ? ` · à ${formatDistance(s.distance_from_driver_m)}` : ''}
+                        {s.distance_km != null ? ` · ${s.distance_km} km` : ''}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => acceptScheduled(s.id)}
+                        disabled={acceptingSchedId === s.id}
+                        className="mt-md w-full rounded-lg bg-gradient-to-r from-primary-500 to-primary-700 py-md text-sm font-bold text-white shadow-glow transition hover:brightness-110 active:scale-[0.98] disabled:opacity-50"
+                      >
+                        {acceptingSchedId === s.id ? '…' : 'Accepter la réservation'}
+                      </button>
                     </div>
                   ))}
                 </div>
