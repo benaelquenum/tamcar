@@ -16,6 +16,7 @@ import {
 import { Map } from '@/components/Map';
 import { MessagesFab } from '@/components/MessagesFab';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+import { useWakeLock } from '@/lib/useWakeLock';
 import { isAccurateEnough } from '@/lib/geo-precision';
 import { acceptRideAction } from './actions';
 
@@ -131,6 +132,9 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
   const [myBookings, setMyBookings] = useState<MyBooking[]>([]);
   const [acceptingSchedId, setAcceptingSchedId] = useState<string | null>(null);
   const [cancellingSchedId, setCancellingSchedId] = useState<string | null>(null);
+
+  // Garde l'écran allumé tant que le chauffeur est en ligne (géoloc active).
+  useWakeLock(isOnline);
 
   // Offres TamPass ouvertes : visibles même hors ligne (revenu récurrent).
   // On rafraîchit à l'ouverture puis toutes les 30 s, indépendamment du push.

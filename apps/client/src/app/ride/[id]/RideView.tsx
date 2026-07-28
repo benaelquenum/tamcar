@@ -181,6 +181,9 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
   const [durationToPickup, setDurationToPickup] = useState<number | null>(null);
   const [routeGeo, setRouteGeo] = useState<GeoJSON.LineString | null>(null);
   const [sheetExpanded, setSheetExpanded] = useState(false);
+  const [sheetMin, setSheetMin] = useState(false);
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  const autoMinRef = useRef(false);
   const [hasRated, setHasRated] = useState<boolean | null>(null);
   const [ratingOpen, setRatingOpen] = useState(false);
   const [cancelling, setCancelling] = useState(false);
@@ -474,6 +477,32 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
   );
   // La position live (broadcast temps réel) prime sur la position BDD (plus lente).
   const effectiveDriverCoord = liveDriverCoord ?? driverCoord;
+
+  // Compte à rebours jusqu'à destination pendant la course (tick 1 s).
+  useEffect(() => {
+    if (ride.status !== 'in_progress' || !ride.started_at) return;
+    setNowMs(Date.now());
+    const id = setInterval(() => setNowMs(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [ride.status, ride.started_at]);
+
+  const countdownLabel = useMemo<string | null>(() => {
+    if (ride.status !== 'in_progress' || !ride.started_at || !ride.duration_min) return null;
+    const arrival = new Date(ride.started_at).getTime() + ride.duration_min * 60_000;
+    const remain = Math.round((arrival - nowMs) / 1000);
+    if (remain <= 0) return 'Arrivée imminente';
+    const m = Math.floor(remain / 60);
+    const s = remain % 60;
+    return `Arrivée dans ${m}:${s.toString().padStart(2, '0')}`;
+  }, [ride.status, ride.started_at, ride.duration_min, nowMs]);
+
+  // Réduit automatiquement la fenêtre une fois la course démarrée.
+  useEffect(() => {
+    if (ride.status === 'in_progress' && !autoMinRef.current) {
+      autoMinRef.current = true;
+      setSheetMin(true);
+    }
+  }, [ride.status]);
 
   // Charge les stops + refresh sur realtime updates
   const refetchStops = useCallback(async () => {
@@ -891,13 +920,37 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
         <div className="mx-auto max-w-md rounded-t-2xl bg-white shadow-2xl ring-1 ring-neutral-200">
           <button
             type="button"
-            onClick={() => setSheetExpanded((v) => !v)}
-            aria-label={sheetExpanded ? 'Réduire' : 'Étendre'}
+            onClick={() => setSheetMin((v) => !v)}
+            aria-label={sheetMin ? 'Agrandir' : 'Réduire'}
             className="flex w-full items-center justify-center pt-md pb-xs"
           >
             <span className="h-1.5 w-10 rounded-full bg-neutral-200" />
           </button>
 
+          {sheetMin ? (
+            <button
+              type="button"
+              onClick={() => setSheetMin(false)}
+              className="flex w-full items-center gap-md px-lg pb-md pt-xs text-left"
+            >
+              <span className={`grid h-11 w-11 flex-none place-items-center rounded-full ${meta.color} text-white`}>
+                <CarIcon className="h-5 w-5" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-extrabold text-neutral-900">{statusTitle}</p>
+                <p className="truncate text-xs font-semibold text-primary-700" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {countdownLabel ?? statusSub}
+                </p>
+              </div>
+              <span className="flex-none text-base font-extrabold text-neutral-900" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                {formatFcfa(ride.price_total_fcfa)} F
+              </span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 flex-none text-neutral-400">
+                <polyline points="18 15 12 9 6 15" />
+              </svg>
+            </button>
+          ) : (
+          <>
           {/* Badge statut */}
           <div className={`mx-lg mt-xs mb-md rounded-xl ${meta.color} p-md text-white shadow-md`}>
             <div className="flex items-center gap-md">
@@ -909,7 +962,11 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
               )}
               <div className="flex-1">
                 <p className="text-lg font-extrabold leading-tight">{statusTitle}</p>
-                {statusSub && <p className="text-xs text-white/90">{statusSub}</p>}
+                {(countdownLabel ?? statusSub) && (
+                  <p className="text-xs text-white/90" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                    {countdownLabel ?? statusSub}
+                  </p>
+                )}
               </div>
               {isWaiting && (() => {
                 const matchingCat = ride.requested_category;
@@ -1146,6 +1203,8 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
               </div>
             )}
           </div>
+          </>
+          )}
         </div>
       </div>
 

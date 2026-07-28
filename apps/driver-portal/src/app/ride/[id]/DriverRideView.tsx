@@ -11,6 +11,7 @@ import { RatingModal } from '@/components/RatingModal';
 import { getRoute } from '@/lib/mapbox';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { isAccurateEnough, SmoothingBuffer } from '@/lib/geo-precision';
+import { useWakeLock } from '@/lib/useWakeLock';
 import { titleCaseName } from '@/lib/name';
 import { SUPPORT_PHONE, SUPPORT_PHONE_DISPLAY } from '@/lib/support';
 import { markArrivedAction, startRideAction } from './actions';
@@ -101,6 +102,9 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
     if (ride.status === 'in_progress') return [ride.dropoff_lng, ride.dropoff_lat];
     return [ride.pickup_lng, ride.pickup_lat];
   }, [ride.status, ride.pickup_lat, ride.pickup_lng, ride.dropoff_lat, ride.dropoff_lng]);
+
+  // Garde l'écran allumé pendant la course active → la géoloc ne se coupe pas.
+  useWakeLock(['matched', 'arrived', 'in_progress'].includes(ride.status));
 
   // Bulle « messages non lus » sur le bouton chat : compte initial + temps réel.
   useEffect(() => {
@@ -608,6 +612,19 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
                 </a>
               )}
             </div>
+
+            {/* Navigation guidée (Google Maps) vers la cible courante */}
+            {['matched', 'arrived', 'in_progress'].includes(ride.status) && (
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&destination=${target[1]},${target[0]}&travelmode=driving`}
+                target="_blank"
+                rel="noopener"
+                className="mt-sm flex w-full items-center justify-center gap-xs rounded-xl bg-neutral-900 py-2.5 text-sm font-bold text-white shadow-sm hover:brightness-110"
+              >
+                <PinIcon className="h-4 w-4" />
+                {ride.status === 'in_progress' ? 'Naviguer vers la destination' : 'Naviguer vers le client'}
+              </a>
+            )}
             </>
             )}
 
