@@ -1,6 +1,6 @@
 {
   "appId": "com.tamcar.driver",
-  "appName": "TamCar Chauffeur",
+  "appName": "TamCar Pro",
   "webDir": "www",
   "server": {
     "url": "https://tamcar-driver-portal.vercel.app",

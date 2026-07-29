@@ -52,7 +52,7 @@ export async function startBackgroundTracking(
   try {
     id = await BackgroundGeolocation.addWatcher(
       {
-        backgroundTitle: 'TamCar Chauffeur',
+        backgroundTitle: 'TamCar Pro',
         backgroundMessage: 'Suivi de course actif.',
         requestPermissions: true,
         stale: false,

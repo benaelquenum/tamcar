@@ -20,10 +20,10 @@ self.addEventListener('push', (event) => {
   try {
     payload = event.data.json();
   } catch {
-    payload = { title: 'TamCar Chauffeur', body: event.data.text() };
+    payload = { title: 'TamCar Pro', body: event.data.text() };
   }
   const {
-    title = 'TamCar Chauffeur',
+    title = 'TamCar Pro',
     body = '',
     tag,
     url = '/',
