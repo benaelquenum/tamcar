@@ -558,12 +558,13 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
 
       {/* Header */}
       <header className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center justify-between p-lg">
-        <Link
-          href="/"
+        <button
+          type="button"
+          onClick={() => { if (window.history.length > 1) router.back(); else router.push('/'); }}
           className="pointer-events-auto grid h-11 w-11 place-items-center rounded-full bg-white text-neutral-900 shadow-lg ring-1 ring-neutral-200"
         >
           <span className="text-xl leading-none">←</span>
-        </Link>
+        </button>
         <div className="pointer-events-auto flex items-center gap-xs rounded-full bg-white/95 px-md py-xs shadow-lg ring-1 ring-neutral-200 backdrop-blur">
           <Logo className="h-5 w-auto" />
           <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-900">

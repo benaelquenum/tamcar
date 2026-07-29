@@ -4,6 +4,7 @@ import './globals.css';
 import { EnableNotifications } from '@/components/EnableNotifications';
 import { InstallPwaBanner } from '@/components/InstallPwaBanner';
 import { TopProgressBar } from '@/components/TopProgressBar';
+import { NativeBackHandler } from '@/components/NativeBackHandler';
 
 const sora = Sora({
   subsets: ['latin'],
@@ -45,6 +46,7 @@ export default function RootLayout({
     <html lang="fr" className={sora.variable}>
       <body className="font-sans antialiased">
         <TopProgressBar />
+        <NativeBackHandler />
         <EnableNotifications />
         <InstallPwaBanner />
         {children}
