@@ -597,20 +597,27 @@ function CategoryChoice({
           {climateLabel}
         </p>
         {availability && (
-          <p className="mt-xs inline-flex items-center gap-xs text-[11px] font-semibold">
+          <p className="mt-sm">
             {availability.online_count > 0 ? (
-              <>
-                <span className="relative grid h-1.5 w-1.5 place-items-center">
+              <span className="inline-flex items-center gap-xs rounded-full bg-primary-50 px-md py-0.5 text-[11px] font-bold text-primary-700 ring-1 ring-primary-100">
+                <span className="relative grid h-1.5 w-1.5 flex-none place-items-center">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary-500/60" />
                   <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary-500" />
                 </span>
-                <span className="text-primary-700" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                <span style={{ fontVariantNumeric: 'tabular-nums' }}>
                   {availability.online_count} {availableLabel}
-                  {availability.eta_min != null ? ` · ~${availability.eta_min} min` : ''}
+                  {availability.online_count > 1 ? 's' : ''}
                 </span>
-              </>
+                {availability.eta_min != null && (
+                  <span className="font-semibold text-primary-500" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                    · ~{availability.eta_min} min
+                  </span>
+                )}
+              </span>
             ) : (
-              <span className="text-neutral-400">{noDriverLabel}</span>
+              <span className="inline-flex items-center rounded-full bg-neutral-100 px-md py-0.5 text-[11px] font-semibold text-neutral-500">
+                {noDriverLabel}
+              </span>
             )}
           </p>
         )}

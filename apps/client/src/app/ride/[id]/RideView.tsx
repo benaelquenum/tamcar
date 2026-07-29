@@ -1366,14 +1366,22 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                       >
                         <div>
                           <p className="text-base font-bold text-neutral-900">{label}</p>
-                          <p className="text-[11px] text-neutral-600" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                            {t(o.drivers_online_nearby > 1 ? 'alternatives.driver_nearby_plural' : 'alternatives.driver_nearby', { n: o.drivers_online_nearby })}
+                          <p className="mt-xs">
+                            <span className="inline-flex items-center gap-xs rounded-full bg-primary-50 px-md py-0.5 text-[11px] font-bold text-primary-700 ring-1 ring-primary-100">
+                              <span className="relative grid h-1.5 w-1.5 flex-none place-items-center">
+                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary-500/60" />
+                                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary-500" />
+                              </span>
+                              <span style={{ fontVariantNumeric: 'tabular-nums' }}>
+                                {t(o.drivers_online_nearby > 1 ? 'alternatives.driver_nearby_plural' : 'alternatives.driver_nearby', { n: o.drivers_online_nearby })}
+                              </span>
+                              {o.eta_min != null && (
+                                <span className="font-semibold text-primary-500" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                                  · ~{o.eta_min} min
+                                </span>
+                              )}
+                            </span>
                           </p>
-                          {o.eta_min != null && (
-                            <p className="text-[11px] font-bold text-primary-700" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                              ~{o.eta_min} min
-                            </p>
-                          )}
                         </div>
                         <div className="text-right">
                           <p className="text-lg font-extrabold text-neutral-900" style={{ fontVariantNumeric: 'tabular-nums' }}>
