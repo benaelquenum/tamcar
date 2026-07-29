@@ -87,9 +87,9 @@ export default async function AdminVehiclesPage() {
             options={[
               { value: 'moto', label: 'Moto (zémidjan)' },
               { value: 'tricycle', label: 'Tricycle (Kloboto)' },
-              { value: 'essentiel', label: 'Essentiel (voiture éco)' },
-              { value: 'confort', label: 'Confort (voiture premium)' },
-              { value: 'premium', label: 'VIP (berline haut de gamme)' },
+              { value: 'essentiel', label: 'Essentiel (voiture basique)' },
+              { value: 'confort', label: 'Confort (voiture confortable)' },
+              { value: 'premium', label: 'VIP (voiture de prestige)' },
             ]}
           />
           {/* Formule dérivée automatiquement : dealer choisi → cession, sinon → propriétaire.

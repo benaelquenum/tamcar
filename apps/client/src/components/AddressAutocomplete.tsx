@@ -23,6 +23,7 @@ import {
   googleReverseGeocode,
 } from '@/lib/google-places';
 import { CheckIcon, CrosshairIcon, PinIcon } from './Icon';
+import { getAccuratePosition } from '@/lib/geo-precision';
 
 export type SelectedAddress = {
   place_name: string;
@@ -140,34 +141,34 @@ export function AddressAutocomplete({
     }
     setGeolocating(true);
     setGeoError(null);
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { longitude, latitude } = pos.coords;
-        const feature =
-          (googlePlacesConfigured() ? await googleReverseGeocode(longitude, latitude) : null) ||
-          (await mapboxReverseGeocode(longitude, latitude));
-        const selected: SelectedAddress = feature
-          ? { place_name: feature.place_name, center: feature.center }
-          : {
-              place_name: `Ma position (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
-              center: [longitude, latitude],
-            };
-        onChange(selected);
-        setQuery(selected.place_name);
-        setResults([]);
-        setOpen(false);
-        setGeolocating(false);
-      },
-      (err) => {
-        setGeolocating(false);
-        const msg =
-          err.code === err.PERMISSION_DENIED
-            ? 'Autorisez la géolocalisation dans votre navigateur pour utiliser cette fonction.'
-            : 'Impossible de récupérer votre position (GPS indisponible).';
-        setGeoError(msg);
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 },
-    );
+    try {
+      // Rafale watchPosition : attend un fix GPS précis (≤ 50 m) au lieu du
+      // premier fix réseau (souvent à des centaines de mètres du vrai point).
+      const pos = await getAccuratePosition({ timeoutMs: 12000 });
+      const { longitude, latitude } = pos.coords;
+      const feature =
+        (googlePlacesConfigured() ? await googleReverseGeocode(longitude, latitude) : null) ||
+        (await mapboxReverseGeocode(longitude, latitude));
+      const selected: SelectedAddress = feature
+        ? { place_name: feature.place_name, center: feature.center }
+        : {
+            place_name: `Ma position (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
+            center: [longitude, latitude],
+          };
+      onChange(selected);
+      setQuery(selected.place_name);
+      setResults([]);
+      setOpen(false);
+      setGeolocating(false);
+    } catch (err) {
+      setGeolocating(false);
+      const code = (err as GeolocationPositionError | undefined)?.code;
+      setGeoError(
+        code === 1
+          ? 'Autorisez la géolocalisation dans votre navigateur pour utiliser cette fonction.'
+          : 'Impossible de récupérer votre position (GPS indisponible).',
+      );
+    }
   }
 
   function selectPlace(f: GeocodeFeature) {

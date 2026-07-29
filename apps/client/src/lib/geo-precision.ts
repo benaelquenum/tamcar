@@ -27,6 +27,52 @@ export function isAccurateEnough(pos: GeolocationPosition, threshold = ACCURACY_
   return typeof acc === 'number' && Number.isFinite(acc) && acc <= threshold;
 }
 
+/**
+ * Acquisition PRÉCISE en une demande : lance un watchPosition court et
+ * résout dès qu'un fix passe le seuil d'accuracy (50 m). Un getCurrentPosition
+ * one-shot renvoie souvent le premier fix réseau (wifi/antennes, 500 m à
+ * plusieurs km au Bénin) car le GPS n'a pas encore chauffé — c'est ce qui
+ * faussait le point de départ client (et donc distance + prix).
+ * Au timeout, renvoie le MEILLEUR fix observé plutôt que d'échouer.
+ */
+export function getAccuratePosition(opts?: {
+  threshold?: number;
+  timeoutMs?: number;
+}): Promise<GeolocationPosition> {
+  const threshold = opts?.threshold ?? ACCURACY_THRESHOLD_M;
+  const timeoutMs = opts?.timeoutMs ?? 12000;
+  return new Promise((resolve, reject) => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      reject(new Error('geolocation_unsupported'));
+      return;
+    }
+    let best: GeolocationPosition | null = null;
+    let done = false;
+    let watchId = 0;
+    const finish = (err?: GeolocationPositionError) => {
+      if (done) return;
+      done = true;
+      navigator.geolocation.clearWatch(watchId);
+      clearTimeout(timer);
+      if (best) resolve(best);
+      else reject(err ?? new Error('gps_timeout'));
+    };
+    const timer = setTimeout(() => finish(), timeoutMs);
+    watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        if (!best || pos.coords.accuracy < best.coords.accuracy) best = pos;
+        if (isAccurateEnough(pos, threshold)) finish();
+      },
+      (err) => {
+        // Refus de permission = définitif ; les autres erreurs laissent
+        // le watch continuer jusqu'au timeout (le GPS peut encore accrocher).
+        if (err.code === err.PERMISSION_DENIED) finish(err);
+      },
+      { enableHighAccuracy: true, maximumAge: 0, timeout: timeoutMs },
+    );
+  });
+}
+
 export class SmoothingBuffer {
   private samples: Sample[] = [];
 

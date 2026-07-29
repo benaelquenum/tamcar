@@ -15,7 +15,7 @@ import { SUPPORT_PHONE, SUPPORT_PHONE_DISPLAY } from '@/lib/support';
 import { titleCaseName } from '@/lib/name';
 import { AddStopModal } from './AddStopModal';
 import { StopsListClient } from './StopsListClient';
-import { isAccurateEnough, SmoothingBuffer } from '@/lib/geo-precision';
+import { isAccurateEnough, SmoothingBuffer, getAccuratePosition } from '@/lib/geo-precision';
 import { SosButton } from '@/components/SosButton';
 import { RideChat } from '@/components/RideChat';
 import { playMessageSound } from '@/lib/message-sound';
@@ -335,12 +335,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
     let lng = myLocation?.[0] ?? null;
     if (lat == null || lng == null) {
       try {
-        const p = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: true,
-            timeout: 8000,
-          });
-        });
+        const p = await getAccuratePosition({ timeoutMs: 8000 });
         lat = p.coords.latitude;
         lng = p.coords.longitude;
       } catch {

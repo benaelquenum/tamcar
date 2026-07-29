@@ -32,9 +32,9 @@ type CategoryDef = {
 const CATEGORIES: CategoryDef[] = [
   { id: 'moto', name: 'Moto', tagline: 'Rapide, éco, zémidjan formalisé' },
   { id: 'tricycle', name: 'Tricycle', tagline: 'Kloboto confortable à petit prix' },
-  { id: 'essentiel', name: 'Essentiel', tagline: 'Voiture éco sans surprise' },
-  { id: 'confort', name: 'Confort', tagline: 'Voiture premium clim incluse', badge: 'Best-seller' },
-  { id: 'premium', name: 'VIP', tagline: 'Berline haut de gamme, service soigné' },
+  { id: 'essentiel', name: 'Essentiel', tagline: 'Voiture basique, fonctionnelle' },
+  { id: 'confort', name: 'Confort', tagline: 'Voiture confortable, bien entretenue', badge: 'Best-seller' },
+  { id: 'premium', name: 'VIP', tagline: 'Voiture de prestige, confort premium' },
 ];
 
 function formatFcfa(n: number | undefined | null): string {

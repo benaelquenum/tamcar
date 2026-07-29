@@ -18,9 +18,9 @@ type CategoryDef = {
 const CATEGORIES: CategoryDef[] = [
   { id: 'moto',      name: 'Moto',      tagline: 'Rapide, éco',    seats: '2 pl.', accent: 'bg-orange-500',  Icon: MotoIcon },
   { id: 'tricycle',  name: 'Tricycle',  tagline: 'Kloboto',        seats: '3 pl.', accent: 'bg-violet-500',  Icon: TricycleIcon },
-  { id: 'essentiel', name: 'Essentiel', tagline: 'Voiture éco',    seats: '4 pl.', accent: 'bg-primary-500', Icon: CarIcon },
-  { id: 'confort',   name: 'Confort',   tagline: 'Voiture clim.',  seats: '4 pl.', accent: 'bg-amber-500',   Icon: SuvIcon },
-  { id: 'premium',   name: 'VIP',       tagline: 'Haut de gamme',  seats: '4 pl.', accent: 'bg-neutral-900', Icon: VipCarIcon },
+  { id: 'essentiel', name: 'Essentiel', tagline: 'Voiture basique',      seats: '4 pl.', accent: 'bg-primary-500', Icon: CarIcon },
+  { id: 'confort',   name: 'Confort',   tagline: 'Voiture confortable',  seats: '4 pl.', accent: 'bg-amber-500',   Icon: SuvIcon },
+  { id: 'premium',   name: 'VIP',       tagline: 'Voiture de prestige',  seats: '4 pl.', accent: 'bg-neutral-900', Icon: VipCarIcon },
 ];
 
 export async function CategoryPricingCards() {
