@@ -161,7 +161,7 @@ export function ApproveDriverForm({ app }: Props) {
             >
               <option value="essentiel">TamCar essentiel</option>
               <option value="confort">TamCar confort</option>
-              <option value="premium">TamCar premium</option>
+              <option value="premium">TamCar VIP</option>
             </select>
           </label>
         </FieldSet>

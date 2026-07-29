@@ -242,7 +242,7 @@ export default async function DriverDashboardPage() {
             <dl className="space-y-sm text-sm">
               <Row label="Marque & modèle" value={`${vehicleInfo.brand} ${vehicleInfo.model}`} />
               <Row label="Plaque" value={vehicleInfo.plate_number} />
-              <Row label="Catégorie" value={`TamCar ${vehicleInfo.category}`} />
+              <Row label="Catégorie" value={`TamCar ${vehicleInfo.category === 'premium' ? 'VIP' : vehicleInfo.category}`} />
               {vehicleInfo.color && <Row label="Couleur" value={vehicleInfo.color} />}
             </dl>
             <p className="mt-md rounded-md bg-warning/10 p-sm text-[11px] text-warning">

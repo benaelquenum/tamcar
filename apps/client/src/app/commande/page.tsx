@@ -34,6 +34,7 @@ const CATEGORIES: CategoryDef[] = [
   { id: 'tricycle', name: 'Tricycle', tagline: 'Kloboto confortable à petit prix' },
   { id: 'essentiel', name: 'Essentiel', tagline: 'Voiture éco sans surprise' },
   { id: 'confort', name: 'Confort', tagline: 'Voiture premium clim incluse', badge: 'Best-seller' },
+  { id: 'premium', name: 'VIP', tagline: 'Berline haut de gamme, service soigné' },
 ];
 
 function formatFcfa(n: number | undefined | null): string {
@@ -569,7 +570,7 @@ function CategoryChoice({
   noDriverLabel: string;
   availableLabel: string;
 }) {
-  const climateTint = category.id === 'confort' ? 'text-cyan-500' : 'text-neutral-500';
+  const climateTint = category.id === 'confort' || category.id === 'premium' ? 'text-cyan-500' : 'text-neutral-500';
   return (
     <button
       type="button"

@@ -45,6 +45,7 @@ const CAT_LABEL: Record<string, string> = {
   tricycle: 'Tricycle',
   essentiel: 'Essentiel',
   confort: 'Confort',
+  premium: 'VIP',
 };
 
 const PAYMENT_LABEL: Record<string, string> = {

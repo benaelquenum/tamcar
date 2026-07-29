@@ -89,6 +89,7 @@ export default async function AdminVehiclesPage() {
               { value: 'tricycle', label: 'Tricycle (Kloboto)' },
               { value: 'essentiel', label: 'Essentiel (voiture éco)' },
               { value: 'confort', label: 'Confort (voiture premium)' },
+              { value: 'premium', label: 'VIP (berline haut de gamme)' },
             ]}
           />
           {/* Formule dérivée automatiquement : dealer choisi → cession, sinon → propriétaire.

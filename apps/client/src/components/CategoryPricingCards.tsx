@@ -4,7 +4,7 @@ import {
   type PriceQuote,
   type VehicleCategory,
 } from '@/lib/pricing';
-import { CarIcon, MotoIcon, TricycleIcon, SuvIcon } from './Icon';
+import { CarIcon, MotoIcon, TricycleIcon, SuvIcon, VipCarIcon } from './Icon';
 
 type CategoryDef = {
   id: VehicleCategory;
@@ -20,6 +20,7 @@ const CATEGORIES: CategoryDef[] = [
   { id: 'tricycle',  name: 'Tricycle',  tagline: 'Kloboto',        seats: '3 pl.', accent: 'bg-violet-500',  Icon: TricycleIcon },
   { id: 'essentiel', name: 'Essentiel', tagline: 'Voiture éco',    seats: '4 pl.', accent: 'bg-primary-500', Icon: CarIcon },
   { id: 'confort',   name: 'Confort',   tagline: 'Voiture clim.',  seats: '4 pl.', accent: 'bg-amber-500',   Icon: SuvIcon },
+  { id: 'premium',   name: 'VIP',       tagline: 'Haut de gamme',  seats: '4 pl.', accent: 'bg-neutral-900', Icon: VipCarIcon },
 ];
 
 export async function CategoryPricingCards() {

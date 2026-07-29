@@ -140,6 +140,8 @@ const dict: Record<Lang, Record<string, string>> = {
     'cat.confort.tagline': 'Voiture premium clim incluse',
     'cat.confort.climate': 'Clim incluse',
     'cat.confort.badge': 'Best-seller',
+    'cat.premium.tagline': 'Berline haut de gamme, service soigné',
+    'cat.premium.climate': 'Clim incluse · chauffeur d’élite',
     // Cancel reasons
     'cancel.reason.driver_asked': 'Le chauffeur m\'a demandé d\'annuler',
     'cancel.reason.driver_not_moving': 'Le chauffeur ne bouge pas',
@@ -298,6 +300,8 @@ const dict: Record<Lang, Record<string, string>> = {
     'cat.confort.tagline': 'Premium car, AC included',
     'cat.confort.climate': 'AC included',
     'cat.confort.badge': 'Best-seller',
+    'cat.premium.tagline': 'High-end sedan, refined service',
+    'cat.premium.climate': 'AC included · top-rated driver',
     'cancel.reason.driver_asked': 'The driver asked me to cancel',
     'cancel.reason.driver_not_moving': 'The driver is not moving',
     'cancel.reason.wrong_direction': 'The driver is going the wrong way',

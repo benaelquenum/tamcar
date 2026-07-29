@@ -17,6 +17,7 @@ const CATEGORIES: { code: VehicleCategory; label: string }[] = [
   { code: 'tricycle', label: 'Tricycle' },
   { code: 'essentiel', label: 'Essentiel' },
   { code: 'confort', label: 'Confort' },
+  { code: 'premium', label: 'VIP' },
 ];
 
 const DAYS: { n: number; label: string }[] = [

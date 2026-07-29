@@ -65,6 +65,7 @@ function pinClassForCategory(cat?: string): string {
   if (cat === 'moto') return 'tc-driver-pin moto';
   if (cat === 'tricycle') return 'tc-driver-pin tricycle';
   if (cat === 'confort') return 'tc-driver-pin confort';
+  if (cat === 'premium') return 'tc-driver-pin premium';
   return 'tc-driver-pin';
 }
 

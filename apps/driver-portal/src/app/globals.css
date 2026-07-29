@@ -59,6 +59,11 @@ body {
   background: linear-gradient(135deg, #D97706, #B45309);
   box-shadow: 0 2px 8px rgba(217, 119, 6, 0.55);
 }
+.tc-driver-pin.premium {
+  background: linear-gradient(135deg, #1F2937, #0B0F1A);
+  border-color: #CDAB6B;
+  box-shadow: 0 2px 8px rgba(205, 171, 107, 0.55);
+}
 
 .tc-driver-pin.assigned {
   width: 38px;
@@ -78,6 +83,11 @@ body {
 .tc-driver-pin.confort.assigned {
   background: linear-gradient(135deg, #D97706, #B45309);
   box-shadow: 0 4px 14px rgba(217, 119, 6, 0.65);
+}
+.tc-driver-pin.premium.assigned {
+  background: linear-gradient(135deg, #1F2937, #0B0F1A);
+  border-color: #CDAB6B;
+  box-shadow: 0 4px 14px rgba(205, 171, 107, 0.65);
 }
 .tc-driver-pin.assigned svg { width: 20px; height: 20px; }
 

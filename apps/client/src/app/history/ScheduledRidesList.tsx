@@ -40,6 +40,7 @@ const CAT_LABEL: Record<string, string> = {
   tricycle: 'Tricycle',
   essentiel: 'Essentiel',
   confort: 'Confort',
+  premium: 'VIP',
 };
 
 export function ScheduledRidesList({ initial, justScheduled }: { initial: Scheduled[]; justScheduled: boolean }) {

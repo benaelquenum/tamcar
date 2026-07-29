@@ -60,7 +60,7 @@ export type RideForView = {
   status: RideStatus;
   payment_method: string | null;
   requested_at: string;
-  requested_category?: 'moto' | 'tricycle' | 'essentiel' | 'confort' | null;
+  requested_category?: 'moto' | 'tricycle' | 'essentiel' | 'confort' | 'premium' | null;
   vehicle_category?: string | null;
   downgrade_accepted_at?: string | null;
   matched_at?: string | null;
@@ -162,7 +162,7 @@ function catLabel(cat: string): string {
     case 'tricycle': return 'Tricycle';
     case 'essentiel': return 'Essentiel';
     case 'confort': return 'Confort';
-    case 'premium': return 'Premium';
+    case 'premium': return 'VIP';
     default: return cat;
   }
 }
@@ -993,6 +993,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                     : matchingCat === 'tricycle' ? 'Tricycle'
                     : matchingCat === 'essentiel' ? 'Essentiel'
                     : matchingCat === 'confort' ? 'Confort'
+                    : matchingCat === 'premium' ? 'VIP'
                     : String(matchingCat))
                   : 'véhicule';
                 return (

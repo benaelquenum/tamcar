@@ -890,7 +890,7 @@ function catLabel(cat: string): string {
     case 'tricycle': return 'Tricycle';
     case 'essentiel': return 'Essentiel';
     case 'confort': return 'Confort';
-    case 'premium': return 'Premium';
+    case 'premium': return 'VIP';
     default: return cat;
   }
 }

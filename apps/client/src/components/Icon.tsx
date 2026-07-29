@@ -367,6 +367,17 @@ export function SuvIcon({ className = 'h-4 w-4', strokeWidth = 2 }: IconProps) {
   );
 }
 
+export function VipCarIcon({ className = 'h-4 w-4', strokeWidth = 2 }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={`${base} ${className}`}>
+      <path d="M2 16h20v-3l-3.5-1L16 8.5H8L5.5 12 2 13z" />
+      <circle cx="7" cy="18" r="2" />
+      <circle cx="17" cy="18" r="2" />
+      <path d="M12 1.6l.8 1.6 1.8.3-1.3 1.3.3 1.8-1.6-.85-1.6.85.3-1.8-1.3-1.3 1.8-.3z" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 export function WhatsAppIcon({ className = 'h-4 w-4' }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" className={`${base} ${className}`}>
