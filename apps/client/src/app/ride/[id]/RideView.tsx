@@ -10,6 +10,7 @@ import { Map } from '@/components/Map';
 import { RatingModal } from '@/components/RatingModal';
 import { getRoute } from '@/lib/mapbox';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+import { freshChannel } from '@/lib/realtime';
 import { SUPPORT_PHONE, SUPPORT_PHONE_DISPLAY } from '@/lib/support';
 import { titleCaseName } from '@/lib/name';
 import { AddStopModal } from './AddStopModal';
@@ -242,8 +243,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
       setUnreadMessages(chatOpenRef.current ? 0 : n);
     })();
 
-    const channel = supabaseBrowser
-      .channel(`ride_unread:${ride.id}`)
+    const channel = freshChannel(`ride_unread:${ride.id}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'ride_messages', filter: `ride_id=eq.${ride.id}` },
@@ -518,8 +518,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
 
   useEffect(() => {
     refetchStops();
-    const channel = supabaseBrowser
-      .channel(`stops:${ride.id}`)
+    const channel = freshChannel(`stops:${ride.id}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'ride_stops', filter: `ride_id=eq.${ride.id}` },
@@ -802,8 +801,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
 
   // Realtime : updates de la ride (statut change → refetch complet pour infos driver)
   useEffect(() => {
-    const channel = supabaseBrowser
-      .channel(`ride:${ride.id}`)
+    const channel = freshChannel(`ride:${ride.id}`)
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'rides', filter: `id=eq.${ride.id}` },
@@ -818,8 +816,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
   // Realtime : position du chauffeur assigné (updates de public.drivers)
   useEffect(() => {
     if (!ride.driver_id) return;
-    const channel = supabaseBrowser
-      .channel(`driver-pos:${ride.driver_id}`)
+    const channel = freshChannel(`driver-pos:${ride.driver_id}`)
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'drivers', filter: `id=eq.${ride.driver_id}` },
@@ -835,7 +832,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
   useEffect(() => {
     const active = ['matched', 'arrived', 'in_progress'].includes(ride.status);
     if (!active || !ride.driver_id) { setLiveDriverCoord(null); return; }
-    const ch = supabaseBrowser.channel(`ride-track:${ride.id}`, { config: { broadcast: { self: false } } });
+    const ch = freshChannel(`ride-track:${ride.id}`, { config: { broadcast: { self: false } } });
     ch.on('broadcast', { event: 'driver-pos' }, ({ payload }) => {
       const p = payload as { lng?: number; lat?: number };
       if (typeof p.lng === 'number' && typeof p.lat === 'number') setLiveDriverCoord([p.lng, p.lat]);

@@ -11,6 +11,7 @@ import { NavBanner } from '@/components/NavBanner';
 import { RatingModal } from '@/components/RatingModal';
 import { getNavRoute, type NavStep } from '@/lib/mapbox';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+import { freshChannel } from '@/lib/realtime';
 import { isAccurateEnough, SmoothingBuffer } from '@/lib/geo-precision';
 import { useWakeLock } from '@/lib/useWakeLock';
 import { useBackgroundTracking } from '@/lib/backgroundTracking';
@@ -138,8 +139,7 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
       if (Array.isArray(data)) setMapStops(data as { lat: number; lng: number; status: string }[]);
     };
     load();
-    const ch = supabaseBrowser
-      .channel(`driver-stops:${ride.id}`)
+    const ch = freshChannel(`driver-stops:${ride.id}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'ride_stops', filter: `ride_id=eq.${ride.id}` },
@@ -182,8 +182,7 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
       setUnreadMessages(chatOpenRef.current ? 0 : n);
     })();
 
-    const channel = supabaseBrowser
-      .channel(`ride_unread:${ride.id}`)
+    const channel = freshChannel(`ride_unread:${ride.id}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'ride_messages', filter: `ride_id=eq.${ride.id}` },
@@ -272,7 +271,7 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
   useEffect(() => {
     const active = ['matched', 'arrived', 'in_progress'].includes(ride.status);
     if (!active) { setClientLive(null); return; }
-    const ch = supabaseBrowser.channel(`ride-track:${ride.id}`, { config: { broadcast: { self: false } } });
+    const ch = freshChannel(`ride-track:${ride.id}`, { config: { broadcast: { self: false } } });
     ch.on('broadcast', { event: 'client-pos' }, ({ payload }) => {
       const p = payload as { lng?: number; lat?: number };
       if (typeof p.lng === 'number' && typeof p.lat === 'number') setClientLive([p.lng, p.lat]);
@@ -314,8 +313,7 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
   // Realtime : écoute updates ride pour rester en sync si annulée client par exemple.
   // Son + vibration sur les transitions clés.
   useEffect(() => {
-    const channel = supabaseBrowser
-      .channel(`driver-ride:${ride.id}`)
+    const channel = freshChannel(`driver-ride:${ride.id}`)
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'rides', filter: `id=eq.${ride.id}` },

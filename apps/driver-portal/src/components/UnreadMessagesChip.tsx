@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+import { freshChannel } from '@/lib/realtime';
 
 /**
  * Bulle globale « messages non lus » affichée sur l'accueil chauffeur.
@@ -27,8 +28,7 @@ export function UnreadMessagesChip({ bottomClass = 'bottom-28' }: { bottomClass?
     }
 
     refresh();
-    const channel = supabaseBrowser
-      .channel('global_unread_messages')
+    const channel = freshChannel('global_unread_messages')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'ride_messages' }, () => refresh())
       .subscribe();
 

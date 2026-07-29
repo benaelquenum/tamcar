@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+import { freshChannel } from '@/lib/realtime';
 import { MessageIcon } from '@/components/Icon';
 
 /**
@@ -26,8 +27,7 @@ export function MessagesFab() {
       setRideId(row?.ride_id ?? null);
     }
     refresh();
-    const channel = supabaseBrowser
-      .channel('driver_unread_fab')
+    const channel = freshChannel('driver_unread_fab')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'ride_messages' }, () => refresh())
       .subscribe();
     return () => {

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+import { freshChannel } from '@/lib/realtime';
 import { CameraIcon, VideoIcon, MicIcon, ClockIcon } from './Icon';
 
 type MsgKind = 'text' | 'photo' | 'audio' | 'video';
@@ -88,8 +89,7 @@ export function RideChat({ rideId, myUserId, otherName, onClose }: Props) {
       supabaseBrowser.rpc('mark_ride_messages_read', { p_ride_id: rideId });
     })();
 
-    const channel = supabaseBrowser
-      .channel(`ride_messages:${rideId}`)
+    const channel = freshChannel(`ride_messages:${rideId}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'ride_messages', filter: `ride_id=eq.${rideId}` },

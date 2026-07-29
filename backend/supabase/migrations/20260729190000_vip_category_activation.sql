@@ -171,7 +171,11 @@ end;
 $fn_pending$;
 
 -- 3. Alternatives : VIP → Confort/Essentiel ; Confort → + VIP ----------
-create or replace function public.preview_alternative_offers(p_ride_id uuid)
+-- Le type de retour de la version déployée diffère → drop d'abord
+-- (42P13 "cannot change return type of existing function" sinon).
+drop function if exists public.preview_alternative_offers(uuid);
+
+create function public.preview_alternative_offers(p_ride_id uuid)
 returns table (
   category vehicle_category,
   new_price_fcfa int,
@@ -231,3 +235,10 @@ begin
   end loop;
 end;
 $$;
+
+grant execute on function public.preview_alternative_offers(uuid) to authenticated;
+
+-- 4. Prix VIP : km ville 180 -> 200 F (décision Terence 2026-07-29) ----
+update public.pricing_tiers
+   set km_city_fcfa = 200, updated_at = now()
+ where category = 'premium';

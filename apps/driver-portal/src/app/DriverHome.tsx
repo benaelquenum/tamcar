@@ -16,6 +16,7 @@ import {
 import { Map } from '@/components/Map';
 import { MessagesFab } from '@/components/MessagesFab';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+import { freshChannel } from '@/lib/realtime';
 import { useWakeLock } from '@/lib/useWakeLock';
 import { useBackgroundTracking } from '@/lib/backgroundTracking';
 import { isAccurateEnough } from '@/lib/geo-precision';
@@ -354,8 +355,7 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
   // Realtime : nouveaux INSERTs rides dans le pool → refresh immédiat
   useEffect(() => {
     if (!isOnline) return;
-    const channel = supabaseBrowser
-      .channel('driver-pool')
+    const channel = freshChannel('driver-pool')
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'rides' },

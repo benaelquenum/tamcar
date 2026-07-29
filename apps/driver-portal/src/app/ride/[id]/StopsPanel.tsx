@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+import { freshChannel } from '@/lib/realtime';
 
 type RideStopRow = {
   id: string;
@@ -83,8 +84,9 @@ export function StopsPanel({ rideId }: { rideId: string }) {
       setStops(list);
     }
     load();
-    const channel = supabaseBrowser
-      .channel(`driver-stops:${rideId}`)
+    // Topic distinct de celui de DriverRideView (`driver-stops:`) — deux
+    // composants sur le même topic = crash « callbacks after subscribe() ».
+    const channel = freshChannel(`driver-stops-panel:${rideId}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'ride_stops', filter: `ride_id=eq.${rideId}` },
