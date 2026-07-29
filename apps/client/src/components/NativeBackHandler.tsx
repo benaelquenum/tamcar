@@ -18,15 +18,21 @@ export function NativeBackHandler() {
     if (!native) return;
 
     let remove: (() => void) | undefined;
-    App.addListener('backButton', ({ canGoBack }) => {
-      if (canGoBack || (typeof window !== 'undefined' && window.history.length > 1)) {
-        window.history.back();
-      } else {
-        App.exitApp();
-      }
-    }).then((handle) => {
-      remove = () => handle.remove();
-    });
+    try {
+      // Peut jeter si l'APK installé ne contient pas encore le plugin
+      // @capacitor/app (vieux build) — le site live doit le tolérer.
+      App.addListener('backButton', ({ canGoBack }) => {
+        if (canGoBack || (typeof window !== 'undefined' && window.history.length > 1)) {
+          window.history.back();
+        } else {
+          try { App.exitApp(); } catch { /* ignore */ }
+        }
+      }).then((handle) => {
+        remove = () => handle.remove();
+      }).catch(() => undefined);
+    } catch {
+      /* plugin natif absent → no-op */
+    }
 
     return () => remove?.();
   }, []);
