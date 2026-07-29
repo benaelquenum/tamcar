@@ -1,0 +1,13 @@
+{
+  "appId": "com.tamcar.client",
+  "appName": "TamCar",
+  "webDir": "www",
+  "server": {
+    "url": "https://tamcar-client.vercel.app",
+    "cleartext": false,
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}
