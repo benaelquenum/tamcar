@@ -1,0 +1,13 @@
+{
+  "name": "mobile-driver",
+  "version": "1.0.0",
+  "description": "TamCar — app native chauffeur (Capacitor)",
+  "private": true,
+  "type": "commonjs",
+  "dependencies": {
+    "@capacitor/android": "^8.4.2",
+    "@capacitor/cli": "^8.4.2",
+    "@capacitor/core": "^8.4.2",
+    "@capacitor/geolocation": "^8.2.0"
+  }
+}

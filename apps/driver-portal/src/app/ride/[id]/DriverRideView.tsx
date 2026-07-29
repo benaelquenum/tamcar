@@ -13,6 +13,7 @@ import { getNavRoute, type NavStep } from '@/lib/mapbox';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { isAccurateEnough, SmoothingBuffer } from '@/lib/geo-precision';
 import { useWakeLock } from '@/lib/useWakeLock';
+import { useBackgroundTracking } from '@/lib/backgroundTracking';
 import { titleCaseName } from '@/lib/name';
 import { SUPPORT_PHONE, SUPPORT_PHONE_DISPLAY } from '@/lib/support';
 import { markArrivedAction, startRideAction } from './actions';
@@ -118,6 +119,17 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
 
   // Garde l'écran allumé pendant la course active → la géoloc ne se coupe pas.
   useWakeLock(['matched', 'arrived', 'in_progress'].includes(ride.status));
+
+  // Suivi natif en arrière-plan (app native) : la position remonte même
+  // écran éteint / app en fond → BDD + broadcast temps réel.
+  useBackgroundTracking(
+    ['matched', 'arrived', 'in_progress'].includes(ride.status),
+    (lng, lat) => {
+      setDriverPos([lng, lat]);
+      supabaseBrowser.rpc('driver_update_location', { current_lng: lng, current_lat: lat });
+      trackChannelRef.current?.send({ type: 'broadcast', event: 'driver-pos', payload: { lng, lat } });
+    },
+  );
 
   // Escales de la course → marqueurs sur la carte (temps réel).
   useEffect(() => {

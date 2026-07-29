@@ -1,0 +1,13 @@
+{
+  "appId": "com.tamcar.driver",
+  "appName": "TamCar Chauffeur",
+  "webDir": "www",
+  "server": {
+    "url": "https://tamcar-driver-portal.vercel.app",
+    "cleartext": false,
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}
