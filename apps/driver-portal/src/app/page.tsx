@@ -33,6 +33,15 @@ export default async function HomePage() {
     if (activeRide?.id) redirect(`/ride/${activeRide.id}`);
   }
 
+  // Dette chauffeur : solde Revenus négatif => bloqué en ligne tant que non réglé.
+  const { data: revWallet } = await supabase
+    .from('wallets')
+    .select('balance_fcfa')
+    .eq('profile_id', profile.id)
+    .eq('kind', 'tamcar_revenus')
+    .maybeSingle();
+  const debt = revWallet && revWallet.balance_fcfa < 0 ? -revWallet.balance_fcfa : 0;
+
   if (!driverRow) {
     // Cas edge : profil "driver" en base mais aucune fiche drivers. On informe.
     return (
@@ -55,6 +64,7 @@ export default async function HomePage() {
       driverName={profile.full_name}
       initialIsOnline={driverRow.is_online}
       hasVehicle={driverRow.current_vehicle_id !== null}
+      debt={debt}
     />
   );
 }

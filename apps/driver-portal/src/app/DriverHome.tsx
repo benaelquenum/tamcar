@@ -93,6 +93,7 @@ type Props = {
   driverName: string;
   initialIsOnline: boolean;
   hasVehicle: boolean;
+  debt: number;
 };
 
 function formatFcfa(n: number): string {
@@ -115,7 +116,7 @@ function fmtSched(iso: string): string {
   });
 }
 
-export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
+export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Props) {
   const router = useRouter();
   const [isOnline, setIsOnline] = useState(initialIsOnline);
   const [busy, setBusy] = useState(false);
@@ -263,6 +264,10 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
 
   async function goOnline() {
     setError(null);
+    if (debt > 0) {
+      setError(`Régularisez votre dette (${formatFcfa(debt)} F) avant de repasser en ligne.`);
+      return;
+    }
     setBusy(true);
     const p = await getMyPosition();
     if (!p) {
@@ -560,7 +565,7 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
               <button
                 type="button"
                 onClick={isOnline ? goOffline : goOnline}
-                disabled={busy || !hasVehicle}
+                disabled={busy || !hasVehicle || (!isOnline && debt > 0)}
                 className={`rounded-full px-lg py-md text-sm font-bold shadow-md transition disabled:cursor-not-allowed disabled:opacity-50 ${
                   isOnline
                     ? 'bg-neutral-900 text-white hover:brightness-110'
@@ -575,6 +580,23 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle }: Props) {
               <div className="mb-md rounded-md bg-error/10 p-md text-sm text-error">
                 Aucun véhicule assigné. Contactez l&apos;équipe TamCar pour
                 associer une voiture à votre compte.
+              </div>
+            )}
+
+            {debt > 0 && (
+              <div className="mb-md rounded-md bg-warning/10 p-md">
+                <p className="text-sm font-bold text-warning">
+                  Dette de {formatFcfa(debt)} F
+                </p>
+                <p className="mt-xs text-xs text-neutral-600">
+                  Régularisez pour repasser en ligne.
+                </p>
+                <Link
+                  href="/wallet"
+                  className="mt-sm inline-block rounded-lg bg-primary-600 px-md py-sm text-xs font-bold text-white"
+                >
+                  Régler ma dette
+                </Link>
               </div>
             )}
 
