@@ -29,6 +29,8 @@ export type PendingPickup = {
   price_fcfa?: number;
 };
 
+export type StopPin = { lat: number; lng: number; label: number };
+
 const CAR_SVG = `
 <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
   <path d="M5 17h14M5 17v-4l1.5-4A2 2 0 0 1 8.4 7.7h7.2a2 2 0 0 1 1.9 1.3L19 13v4M5 17v2a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-2M16 17v2a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-2"/>
@@ -88,6 +90,19 @@ function makePinEl(svg: string): HTMLDivElement {
   return el;
 }
 
+// Pin d'escale : teardrop violet numéroté (ancré au sol).
+function makeStopEl(n: number): HTMLDivElement {
+  const el = document.createElement('div');
+  el.style.lineHeight = '0';
+  el.innerHTML =
+    '<svg width="28" height="36" viewBox="0 0 32 42" style="display:block;filter:drop-shadow(0 3px 4px rgba(0,0,0,.28))">' +
+    '<path d="M16 1C8.8 1 3 6.8 3 14c0 9 13 26 13 26s13-17 13-26C29 6.8 23.2 1 16 1Z" fill="#8B5CF6"/>' +
+    '<circle cx="16" cy="14" r="7.5" fill="#fff"/>' +
+    '<text x="16" y="18" text-anchor="middle" font-size="11" font-weight="700" fill="#8B5CF6" font-family="system-ui,sans-serif">' +
+    n + '</text></svg>';
+  return el;
+}
+
 // Pastille chauffeur : disque bleu + silhouette véhicule + pointe de cap
 // orientable (+ halo si c'est « moi »).
 function makePuckEl(category?: string, self = false): HTMLDivElement {
@@ -137,6 +152,8 @@ type Props = {
   pickup?: [number, number] | null;
   dropoff?: [number, number] | null;
   route?: GeoJSON.LineString | null;
+  /** Escales (arrêts) à matérialiser — pins violets numérotés. */
+  stops?: StopPin[];
   className?: string;
   /** Si fourni, la carte devient sélectionnable : clic pose un point provisoire ambre et déclenche le callback */
   onMapClick?: (lngLat: [number, number]) => void;
@@ -166,6 +183,7 @@ export function Map({
   pickup,
   dropoff,
   route,
+  stops,
   className,
   onMapClick,
   candidate,
@@ -185,6 +203,10 @@ export function Map({
   const dropoffMarkerRef = useRef<maplibregl.Marker | null>(null);
   const candidateMarkerRef = useRef<maplibregl.Marker | null>(null);
   const driverMarkersRef = useRef<Map<string, maplibregl.Marker>>(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    new (globalThis as any).Map(),
+  );
+  const stopMarkersRef = useRef<Map<string, maplibregl.Marker>>(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     new (globalThis as any).Map(),
   );
@@ -292,6 +314,26 @@ export function Map({
         .addTo(mapRef.current);
     }
   }, [dropoff]);
+
+  // Marqueurs d'escale (pins violets numérotés).
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const seen = new Set<string>();
+    for (const s of stops ?? []) {
+      const key = `${s.label}:${s.lat.toFixed(6)}:${s.lng.toFixed(6)}`;
+      seen.add(key);
+      if (!stopMarkersRef.current.has(key)) {
+        const m = new GL.Marker({ element: makeStopEl(s.label), anchor: 'bottom' })
+          .setLngLat([s.lng, s.lat])
+          .addTo(map);
+        stopMarkersRef.current.set(key, m);
+      }
+    }
+    for (const [k, m] of Array.from(stopMarkersRef.current.entries())) {
+      if (!seen.has(k)) { m.remove(); stopMarkersRef.current.delete(k); }
+    }
+  }, [stops]);
 
   // Fit bounds ou fly (uniquement si autoFit)
   useEffect(() => {

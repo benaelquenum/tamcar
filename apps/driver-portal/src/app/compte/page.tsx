@@ -75,12 +75,6 @@ export default async function ComptePage() {
             sub="Ce que chaque course vous a rapporté"
           />
           <ShortcutLink
-            href="/strikes"
-            Icon={CarIcon}
-            title="Signalements"
-            sub="Voir vos strikes et les contester"
-          />
-          <ShortcutLink
             href="/"
             Icon={CarIcon}
             title="Prendre des courses"

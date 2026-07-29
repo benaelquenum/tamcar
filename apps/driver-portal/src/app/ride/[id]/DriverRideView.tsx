@@ -84,6 +84,7 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
   const [driverPos, setDriverPos] = useState<[number, number] | null>(null);
   const [clientLive, setClientLive] = useState<[number, number] | null>(null);
   const trackChannelRef = useRef<ReturnType<typeof supabaseBrowser.channel> | null>(null);
+  const [mapStops, setMapStops] = useState<{ lat: number; lng: number; status: string }[]>([]);
   const [routeGeo, setRouteGeo] = useState<GeoJSON.LineString | null>(null);
   const [distanceToTarget, setDistanceToTarget] = useState<number | null>(null);
   const [durationToTarget, setDurationToTarget] = useState<number | null>(null);
@@ -105,6 +106,24 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
 
   // Garde l'écran allumé pendant la course active → la géoloc ne se coupe pas.
   useWakeLock(['matched', 'arrived', 'in_progress'].includes(ride.status));
+
+  // Escales de la course → marqueurs sur la carte (temps réel).
+  useEffect(() => {
+    const load = async () => {
+      const { data } = await supabaseBrowser.rpc('ride_stops_of', { p_ride_id: ride.id });
+      if (Array.isArray(data)) setMapStops(data as { lat: number; lng: number; status: string }[]);
+    };
+    load();
+    const ch = supabaseBrowser
+      .channel(`driver-stops:${ride.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'ride_stops', filter: `ride_id=eq.${ride.id}` },
+        load,
+      )
+      .subscribe();
+    return () => { supabaseBrowser.removeChannel(ch); };
+  }, [ride.id]);
 
   // Bulle « messages non lus » sur le bouton chat : compte initial + temps réel.
   useEffect(() => {
@@ -483,6 +502,9 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
           selfLocation={driverPos}
           selfCategory={ride.vehicle_category ?? undefined}
           clientLocation={clientLive}
+          stops={mapStops
+            .filter((s) => s.status !== 'cancelled')
+            .map((s, i) => ({ lat: s.lat, lng: s.lng, label: i + 1 }))}
           route={routeGeo}
           autoFit={false}
           className="h-full w-full"
