@@ -27,6 +27,7 @@ export function WalletView({ wallets, transactions, isDriver, driverApplicationT
 
   const creditWallet = wallets.find((w) => w.kind === 'tamcar_credit');
   const revenusWallet = wallets.find((w) => w.kind === 'tamcar_revenus');
+  const epargneWallet = wallets.find((w) => w.kind === 'tamcar_epargne');
 
   return (
     <main className="relative min-h-dvh bg-white">
@@ -68,6 +69,13 @@ export function WalletView({ wallets, transactions, isDriver, driverApplicationT
               actionLabel="Retirer"
               onAction={() => setModal('withdraw')}
               disabled={revenusWallet.balance_fcfa < 500}
+            />
+          )}
+          {/* TamAssur — épargne récupérable (verrouillée, avance après 24 mois) */}
+          {isDriver && epargneWallet && (
+            <BigWalletCard
+              wallet={epargneWallet}
+              note="Récupérable — avance possible après 24 mois."
             />
           )}
         </div>

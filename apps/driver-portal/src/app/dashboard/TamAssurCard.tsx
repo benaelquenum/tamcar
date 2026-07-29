@@ -7,15 +7,18 @@ import { supabaseBrowser } from '@/lib/supabase-browser';
 import { formatFcfa } from '@/lib/wallet';
 
 const CHIPS = [1000, 1500, 2000, 3000, 5000];
+const GOAL = 600_000; // objectif commercial « ~600 000 F sur 2 ans »
 
 type TodayCharge = { amount_fcfa: number; collected_fcfa: number; status: string } | null;
 
 export function TamAssurCard({
   amount,
+  capital,
   today,
   outstanding,
 }: {
   amount: number;
+  capital: number;
   today: TodayCharge;
   outstanding: number;
 }) {
@@ -44,11 +47,13 @@ export function TamAssurCard({
 
   const badge: { txt: string; cls: string } = today
     ? today.status === 'paid'
-      ? { txt: "Aujourd'hui : prélevé", cls: 'bg-success/15 text-success' }
+      ? { txt: "Aujourd'hui : épargné", cls: 'bg-success/15 text-success' }
       : today.status === 'partial'
         ? { txt: "Aujourd'hui : partiel", cls: 'bg-warning/15 text-warning' }
         : { txt: "Aujourd'hui : en attente", cls: 'bg-neutral-100 text-neutral-500' }
     : { txt: 'À venir', cls: 'bg-neutral-100 text-neutral-500' };
+
+  const pct = Math.min(100, Math.round((capital / GOAL) * 100));
 
   return (
     <section className="mt-lg rounded-xl border border-neutral-200 bg-white p-lg shadow-sm">
@@ -61,7 +66,7 @@ export function TamAssurCard({
           <p className="mt-xs text-sm text-neutral-700">
             Assurance épargne —{' '}
             <strong style={{ fontVariantNumeric: 'tabular-nums' }}>{formatFcfa(amount)} F</strong>{' '}
-            / jour, prélevés automatiquement sur vos revenus.
+            / jour, mis de côté automatiquement. Capital récupérable.
           </p>
         </div>
         <span className={`flex-none rounded-full px-md py-xs text-[10px] font-bold ${badge.cls}`}>
@@ -69,11 +74,28 @@ export function TamAssurCard({
         </span>
       </div>
 
+      {/* Capital épargné + progression vers l'objectif */}
+      <div className="mt-md rounded-lg bg-success/5 p-md">
+        <div className="flex items-baseline justify-between">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-500">
+            Mon capital
+          </span>
+          <span className="text-[11px] text-neutral-500">Objectif {formatFcfa(GOAL)} F</span>
+        </div>
+        <p className="mt-xs text-2xl font-extrabold text-success" style={{ fontVariantNumeric: 'tabular-nums' }}>
+          {formatFcfa(capital)}
+          <span className="ml-xs text-sm font-medium text-neutral-500">F</span>
+        </p>
+        <div className="mt-sm h-2 overflow-hidden rounded-full bg-neutral-200">
+          <div className="h-full rounded-full bg-success transition-all" style={{ width: `${pct}%` }} />
+        </div>
+      </div>
+
       {outstanding > 0 && (
         <p className="mt-md rounded-md bg-warning/10 p-sm text-[11px] text-warning">
-          Reste à couvrir :{' '}
+          Reste à épargner :{' '}
           <strong style={{ fontVariantNumeric: 'tabular-nums' }}>{formatFcfa(outstanding)} F</strong>{' '}
-          — prélevé dès que vos revenus le permettent.
+          — mis de côté dès que vos revenus le permettent.
         </p>
       )}
 

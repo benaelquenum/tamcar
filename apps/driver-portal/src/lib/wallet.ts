@@ -1,4 +1,4 @@
-export type WalletKind = 'tamcar_credit' | 'tamcar_revenus' | 'tamcar_rachat';
+export type WalletKind = 'tamcar_credit' | 'tamcar_revenus' | 'tamcar_rachat' | 'tamcar_epargne';
 
 export type WalletTxType =
   | 'topup'
@@ -13,6 +13,7 @@ export type WalletTxType =
   | 'change_return_out'
   | 'dealer_share_credit'
   | 'insurance_premium'
+  | 'tamassur_saving'
   | 'goodwill_credit'
   | 'adjustment';
 
@@ -52,6 +53,12 @@ export const WALLET_KIND_META: Record<WalletKind, { label: string; sub: string; 
     gradient: 'from-gold to-warning',
     icon: '🔑',
   },
+  tamcar_epargne: {
+    label: 'TamAssur — Épargne',
+    sub: 'Votre capital récupérable · ~600 000 F sur 2 ans',
+    gradient: 'from-success to-cyan',
+    icon: '🏦',
+  },
 };
 
 const TX_LABEL: Record<WalletTxType, string> = {
@@ -66,7 +73,8 @@ const TX_LABEL: Record<WalletTxType, string> = {
   change_return_in: 'Monnaie reçue',
   change_return_out: 'Monnaie rendue au client',
   dealer_share_credit: 'Part partenaire véhicule',
-  insurance_premium: 'TamAssur',
+  insurance_premium: 'TamAssur (vers épargne)',
+  tamassur_saving: 'Épargne TamAssur',
   goodwill_credit: 'Crédit d\'excuse',
   adjustment: 'Ajustement admin',
 };
@@ -78,6 +86,7 @@ const CREDIT_TYPES = new Set<WalletTxType>([
   'rachat_credit',
   'cancellation_reimbursement',
   'goodwill_credit',
+  'tamassur_saving',
 ]);
 
 export function txLabel(t: WalletTxType): string {

@@ -1,15 +1,26 @@
 -- ============================================================
--- TamCar — TamAssur : assurance épargne chauffeur (2026-07-29)
---   Refonte de l'« assurance conducteur » :
---   - Montant CONFIGURABLE par chauffeur, plancher 1 000 F, défaut 1 000.
---   - Prélèvement QUOTIDIEN (au lieu de mensuel) sur le wallet TamCar
---     Revenus, façon tontine/susu. Prime pure (non récupérable).
---   - Rattrapage : les jours impayés sont collectés dès que le solde le
---     permet (du plus ancien au plus récent), en un seul passage.
---   La période du ledger passe de « 1er du mois » à « le jour concerné ».
+-- TamCar — TamAssur : assurance ÉPARGNE chauffeur (2026-07-29)
+--   TamAssur = épargne RÉCUPÉRABLE (« ~600 000 F à toi sur 2 ans »),
+--   pas une prime perdue. Chaque jour, un montant choisi par le
+--   chauffeur (plancher 1 000 F) est transféré de son wallet
+--   « Revenus » vers une poche dédiée « Épargne » (tamcar_epargne).
+--   Le capital lui appartient (avance possible après 24 mois — méca
+--   de retrait à venir, comme le fonds rachat verrouillé).
+--
+--   - Montant CONFIGURABLE par chauffeur (drivers.tamassur_fcfa >= 1000).
+--   - Sweep QUOTIDIEN (cron) : Revenus -> Épargne. Rattrapage des jours
+--     non épargnés dès que le solde le permet (oldest-first).
+--   - Le ledger driver_insurance_charges sert de calendrier de cotisation
+--     (period = jour, status paid/partial/pending).
 -- ============================================================
 
--- 1. Montant TamAssur choisi par le chauffeur (plancher 1 000 F/jour) --
+-- A. Nouvelle poche épargne + type de transaction (crédit épargne) -----
+--    Valeurs d'enum utilisées uniquement dans des corps plpgsql /
+--    exécutions différées => pas de conflit "unsafe use of new value".
+alter type wallet_kind    add value if not exists 'tamcar_epargne';
+alter type wallet_tx_type add value if not exists 'tamassur_saving';
+
+-- B. Montant TamAssur choisi par le chauffeur (plancher 1 000 F/jour) ---
 alter table public.drivers
   add column if not exists tamassur_fcfa int not null default 1000;
 
@@ -18,7 +29,7 @@ alter table public.drivers
 alter table public.drivers
   add constraint drivers_tamassur_min check (tamassur_fcfa >= 1000);
 
--- 2. Le chauffeur configure son montant (>= 1 000) --------------------
+-- C. Le chauffeur configure son montant (>= 1 000) ---------------------
 create or replace function public.set_my_tamassur(p_amount int)
 returns int
 language plpgsql security definer set search_path = public as $fn_set$
@@ -39,7 +50,6 @@ $fn_set$;
 revoke execute on function public.set_my_tamassur(int) from public, anon;
 grant execute on function public.set_my_tamassur(int) to authenticated;
 
--- 3. Lecture du montant configuré ------------------------------------
 create or replace function public.my_tamassur()
 returns int
 language sql stable security definer set search_path = public as $fn_amt$
@@ -47,10 +57,10 @@ language sql stable security definer set search_path = public as $fn_amt$
 $fn_amt$;
 grant execute on function public.my_tamassur to authenticated;
 
--- 4. Nouveau défaut du ledger (période = jour désormais) -------------
+-- D. Nouveau défaut du ledger (période = jour désormais) ---------------
 alter table public.driver_insurance_charges alter column amount_fcfa set default 1000;
 
--- 5. Collecte QUOTIDIENNE + rattrapage (service_role / cron) ----------
+-- E. Sweep QUOTIDIEN : Revenus -> Épargne (service_role / cron) ---------
 create or replace function public.charge_driver_insurance(p_period date default null)
 returns jsonb
 language plpgsql security definer set search_path = public as $fn_charge$
@@ -60,13 +70,15 @@ declare
     (now() at time zone 'Africa/Porto-Novo')::date
   );
   v_drv record;
-  v_wallet record;
+  v_rev record;
   v_charge record;
+  v_epargne_id uuid;
   v_amount int;
   v_take int;
   v_bal int;
+  v_saved int;
   v_new_collected int;
-  v_collected_total int := 0;
+  v_saved_total int := 0;
   v_drivers int := 0;
 begin
   for v_drv in
@@ -76,22 +88,32 @@ begin
     v_drivers := v_drivers + 1;
     v_amount := greatest(v_drv.amount, 1000);
 
-    -- Garantir la charge du jour (montant courant tant que non prélevée)
+    -- Calendrier : charge du jour (montant courant tant que non épargnée)
     insert into public.driver_insurance_charges (driver_id, period, amount_fcfa)
     values (v_drv.id, v_period, v_amount)
     on conflict (driver_id, period) do update
       set amount_fcfa = excluded.amount_fcfa
       where driver_insurance_charges.collected_fcfa = 0;
 
-    -- Solde revenus du chauffeur (verrou)
-    select id, balance_fcfa into v_wallet from public.wallets
+    -- Poche épargne (création paresseuse)
+    select id into v_epargne_id from public.wallets
+     where profile_id = v_drv.profile_id and kind = 'tamcar_epargne';
+    if v_epargne_id is null then
+      insert into public.wallets (profile_id, kind, balance_fcfa)
+      values (v_drv.profile_id, 'tamcar_epargne', 0)
+      returning id into v_epargne_id;
+    end if;
+
+    -- Solde Revenus (verrou)
+    select id, balance_fcfa into v_rev from public.wallets
      where profile_id = v_drv.profile_id and kind = 'tamcar_revenus'
      for update;
-    if v_wallet.id is null then continue; end if;
-    v_bal := v_wallet.balance_fcfa;
+    if v_rev.id is null then continue; end if;
+    v_bal := v_rev.balance_fcfa;
     if v_bal <= 0 then continue; end if;
 
-    -- Collecte des jours impayés, du plus ancien au plus récent
+    -- Cotisation du jour + rattrapage des jours non épargnés (oldest-first)
+    v_saved := 0;
     for v_charge in
       select * from public.driver_insurance_charges
        where driver_id = v_drv.id and status <> 'paid' and period <= v_period
@@ -103,6 +125,7 @@ begin
       if v_take <= 0 then continue; end if;
 
       v_bal := v_bal - v_take;
+      v_saved := v_saved + v_take;
       v_new_collected := v_charge.collected_fcfa + v_take;
 
       update public.driver_insurance_charges
@@ -110,26 +133,31 @@ begin
              status = case when v_new_collected >= amount_fcfa then 'paid' else 'partial' end,
              collected_at = case when v_new_collected >= amount_fcfa then now() else collected_at end
        where id = v_charge.id;
+    end loop;
+
+    -- Transfert effectif Revenus -> Épargne (montants positifs = absolus)
+    if v_saved > 0 then
+      update public.wallets set balance_fcfa = v_bal, updated_at = now()
+       where id = v_rev.id;
+      update public.wallets set balance_fcfa = balance_fcfa + v_saved, updated_at = now()
+       where id = v_epargne_id;
 
       insert into public.wallet_transactions
         (wallet_id, type, amount_fcfa, provider, status, meta)
       values
-        (v_wallet.id, 'insurance_premium', -v_take, 'internal', 'success',
-         jsonb_build_object('period', v_charge.period, 'charge_id', v_charge.id, 'product', 'tamassur'));
+        (v_rev.id, 'insurance_premium', v_saved, 'internal', 'success',
+         jsonb_build_object('period', v_period, 'product', 'tamassur')),
+        (v_epargne_id, 'tamassur_saving', v_saved, 'internal', 'success',
+         jsonb_build_object('period', v_period, 'product', 'tamassur'));
 
-      v_collected_total := v_collected_total + v_take;
-    end loop;
-
-    -- Solde final du wallet après collecte
-    update public.wallets
-       set balance_fcfa = v_bal, updated_at = now()
-     where id = v_wallet.id;
+      v_saved_total := v_saved_total + v_saved;
+    end if;
   end loop;
 
   return jsonb_build_object(
     'period', v_period,
     'drivers_scanned', v_drivers,
-    'collected_fcfa', v_collected_total
+    'saved_fcfa', v_saved_total
   );
 end;
 $fn_charge$;
@@ -137,7 +165,7 @@ $fn_charge$;
 revoke execute on function public.charge_driver_insurance(date) from public, anon, authenticated;
 grant execute on function public.charge_driver_insurance(date) to service_role;
 
--- 6. Statut côté chauffeur : 60 derniers jours -----------------------
+-- F. Statut côté chauffeur : 60 derniers jours -------------------------
 create or replace function public.my_insurance_status()
 returns table (period date, amount_fcfa int, collected_fcfa int, status text)
 language sql stable security definer set search_path = public as $fn_status$
@@ -150,7 +178,7 @@ language sql stable security definer set search_path = public as $fn_status$
 $fn_status$;
 grant execute on function public.my_insurance_status to authenticated;
 
--- 7. Cron : mensuel -> QUOTIDIEN (21:00 UTC = 22:00 Porto-Novo) -------
+-- G. Cron : mensuel -> QUOTIDIEN (21:00 UTC = 22:00 Porto-Novo) --------
 do $cron$
 begin
   perform cron.unschedule('driver_insurance_monthly');

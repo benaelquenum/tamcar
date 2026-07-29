@@ -19,7 +19,7 @@ import { logout } from '@/app/login/actions';
 import { BannerCarousel, type BannerItem } from '@/components/BannerCarousel';
 import { TamAssurCard } from './TamAssurCard';
 
-type WalletRow = { kind: 'tamcar_credit' | 'tamcar_revenus' | 'tamcar_rachat'; balance_fcfa: number };
+type WalletRow = { kind: 'tamcar_credit' | 'tamcar_revenus' | 'tamcar_rachat' | 'tamcar_epargne'; balance_fcfa: number };
 type RideRow = {
   id: string;
   driver_share_fcfa: number;
@@ -102,6 +102,7 @@ export default async function DriverDashboardPage() {
 
   const w = (wallets ?? []) as WalletRow[];
   const revenus = w.find((x) => x.kind === 'tamcar_revenus')?.balance_fcfa ?? 0;
+  const epargne = w.find((x) => x.kind === 'tamcar_epargne')?.balance_fcfa ?? 0;
 
   const list = (rides ?? []) as RideRow[];
   const weekStart = startOfWeek().toISOString();
@@ -223,8 +224,13 @@ export default async function DriverDashboardPage() {
           </div>
         </section>
 
-        {/* TamAssur — assurance épargne (prélèvement quotidien configurable) */}
-        <TamAssurCard amount={tamassur} today={insuranceToday} outstanding={insuranceOutstanding} />
+        {/* TamAssur — assurance épargne récupérable (cotisation quotidienne configurable) */}
+        <TamAssurCard
+          amount={tamassur}
+          capital={epargne}
+          today={insuranceToday}
+          outstanding={insuranceOutstanding}
+        />
 
         {/* Véhicule */}
         {vehicleInfo && (
