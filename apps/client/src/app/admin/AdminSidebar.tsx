@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Logo } from '@/components/Logo';
 import { LogOutIcon } from '@/components/Icon';
 import { logout } from '@/app/login/actions';
 
@@ -24,12 +23,13 @@ export function AdminSidebar({ fullName }: { fullName: string }) {
   const pathname = usePathname();
 
   return (
-    <aside className="sticky top-0 flex h-dvh w-56 shrink-0 flex-col border-r border-neutral-200 bg-white">
-      <div className="flex items-center gap-sm border-b border-neutral-200 px-lg py-md">
+    <aside className="sticky top-0 flex h-dvh w-56 shrink-0 flex-col bg-primary-700 text-white">
+      <div className="flex items-center gap-sm border-b border-white/15 px-lg py-md">
         <Link href="/admin" aria-label="Tableau de bord admin">
-          <Logo className="h-7 w-auto" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-white.png" alt="TamCar" className="h-7 w-auto" />
         </Link>
-        <span className="rounded-full bg-neutral-900 px-sm py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
+        <span className="rounded-full bg-white/20 px-sm py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
           Admin
         </span>
       </div>
@@ -47,8 +47,8 @@ export function AdminSidebar({ fullName }: { fullName: string }) {
                   aria-current={active ? 'page' : undefined}
                   className={`block rounded-lg px-md py-sm text-sm font-semibold transition ${
                     active
-                      ? 'bg-primary-50 text-primary-700'
-                      : 'text-neutral-700 hover:bg-neutral-100'
+                      ? 'bg-white text-primary-700'
+                      : 'text-white/85 hover:bg-white/10 hover:text-white'
                   }`}
                 >
                   {item.label}
@@ -59,10 +59,10 @@ export function AdminSidebar({ fullName }: { fullName: string }) {
         </ul>
       </nav>
 
-      <div className="border-t border-neutral-200 px-sm py-md">
+      <div className="border-t border-white/15 px-sm py-md">
         <Link
           href="/compte"
-          className="block truncate rounded-lg px-md py-sm text-xs text-neutral-600 hover:bg-neutral-100"
+          className="block truncate rounded-lg px-md py-sm text-xs text-white/75 hover:bg-white/10 hover:text-white"
           title={fullName}
         >
           {fullName}
@@ -70,7 +70,7 @@ export function AdminSidebar({ fullName }: { fullName: string }) {
         <form action={logout}>
           <button
             type="submit"
-            className="mt-xs flex w-full items-center gap-xs rounded-lg px-md py-sm text-xs font-semibold text-neutral-700 transition hover:bg-error/5 hover:text-error"
+            className="mt-xs flex w-full items-center gap-xs rounded-lg px-md py-sm text-xs font-semibold text-white/85 transition hover:bg-white/10 hover:text-white"
           >
             <LogOutIcon className="h-3.5 w-3.5" />
             Déconnexion
