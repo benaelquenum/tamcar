@@ -23,7 +23,7 @@ import {
   googleReverseGeocode,
 } from '@/lib/google-places';
 import { CheckIcon, CrosshairIcon, PinIcon } from './Icon';
-import { getAccuratePosition } from '@/lib/geo-precision';
+import { getAccuratePosition, isAccurateEnough, SmoothingBuffer } from '@/lib/geo-precision';
 
 export type SelectedAddress = {
   place_name: string;
@@ -70,11 +70,38 @@ export function AddressAutocomplete({
   const [geoError, setGeoError] = useState<string | null>(null);
   const [recents, setRecents] = useState<RecentAddress[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const liveCoordRef = useRef<[number, number] | null>(null);
 
   // Load derniers lieux du user (async, une fois)
   useEffect(() => {
     fetchRecentAddresses(6).then(setRecents);
   }, []);
+
+  // Veille GPS continue (même stratégie que l'app chauffeur) : dès que le
+  // champ « Ma position » est affiché, un watchPosition tourne en fond avec
+  // filtre de précision (≤ 50 m) + lissage. Le GPS chauffe pendant que le
+  // client remplit le formulaire → au tap sur « Ma position », le fix
+  // précis est déjà prêt (le one-shot renvoyait le 1er fix réseau, à des
+  // centaines de mètres du vrai point → distance et prix faussés).
+  useEffect(() => {
+    if (!showLocationButton) return;
+    if (typeof navigator === 'undefined' || !navigator.geolocation) return;
+    const buffer = new SmoothingBuffer(5);
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        if (!isAccurateEnough(pos)) return;
+        liveCoordRef.current = buffer.push({
+          lng: pos.coords.longitude,
+          lat: pos.coords.latitude,
+          accuracy: pos.coords.accuracy,
+          ts: pos.timestamp,
+        });
+      },
+      () => undefined,
+      { enableHighAccuracy: true, maximumAge: 2000, timeout: 20000 },
+    );
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [showLocationButton]);
 
   useEffect(() => {
     setQuery(value?.place_name || '');
@@ -142,10 +169,19 @@ export function AddressAutocomplete({
     setGeolocating(true);
     setGeoError(null);
     try {
-      // Rafale watchPosition : attend un fix GPS précis (≤ 50 m) au lieu du
-      // premier fix réseau (souvent à des centaines de mètres du vrai point).
-      const pos = await getAccuratePosition({ timeoutMs: 12000 });
-      const { longitude, latitude } = pos.coords;
+      // 1. Fix précis déjà prêt (veille GPS continue) → instantané.
+      // 2. Sinon : rafale watchPosition qui attend un fix ≤ 50 m (20 s max,
+      //    à défaut le meilleur fix observé).
+      let longitude: number;
+      let latitude: number;
+      const live = liveCoordRef.current;
+      if (live) {
+        [longitude, latitude] = live;
+      } else {
+        const pos = await getAccuratePosition({ timeoutMs: 20000 });
+        longitude = pos.coords.longitude;
+        latitude = pos.coords.latitude;
+      }
       const feature =
         (googlePlacesConfigured() ? await googleReverseGeocode(longitude, latitude) : null) ||
         (await mapboxReverseGeocode(longitude, latitude));
