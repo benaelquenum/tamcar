@@ -12,6 +12,7 @@ export type WalletTxType =
   | 'change_return_in'
   | 'change_return_out'
   | 'dealer_share_credit'
+  | 'cash_commission'
   | 'insurance_premium'
   | 'tamassur_saving'
   | 'goodwill_credit'
@@ -73,6 +74,7 @@ const TX_LABEL: Record<WalletTxType, string> = {
   change_return_in: 'Monnaie reçue',
   change_return_out: 'Monnaie rendue au client',
   dealer_share_credit: 'Part partenaire véhicule',
+  cash_commission: 'Commission course (encaissée en direct)',
   insurance_premium: 'TamAssur (vers épargne)',
   tamassur_saving: 'Épargne TamAssur',
   goodwill_credit: 'Crédit d\'excuse',
