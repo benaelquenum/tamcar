@@ -234,3 +234,101 @@ function ProviderChoice({
     </button>
   );
 }
+
+export function EpargneWithdrawModal({
+  open,
+  onClose,
+  amount,
+}: {
+  open: boolean;
+  onClose: () => void;
+  amount: number;
+}) {
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const router = useRouter();
+
+  if (!open) return null;
+
+  function submit() {
+    setError(null);
+    startTransition(async () => {
+      const { error: rpcErr } = await supabaseBrowser.rpc('request_tamassur_withdrawal', {
+        p_amount: amount,
+      });
+      if (rpcErr) {
+        setError(rpcErr.message);
+        return;
+      }
+      setSuccess(true);
+      setTimeout(() => {
+        onClose();
+        setSuccess(false);
+        router.refresh();
+      }, 1200);
+    });
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-neutral-900/50 backdrop-blur-sm sm:items-center">
+      <div className="w-full max-w-md rounded-t-2xl bg-white p-lg shadow-xl sm:rounded-2xl">
+        <div className="mb-lg flex items-start justify-between">
+          <div>
+            <h2 className="text-xl font-extrabold text-neutral-900">Retirer mon épargne</h2>
+            <p className="mt-xs text-xs text-neutral-600">Épargne TamAssur · capital récupérable</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full p-xs text-neutral-400 hover:bg-neutral-100"
+            aria-label="Fermer"
+          >
+            ✕
+          </button>
+        </div>
+
+        {success ? (
+          <div className="rounded-xl bg-success/10 p-xl text-center">
+            <span className="mx-auto mb-md grid h-12 w-12 place-items-center rounded-full bg-success text-white">
+              <CheckIcon className="h-6 w-6" strokeWidth={3} />
+            </span>
+            <p className="text-xl font-bold text-neutral-900" style={{ fontVariantNumeric: 'tabular-nums' }}>
+              {formatFcfa(amount)} FCFA
+            </p>
+            <p className="mt-xs text-sm text-neutral-600">
+              Demande enregistrée · paiement sous 30 jours
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="rounded-xl bg-success/5 p-lg text-center">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-500">
+                Montant retiré
+              </p>
+              <p className="mt-xs text-3xl font-extrabold text-success" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                {formatFcfa(amount)}
+                <span className="ml-xs text-base font-medium text-neutral-500">F</span>
+              </p>
+            </div>
+            <p className="mt-md rounded-md bg-neutral-100 p-md text-xs text-neutral-700">
+              TamCar vous règle <strong>sous 30 jours</strong> à compter de cette demande, en espèces
+              ou par Mobile Money. Le montant est réservé dès maintenant.
+            </p>
+            {error && (
+              <div className="mt-md rounded-md bg-error/10 p-md text-sm text-error">{error}</div>
+            )}
+            <button
+              type="button"
+              onClick={submit}
+              disabled={pending}
+              className="mt-lg w-full rounded-xl bg-gradient-to-r from-success to-cyan py-md text-base font-bold text-white shadow-glow disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {pending ? '…' : 'Confirmer le retrait'}
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}

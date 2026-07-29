@@ -13,17 +13,28 @@ import {
   type WalletKind,
   type WalletTransaction,
 } from '@/lib/wallet';
-import { WalletModal } from './WalletModals';
+import { WalletModal, EpargneWithdrawModal } from './WalletModals';
+
+const TAMASSUR_THRESHOLD = 600000;
+
+type TamassurPending = { id: string; amount_fcfa: number; status: string; due_at: string } | null;
 
 type Props = {
   wallets: Wallet[];
   transactions: WalletTransaction[];
   isDriver: boolean;
   driverApplicationType?: 'cession' | 'proprietaire' | null;
+  tamassurPending?: TamassurPending;
 };
 
-export function WalletView({ wallets, transactions, isDriver, driverApplicationType }: Props) {
-  const [modal, setModal] = useState<'topup' | 'withdraw' | 'settle' | null>(null);
+export function WalletView({
+  wallets,
+  transactions,
+  isDriver,
+  driverApplicationType,
+  tamassurPending = null,
+}: Props) {
+  const [modal, setModal] = useState<'topup' | 'withdraw' | 'settle' | 'epargne' | null>(null);
 
   const creditWallet = wallets.find((w) => w.kind === 'tamcar_credit');
   const revenusWallet = wallets.find((w) => w.kind === 'tamcar_revenus');
@@ -80,12 +91,26 @@ export function WalletView({ wallets, transactions, isDriver, driverApplicationT
               />
             )
           )}
-          {/* TamAssur — épargne récupérable (verrouillée, avance après 24 mois) */}
+          {/* TamAssur — épargne récupérable (déblocable à 600 000 F) */}
           {isDriver && epargneWallet && (
-            <BigWalletCard
-              wallet={epargneWallet}
-              note="Récupérable — avance possible après 24 mois."
-            />
+            tamassurPending ? (
+              <BigWalletCard
+                wallet={epargneWallet}
+                note={`Retrait de ${formatFcfa(tamassurPending.amount_fcfa)} F en cours — paiement sous 30 jours (avant le ${new Date(tamassurPending.due_at).toLocaleDateString('fr-FR')}).`}
+              />
+            ) : epargneWallet.balance_fcfa >= TAMASSUR_THRESHOLD ? (
+              <BigWalletCard
+                wallet={epargneWallet}
+                actionLabel="Retirer mon épargne"
+                onAction={() => setModal('epargne')}
+                note="Paiement sous 30 jours après la demande (espèces ou Mobile Money)."
+              />
+            ) : (
+              <BigWalletCard
+                wallet={epargneWallet}
+                note={`Déblocable à ${formatFcfa(TAMASSUR_THRESHOLD)} F · paiement sous 30 jours après la demande.`}
+              />
+            )
           )}
         </div>
 
@@ -126,6 +151,11 @@ export function WalletView({ wallets, transactions, isDriver, driverApplicationT
         onClose={() => setModal(null)}
         kind="settle"
         debt={revenusWallet ? Math.max(0, -revenusWallet.balance_fcfa) : 0}
+      />
+      <EpargneWithdrawModal
+        open={modal === 'epargne'}
+        onClose={() => setModal(null)}
+        amount={epargneWallet?.balance_fcfa ?? 0}
       />
     </main>
   );

@@ -16,6 +16,7 @@ export type WalletTxType =
   | 'debt_settlement'
   | 'insurance_premium'
   | 'tamassur_saving'
+  | 'tamassur_withdrawal'
   | 'goodwill_credit'
   | 'adjustment';
 
@@ -79,6 +80,7 @@ const TX_LABEL: Record<WalletTxType, string> = {
   debt_settlement: 'Régularisation dette',
   insurance_premium: 'TamAssur (vers épargne)',
   tamassur_saving: 'Épargne TamAssur',
+  tamassur_withdrawal: 'Retrait épargne TamAssur',
   goodwill_credit: 'Crédit d\'excuse',
   adjustment: 'Ajustement admin',
 };

@@ -15,6 +15,7 @@ const NAV: { href: string; label: string; exact?: boolean }[] = [
   { href: '/admin/dealer-advances', label: 'ADR' },
   { href: '/admin/litiges', label: 'Litiges' },
   { href: '/admin/dettes', label: 'Dettes chauffeur' },
+  { href: '/admin/tamassur', label: 'Retraits TamAssur' },
   { href: '/admin/promos', label: 'Promos' },
   { href: '/admin/banners', label: 'Bannières' },
   { href: '/admin/places', label: 'Lieux' },

@@ -9,11 +9,17 @@ export default async function WalletPage() {
   if (!profile) redirect('/login');
 
   const supabase = createServerSupabase();
-  const [{ data: wallets }, { data: transactions }, { data: driver }] = await Promise.all([
-    supabase.rpc('my_wallets'),
-    supabase.rpc('wallet_transactions_for_user', { limit_count: 30 }),
-    supabase.from('drivers').select('application_type').eq('profile_id', profile.id).single(),
-  ]);
+  const [{ data: wallets }, { data: transactions }, { data: driver }, { data: withdrawals }] =
+    await Promise.all([
+      supabase.rpc('my_wallets'),
+      supabase.rpc('wallet_transactions_for_user', { limit_count: 30 }),
+      supabase.from('drivers').select('application_type').eq('profile_id', profile.id).single(),
+      supabase.rpc('my_tamassur_withdrawals'),
+    ]);
+
+  type Withdrawal = { id: string; amount_fcfa: number; status: string; due_at: string };
+  const tamassurPending =
+    ((withdrawals ?? []) as Withdrawal[]).find((w) => w.status === 'pending') ?? null;
 
   const applicationType =
     (driver as { application_type: 'cession' | 'proprietaire' } | null)?.application_type ?? null;
@@ -36,6 +42,7 @@ export default async function WalletPage() {
       transactions={visibleTx}
       isDriver
       driverApplicationType={applicationType}
+      tamassurPending={tamassurPending}
     />
   );
 }
