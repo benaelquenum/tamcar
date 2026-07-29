@@ -7,8 +7,9 @@ import { Logo } from '@/components/Logo';
 import { ArrowRightIcon, CheckIcon, PinIcon, WhatsAppIcon, MessageIcon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { Map } from '@/components/Map';
+import { NavBanner } from '@/components/NavBanner';
 import { RatingModal } from '@/components/RatingModal';
-import { getRoute } from '@/lib/mapbox';
+import { getNavRoute, type NavStep } from '@/lib/mapbox';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { isAccurateEnough, SmoothingBuffer } from '@/lib/geo-precision';
 import { useWakeLock } from '@/lib/useWakeLock';
@@ -20,6 +21,15 @@ import { ReturnChangeModal } from './ReturnChangeModal';
 import { SosButton } from '@/components/SosButton';
 import { RideChat } from '@/components/RideChat';
 import { playMessageSound } from '@/lib/message-sound';
+
+function metersBetween(a: [number, number], b: [number, number]): number {
+  const R = 6371000;
+  const toR = (x: number) => (x * Math.PI) / 180;
+  const dLat = toR(b[1] - a[1]);
+  const dLng = toR(b[0] - a[0]);
+  const s = Math.sin(dLat / 2) ** 2 + Math.cos(toR(a[1])) * Math.cos(toR(b[1])) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
 
 type RideStatus =
   | 'requested'
@@ -85,6 +95,8 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
   const [clientLive, setClientLive] = useState<[number, number] | null>(null);
   const trackChannelRef = useRef<ReturnType<typeof supabaseBrowser.channel> | null>(null);
   const [mapStops, setMapStops] = useState<{ lat: number; lng: number; status: string }[]>([]);
+  const [nextManeuver, setNextManeuver] = useState<NavStep | null>(null);
+  const spokenRef = useRef('');
   const [routeGeo, setRouteGeo] = useState<GeoJSON.LineString | null>(null);
   const [distanceToTarget, setDistanceToTarget] = useState<number | null>(null);
   const [durationToTarget, setDurationToTarget] = useState<number | null>(null);
@@ -124,6 +136,26 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
       .subscribe();
     return () => { supabaseBrowser.removeChannel(ch); };
   }, [ride.id]);
+
+  // Distance live jusqu'à la prochaine manœuvre (recalculée à chaque position).
+  const maneuverDistM = useMemo<number | null>(
+    () => (nextManeuver && driverPos ? metersBetween(driverPos, nextManeuver.location) : null),
+    [nextManeuver, driverPos],
+  );
+
+  // Annonce vocale (FR) de chaque nouvelle manœuvre.
+  useEffect(() => {
+    const instr = nextManeuver?.instruction;
+    if (!instr || spokenRef.current === instr) return;
+    spokenRef.current = instr;
+    try {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        const u = new SpeechSynthesisUtterance(instr);
+        u.lang = 'fr-FR';
+        window.speechSynthesis.speak(u);
+      }
+    } catch { /* ignore */ }
+  }, [nextManeuver]);
 
   // Bulle « messages non lus » sur le bouton chat : compte initial + temps réel.
   useEffect(() => {
@@ -206,11 +238,12 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
       trackChannelRef.current?.send({ type: 'broadcast', event: 'driver-pos', payload: { lng: p[0], lat: p[1] } });
 
       // Route jusqu'à la target
-      const r = await getRoute(p, target);
+      const r = await getNavRoute(p, target);
       if (r && !cancelled) {
         setRouteGeo(r.geometry);
         setDistanceToTarget(r.distance_km * 1000);
         setDurationToTarget(r.duration_min);
+        setNextManeuver(r.steps.find((s) => s.type !== 'depart') ?? null);
       }
     }
 
@@ -526,6 +559,10 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
           </span>
         </div>
       </header>
+
+      {['matched', 'arrived', 'in_progress'].includes(ride.status) && (
+        <NavBanner step={nextManeuver} distanceM={maneuverDistM} />
+      )}
 
       {/* Bottom sheet */}
       <div className="absolute inset-x-0 bottom-0 z-10">

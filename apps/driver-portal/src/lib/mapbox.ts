@@ -181,3 +181,55 @@ export async function getRoute(
     geometry: route.geometry as GeoJSON.LineString,
   };
 }
+
+// ------------------------------------------------------------
+// Navigation guidée (turn-by-turn) : route + manœuvres en français.
+// ------------------------------------------------------------
+export type NavStep = {
+  instruction: string;
+  type: string;            // depart | turn | roundabout | arrive | continue…
+  modifier: string | null; // left | right | straight | slight left | uturn…
+  location: [number, number]; // point [lng,lat] où se produit la manœuvre
+  distanceM: number;       // longueur du segment qui suit la manœuvre
+};
+
+export type NavRoute = {
+  distance_km: number;
+  duration_min: number;
+  geometry: GeoJSON.LineString;
+  steps: NavStep[];
+};
+
+export async function getNavRoute(
+  from: [number, number],
+  to: [number, number],
+): Promise<NavRoute | null> {
+  if (!MAPBOX_TOKEN) return null;
+
+  const url =
+    `https://api.mapbox.com/directions/v5/mapbox/driving/${from[0]},${from[1]};${to[0]},${to[1]}` +
+    `?geometries=geojson&overview=full&steps=true&language=fr&access_token=${MAPBOX_TOKEN}`;
+  const res = await fetch(url);
+  if (!res.ok) return null;
+
+  const data = await res.json();
+  const route = data.routes?.[0];
+  if (!route) return null;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const legSteps: any[] = route.legs?.[0]?.steps ?? [];
+  const steps: NavStep[] = legSteps.map((s) => ({
+    instruction: s.maneuver?.instruction ?? '',
+    type: s.maneuver?.type ?? '',
+    modifier: s.maneuver?.modifier ?? null,
+    location: (s.maneuver?.location ?? to) as [number, number],
+    distanceM: s.distance ?? 0,
+  }));
+
+  return {
+    distance_km: route.distance / 1000,
+    duration_min: Math.max(1, Math.round(route.duration / 60)),
+    geometry: route.geometry as GeoJSON.LineString,
+    steps,
+  };
+}
