@@ -66,7 +66,7 @@ const TX_LABEL: Record<WalletTxType, string> = {
   change_return_in: 'Monnaie reçue',
   change_return_out: 'Monnaie rendue au client',
   dealer_share_credit: 'Part partenaire véhicule',
-  insurance_premium: 'Assurance conducteur',
+  insurance_premium: 'TamAssur',
   goodwill_credit: 'Crédit d\'excuse',
   adjustment: 'Ajustement admin',
 };

@@ -17,6 +17,7 @@ import { getCurrentProfile } from '@/lib/session';
 import { createServerSupabase } from '@/lib/supabase-server';
 import { logout } from '@/app/login/actions';
 import { BannerCarousel, type BannerItem } from '@/components/BannerCarousel';
+import { TamAssurCard } from './TamAssurCard';
 
 type WalletRow = { kind: 'tamcar_credit' | 'tamcar_revenus' | 'tamcar_rachat'; balance_fcfa: number };
 type RideRow = {
@@ -58,7 +59,7 @@ export default async function DriverDashboardPage() {
 
   const { data: driver } = await supabase
     .from('drivers')
-    .select('id, application_type, current_vehicle_id, status, is_online')
+    .select('id, application_type, current_vehicle_id, status, is_online, tamassur_fcfa')
     .eq('profile_id', profile.id)
     .single();
   if (!driver) redirect('/');
@@ -117,10 +118,11 @@ export default async function DriverDashboardPage() {
 
   type InsuranceRow = { period: string; amount_fcfa: number; collected_fcfa: number; status: string };
   const insurance = (insuranceData ?? []) as InsuranceRow[];
-  const insuranceMonthly = insurance[0]?.amount_fcfa ?? 2000;
+  const tamassur = (driver as { tamassur_fcfa?: number }).tamassur_fcfa ?? 1000;
   const insuranceOutstanding = insurance.reduce((s, r) => s + Math.max(0, r.amount_fcfa - r.collected_fcfa), 0);
-  const currentMonthKey = startOfMonth().toISOString().slice(0, 7);
-  const insuranceThisMonth = insurance.find((r) => r.period.slice(0, 7) === currentMonthKey) ?? null;
+  // Date « aujourd'hui » côté Porto-Novo (UTC+1, pas de DST au Bénin)
+  const pnToday = new Date(Date.now() + 3_600_000).toISOString().slice(0, 10);
+  const insuranceToday = insurance.find((r) => r.period.slice(0, 10) === pnToday) ?? null;
 
   type ProgressRow = {
     volume_today: number;
@@ -221,52 +223,8 @@ export default async function DriverDashboardPage() {
           </div>
         </section>
 
-        {/* Assurance conducteur */}
-        <section className="mt-lg rounded-xl border border-neutral-200 bg-white p-lg shadow-sm">
-          <div className="flex items-start justify-between gap-md">
-            <div>
-              <h2 className="flex items-center gap-xs text-xs font-bold uppercase tracking-wider text-neutral-500">
-                🛡️ Assurance conducteur
-              </h2>
-              <p className="mt-xs text-sm text-neutral-700">
-                <strong style={{ fontVariantNumeric: 'tabular-nums' }}>
-                  {formatFcfa(insuranceMonthly)} F
-                </strong>{' '}
-                / mois, prélevés automatiquement sur vos revenus.
-              </p>
-            </div>
-            {insuranceThisMonth ? (
-              <span
-                className={`flex-none rounded-full px-md py-xs text-[10px] font-bold ${
-                  insuranceThisMonth.status === 'paid'
-                    ? 'bg-success/15 text-success'
-                    : insuranceThisMonth.status === 'partial'
-                      ? 'bg-warning/15 text-warning'
-                      : 'bg-neutral-100 text-neutral-500'
-                }`}
-              >
-                {insuranceThisMonth.status === 'paid'
-                  ? 'Ce mois : payé'
-                  : insuranceThisMonth.status === 'partial'
-                    ? 'Ce mois : partiel'
-                    : 'Ce mois : en attente'}
-              </span>
-            ) : (
-              <span className="flex-none rounded-full bg-neutral-100 px-md py-xs text-[10px] font-bold text-neutral-500">
-                À venir
-              </span>
-            )}
-          </div>
-          {insuranceOutstanding > 0 && (
-            <p className="mt-md rounded-md bg-warning/10 p-sm text-[11px] text-warning">
-              Reste à couvrir :{' '}
-              <strong style={{ fontVariantNumeric: 'tabular-nums' }}>
-                {formatFcfa(insuranceOutstanding)} F
-              </strong>{' '}
-              — prélevé dès que vos revenus le permettent.
-            </p>
-          )}
-        </section>
+        {/* TamAssur — assurance épargne (prélèvement quotidien configurable) */}
+        <TamAssurCard amount={tamassur} today={insuranceToday} outstanding={insuranceOutstanding} />
 
         {/* Véhicule */}
         {vehicleInfo && (
