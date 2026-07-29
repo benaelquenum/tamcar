@@ -1187,24 +1187,34 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
               ride.status === 'matched' ||
               ride.status === 'arrived') && (
               <>
-                {!cancelConfirm ? (
-                  <button
-                    type="button"
-                    onClick={openCancelConfirm}
-                    className="w-full rounded-xl border-2 border-neutral-200 py-md text-sm font-bold text-neutral-600 transition hover:border-error hover:text-error"
+                <button
+                  type="button"
+                  onClick={openCancelConfirm}
+                  className="w-full rounded-xl border-2 border-neutral-200 py-md text-sm font-bold text-neutral-600 transition hover:border-error hover:text-error"
+                >
+                  {t('ride.cancel_ride')}
+                </button>
+                {/* Modale d'annulation (frais + raison + confirmation) */}
+                {cancelConfirm && (
+                  <div
+                    className="fixed inset-0 z-50 flex items-end justify-center bg-neutral-900/60 backdrop-blur-sm sm:items-center"
+                    onClick={() => { if (!cancelling) setCancelConfirm(false); }}
                   >
-                    {t('ride.cancel_ride')}
-                  </button>
-                ) : (
-                  <CancelConfirmPanel
-                    preview={cancelPreview}
-                    onKeep={() => setCancelConfirm(false)}
-                    onConfirm={handleCancelRide}
-                    onReasonChange={fetchCancelPreview}
-                    cancelling={cancelling}
-                    error={cancelError}
-                    etaMin={durationToPickup}
-                  />
+                    <div
+                      className="max-h-[85dvh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-white p-lg shadow-xl sm:rounded-2xl"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <CancelConfirmPanel
+                        preview={cancelPreview}
+                        onKeep={() => setCancelConfirm(false)}
+                        onConfirm={handleCancelRide}
+                        onReasonChange={fetchCancelPreview}
+                        cancelling={cancelling}
+                        error={cancelError}
+                        etaMin={durationToPickup}
+                      />
+                    </div>
+                  </div>
                 )}
               </>
             )}

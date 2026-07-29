@@ -83,11 +83,12 @@ export function WalletView({
                 note={`Vous devez ${formatFcfa(-revenusWallet.balance_fcfa)} F à TamCar. Régularisez pour repasser en ligne.`}
               />
             ) : (
+              // Pas de retrait : vous encaissez vos courses en direct. Un solde
+              // positif (courses TamCar Crédit) se compense automatiquement avec
+              // les commissions de vos prochaines courses en espèces.
               <BigWalletCard
                 wallet={revenusWallet}
-                actionLabel="Retirer"
-                onAction={() => setModal('withdraw')}
-                disabled={revenusWallet.balance_fcfa < 500}
+                note="Solde compensé automatiquement avec les commissions de vos prochaines courses encaissées en direct."
               />
             )
           )}
@@ -139,12 +140,6 @@ export function WalletView({
         open={modal === 'topup'}
         onClose={() => setModal(null)}
         kind="topup"
-      />
-      <WalletModal
-        open={modal === 'withdraw'}
-        onClose={() => setModal(null)}
-        kind="withdraw"
-        availableBalance={revenusWallet?.balance_fcfa}
       />
       <WalletModal
         open={modal === 'settle'}
