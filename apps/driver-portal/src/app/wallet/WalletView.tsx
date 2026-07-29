@@ -23,7 +23,7 @@ type Props = {
 };
 
 export function WalletView({ wallets, transactions, isDriver, driverApplicationType }: Props) {
-  const [modal, setModal] = useState<'topup' | 'withdraw' | null>(null);
+  const [modal, setModal] = useState<'topup' | 'withdraw' | 'settle' | null>(null);
 
   const creditWallet = wallets.find((w) => w.kind === 'tamcar_credit');
   const revenusWallet = wallets.find((w) => w.kind === 'tamcar_revenus');
@@ -64,12 +64,21 @@ export function WalletView({ wallets, transactions, isDriver, driverApplicationT
           )}
           {/* Chauffeur : cash reçu → retirer sur Mobile Money */}
           {isDriver && revenusWallet && (
-            <BigWalletCard
-              wallet={revenusWallet}
-              actionLabel="Retirer"
-              onAction={() => setModal('withdraw')}
-              disabled={revenusWallet.balance_fcfa < 500}
-            />
+            revenusWallet.balance_fcfa < 0 ? (
+              <BigWalletCard
+                wallet={revenusWallet}
+                actionLabel="Régler ma dette"
+                onAction={() => setModal('settle')}
+                note={`Vous devez ${formatFcfa(-revenusWallet.balance_fcfa)} F à TamCar. Régularisez pour repasser en ligne.`}
+              />
+            ) : (
+              <BigWalletCard
+                wallet={revenusWallet}
+                actionLabel="Retirer"
+                onAction={() => setModal('withdraw')}
+                disabled={revenusWallet.balance_fcfa < 500}
+              />
+            )
           )}
           {/* TamAssur — épargne récupérable (verrouillée, avance après 24 mois) */}
           {isDriver && epargneWallet && (
@@ -111,6 +120,12 @@ export function WalletView({ wallets, transactions, isDriver, driverApplicationT
         onClose={() => setModal(null)}
         kind="withdraw"
         availableBalance={revenusWallet?.balance_fcfa}
+      />
+      <WalletModal
+        open={modal === 'settle'}
+        onClose={() => setModal(null)}
+        kind="settle"
+        debt={revenusWallet ? Math.max(0, -revenusWallet.balance_fcfa) : 0}
       />
     </main>
   );

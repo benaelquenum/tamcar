@@ -13,6 +13,7 @@ export type WalletTxType =
   | 'change_return_out'
   | 'dealer_share_credit'
   | 'cash_commission'
+  | 'debt_settlement'
   | 'insurance_premium'
   | 'tamassur_saving'
   | 'goodwill_credit'
@@ -75,6 +76,7 @@ const TX_LABEL: Record<WalletTxType, string> = {
   change_return_out: 'Monnaie rendue au client',
   dealer_share_credit: 'Part partenaire véhicule',
   cash_commission: 'Commission course (encaissée en direct)',
+  debt_settlement: 'Régularisation dette',
   insurance_premium: 'TamAssur (vers épargne)',
   tamassur_saving: 'Épargne TamAssur',
   goodwill_credit: 'Crédit d\'excuse',
@@ -89,6 +91,7 @@ const CREDIT_TYPES = new Set<WalletTxType>([
   'cancellation_reimbursement',
   'goodwill_credit',
   'tamassur_saving',
+  'debt_settlement',
 ]);
 
 export function txLabel(t: WalletTxType): string {

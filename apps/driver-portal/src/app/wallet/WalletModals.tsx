@@ -1,24 +1,25 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckIcon } from '@/components/Icon';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { formatFcfa } from '@/lib/wallet';
 
-type ModalKind = 'topup' | 'withdraw';
+type ModalKind = 'topup' | 'withdraw' | 'settle';
 
 type Props = {
   open: boolean;
   onClose: () => void;
   kind: ModalKind;
   availableBalance?: number;
+  debt?: number;
 };
 
 const AMOUNT_CHIPS_TOPUP = [1000, 2000, 5000, 10000, 25000];
 const AMOUNT_CHIPS_WITHDRAW = [5000, 10000, 25000, 50000, 100000];
 
-export function WalletModal({ open, onClose, kind, availableBalance }: Props) {
+export function WalletModal({ open, onClose, kind, availableBalance, debt }: Props) {
   const [amount, setAmount] = useState<number>(0);
   const [provider, setProvider] = useState<'mtn' | 'moov'>('mtn');
   const [pending, startTransition] = useTransition();
@@ -26,12 +27,23 @@ export function WalletModal({ open, onClose, kind, availableBalance }: Props) {
   const [success, setSuccess] = useState(false);
   const router = useRouter();
 
+  useEffect(() => {
+    if (open && kind === 'settle') setAmount(debt ?? 0);
+  }, [open, kind, debt]);
+
   if (!open) return null;
 
-  const chips = kind === 'topup' ? AMOUNT_CHIPS_TOPUP : AMOUNT_CHIPS_WITHDRAW;
-  const title = kind === 'topup' ? 'Recharger TamCar Crédit' : 'Retirer mes revenus';
-  const cta = kind === 'topup' ? 'Recharger' : 'Retirer';
-  const minAmount = kind === 'topup' ? 100 : 500;
+  const chips =
+    kind === 'topup' ? AMOUNT_CHIPS_TOPUP
+    : kind === 'withdraw' ? AMOUNT_CHIPS_WITHDRAW
+    : debt && debt > 0 ? [debt] : [];
+  const title =
+    kind === 'topup' ? 'Recharger TamCar Crédit'
+    : kind === 'withdraw' ? 'Retirer mes revenus'
+    : 'Régler ma dette';
+  const cta = kind === 'topup' ? 'Recharger' : kind === 'withdraw' ? 'Retirer' : 'Régler';
+  const minAmount = kind === 'topup' ? 100 : kind === 'withdraw' ? 500 : 1;
+  const maxAmount = kind === 'settle' ? (debt ?? 0) : 500000;
 
   function submit() {
     if (amount < minAmount) {
@@ -42,6 +54,10 @@ export function WalletModal({ open, onClose, kind, availableBalance }: Props) {
       setError(`Solde insuffisant (${formatFcfa(availableBalance)} F).`);
       return;
     }
+    if (kind === 'settle' && debt != null && amount > debt) {
+      setError(`Dette de ${formatFcfa(debt)} F seulement.`);
+      return;
+    }
 
     setError(null);
     startTransition(async () => {
@@ -49,6 +65,12 @@ export function WalletModal({ open, onClose, kind, availableBalance }: Props) {
         const { error: rpcErr } = await supabaseBrowser.rpc('topup_tamcar_credit', {
           amount_fcfa: amount,
           provider,
+        });
+        if (rpcErr) { setError(rpcErr.message); return; }
+      } else if (kind === 'settle') {
+        const { error: rpcErr } = await supabaseBrowser.rpc('settle_driver_debt', {
+          p_amount: amount,
+          p_provider: provider,
         });
         if (rpcErr) { setError(rpcErr.message); return; }
       } else {
@@ -94,7 +116,9 @@ export function WalletModal({ open, onClose, kind, availableBalance }: Props) {
             <p className="mt-xs text-xs text-neutral-600">
               {kind === 'topup'
                 ? 'Simulation Mobile Money (intégration API réelle à venir).'
-                : 'Vers votre Mobile Money · virement FedaPay. Le solde est débité puis recrédité si le virement échoue.'}
+                : kind === 'settle'
+                  ? 'Encaissement Mobile Money (FeexPay à venir). Régularise votre solde Revenus.'
+                  : 'Vers votre Mobile Money · virement FedaPay. Le solde est débité puis recrédité si le virement échoue.'}
             </p>
           </div>
           <button
@@ -116,7 +140,7 @@ export function WalletModal({ open, onClose, kind, availableBalance }: Props) {
               {formatFcfa(amount)} FCFA
             </p>
             <p className="mt-xs text-sm text-neutral-600">
-              {kind === 'topup' ? 'Crédit ajouté à votre compte' : 'Retrait effectué'}
+              {kind === 'topup' ? 'Crédit ajouté à votre compte' : kind === 'settle' ? 'Dette régularisée' : 'Retrait effectué'}
             </p>
           </div>
         ) : (
@@ -126,7 +150,7 @@ export function WalletModal({ open, onClose, kind, availableBalance }: Props) {
               <input
                 type="number"
                 min={minAmount}
-                max={500000}
+                max={maxAmount}
                 value={amount || ''}
                 onChange={(e) => setAmount(Number(e.target.value) || 0)}
                 placeholder={`${formatFcfa(minAmount)}`}
