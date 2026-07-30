@@ -500,6 +500,40 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
   // La position live (broadcast temps réel) prime sur la position BDD (plus lente).
   const effectiveDriverCoord = liveDriverCoord ?? driverCoord;
 
+  // Origine du recalcul d'itinéraire/ETA : suit la position LIVE du chauffeur,
+  // avec garde-fou anti-spam Mapbox — recalcul si déplacement > 120 m ou
+  // > 30 s depuis le dernier calcul. Sans ça, l'ETA restait figée sur la
+  // position BDD et le compte à rebours décomptait comme une simple horloge.
+  const [routeOrigin, setRouteOrigin] = useState<[number, number] | null>(null);
+  const lastRouteCalcRef = useRef<{ coord: [number, number] | null; at: number }>({ coord: null, at: 0 });
+  const effCoordRef = useRef(effectiveDriverCoord);
+  effCoordRef.current = effectiveDriverCoord;
+
+  useEffect(() => {
+    const c = effectiveDriverCoord;
+    if (!c) return;
+    const prev = lastRouteCalcRef.current;
+    const movedM = prev.coord ? haversineMeters(prev.coord, c) : Infinity;
+    const agedMs = Date.now() - prev.at;
+    if (movedM > 120 || agedMs > 30_000) {
+      lastRouteCalcRef.current = { coord: c, at: Date.now() };
+      setRouteOrigin([c[0], c[1]]);
+    }
+  }, [effectiveDriverCoord]);
+
+  // Filet : recalcul forcé toutes les 45 s pendant la course (trafic, arrêt…).
+  useEffect(() => {
+    if (!['matched', 'arrived', 'in_progress'].includes(ride.status)) return;
+    const id = setInterval(() => {
+      const c = effCoordRef.current;
+      if (c) {
+        lastRouteCalcRef.current = { coord: c, at: Date.now() };
+        setRouteOrigin([c[0], c[1]]);
+      }
+    }, 45_000);
+    return () => clearInterval(id);
+  }, [ride.status]);
+
   // Compte à rebours jusqu'à destination pendant la course (tick 1 s).
   useEffect(() => {
     if (ride.status !== 'in_progress' || !ride.started_at) return;
@@ -881,10 +915,10 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
     let origin: [number, number] | null = null;
     let dest: [number, number] | null = null;
     if (ride.status === 'matched' || ride.status === 'arrived') {
-      origin = driverCoord;
+      origin = routeOrigin ?? driverCoord;
       dest = pickupCoord;
     } else if (ride.status === 'in_progress') {
-      origin = driverCoord ?? pickupCoord;
+      origin = routeOrigin ?? driverCoord ?? pickupCoord;
       dest = dropoffCoord;
     }
     if (!origin || !dest) {
@@ -906,7 +940,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
       else setEtaArrivalMs(null);
     });
     return () => { cancelled = true; };
-  }, [driverCoord, pickupCoord, dropoffCoord, ride.status]);
+  }, [routeOrigin, driverCoord, pickupCoord, dropoffCoord, ride.status]);
 
   return (
     <main className="fixed inset-0 overflow-hidden bg-white">
@@ -1214,7 +1248,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                 type="button"
                 onClick={handleShareTracking}
                 disabled={sharing}
-                className="mb-md flex w-full items-center justify-center gap-xs rounded-xl border-2 border-primary-500 bg-white py-md text-sm font-bold text-primary-700 transition hover:bg-primary-50 disabled:opacity-50"
+                className="mb-md mt-lg flex w-full items-center justify-center gap-xs rounded-xl border-2 border-primary-500 bg-white py-md text-sm font-bold text-primary-700 transition hover:bg-primary-50 disabled:opacity-50"
               >
                 <ShareIcon className="h-4 w-4" />
                 {sharing ? '…' : 'Partager le suivi avec un proche'}
