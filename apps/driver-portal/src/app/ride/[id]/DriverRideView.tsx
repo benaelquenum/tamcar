@@ -12,6 +12,7 @@ import { RatingModal } from '@/components/RatingModal';
 import { getNavRoute, type NavStep } from '@/lib/mapbox';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { freshChannel } from '@/lib/realtime';
+import { RideTalkie } from '@/components/RideTalkie';
 import { isAccurateEnough, SmoothingBuffer } from '@/lib/geo-precision';
 import { useWakeLock } from '@/lib/useWakeLock';
 import { useBackgroundTracking } from '@/lib/backgroundTracking';
@@ -685,6 +686,12 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
                 </a>
               )}
             </div>
+
+            {/* Talkie-walkie : maintenir pour parler, lecture auto en face */}
+            <RideTalkie
+              rideId={ride.id}
+              active={['matched', 'arrived', 'in_progress'].includes(ride.status)}
+            />
 
             </>
             )}

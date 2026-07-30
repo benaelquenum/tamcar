@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/Logo';
 import { CarIcon, CheckIcon, PinIcon, StarIcon, AlertTriangleIcon, WhatsAppIcon, MessageIcon, ShareIcon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
+import { RideTalkie } from '@/components/RideTalkie';
 import { Map } from '@/components/Map';
 import { RatingModal } from '@/components/RatingModal';
 import { getRoute } from '@/lib/mapbox';
@@ -1165,6 +1166,12 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                   </a>
                 )}
               </div>
+
+              {/* Talkie-walkie : maintenir pour parler, lecture auto en face */}
+              <RideTalkie
+                rideId={ride.id}
+                active={['matched', 'arrived', 'in_progress'].includes(ride.status)}
+              />
               {ride.status === 'matched' && distanceToPickup != null && (
                 <div className="mt-sm flex justify-between text-xs text-neutral-600">
                   <span style={{ fontVariantNumeric: 'tabular-nums' }}>
