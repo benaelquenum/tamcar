@@ -95,6 +95,10 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [cancelling, setCancelling] = useState(false);
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
+  // Vitesse GPS instantanée (km/h). Limite générique agglomération Bénin :
+  // 50 km/h — alerte au-delà (+4 de tolérance bruit GPS), throttle 10 s.
+  const [speedKmh, setSpeedKmh] = useState<number | null>(null);
+  const lastSpeedAlertRef = useRef(0);
   const chatOpenRef = useRef(chatOpen);
   const [driverPos, setDriverPos] = useState<[number, number] | null>(null);
   const [clientLive, setClientLive] = useState<[number, number] | null>(null);
@@ -294,6 +298,8 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
         if (!isAccurateEnough(pos)) return;
         const c: [number, number] = [pos.coords.longitude, pos.coords.latitude];
         setDriverPos(c);
+        const sp = pos.coords.speed;
+        setSpeedKmh(sp != null && Number.isFinite(sp) && sp >= 0 ? sp * 3.6 : null);
         trackChannelRef.current?.send({ type: 'broadcast', event: 'driver-pos', payload: { lng: c[0], lat: c[1] } });
       },
       () => undefined,
@@ -301,6 +307,47 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
     );
     return () => navigator.geolocation.clearWatch(id);
   }, [ride.status]);
+
+  // Alerte excès de vitesse : > 54 km/h (50 + tolérance GPS) → double bip
+  // grave + vibration + « Ralentissez » (voix), au plus toutes les 10 s.
+  const overSpeed = speedKmh != null && speedKmh > 54;
+  useEffect(() => {
+    if (!overSpeed) return;
+    const now = Date.now();
+    if (now - lastSpeedAlertRef.current < 10_000) return;
+    lastSpeedAlertRef.current = now;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const Ctx = window.AudioContext || (window as any).webkitAudioContext;
+      const ctx = new Ctx();
+      [0, 0.25].forEach((at) => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.connect(g);
+        g.connect(ctx.destination);
+        o.type = 'square';
+        o.frequency.value = 440;
+        g.gain.setValueAtTime(0.2, ctx.currentTime + at);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + at + 0.2);
+        o.start(ctx.currentTime + at);
+        o.stop(ctx.currentTime + at + 0.22);
+      });
+    } catch {
+      /* ignore */
+    }
+    try {
+      navigator.vibrate?.([120, 60, 120]);
+    } catch {
+      /* ignore */
+    }
+    try {
+      const u = new SpeechSynthesisUtterance('Ralentissez');
+      u.lang = 'fr-FR';
+      window.speechSynthesis?.speak(u);
+    } catch {
+      /* ignore */
+    }
+  }, [overSpeed, speedKmh]);
 
   // Auto-open rating modal quand completed
   useEffect(() => {
@@ -573,6 +620,24 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
 
       {['matched', 'arrived', 'in_progress'].includes(ride.status) && (
         <NavBanner step={nextManeuver} distanceM={maneuverDistM} />
+      )}
+
+      {/* Compteur de vitesse (panneau) — rouge pulsant en excès (> 50 km/h) */}
+      {speedKmh != null && ['matched', 'arrived', 'in_progress'].includes(ride.status) && (
+        <div
+          className={`pointer-events-none absolute left-3 top-[128px] z-20 grid h-14 w-14 place-items-center rounded-full shadow-lg ring-4 ${
+            overSpeed
+              ? 'animate-pulse bg-error text-white ring-error/50'
+              : 'bg-white text-neutral-900 ring-error'
+          }`}
+        >
+          <div className="text-center leading-none">
+            <p className="text-lg font-extrabold" style={{ fontVariantNumeric: 'tabular-nums' }}>
+              {Math.round(speedKmh)}
+            </p>
+            <p className="text-[8px] font-bold uppercase">km/h</p>
+          </div>
+        </div>
       )}
 
       {/* Bottom sheet */}
