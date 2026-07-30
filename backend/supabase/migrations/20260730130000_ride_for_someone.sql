@@ -67,11 +67,20 @@ from public.rides r;
 grant select on public.rides_view to authenticated, anon;
 
 -- 3. create_ride v6 : + passager --------------------------------------
-drop function if exists public.create_ride(
-  vehicle_category, double precision, double precision, text,
-  double precision, double precision, text, numeric, int,
-  boolean, boolean, timestamptz, payment_method, text
-);
+-- Drop de TOUTES les surcharges historiques (v1..v5 ont des signatures
+-- différentes jamais droppées → "function name is not unique").
+do $$
+declare r record;
+begin
+  for r in
+    select p.oid::regprocedure as fq
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.proname = 'create_ride'
+  loop
+    execute format('drop function if exists %s cascade', r.fq);
+  end loop;
+end $$;
 
 create function public.create_ride(
   p_category vehicle_category,
@@ -188,7 +197,11 @@ begin
 end;
 $fnr$;
 
-grant execute on function public.create_ride to authenticated;
+grant execute on function public.create_ride(
+  vehicle_category, double precision, double precision, text,
+  double precision, double precision, text, numeric, int,
+  boolean, boolean, timestamptz, payment_method, text, text, text
+) to authenticated;
 
 -- 4. ride_with_driver_details : + passager (drop : return type change) -
 drop function if exists public.ride_with_driver_details(uuid);
@@ -273,4 +286,4 @@ language sql stable security definer set search_path = public as $$
     );
 $$;
 
-grant execute on function public.ride_with_driver_details to authenticated;
+grant execute on function public.ride_with_driver_details(uuid) to authenticated;
