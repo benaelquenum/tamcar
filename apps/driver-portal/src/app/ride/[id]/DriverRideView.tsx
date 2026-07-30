@@ -93,6 +93,7 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
   const [chatOpen, setChatOpen] = useState(false);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [cancelling, setCancelling] = useState(false);
+  const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
   const chatOpenRef = useRef(chatOpen);
   const [driverPos, setDriverPos] = useState<[number, number] | null>(null);
   const [clientLive, setClientLive] = useState<[number, number] | null>(null);
@@ -417,10 +418,6 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
 
   async function handleDriverCancel() {
     if (cancelling) return;
-    const ok = window.confirm(
-      "Annuler cette course ?\n\nC'est une annulation de ta part : elle compte comme un signalement (strike) et le client reçoit une compensation. Répétée, elle peut suspendre ton compte.",
-    );
-    if (!ok) return;
     setCancelling(true);
     setErr(null);
     const { error } = await supabaseBrowser.rpc('cancel_ride_by_driver', {
@@ -757,12 +754,53 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
             {(ride.status === 'matched' || ride.status === 'arrived') && (
               <button
                 type="button"
-                onClick={handleDriverCancel}
+                onClick={() => setCancelConfirmOpen(true)}
                 disabled={pending || cancelling}
                 className="mt-sm w-full rounded-xl border-2 border-error/30 py-md text-sm font-bold text-error transition hover:bg-error/5 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {cancelling ? '…' : 'Annuler la course'}
               </button>
+            )}
+
+            {/* Modale d'annulation chauffeur (remplace le confirm() navigateur) */}
+            {cancelConfirmOpen && (
+              <div
+                className="fixed inset-0 z-50 flex items-end justify-center bg-neutral-900/60 backdrop-blur-sm sm:items-center"
+                onClick={() => { if (!cancelling) setCancelConfirmOpen(false); }}
+              >
+                <div
+                  className="w-full max-w-md rounded-t-2xl bg-white p-lg shadow-xl sm:rounded-2xl"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <h2 className="text-xl font-extrabold text-neutral-900">
+                    Annuler cette course ?
+                  </h2>
+                  <p className="mt-sm rounded-md bg-warning/10 p-md text-sm text-neutral-700">
+                    Le client recevra un geste commercial de{' '}
+                    <strong style={{ fontVariantNumeric: 'tabular-nums' }}>200 F</strong>,{' '}
+                    <strong>prélevé sur votre solde Revenus</strong>. Les annulations
+                    répétées nuisent à votre fiabilité auprès des clients.
+                  </p>
+                  <div className="mt-lg flex flex-col gap-sm">
+                    <button
+                      type="button"
+                      onClick={() => setCancelConfirmOpen(false)}
+                      disabled={cancelling}
+                      className="w-full rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-md text-sm font-bold text-white shadow-glow disabled:opacity-50"
+                    >
+                      Garder la course
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setCancelConfirmOpen(false); void handleDriverCancel(); }}
+                      disabled={cancelling}
+                      className="w-full rounded-xl border-2 border-error/30 py-md text-sm font-bold text-error transition hover:bg-error/5 disabled:opacity-50"
+                    >
+                      {cancelling ? '…' : "Confirmer l'annulation"}
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
 
             {ride.status === 'completed' && (

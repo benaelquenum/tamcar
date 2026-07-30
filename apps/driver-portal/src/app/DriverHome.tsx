@@ -135,6 +135,7 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
   const [myBookings, setMyBookings] = useState<MyBooking[]>([]);
   const [acceptingSchedId, setAcceptingSchedId] = useState<string | null>(null);
   const [cancellingSchedId, setCancellingSchedId] = useState<string | null>(null);
+  const [desistConfirmId, setDesistConfirmId] = useState<string | null>(null);
 
   // Garde l'écran allumé tant que le chauffeur est en ligne (géoloc active).
   useWakeLock(isOnline);
@@ -178,7 +179,6 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
 
   async function cancelScheduled(id: string) {
     if (cancellingSchedId) return;
-    if (!confirm('Se désister de cette réservation ? Elle repartira à d\'autres chauffeurs.')) return;
     setCancellingSchedId(id);
     const { error: err } = await supabaseBrowser.rpc('cancel_scheduled_by_driver', { p_ride_id: id });
     setCancellingSchedId(null);
@@ -679,7 +679,7 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
                       <p className="text-xs text-neutral-700">{b.pickup_address} → {b.dropoff_address}</p>
                       <button
                         type="button"
-                        onClick={() => cancelScheduled(b.id)}
+                        onClick={() => setDesistConfirmId(b.id)}
                         disabled={cancellingSchedId === b.id}
                         className="mt-md w-full rounded-lg bg-white py-xs text-[11px] font-bold text-neutral-600 ring-1 ring-neutral-300 hover:bg-neutral-50 disabled:opacity-50"
                       >
@@ -687,6 +687,47 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
                       </button>
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {/* Modale de désistement (remplace le confirm() navigateur) */}
+            {desistConfirmId && (
+              <div
+                className="fixed inset-0 z-50 flex items-end justify-center bg-neutral-900/60 backdrop-blur-sm sm:items-center"
+                onClick={() => setDesistConfirmId(null)}
+              >
+                <div
+                  className="w-full max-w-md rounded-t-2xl bg-white p-lg shadow-xl sm:rounded-2xl"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <h2 className="text-xl font-extrabold text-neutral-900">
+                    Se désister de cette réservation ?
+                  </h2>
+                  <p className="mt-sm rounded-md bg-warning/10 p-md text-sm text-neutral-700">
+                    Elle repartira aussitôt vers d&apos;autres chauffeurs et le client sera
+                    prévenu. Évitez les désistements de dernière minute.
+                  </p>
+                  <div className="mt-lg flex flex-col gap-sm">
+                    <button
+                      type="button"
+                      onClick={() => setDesistConfirmId(null)}
+                      className="w-full rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-md text-sm font-bold text-white shadow-glow"
+                    >
+                      Garder ma réservation
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const id = desistConfirmId;
+                        setDesistConfirmId(null);
+                        if (id) void cancelScheduled(id);
+                      }}
+                      className="w-full rounded-xl border-2 border-error/30 py-md text-sm font-bold text-error transition hover:bg-error/5"
+                    >
+                      Me désister
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
