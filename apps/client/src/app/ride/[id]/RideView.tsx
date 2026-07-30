@@ -738,6 +738,19 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
     }
   }, [ride.id]);
 
+  // Poll de secours pendant la course active (10 s) : rafraîchit la position
+  // BDD du chauffeur quand le broadcast live est absent (app chauffeur en
+  // arrière-plan → suivi natif → BDD seule) — le canal realtime `drivers`
+  // étant filtré par RLS côté client, sans ce poll l'origine du calcul ETA
+  // restait figée et le compte à rebours n'évoluait plus avec la distance.
+  useEffect(() => {
+    if (!['matched', 'arrived', 'in_progress'].includes(ride.status)) return;
+    const id = setInterval(() => {
+      void refetchDetails();
+    }, 10_000);
+    return () => clearInterval(id);
+  }, [ride.status, refetchDetails]);
+
   // Son d'événement joué à chaque transition de statut.
   // Fichiers custom optionnels ; fallback Web Audio motif distinct par étape.
   // Status 'arrived' : boucle toutes les 10s tant que le client n'est pas monté (obligation d'entendre).
