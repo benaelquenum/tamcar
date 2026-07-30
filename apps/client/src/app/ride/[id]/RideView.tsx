@@ -964,6 +964,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
             .map((s, i) => ({ lat: s.lat, lng: s.lng, label: i + 1 }))}
           pickupPulse={isWaiting}
           autoFit={isWaiting}
+          follow={ride.status === 'in_progress' ? (myLocation ?? effectiveDriverCoord) : null}
           frameKey={`${ride.status}:${routeGeo ? 1 : 0}`}
           className="h-full w-full"
         />

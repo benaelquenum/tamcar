@@ -178,7 +178,38 @@ type Props = {
   clientLocation?: [number, number] | null;
   /** Rendu du pion « moi » en beacon (point + signal) au lieu de la pastille véhicule. */
   selfBeacon?: boolean;
+  /**
+   * Mode NAVIGATION : la caméra suit cette position et pivote pour garder le
+   * sens de marche vers le haut de l'écran (le curseur, lui, reste fixe —
+   * les markers GL ne tournent pas avec la carte). Prime sur autoFit.
+   * Repasser à null → cap remis au nord + retour aux recadrages classiques.
+   */
+  follow?: [number, number] | null;
 };
+
+// Cap (bearing) entre deux points, en degrés 0-360.
+function navBearing(a: [number, number], b: [number, number]): number {
+  const toRad = Math.PI / 180;
+  const [lng1, lat1] = a;
+  const [lng2, lat2] = b;
+  const dLng = (lng2 - lng1) * toRad;
+  const y = Math.sin(dLng) * Math.cos(lat2 * toRad);
+  const x =
+    Math.cos(lat1 * toRad) * Math.sin(lat2 * toRad) -
+    Math.sin(lat1 * toRad) * Math.cos(lat2 * toRad) * Math.cos(dLng);
+  return (Math.atan2(y, x) * (180 / Math.PI) + 360) % 360;
+}
+
+function navMeters(a: [number, number], b: [number, number]): number {
+  const R = 6371000;
+  const toRad = Math.PI / 180;
+  const dLat = (b[1] - a[1]) * toRad;
+  const dLng = (b[0] - a[0]) * toRad;
+  const s =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(a[1] * toRad) * Math.cos(b[1] * toRad) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
 
 export function Map({
   pickup,
@@ -197,9 +228,12 @@ export function Map({
   selfCategory,
   clientLocation,
   selfBeacon,
+  follow = null,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
+  const followPrevRef = useRef<[number, number] | null>(null);
+  const followBearingRef = useRef(0);
   const pickupMarkerRef = useRef<maplibregl.Marker | null>(null);
   const dropoffMarkerRef = useRef<maplibregl.Marker | null>(null);
   const candidateMarkerRef = useRef<maplibregl.Marker | null>(null);
@@ -336,10 +370,10 @@ export function Map({
     }
   }, [stops]);
 
-  // Fit bounds ou fly (uniquement si autoFit)
+  // Fit bounds ou fly (uniquement si autoFit, et hors mode navigation)
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !autoFit) return;
+    if (!map || !autoFit || follow) return;
     if (pickup && dropoff) {
       const bounds = new GL.LngLatBounds();
       bounds.extend(pickup);
@@ -350,7 +384,39 @@ export function Map({
     } else if (dropoff) {
       map.flyTo({ center: dropoff, zoom: 13, duration: 600 });
     }
-  }, [pickup, dropoff, autoFit]);
+  }, [pickup, dropoff, autoFit, follow]);
+
+  // Mode NAVIGATION : caméra collée à la position suivie, carte pivotée pour
+  // garder le sens de marche vers le haut (cap lissé, recalculé après ≥ 8 m
+  // de déplacement pour éviter les rotations parasites à l'arrêt).
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (!follow) {
+      if (followPrevRef.current) {
+        followPrevRef.current = null;
+        // Fin de course : cap remis au nord, la vue d'ensemble reprend la main.
+        map.easeTo({ bearing: 0, pitch: 0, duration: 700 });
+      }
+      return;
+    }
+    const prev = followPrevRef.current;
+    let bearing = followBearingRef.current;
+    if (prev && navMeters(prev, follow) >= 8) {
+      bearing = navBearing(prev, follow);
+      followBearingRef.current = bearing;
+      followPrevRef.current = follow;
+    } else if (!prev) {
+      followPrevRef.current = follow;
+    }
+    map.easeTo({
+      center: follow,
+      bearing,
+      zoom: Math.max(map.getZoom(), 16),
+      duration: 800,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [follow]);
 
   // Pins chauffeurs autour (petits, cyan pâle)
   useEffect(() => {

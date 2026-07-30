@@ -549,6 +549,7 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
             .map((s, i) => ({ lat: s.lat, lng: s.lng, label: i + 1 }))}
           route={routeGeo}
           autoFit={false}
+          follow={['matched', 'arrived', 'in_progress'].includes(ride.status) ? driverPos : null}
           className="h-full w-full"
         />
       </div>
