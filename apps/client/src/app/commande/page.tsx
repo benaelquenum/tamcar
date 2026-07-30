@@ -92,6 +92,11 @@ export default function CommandePage() {
   const [promoChecking, setPromoChecking] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Course pour un proche : le passager n'est pas le titulaire du compte
+  const [forWhom, setForWhom] = useState<'me' | 'other'>('me');
+  const [passengerName, setPassengerName] = useState('');
+  const [passengerPhone, setPassengerPhone] = useState('');
+
   // Mode sélection sur carte
   const [pickingMode, setPickingMode] = useState<PickingMode>(null);
   const [candidate, setCandidate] = useState<[number, number] | null>(null);
@@ -129,6 +134,16 @@ export default function CommandePage() {
   function handleConfirm() {
     if (!pickup || !dropoff || !route || !prices[selectedCat]) return;
     setConfirmError(null);
+    if (forWhom === 'other') {
+      if (!passengerName.trim()) {
+        setConfirmError('Indiquez le nom du passager.');
+        return;
+      }
+      if (passengerPhone.replace(/\D/g, '').length < 8) {
+        setConfirmError('Numéro du passager invalide.');
+        return;
+      }
+    }
     startConfirm(async () => {
       try {
         await createRideAction({
@@ -146,6 +161,8 @@ export default function CommandePage() {
           scheduled_at: isScheduled && scheduledAt ? new Date(scheduledAt).toISOString() : null,
           payment_method: paymentMethod,
           promo_code: promoPreview?.valid ? promoCode.trim().toUpperCase() : null,
+          passenger_name: forWhom === 'other' ? passengerName.trim() : null,
+          passenger_phone: forWhom === 'other' ? passengerPhone.replace(/[^0-9+]/g, '') : null,
         });
       } catch (e) {
         setConfirmError(e instanceof Error ? e.message : 'Erreur inconnue');
@@ -453,6 +470,72 @@ export default function CommandePage() {
                     {promoReasonLabel(promoPreview.reason)}
                   </p>
                 )
+              )}
+            </section>
+
+            <section className="mt-lg">
+              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-600">
+                Pour qui est cette course ?
+              </p>
+              <div className="mt-sm grid grid-cols-2 gap-sm">
+                <button
+                  type="button"
+                  onClick={() => setForWhom('me')}
+                  className={`rounded-xl border-2 p-md text-left transition ${
+                    forWhom === 'me'
+                      ? 'border-primary-500 bg-primary-50'
+                      : 'border-neutral-200 bg-white hover:border-primary-300'
+                  }`}
+                >
+                  <p className="text-sm font-bold text-neutral-900">Pour moi</p>
+                  <p className="text-[10px] text-neutral-600">Je suis le passager</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setForWhom('other')}
+                  className={`rounded-xl border-2 p-md text-left transition ${
+                    forWhom === 'other'
+                      ? 'border-primary-500 bg-primary-50'
+                      : 'border-neutral-200 bg-white hover:border-primary-300'
+                  }`}
+                >
+                  <p className="text-sm font-bold text-neutral-900">Pour un proche</p>
+                  <p className="text-[10px] text-neutral-600">Quelqu&apos;un d&apos;autre voyage</p>
+                </button>
+              </div>
+              {forWhom === 'other' && (
+                <div className="mt-sm space-y-sm rounded-xl bg-primary-50/60 p-md ring-1 ring-primary-100">
+                  <label className="block">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+                      Nom du passager
+                    </span>
+                    <input
+                      type="text"
+                      value={passengerName}
+                      onChange={(e) => setPassengerName(e.target.value)}
+                      placeholder="Ex : Maman Rose"
+                      className="mt-xs w-full rounded-lg bg-white px-md py-sm text-sm font-semibold text-neutral-900 ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+                      Téléphone du passager
+                    </span>
+                    <input
+                      type="tel"
+                      inputMode="tel"
+                      value={passengerPhone}
+                      onChange={(e) => setPassengerPhone(e.target.value)}
+                      placeholder="+229 01 XX XX XX XX"
+                      className="mt-xs w-full rounded-lg bg-white px-md py-sm text-sm font-semibold text-neutral-900 ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      style={{ fontVariantNumeric: 'tabular-nums' }}
+                    />
+                  </label>
+                  <p className="text-[11px] text-neutral-600">
+                    Le chauffeur verra le nom du passager et l&apos;appellera directement à ce
+                    numéro. Vous suivez la course et payez depuis votre compte.
+                  </p>
+                </div>
               )}
             </section>
 

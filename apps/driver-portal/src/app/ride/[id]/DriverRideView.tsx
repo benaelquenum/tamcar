@@ -60,6 +60,7 @@ export type DriverRideForView = {
   client_full_name: string | null;
   client_phone: string | null;
   client_avatar_url: string | null;
+  booked_by_name: string | null;
   completion_requested_at: string | null;
   completion_recomputed_price_fcfa: number | null;
   completion_distance_from_dropoff_m: number | null;
@@ -638,7 +639,7 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
               />
               <div className="flex-1 min-w-0">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
-                  Votre client
+                  {ride.booked_by_name ? 'Votre passager' : 'Votre client'}
                 </p>
                 <p className="truncate text-sm font-extrabold text-neutral-900">
                   {titleCaseName(ride.client_full_name) || 'Client'}
@@ -649,6 +650,11 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
                     style={{ fontVariantNumeric: 'tabular-nums' }}
                   >
                     {ride.client_phone}
+                  </p>
+                )}
+                {ride.booked_by_name && (
+                  <p className="truncate text-[10px] text-neutral-500">
+                    Commandé par {titleCaseName(ride.booked_by_name)}
                   </p>
                 )}
               </div>

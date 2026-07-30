@@ -19,6 +19,8 @@ export type CreateRideInput = {
   scheduled_at?: string | null;
   payment_method?: 'cash' | 'mobile_money_mtn' | 'mobile_money_moov' | 'tamcar_credit';
   promo_code?: string | null;
+  passenger_name?: string | null;
+  passenger_phone?: string | null;
 };
 
 export async function createRideAction(input: CreateRideInput) {
@@ -46,6 +48,8 @@ export async function createRideAction(input: CreateRideInput) {
     p_scheduled_at: input.scheduled_at ?? null,
     p_payment_method: input.payment_method ?? 'cash',
     p_promo_code: input.promo_code ?? null,
+    p_passenger_name: input.passenger_name ?? null,
+    p_passenger_phone: input.passenger_phone ?? null,
   });
 
   if (error || !data) {

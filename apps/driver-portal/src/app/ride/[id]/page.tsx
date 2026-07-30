@@ -13,7 +13,7 @@ export default async function DriverRideDetail({ params }: { params: { id: strin
   const { data: ride, error } = await supabase
     .from('rides_view')
     .select(
-      'id, status, driver_id, vehicle_id, pickup_address, pickup_lat, pickup_lng, dropoff_address, dropoff_lat, dropoff_lng, distance_km, duration_min, price_total_fcfa, driver_share_fcfa, driver_rachat_fcfa, client_id, completion_requested_at, completion_recomputed_price_fcfa, completion_distance_from_dropoff_m, completion_auto_accept_at',
+      'id, status, driver_id, vehicle_id, pickup_address, pickup_lat, pickup_lng, dropoff_address, dropoff_lat, dropoff_lng, distance_km, duration_min, price_total_fcfa, driver_share_fcfa, driver_rachat_fcfa, client_id, completion_requested_at, completion_recomputed_price_fcfa, completion_distance_from_dropoff_m, completion_auto_accept_at, passenger_name, passenger_phone',
     )
     .eq('id', params.id)
     .single();
@@ -52,9 +52,16 @@ export default async function DriverRideDetail({ params }: { params: { id: strin
     price_total_fcfa: ride.price_total_fcfa,
     driver_share_fcfa: ride.driver_share_fcfa,
     driver_rachat_fcfa: ride.driver_rachat_fcfa,
-    client_full_name: client?.full_name ?? null,
-    client_phone: client?.phone ? `+${client.phone.replace(/^\+/, '')}` : null,
-    client_avatar_url: client?.avatar_url ?? null,
+    // Course pour un proche : le chauffeur voit et appelle le PASSAGER ;
+    // le titulaire du compte (payeur) est affiché en « Commandé par ».
+    client_full_name: ride.passenger_name ?? client?.full_name ?? null,
+    client_phone: ride.passenger_phone
+      ? `+${ride.passenger_phone.replace(/^\+/, '')}`
+      : client?.phone
+        ? `+${client.phone.replace(/^\+/, '')}`
+        : null,
+    client_avatar_url: ride.passenger_name ? null : (client?.avatar_url ?? null),
+    booked_by_name: ride.passenger_name ? (client?.full_name ?? null) : null,
     completion_requested_at: ride.completion_requested_at ?? null,
     completion_recomputed_price_fcfa: ride.completion_recomputed_price_fcfa ?? null,
     completion_distance_from_dropoff_m: ride.completion_distance_from_dropoff_m ?? null,

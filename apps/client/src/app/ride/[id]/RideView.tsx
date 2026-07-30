@@ -82,6 +82,8 @@ export type RideForView = {
   vehicle_brand?: string | null;
   vehicle_model?: string | null;
   vehicle_color?: string | null;
+  passenger_name?: string | null;
+  passenger_phone?: string | null;
 };
 
 type NearbyDriverRow = { driver_id: string; lat: number; lng: number; category?: string };
@@ -971,6 +973,11 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                 {(countdownLabel ?? statusSub) && (
                   <p className="text-xs text-white/90" style={{ fontVariantNumeric: 'tabular-nums' }}>
                     {countdownLabel ?? statusSub}
+                  </p>
+                )}
+                {ride.passenger_name && (
+                  <p className="mt-0.5 inline-flex items-center rounded-full bg-white/20 px-sm py-0.5 text-[11px] font-bold text-white">
+                    Course pour {ride.passenger_name}
                   </p>
                 )}
               </div>
