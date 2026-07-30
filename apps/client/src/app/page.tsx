@@ -13,6 +13,7 @@ import {
   PinIcon,
   PlusIcon,
   UserIcon,
+  UsersIcon,
   WalletIcon,
   WaveIcon,
 } from '@/components/Icon';
@@ -261,6 +262,12 @@ export default async function HomePage() {
             </span>
             <span className="text-xs font-semibold text-neutral-900">{t('home.help')}</span>
           </a>
+          <QuickActionLink
+            href="/commande?proche=1"
+            Icon={UsersIcon}
+            label="Pour un proche"
+            tint="violet"
+          />
         </section>
 
         {/* Devenir chauffeur */}

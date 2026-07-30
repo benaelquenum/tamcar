@@ -68,6 +68,7 @@ export default function CommandePage() {
   const t = useT();
   const searchParams = useSearchParams();
   const isScheduled = searchParams.get('scheduled') === '1';
+  const isProche = searchParams.get('proche') === '1';
 
   const [pickup, setPickup] = useState<SelectedAddress | null>(null);
   const [dropoff, setDropoff] = useState<SelectedAddress | null>(null);
@@ -93,7 +94,8 @@ export default function CommandePage() {
   const [loading, setLoading] = useState(false);
 
   // Course pour un proche : le passager n'est pas le titulaire du compte
-  const [forWhom, setForWhom] = useState<'me' | 'other'>('me');
+  // (?proche=1 depuis l'accueil pré-sélectionne le mode proche)
+  const [forWhom, setForWhom] = useState<'me' | 'other'>(isProche ? 'other' : 'me');
   const [passengerName, setPassengerName] = useState('');
   const [passengerPhone, setPassengerPhone] = useState('');
 
