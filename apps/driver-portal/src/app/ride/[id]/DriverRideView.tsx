@@ -13,6 +13,7 @@ import { getNavRoute, type NavStep } from '@/lib/mapbox';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { freshChannel } from '@/lib/realtime';
 import { RideTalkie } from '@/components/RideTalkie';
+import { speak } from '@/lib/tts';
 import { isAccurateEnough, SmoothingBuffer } from '@/lib/geo-precision';
 import { useWakeLock } from '@/lib/useWakeLock';
 import { useBackgroundTracking } from '@/lib/backgroundTracking';
@@ -162,18 +163,12 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
     [nextManeuver, driverPos],
   );
 
-  // Annonce vocale (FR) de chaque nouvelle manœuvre.
+  // Annonce vocale (FR) de chaque nouvelle manœuvre (TTS natif sur APK).
   useEffect(() => {
     const instr = nextManeuver?.instruction;
     if (!instr || spokenRef.current === instr) return;
     spokenRef.current = instr;
-    try {
-      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-        const u = new SpeechSynthesisUtterance(instr);
-        u.lang = 'fr-FR';
-        window.speechSynthesis.speak(u);
-      }
-    } catch { /* ignore */ }
+    void speak(instr);
   }, [nextManeuver]);
 
   // Bulle « messages non lus » sur le bouton chat : compte initial + temps réel.
@@ -340,13 +335,7 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
     } catch {
       /* ignore */
     }
-    try {
-      const u = new SpeechSynthesisUtterance('Ralentissez');
-      u.lang = 'fr-FR';
-      window.speechSynthesis?.speak(u);
-    } catch {
-      /* ignore */
-    }
+    void speak('Ralentissez');
   }, [overSpeed, speedKmh]);
 
   // Auto-open rating modal quand completed
