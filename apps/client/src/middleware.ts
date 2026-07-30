@@ -20,6 +20,7 @@ const PUBLIC_PREFIXES = [
   '/driver', // page informative "L'espace chauffeur a déménagé"
   '/cgu', // documents légaux consultables sans compte
   '/confidentialite',
+  '/suivi', // lien public de suivi de course (token, sans compte)
 ];
 
 export async function middleware(request: NextRequest) {

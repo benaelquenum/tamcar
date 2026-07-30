@@ -131,6 +131,18 @@ export function UserIcon({ className = 'h-5 w-5', strokeWidth = 2 }: IconProps) 
   );
 }
 
+export function ShareIcon({ className = 'h-5 w-5', strokeWidth = 2 }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={`${base} ${className}`}>
+      <circle cx="18" cy="5" r="3" />
+      <circle cx="6" cy="12" r="3" />
+      <circle cx="18" cy="19" r="3" />
+      <line x1="8.6" y1="10.5" x2="15.4" y2="6.5" />
+      <line x1="8.6" y1="13.5" x2="15.4" y2="17.5" />
+    </svg>
+  );
+}
+
 export function UsersIcon({ className = 'h-5 w-5', strokeWidth = 2 }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={`${base} ${className}`}>

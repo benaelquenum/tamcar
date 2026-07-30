@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/Logo';
-import { CarIcon, CheckIcon, PinIcon, StarIcon, AlertTriangleIcon, WhatsAppIcon, MessageIcon } from '@/components/Icon';
+import { CarIcon, CheckIcon, PinIcon, StarIcon, AlertTriangleIcon, WhatsAppIcon, MessageIcon, ShareIcon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { Map } from '@/components/Map';
 import { RatingModal } from '@/components/RatingModal';
@@ -281,6 +281,30 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
     setCancelPreview(null);
     setCancelConfirm(true);
     await fetchCancelPreview(null);
+  }
+
+  // Lien public de suivi : créé (idempotent) puis partagé via la feuille de
+  // partage native, sinon WhatsApp en repli.
+  const [sharing, setSharing] = useState(false);
+  async function handleShareTracking() {
+    if (sharing) return;
+    setSharing(true);
+    try {
+      const { data, error } = await supabaseBrowser.rpc('create_ride_share_link', {
+        p_ride_id: ride.id,
+      });
+      if (!error && typeof data === 'string' && data) {
+        const url = `${window.location.origin}/suivi/${data}`;
+        const text = `Suivez ma course TamCar en direct : ${url}`;
+        if (typeof navigator !== 'undefined' && navigator.share) {
+          await navigator.share({ title: 'Suivi TamCar', text, url }).catch(() => undefined);
+        } else {
+          window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+        }
+      }
+    } finally {
+      setSharing(false);
+    }
   }
 
   async function fetchCancelPreview(userReason: string | null) {
@@ -1184,6 +1208,17 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
             )}
             {completeError && (
               <p className="mt-xs text-center text-xs text-error">{completeError}</p>
+            )}
+            {['requested', 'matched', 'arrived', 'in_progress'].includes(ride.status) && (
+              <button
+                type="button"
+                onClick={handleShareTracking}
+                disabled={sharing}
+                className="mb-md flex w-full items-center justify-center gap-xs rounded-xl border-2 border-primary-500 bg-white py-md text-sm font-bold text-primary-700 transition hover:bg-primary-50 disabled:opacity-50"
+              >
+                <ShareIcon className="h-4 w-4" />
+                {sharing ? '…' : 'Partager le suivi avec un proche'}
+              </button>
             )}
             {(ride.status === 'requested' ||
               ride.status === 'matched' ||
