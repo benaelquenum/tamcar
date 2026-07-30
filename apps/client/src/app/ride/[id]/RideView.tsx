@@ -185,8 +185,11 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
   const [routeGeo, setRouteGeo] = useState<GeoJSON.LineString | null>(null);
   const [sheetExpanded, setSheetExpanded] = useState(false);
   const [sheetMin, setSheetMin] = useState(false);
-  const [nowMs, setNowMs] = useState(() => Date.now());
-  const [etaArrivalMs, setEtaArrivalMs] = useState<number | null>(null);
+  // Durée restante du trajet (minutes Mapbox depuis la position live du
+  // chauffeur). PAS un chronomètre : la valeur ne diminue que quand la
+  // distance restante diminue (recalcul itinéraire), et se stabilise si le
+  // véhicule est à l'arrêt — fini le décompte « horloge ».
+  const [remainingMin, setRemainingMin] = useState<number | null>(null);
   const autoMinRef = useRef(false);
   const [hasRated, setHasRated] = useState<boolean | null>(null);
   const [ratingOpen, setRatingOpen] = useState(false);
@@ -534,28 +537,13 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
     return () => clearInterval(id);
   }, [ride.status]);
 
-  // Compte à rebours jusqu'à destination pendant la course (tick 1 s).
-  useEffect(() => {
-    if (ride.status !== 'in_progress' || !ride.started_at) return;
-    setNowMs(Date.now());
-    const id = setInterval(() => setNowMs(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, [ride.status, ride.started_at]);
-
   const countdownLabel = useMemo<string | null>(() => {
     if (ride.status !== 'in_progress') return null;
-    const fallback =
-      ride.started_at && ride.duration_min
-        ? new Date(ride.started_at).getTime() + ride.duration_min * 60_000
-        : null;
-    const arrival = etaArrivalMs ?? fallback; // ETA live du trajet en priorité
-    if (arrival == null) return null;
-    const remain = Math.round((arrival - nowMs) / 1000);
-    if (remain <= 0) return 'Arrivée imminente';
-    const m = Math.floor(remain / 60);
-    const s = remain % 60;
-    return `Arrivée dans ${m}:${s.toString().padStart(2, '0')}`;
-  }, [ride.status, ride.started_at, ride.duration_min, etaArrivalMs, nowMs]);
+    const min = remainingMin ?? ride.duration_min ?? null;
+    if (min == null) return null;
+    if (min <= 1) return 'Arrivée imminente';
+    return `Arrivée dans ~${Math.round(min)} min`;
+  }, [ride.status, remainingMin, ride.duration_min]);
 
   // Réduit automatiquement la fenêtre une fois la course démarrée.
   useEffect(() => {
@@ -938,7 +926,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
       setRouteGeo(null);
       setDistanceToPickup(null);
       setDurationToPickup(null);
-      setEtaArrivalMs(null);
+      setRemainingMin(null);
       return;
     }
     const toPickup = ride.status === 'matched' || ride.status === 'arrived';
@@ -948,9 +936,10 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
       setRouteGeo(r?.geometry ?? null);
       setDistanceToPickup(toPickup && r ? r.distance_km * 1000 : null);
       setDurationToPickup(toPickup && r ? r.duration_min : null);
-      // Recale le compte à rebours sur l'ETA réel du trajet en cours.
-      if (ride.status === 'in_progress' && r) setEtaArrivalMs(Date.now() + r.duration_min * 60_000);
-      else setEtaArrivalMs(null);
+      // Durée restante = celle de l'itinéraire recalculé depuis la position
+      // live (elle ne bouge que si la distance restante change).
+      if (ride.status === 'in_progress' && r) setRemainingMin(r.duration_min);
+      else setRemainingMin(null);
     });
     return () => { cancelled = true; };
   }, [routeOrigin, driverCoord, pickupCoord, dropoffCoord, ride.status]);
