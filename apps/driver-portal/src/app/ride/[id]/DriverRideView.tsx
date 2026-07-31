@@ -338,6 +338,17 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
     void speak('Ralentissez');
   }, [overSpeed, speedKmh]);
 
+  // Fenêtre réduite (comme côté client) : auto-réduction au démarrage de la
+  // course pour dégager la carte ; un clic déplie, un clic replie.
+  const [sheetMin, setSheetMin] = useState(false);
+  const autoMinRef = useRef(false);
+  useEffect(() => {
+    if (ride.status === 'in_progress' && !autoMinRef.current) {
+      autoMinRef.current = true;
+      setSheetMin(true);
+    }
+  }, [ride.status]);
+
   // Auto-open rating modal quand completed
   useEffect(() => {
     if (ride.status !== 'completed') return;
@@ -658,25 +669,77 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
               </div>
             )}
 
-            {/* Statut + gains — visibles uniquement pour les états actifs */}
+            {/* Barre compacte (fenêtre réduite) — un clic pour déplier */}
+            {sheetMin &&
+              ride.status !== 'cancelled_by_client' &&
+              ride.status !== 'cancelled_by_driver' &&
+              ride.status !== 'expired' && (
+                <button
+                  type="button"
+                  onClick={() => setSheetMin(false)}
+                  className="flex w-full items-center gap-md text-left"
+                  aria-label="Déplier la fenêtre"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-extrabold text-neutral-900">
+                      {statusLabel}
+                    </p>
+                    <p
+                      className="truncate text-xs text-neutral-500"
+                      style={{ fontVariantNumeric: 'tabular-nums' }}
+                    >
+                      Course : {formatFcfa(ride.price_total_fcfa)} F · vous gagnez{' '}
+                      {formatFcfa(ride.driver_share_fcfa)} F
+                    </p>
+                  </div>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 flex-none text-neutral-400">
+                    <polyline points="18 15 12 9 6 15" />
+                  </svg>
+                </button>
+              )}
+
+            {!sheetMin && (
+            <>
+            {/* Statut + prix course + gains — visibles pour les états actifs */}
             {ride.status !== 'cancelled_by_client' &&
               ride.status !== 'cancelled_by_driver' &&
               ride.status !== 'expired' && (
                 <div className="mb-md flex items-start justify-between gap-md">
-                  <p className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-                    {statusLabel}
-                  </p>
-                  <div className="text-right">
-                    <p className="text-xs uppercase text-neutral-500">Vous gagnez</p>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold uppercase tracking-wider text-neutral-500">
+                      {statusLabel}
+                    </p>
+                    <p className="mt-xs text-[10px] uppercase text-neutral-500">Coût de la course</p>
                     <p
-                      className="text-2xl font-extrabold text-primary-700"
+                      className="text-lg font-extrabold text-neutral-900"
                       style={{ fontVariantNumeric: 'tabular-nums' }}
                     >
-                      {formatFcfa(ride.driver_share_fcfa)}
+                      {formatFcfa(ride.price_total_fcfa)} F
                     </p>
-                    <p className="text-[10px] text-neutral-500">
-                      +{formatFcfa(ride.driver_rachat_fcfa)} rachat
-                    </p>
+                  </div>
+                  <div className="flex items-start gap-sm">
+                    <div className="text-right">
+                      <p className="text-xs uppercase text-neutral-500">Vous gagnez</p>
+                      <p
+                        className="text-2xl font-extrabold text-primary-700"
+                        style={{ fontVariantNumeric: 'tabular-nums' }}
+                      >
+                        {formatFcfa(ride.driver_share_fcfa)}
+                      </p>
+                      <p className="text-[10px] text-neutral-500">
+                        +{formatFcfa(ride.driver_rachat_fcfa)} rachat
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSheetMin(true)}
+                      className="grid h-8 w-8 flex-none place-items-center rounded-full bg-neutral-100 text-neutral-500 hover:bg-neutral-200"
+                      aria-label="Réduire la fenêtre"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+                        <polyline points="6 9 12 15 18 9" />
+                      </svg>
+                    </button>
                   </div>
                 </div>
               )}
@@ -866,6 +929,8 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
                   Rendre la monnaie sur wallet client
                 </button>
               </>
+            )}
+            </>
             )}
           </div>
         </div>
