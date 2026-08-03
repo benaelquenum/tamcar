@@ -17,6 +17,8 @@ import { titleCaseName } from '@/lib/name';
 import { AddStopModal } from './AddStopModal';
 import { StopsListClient } from './StopsListClient';
 import { isAccurateEnough, SmoothingBuffer, getAccuratePosition } from '@/lib/geo-precision';
+import { useWakeLock } from '@/lib/useWakeLock';
+import { useBackgroundTracking } from '@/lib/backgroundTracking';
 import { SosButton } from '@/components/SosButton';
 import { RideChat } from '@/components/RideChat';
 import { playMessageSound } from '@/lib/message-sound';
@@ -692,10 +694,31 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ride.id, ride.status]);
 
-  // Geolocation live du client — actif pendant matched/arrived/in_progress.
-  // Filtre les fixes imprécis (accuracy > 50 m) et lisse les 5 derniers.
+  // ---- Position client : MÊME MODÈLE que le chauffeur --------------------
+  // 1. Wake Lock pendant la course (l'écran ne se met pas en veille).
+  // 2. Watch foreground filtré (accuracy > 50 m rejetée) + lissé (5 fixes).
+  // 3. Suivi NATIF en arrière-plan (service d'avant-plan) sur l'APK.
+  // 4. Broadcast live (client-pos) + heartbeat BDD ~15 s (repli chauffeur).
+  const rideActive = ['matched', 'arrived', 'in_progress'].includes(ride.status);
+  useWakeLock(rideActive);
+
+  const lastDbPushRef = useRef(0);
+  const pushClientPosition = useCallback(
+    (lng: number, lat: number) => {
+      trackChannelRef.current?.send({ type: 'broadcast', event: 'client-pos', payload: { lng, lat } });
+      const now = Date.now();
+      if (now - lastDbPushRef.current >= 15_000) {
+        lastDbPushRef.current = now;
+        supabaseBrowser
+          .rpc('client_update_location', { p_ride_id: ride.id, p_lng: lng, p_lat: lat })
+          .then(() => undefined);
+      }
+    },
+    [ride.id],
+  );
+
   useEffect(() => {
-    if (!['matched', 'arrived', 'in_progress'].includes(ride.status)) {
+    if (!rideActive) {
       setMyLocation(null);
       return;
     }
@@ -711,13 +734,20 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
           ts: pos.timestamp,
         });
         setMyLocation(smoothed);
-        trackChannelRef.current?.send({ type: 'broadcast', event: 'client-pos', payload: { lng: smoothed[0], lat: smoothed[1] } });
+        pushClientPosition(smoothed[0], smoothed[1]);
       },
       () => undefined,
       { enableHighAccuracy: true, maximumAge: 3000, timeout: 15000 },
     );
     return () => navigator.geolocation.clearWatch(watchId);
-  }, [ride.status]);
+  }, [rideActive, pushClientPosition]);
+
+  // Suivi natif arrière-plan (APK) : la position continue de partir même
+  // app en fond / écran éteint — miroir exact du chauffeur.
+  useBackgroundTracking(rideActive, (lng, lat) => {
+    setMyLocation([lng, lat]);
+    pushClientPosition(lng, lat);
+  });
 
   // Refetch complet des détails ride+driver
   const refetchDetails = useCallback(async () => {

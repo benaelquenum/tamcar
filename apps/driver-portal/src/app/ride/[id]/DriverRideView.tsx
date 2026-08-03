@@ -63,6 +63,8 @@ export type DriverRideForView = {
   client_phone: string | null;
   client_avatar_url: string | null;
   booked_by_name: string | null;
+  client_live_lat: number | null;
+  client_live_lng: number | null;
   completion_requested_at: string | null;
   completion_recomputed_price_fcfa: number | null;
   completion_distance_from_dropoff_m: number | null;
@@ -590,7 +592,12 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
           dropoff={ride.status === 'in_progress' ? [ride.dropoff_lng, ride.dropoff_lat] : undefined}
           selfLocation={driverPos}
           selfCategory={ride.vehicle_category ?? undefined}
-          clientLocation={clientLive}
+          clientLocation={
+            clientLive ??
+            (ride.client_live_lng != null && ride.client_live_lat != null
+              ? [ride.client_live_lng, ride.client_live_lat]
+              : null)
+          }
           stops={mapStops
             .filter((s) => s.status !== 'cancelled')
             .map((s, i) => ({ lat: s.lat, lng: s.lng, label: i + 1 }))}

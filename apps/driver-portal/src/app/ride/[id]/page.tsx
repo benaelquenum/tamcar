@@ -13,7 +13,7 @@ export default async function DriverRideDetail({ params }: { params: { id: strin
   const { data: ride, error } = await supabase
     .from('rides_view')
     .select(
-      'id, status, driver_id, vehicle_id, pickup_address, pickup_lat, pickup_lng, dropoff_address, dropoff_lat, dropoff_lng, distance_km, duration_min, price_total_fcfa, driver_share_fcfa, driver_rachat_fcfa, client_id, completion_requested_at, completion_recomputed_price_fcfa, completion_distance_from_dropoff_m, completion_auto_accept_at, passenger_name, passenger_phone',
+      'id, status, driver_id, vehicle_id, pickup_address, pickup_lat, pickup_lng, dropoff_address, dropoff_lat, dropoff_lng, distance_km, duration_min, price_total_fcfa, driver_share_fcfa, driver_rachat_fcfa, client_id, completion_requested_at, completion_recomputed_price_fcfa, completion_distance_from_dropoff_m, completion_auto_accept_at, passenger_name, passenger_phone, client_live_lat, client_live_lng',
     )
     .eq('id', params.id)
     .single();
@@ -62,6 +62,8 @@ export default async function DriverRideDetail({ params }: { params: { id: strin
         : null,
     client_avatar_url: ride.passenger_name ? null : (client?.avatar_url ?? null),
     booked_by_name: ride.passenger_name ? (client?.full_name ?? null) : null,
+    client_live_lat: ride.client_live_lat ?? null,
+    client_live_lng: ride.client_live_lng ?? null,
     completion_requested_at: ride.completion_requested_at ?? null,
     completion_recomputed_price_fcfa: ride.completion_recomputed_price_fcfa ?? null,
     completion_distance_from_dropoff_m: ride.completion_distance_from_dropoff_m ?? null,

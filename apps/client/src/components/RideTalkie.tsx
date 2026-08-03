@@ -20,6 +20,7 @@ export function RideTalkie({ rideId, active }: { rideId: string; active: boolean
   const [secs, setSecs] = useState(0);
   const [sending, setSending] = useState(false);
   const [incomingUrl, setIncomingUrl] = useState<string | null>(null);
+  const [micError, setMicError] = useState<string | null>(null);
   const recRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -103,6 +104,11 @@ export function RideTalkie({ rideId, active }: { rideId: string; active: boolean
   async function startRec(e: React.PointerEvent) {
     e.preventDefault();
     if (recording || sending || !active) return;
+    setMicError(null);
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+      setMicError('Micro non disponible sur cet appareil.');
+      return;
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const rec = new MediaRecorder(stream);
@@ -130,7 +136,9 @@ export function RideTalkie({ rideId, active }: { rideId: string; active: boolean
         });
       }, 1000);
     } catch {
-      /* micro refusé */
+      setMicError(
+        'Accès micro refusé. Autorisez le microphone pour TamCar (réglages du téléphone), puis réessayez.',
+      );
     }
   }
 
@@ -177,6 +185,11 @@ export function RideTalkie({ rideId, active }: { rideId: string; active: boolean
             ? 'Envoi…'
             : 'Talkie — maintenir pour parler'}
       </button>
+      {micError && (
+        <p className="mt-xs rounded-md bg-error/10 p-sm text-center text-[11px] font-semibold text-error">
+          {micError}
+        </p>
+      )}
       {incomingUrl && (
         <button
           type="button"
