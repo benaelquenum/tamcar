@@ -1,6 +1,6 @@
 import { createServerSupabase } from '@/lib/supabase-server';
 import { CheckIcon, PinIcon } from '@/components/Icon';
-import { approvePlace, rejectPlace } from './actions';
+import { approvePlace, rejectPlace, addPlace, deletePlace } from './actions';
 import { ConfirmSubmit } from '@/components/ConfirmSubmit';
 
 type PlaceRow = {
@@ -33,8 +33,23 @@ const SOURCE_COLOR: Record<PlaceRow['source'], string> = {
   admin: 'bg-violet-500 text-white',
 };
 
-export default async function AdminPlacesPage() {
+export default async function AdminPlacesPage({
+  searchParams,
+}: {
+  searchParams?: { q?: string };
+}) {
   const supabase = createServerSupabase();
+  const query = (searchParams?.q ?? '').trim();
+
+  // Recherche pour gestion/suppression (nom, insensible à la casse)
+  const { data: found } = query
+    ? await supabase
+        .from('places_admin_view')
+        .select('id, name, category, category_group, city, district, source, verified, created_at, submitted_by, lat, lng')
+        .ilike('name', `%${query}%`)
+        .order('name')
+        .limit(30)
+    : { data: null };
 
   const { data: pending } = await supabase
     .from('places_admin_view')
@@ -161,6 +176,170 @@ export default async function AdminPlacesPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+      </section>
+
+      {/* Ajout direct par l'admin */}
+      <section className="mt-2xl">
+        <h2 className="mb-md text-lg font-bold text-neutral-900">Ajouter un lieu</h2>
+        <form
+          action={addPlace}
+          className="grid gap-md rounded-xl bg-white p-lg shadow-sm md:grid-cols-2"
+        >
+          <label className="block">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+              Nom du lieu *
+            </span>
+            <input
+              type="text"
+              name="name"
+              required
+              placeholder="Ex : Pharmacie Camp Guézo"
+              className="mt-xs w-full rounded-md bg-neutral-100 px-md py-sm text-sm text-neutral-900 ring-1 ring-neutral-200"
+            />
+          </label>
+          <label className="block">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+              Coordonnées (lat, lng) *
+            </span>
+            <input
+              type="text"
+              name="coords"
+              required
+              placeholder="Ex : 6.3702, 2.3912"
+              className="mt-xs w-full rounded-md bg-neutral-100 px-md py-sm text-sm text-neutral-900 ring-1 ring-neutral-200"
+              style={{ fontVariantNumeric: 'tabular-nums' }}
+            />
+            <span className="mt-xs block text-[10px] text-neutral-500">
+              Clic droit sur Google Maps → premier élément = coordonnées à copier.
+            </span>
+          </label>
+          <label className="block">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+              Ville
+            </span>
+            <input
+              type="text"
+              name="city"
+              defaultValue="Cotonou"
+              className="mt-xs w-full rounded-md bg-neutral-100 px-md py-sm text-sm text-neutral-900 ring-1 ring-neutral-200"
+            />
+          </label>
+          <label className="block">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+              Quartier
+            </span>
+            <input
+              type="text"
+              name="district"
+              placeholder="Ex : Menontin"
+              className="mt-xs w-full rounded-md bg-neutral-100 px-md py-sm text-sm text-neutral-900 ring-1 ring-neutral-200"
+            />
+          </label>
+          <label className="block">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+              Catégorie
+            </span>
+            <select
+              name="category_group"
+              className="mt-xs w-full rounded-md bg-neutral-100 px-md py-sm text-sm text-neutral-900 ring-1 ring-neutral-200"
+            >
+              <option value="">— Aucune —</option>
+              <option value="quartier">Quartier</option>
+              <option value="transport">Transport</option>
+              <option value="commerce">Commerce</option>
+              <option value="restaurant">Restaurant</option>
+              <option value="santé">Santé</option>
+              <option value="école">École</option>
+              <option value="hôtel">Hôtel</option>
+              <option value="autre">Autre</option>
+            </select>
+          </label>
+          <div className="flex items-end">
+            <button
+              type="submit"
+              className="w-full rounded-md bg-primary-500 py-sm text-sm font-bold text-white hover:brightness-110"
+            >
+              Ajouter (vérifié d&apos;office)
+            </button>
+          </div>
+        </form>
+      </section>
+
+      {/* Recherche + suppression de lieux existants */}
+      <section className="mt-2xl">
+        <h2 className="mb-md text-lg font-bold text-neutral-900">
+          Gérer les lieux existants
+        </h2>
+        <form method="get" className="flex gap-sm">
+          <input
+            type="text"
+            name="q"
+            defaultValue={query}
+            placeholder="Rechercher un lieu par nom (ex : 4Q)"
+            className="flex-1 rounded-md bg-white px-md py-sm text-sm text-neutral-900 shadow-sm ring-1 ring-neutral-200"
+          />
+          <button
+            type="submit"
+            className="rounded-md bg-neutral-900 px-lg py-sm text-sm font-bold text-white hover:brightness-110"
+          >
+            Rechercher
+          </button>
+        </form>
+
+        {query && (
+          <div className="mt-md overflow-hidden rounded-xl bg-white shadow-sm">
+            {!found || found.length === 0 ? (
+              <p className="p-lg text-center text-sm text-neutral-600">
+                Aucun lieu trouvé pour « {query} ».
+              </p>
+            ) : (
+              <table className="w-full">
+                <tbody>
+                  {(found as PlaceRow[]).map((p) => (
+                    <tr key={p.id} className="border-b border-neutral-100 last:border-0">
+                      <td className="px-md py-md">
+                        <p className="font-semibold text-neutral-900">{p.name}</p>
+                        <p className="text-xs text-neutral-600">
+                          {[p.district, p.city].filter(Boolean).join(' · ')}
+                          {p.category_group ? ` · ${p.category_group}` : ''}
+                        </p>
+                      </td>
+                      <td className="px-md py-md">
+                        <span className={`inline-flex rounded-full px-sm py-0.5 text-[10px] font-bold ${SOURCE_COLOR[p.source]}`}>
+                          {SOURCE_LABEL[p.source]}
+                        </span>
+                      </td>
+                      <td className="px-md py-md text-right">
+                        <div className="flex justify-end gap-xs">
+                          {p.lat != null && p.lng != null && (
+                            <a
+                              href={`https://www.google.com/maps?q=${p.lat},${p.lng}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-xs rounded-md bg-neutral-100 px-md py-xs text-xs font-bold text-neutral-700 hover:bg-neutral-200"
+                            >
+                              <PinIcon className="h-3 w-3" />
+                              Voir
+                            </a>
+                          )}
+                          <form action={deletePlace} className="inline">
+                            <input type="hidden" name="id" value={p.id} />
+                            <ConfirmSubmit
+                              message={`Supprimer définitivement « ${p.name} » ? Il disparaîtra de l'autocomplete client.`}
+                              className="rounded-md bg-error px-md py-xs text-xs font-bold text-white hover:brightness-110"
+                            >
+                              Supprimer
+                            </ConfirmSubmit>
+                          </form>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         )}
       </section>
