@@ -97,6 +97,10 @@ type Props = {
   debt: number;
 };
 
+// Tolérance de découvert wallet : en dessous, le chauffeur reste en ligne
+// (doit rester aligné avec driver_go_online côté SQL).
+const DEBT_TOLERANCE_FCFA = 5000;
+
 function formatFcfa(n: number): string {
   return n.toLocaleString('fr-FR').replace(/,/g, ' ');
 }
@@ -265,8 +269,11 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
 
   async function goOnline() {
     setError(null);
-    if (debt > 0) {
-      setError(`Régularisez votre dette (${formatFcfa(debt)} F) avant de repasser en ligne.`);
+    if (debt > DEBT_TOLERANCE_FCFA) {
+      setError(
+        `Dette de ${formatFcfa(debt)} F (tolérance ${formatFcfa(DEBT_TOLERANCE_FCFA)} F dépassée). ` +
+        `Rechargez au moins ${formatFcfa(debt - DEBT_TOLERANCE_FCFA)} F pour repasser en ligne.`,
+      );
       return;
     }
     setBusy(true);
@@ -565,7 +572,7 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
               <button
                 type="button"
                 onClick={isOnline ? goOffline : goOnline}
-                disabled={busy || !hasVehicle || (!isOnline && debt > 0)}
+                disabled={busy || !hasVehicle || (!isOnline && debt > DEBT_TOLERANCE_FCFA)}
                 className={`rounded-full px-lg py-md text-sm font-bold shadow-md transition disabled:cursor-not-allowed disabled:opacity-50 ${
                   isOnline
                     ? 'bg-neutral-900 text-white hover:brightness-110'
@@ -589,7 +596,9 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
                   Dette de {formatFcfa(debt)} F
                 </p>
                 <p className="mt-xs text-xs text-neutral-600">
-                  Régularisez pour repasser en ligne.
+                  {debt > DEBT_TOLERANCE_FCFA
+                    ? `Tolérance de ${formatFcfa(DEBT_TOLERANCE_FCFA)} F dépassée : rechargez au moins ${formatFcfa(debt - DEBT_TOLERANCE_FCFA)} F pour repasser en ligne.`
+                    : `Vous pouvez continuer à recevoir des courses (tolérance ${formatFcfa(DEBT_TOLERANCE_FCFA)} F), pensez à recharger votre wallet.`}
                 </p>
                 <Link
                   href="/wallet"
