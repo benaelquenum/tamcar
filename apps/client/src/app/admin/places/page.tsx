@@ -1,5 +1,5 @@
 import { createServerSupabase } from '@/lib/supabase-server';
-import { CheckIcon } from '@/components/Icon';
+import { CheckIcon, PinIcon } from '@/components/Icon';
 import { approvePlace, rejectPlace } from './actions';
 import { ConfirmSubmit } from '@/components/ConfirmSubmit';
 
@@ -130,10 +130,11 @@ export default async function AdminPlacesPage() {
                             href={`https://www.google.com/maps?q=${p.lat},${p.lng}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="rounded-md bg-neutral-100 px-md py-xs text-xs font-bold text-neutral-700 hover:bg-neutral-200"
+                            className="inline-flex items-center gap-xs rounded-md bg-neutral-100 px-md py-xs text-xs font-bold text-neutral-700 hover:bg-neutral-200"
                             title="Localiser sur Google Maps"
                           >
-                            📍 Voir
+                            <PinIcon className="h-3 w-3" />
+                            Voir
                           </a>
                         )}
                         <form action={approvePlace} className="inline">
