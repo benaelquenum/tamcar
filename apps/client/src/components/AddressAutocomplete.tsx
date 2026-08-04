@@ -37,6 +37,12 @@ type Props = {
   onChange: (value: SelectedAddress | null) => void;
   markerColor?: string;
   showLocationButton?: boolean;
+  /**
+   * Position live fournie par le parent (veille GPS partagée de la page).
+   * Si définie, le champ n'ouvre pas sa propre veille et « Ma position »
+   * utilise cette valeur en priorité.
+   */
+  livePosition?: [number, number] | null;
   /** Callback pour demander au parent d'entrer en mode "choisir sur la carte" ciblé sur ce champ */
   onPickOnMap?: () => void;
   /** Callback pour demander au parent d'ouvrir le modal "Suggérer un lieu" avec le query saisi */
@@ -56,6 +62,7 @@ export function AddressAutocomplete({
   onChange,
   markerColor = '#2563EB',
   showLocationButton = false,
+  livePosition,
   onPickOnMap,
   onSuggestPlace,
 }: Props) {
@@ -85,6 +92,7 @@ export function AddressAutocomplete({
   // centaines de mètres du vrai point → distance et prix faussés).
   useEffect(() => {
     if (!showLocationButton) return;
+    if (livePosition !== undefined) return; // veille gérée par le parent
     if (typeof navigator === 'undefined' || !navigator.geolocation) return;
     const buffer = new SmoothingBuffer(5);
     const watchId = navigator.geolocation.watchPosition(
@@ -174,7 +182,7 @@ export function AddressAutocomplete({
       //    à défaut le meilleur fix observé).
       let longitude: number;
       let latitude: number;
-      const live = liveCoordRef.current;
+      const live = livePosition !== undefined ? livePosition : liveCoordRef.current;
       if (live) {
         [longitude, latitude] = live;
       } else {
@@ -185,12 +193,15 @@ export function AddressAutocomplete({
       const feature =
         (googlePlacesConfigured() ? await googleReverseGeocode(longitude, latitude) : null) ||
         (await mapboxReverseGeocode(longitude, latitude));
-      const selected: SelectedAddress = feature
-        ? { place_name: feature.place_name, center: feature.center }
-        : {
-            place_name: `Ma position (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
-            center: [longitude, latitude],
-          };
+      // Le géocodage inverse ne sert qu'au NOM affiché : on garde TOUJOURS
+      // les coordonnées GPS exactes (le center du lieu géocodé peut être à
+      // 100 m+ du vrai point — même règle que la position chauffeur).
+      const selected: SelectedAddress = {
+        place_name:
+          feature?.place_name ??
+          `Ma position (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
+        center: [longitude, latitude],
+      };
       onChange(selected);
       setQuery(selected.place_name);
       setResults([]);

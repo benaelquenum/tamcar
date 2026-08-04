@@ -7,6 +7,7 @@ import { AddressAutocomplete, type SelectedAddress } from '@/components/AddressA
 import { ArrowRightIcon, CarIcon, SnowflakeIcon, StarIcon } from '@/components/Icon';
 import { Logo } from '@/components/Logo';
 import { Map } from '@/components/Map';
+import { useLivePosition } from '@/lib/useLivePosition';
 import { SuggestPlaceModal } from '@/components/SuggestPlaceModal';
 import { getRoute, reverseGeocode, type RouteResult } from '@/lib/mapbox';
 import { computePrice, type PriceQuote, type VehicleCategory } from '@/lib/pricing';
@@ -102,6 +103,11 @@ export default function CommandePage() {
   // Mode sélection sur carte
   const [pickingMode, setPickingMode] = useState<PickingMode>(null);
   const [candidate, setCandidate] = useState<[number, number] | null>(null);
+
+  // Position live du client (hors course) — même modèle que le chauffeur :
+  // veille GPS continue filtrée + lissée, affichée en beacon sur la carte
+  // et réutilisée par « Ma position » (précision GPS, pas centre géocodé).
+  const liveCoord = useLivePosition(true);
 
   // Modal Suggest place
   const [suggestOpen, setSuggestOpen] = useState(false);
@@ -259,12 +265,14 @@ export default function CommandePage() {
     const target = pickingMode; // capture avant l'await pour éviter une race si l'user annule
     setCandidate(lngLat);
     const feature = await reverseGeocode(lngLat[0], lngLat[1]);
-    const place: SelectedAddress = feature
-      ? { place_name: feature.place_name, center: feature.center }
-      : {
-          place_name: `Point sur la carte (${lngLat[1].toFixed(4)}, ${lngLat[0].toFixed(4)})`,
-          center: lngLat,
-        };
+    // Le point EXACT touché sur la carte est conservé ; le géocodage
+    // inverse ne fournit que le libellé (son center peut être décalé).
+    const place: SelectedAddress = {
+      place_name:
+        feature?.place_name ??
+        `Point sur la carte (${lngLat[1].toFixed(4)}, ${lngLat[0].toFixed(4)})`,
+      center: lngLat,
+    };
 
     if (target === 'pickup') {
       setPickup(place);
@@ -330,6 +338,7 @@ export default function CommandePage() {
             onChange={setPickup}
             markerColor="#2563EB"
             showLocationButton
+            livePosition={liveCoord}
             onPickOnMap={() => setPickingMode('pickup')}
             onSuggestPlace={startSuggest}
           />
@@ -382,6 +391,7 @@ export default function CommandePage() {
             dropoff={dropoff?.center ?? null}
             route={route?.geometry ?? null}
             candidate={candidate}
+            clientLocation={liveCoord}
             onMapClick={pickingMode ? handleMapClick : undefined}
             className="h-64 w-full rounded-xl bg-neutral-100 shadow-sm ring-1 ring-neutral-200"
           />
