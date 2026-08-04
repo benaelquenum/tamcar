@@ -711,7 +711,10 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
         lastDbPushRef.current = now;
         supabaseBrowser
           .rpc('client_update_location', { p_ride_id: ride.id, p_lng: lng, p_lat: lat })
-          .then(() => undefined);
+          .then(({ error }) => {
+            // eslint-disable-next-line no-console
+            if (error) console.warn('client_update_location:', error.message);
+          });
       }
     },
     [ride.id],
