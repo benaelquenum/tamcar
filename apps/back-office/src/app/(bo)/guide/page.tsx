@@ -1,3 +1,4 @@
+import { DownloadIcon } from '@/components/Icon';
 import { GUIDE_SECTIONS } from './content';
 import { RichText } from './RichText';
 
@@ -21,6 +22,16 @@ export default function GuidePage() {
           de décrire fidèlement ce qui s&apos;est passé.
         </p>
       </header>
+
+      <a
+        href="/guide-tamcar-office.pdf"
+        target="_blank"
+        rel="noreferrer"
+        className="mt-lg flex w-fit items-center gap-sm rounded-lg bg-neutral-900 px-lg py-md text-sm font-bold text-white transition hover:brightness-125"
+      >
+        <DownloadIcon className="h-4 w-4" />
+        Télécharger la version imprimable (PDF, 12 pages)
+      </a>
 
       {/* Sommaire */}
       <nav className="mt-xl rounded-xl bg-white p-lg shadow-sm ring-1 ring-neutral-200">
