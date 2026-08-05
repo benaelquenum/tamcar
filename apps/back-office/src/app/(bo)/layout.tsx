@@ -10,6 +10,7 @@ import {
   DashboardIcon,
   FileIcon,
   FolderIcon,
+  HelpIcon,
   InboxIcon,
   LogoutIcon,
   PlusIcon,
@@ -116,6 +117,16 @@ export default async function BoLayout({
               {label}
             </span>
           ))}
+
+          <div className="mt-lg border-t border-primary-600 pt-md">
+            <Link
+              href="/guide"
+              className="flex items-center gap-md rounded-lg px-md py-sm text-sm font-semibold text-primary-100 transition hover:bg-primary-600 hover:text-white"
+            >
+              <HelpIcon className="h-5 w-5 shrink-0" />
+              Guide d&apos;utilisation
+            </Link>
+          </div>
         </nav>
 
         <div className="border-t border-primary-600 px-lg py-md">

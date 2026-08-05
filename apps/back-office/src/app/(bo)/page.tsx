@@ -9,7 +9,13 @@ import {
   type BoDeadline,
   type BoDocument,
 } from '@/lib/bo';
-import { AlertIcon, CalendarIcon, InboxIcon, PlusIcon } from '@/components/Icon';
+import {
+  AlertIcon,
+  CalendarIcon,
+  HelpIcon,
+  InboxIcon,
+  PlusIcon,
+} from '@/components/Icon';
 
 export const dynamic = 'force-dynamic';
 
@@ -63,6 +69,22 @@ export default async function DashboardPage() {
           Enregistrer un document
         </Link>
       </div>
+
+      <Link
+        href="/guide"
+        className="mt-lg flex items-center gap-md rounded-xl bg-primary-50 p-lg ring-1 ring-primary-100 transition hover:bg-primary-100"
+      >
+        <HelpIcon className="h-6 w-6 shrink-0 text-primary-700" />
+        <div>
+          <p className="text-sm font-bold text-primary-800">
+            Première fois ici ? Lisez le guide d&apos;utilisation.
+          </p>
+          <p className="text-xs text-primary-700">
+            Comment enregistrer un document, saisir une dépense, comprendre les
+            statuts et corriger une erreur — en quinze minutes.
+          </p>
+        </div>
+      </Link>
 
       <div className="mt-xl grid grid-cols-1 gap-lg sm:grid-cols-3">
         <div className="rounded-xl bg-white p-lg shadow-sm ring-1 ring-neutral-200">
