@@ -50,3 +50,13 @@ file_size_limit = "50MiB"
 
 [analytics]
 enabled = false
+
+# --- Edge functions ---
+# Meta n'envoie aucun JWT sur le webhook WhatsApp : l'authenticité est
+# garantie par la signature X-Hub-Signature-256, vérifiée dans le code.
+[functions.tamy-webhook]
+verify_jwt = false
+
+# Appelée uniquement par le trigger SQL via pg_net, avec la clé service role.
+[functions.tamy-notify]
+verify_jwt = true
