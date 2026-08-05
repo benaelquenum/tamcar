@@ -18,6 +18,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--prefix", "apps/driver-portal"],
       "port": 3002
+    },
+    {
+      "name": "tamcar-back-office",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "apps/back-office"],
+      "port": 3003
     }
   ]
 }

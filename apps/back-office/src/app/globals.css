@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --tamcar-primary: #2563EB;
+  --tamcar-primary-dark: #1D4ED8;
+  --tamcar-bg: #FFFFFF;
+  --tamcar-surface: #F8FAFC;
+  --tamcar-border: #E2E8F0;
+  --tamcar-text: #0F172A;
+  --tamcar-text-secondary: #475569;
+  --tamcar-gold: #EAB308;
+  --tamcar-violet: #8B5CF6;
+  --tamcar-cyan: #06B6D4;
+}
+
+html,
+body {
+  min-height: 100%;
+  background-color: var(--tamcar-bg);
+  color: var(--tamcar-text);
+}
+
+body {
+  min-height: 100dvh;
+  font-feature-settings: 'cv02', 'cv03', 'cv04';
+  -webkit-tap-highlight-color: transparent;
+}
