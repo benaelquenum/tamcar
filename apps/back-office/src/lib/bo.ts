@@ -125,6 +125,23 @@ export type BoExpenseCategory = {
   sort: number;
 };
 
+// Groupes d'affichage des catégories (mêmes bornes que les `sort` du seed SQL)
+export function groupCategories(categories: BoExpenseCategory[]) {
+  const groups: { label: string; items: BoExpenseCategory[] }[] = [
+    { label: 'Dépenses courantes', items: [] },
+    { label: 'Équipements & immobilisations', items: [] },
+    { label: 'Personnel & social', items: [] },
+    { label: 'Impôts, taxes & finances', items: [] },
+    { label: 'Divers', items: [] },
+  ];
+  for (const c of categories) {
+    const i =
+      c.sort < 100 ? 0 : c.sort < 170 ? 1 : c.sort < 200 ? 2 : c.sort < 250 ? 3 : 4;
+    groups[i].items.push(c);
+  }
+  return groups.filter((g) => g.items.length > 0);
+}
+
 export const JOURNAL_LABELS: Record<string, string> = {
   AC: 'Achats',
   VE: 'Ventes et prestations',

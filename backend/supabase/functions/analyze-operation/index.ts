@@ -27,27 +27,11 @@ const CORS = {
     'authorization, x-client-info, apikey, content-type',
 };
 
-const CATEGORIES = [
-  ['loyer', 'Loyer et charges des bureaux'],
-  ['eau_energie', 'Eau et électricité (SBEE, SONEB…)'],
-  ['carburant', 'Carburant, essence, gasoil, lubrifiants'],
-  ['fournitures', 'Fournitures de bureau'],
-  ['entretien', 'Entretien et réparations (véhicules, locaux, matériel)'],
-  ['assurances', 'Primes d’assurance'],
-  ['marketing', 'Marketing, communication, publicité, impression'],
-  ['telecom', 'Téléphone, internet, SMS, crédit de communication'],
-  ['numerique', 'Hébergement et services numériques (Supabase, Vercel…)'],
-  ['frais_bancaires', 'Frais et commissions bancaires'],
-  ['frais_momo', 'Frais Mobile Money ou agrégateur de paiement'],
-  ['honoraires', 'Honoraires (comptable, avocat…) et commissions'],
-  ['deplacements', 'Transports et déplacements (taxi, carburant mission…)'],
-  ['impots_taxes', 'Impôts, taxes, patente, redevances (ANATT…)'],
-  ['salaires', 'Salaires nets payés au personnel'],
-  ['cnss', 'Cotisations sociales CNSS'],
-  ['autres', 'Toute autre dépense'],
-] as const;
-
-const OUTPUT_SCHEMA = {
+// Les catégories sont lues en base (bo_expense_categories) à chaque appel :
+// tout enrichissement côté SQL est immédiatement pris en compte, sans
+// redéploiement de cette fonction.
+function buildSchema(categories: { code: string; label: string }[]) {
+  return {
   type: 'object',
   properties: {
     supplier: {
@@ -67,7 +51,7 @@ const OUTPUT_SCHEMA = {
     },
     category: {
       type: 'string',
-      enum: CATEGORIES.map(([code]) => code),
+      enum: categories.map((c) => c.code),
       description: 'Catégorie comptable de la dépense.',
     },
     payment_account: {
@@ -97,20 +81,24 @@ const OUTPUT_SCHEMA = {
     'notes',
   ],
   additionalProperties: false,
-} as const;
+  };
+}
 
-const SYSTEM_PROMPT = `Tu es l'assistant comptable de TamCar, une plateforme VTC au Bénin (monnaie : franc CFA, FCFA).
+function buildSystemPrompt(categories: { code: string; label: string }[]) {
+  return `Tu es l'assistant comptable de TamCar, une plateforme VTC au Bénin (monnaie : franc CFA, FCFA).
 On te fournit un justificatif de dépense (photo de reçu, facture, capture Mobile Money) et/ou une description en français.
 Extrais l'opération et classe-la dans une catégorie comptable.
 
 Catégories disponibles :
-${CATEGORIES.map(([code, label]) => `- ${code} : ${label}`).join('\n')}
+${categories.map((c) => `- ${c.code} : ${c.label}`).join('\n')}
 
 Règles :
 - Le montant est le TOTAL payé, en FCFA, entier (« 45 000 F » → 45000). Ne confonds pas montant et numéro de téléphone ou de reçu.
+- Une acquisition durable (ordinateur, mobilier, tricycle, moto, logiciel acheté, travaux) va dans sa catégorie d'équipement/immobilisation, pas dans une charge courante.
 - Si la description et la pièce se contredisent, privilégie la pièce et signale l'écart dans notes.
 - Date au format YYYY-MM-DD ; si seule la description donne un indice (« hier », « ce matin »), laisse la date vide plutôt que d'inventer.
 - Baisse la confiance sous 0.75 dès qu'un élément clé (montant, nature de la dépense) est incertain ou illisible.`;
+}
 
 function isImage(mime: string): boolean {
   return ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(mime);
@@ -215,6 +203,19 @@ Deno.serve(async (req: Request) => {
       : 'Analyse le justificatif ci-dessus.',
   });
 
+  // --- Catégories à jour depuis la base ---
+  const { data: cats } = await supabase
+    .from('bo_expense_categories')
+    .select('code, label')
+    .order('sort');
+  const categories = (cats ?? []) as { code: string; label: string }[];
+  if (categories.length === 0) {
+    return new Response(
+      JSON.stringify({ error: 'Catégories introuvables (migration manquante ?)' }),
+      { status: 500, headers: { ...CORS, 'Content-Type': 'application/json' } },
+    );
+  }
+
   // --- Appel Claude : extraction structurée ---
   const anthropic = new Anthropic();
   let result: any;
@@ -222,9 +223,9 @@ Deno.serve(async (req: Request) => {
     const response = await anthropic.messages.create({
       model: MODEL,
       max_tokens: 1024,
-      system: SYSTEM_PROMPT,
+      system: buildSystemPrompt(categories),
       output_config: {
-        format: { type: 'json_schema', schema: OUTPUT_SCHEMA },
+        format: { type: 'json_schema', schema: buildSchema(categories) },
       },
       messages: [{ role: 'user', content }],
     });

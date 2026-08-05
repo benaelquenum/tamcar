@@ -7,6 +7,7 @@ import { supabaseBrowser } from '@/lib/supabase-browser';
 import {
   PAYMENT_ACCOUNTS,
   formatFcfa,
+  groupCategories,
   type BoExpenseCategory,
   type BoPendingOperation,
   type OperationAnalysis,
@@ -322,10 +323,14 @@ export function OperationForm({
           defaultValue={analysis?.category}
           className="mt-xs w-full rounded-lg bg-white px-lg py-md text-sm ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
         >
-          {categories.map((c) => (
-            <option key={c.code} value={c.code}>
-              {c.label} ({c.account_code})
-            </option>
+          {groupCategories(categories).map((g) => (
+            <optgroup key={g.label} label={g.label}>
+              {g.items.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.label} ({c.account_code})
+                </option>
+              ))}
+            </optgroup>
           ))}
         </select>
       </div>
