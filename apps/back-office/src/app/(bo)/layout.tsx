@@ -7,9 +7,11 @@ import {
   BookIcon,
   CalendarIcon,
   DashboardIcon,
+  FileIcon,
   FolderIcon,
   InboxIcon,
   LogoutIcon,
+  SendIcon,
   UsersIcon,
 } from '@/components/Icon';
 import { Logo } from '@/components/Logo';
@@ -21,11 +23,16 @@ const NAV = [
   { href: '/echeances', label: 'Échéances', icon: CalendarIcon },
 ];
 
-const NAV_SOON = [
-  { label: 'Trésorerie', icon: BankIcon },
-  { label: 'Comptabilité', icon: BookIcon },
-  { label: 'RH & paie', icon: UsersIcon },
+const NAV_COMPTA = [
+  { href: '/tresorerie', label: 'Trésorerie', icon: BankIcon },
+  { href: '/compta/ecritures', label: 'Écritures', icon: BookIcon },
+  { href: '/compta/balance', label: 'Balance', icon: DashboardIcon },
+  { href: '/compta/grand-livre', label: 'Grand livre', icon: FolderIcon },
+  { href: '/compta/comptes', label: 'Plan de comptes', icon: FileIcon },
+  { href: '/compta/plateforme', label: 'Sync plateforme', icon: SendIcon },
 ];
+
+const NAV_SOON = [{ label: 'RH & paie', icon: UsersIcon }];
 
 export default async function BoLayout({
   children,
@@ -69,6 +76,20 @@ export default async function BoLayout({
 
         <nav className="mt-md flex-1 space-y-xs px-md">
           {NAV.map(({ href, label, icon: IconCmp }) => (
+            <Link
+              key={href}
+              href={href}
+              className="flex items-center gap-md rounded-lg px-md py-sm text-sm font-semibold text-primary-100 transition hover:bg-primary-600 hover:text-white"
+            >
+              <IconCmp className="h-5 w-5 shrink-0" />
+              {label}
+            </Link>
+          ))}
+
+          <p className="px-md pb-xs pt-lg text-[10px] font-bold uppercase tracking-wider text-primary-300">
+            Trésorerie & compta
+          </p>
+          {NAV_COMPTA.map(({ href, label, icon: IconCmp }) => (
             <Link
               key={href}
               href={href}

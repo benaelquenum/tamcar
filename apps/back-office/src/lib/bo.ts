@@ -84,6 +84,72 @@ export const RECURRENCE_LABELS: Record<BoDeadline['recurrence'], string> = {
   yearly: 'Annuelle',
 };
 
+// ---------- Comptabilité (phase 2) ----------
+
+export type BoAccount = {
+  code: string;
+  label: string;
+  class: number;
+  is_active: boolean;
+};
+
+export type BoEntry = {
+  id: string;
+  journal_code: string;
+  entry_no: string;
+  entry_date: string;
+  label: string;
+  document_id: string | null;
+  source: 'manual' | 'expense' | 'platform' | 'reversal';
+  reverses: string | null;
+  reversed_by: string | null;
+  created_at: string;
+  total_fcfa?: number;
+  line_count?: number;
+};
+
+export type BoEntryLine = {
+  id: string;
+  entry_id: string;
+  line_no: number;
+  account_code: string;
+  label: string | null;
+  debit_fcfa: number;
+  credit_fcfa: number;
+};
+
+export type BoExpenseCategory = {
+  code: string;
+  label: string;
+  account_code: string;
+  sort: number;
+};
+
+export const JOURNAL_LABELS: Record<string, string> = {
+  AC: 'Achats',
+  VE: 'Ventes et prestations',
+  BQ: 'Banque',
+  CS: 'Caisse',
+  MM: 'Mobile Money',
+  OD: 'Opérations diverses',
+  PL: 'Plateforme (auto)',
+};
+
+export const PAYMENT_ACCOUNTS = [
+  { code: '5211', label: 'Banque' },
+  { code: '5311', label: 'Mobile Money — MTN' },
+  { code: '5312', label: 'Mobile Money — Moov' },
+  { code: '571', label: 'Caisse' },
+  { code: '', label: 'À crédit (fournisseur à payer)' },
+] as const;
+
+export const FLOAT_KIND_LABELS: Record<string, string> = {
+  tamcar_credit: 'Wallets clients (TamCar Crédit)',
+  tamcar_revenus: 'Wallets Revenus (chauffeurs & partenaires)',
+  tamcar_epargne: 'Épargne TamAssur',
+  tamcar_rachat: 'Séquestre rachat',
+};
+
 export function formatFcfa(n: number): string {
   return n.toLocaleString('fr-FR').replace(/ /g, ' ').replace(/,/g, ' ');
 }
