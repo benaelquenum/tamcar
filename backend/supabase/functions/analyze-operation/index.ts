@@ -14,7 +14,7 @@
 // SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.
 
 // deno-lint-ignore-file no-explicit-any
-import Anthropic from 'npm:@anthropic-ai/sdk@0.116.0';
+import Anthropic from 'npm:@anthropic-ai/sdk@0.115.0';
 import { createClient } from 'npm:@supabase/supabase-js@2.45.0';
 
 const SB_URL = Deno.env.get('SUPABASE_URL')!;
