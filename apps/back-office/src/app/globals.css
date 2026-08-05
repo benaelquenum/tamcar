@@ -28,3 +28,35 @@ body {
   font-feature-settings: 'cv02', 'cv03', 'cv04';
   -webkit-tap-highlight-color: transparent;
 }
+
+/* Impression : on ne garde que le contenu (barre latérale masquée),
+   en pleine largeur et en couleurs fidèles. Sert surtout aux états
+   financiers, qui se remettent à l'expert-comptable sur papier. */
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+  aside {
+    display: none !important;
+  }
+  main {
+    margin-left: 0 !important;
+    padding: 0 !important;
+  }
+  body {
+    background: #fff;
+    font-size: 9pt;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  table {
+    page-break-inside: auto;
+  }
+  tr {
+    page-break-inside: avoid;
+  }
+  section {
+    page-break-inside: avoid;
+  }
+}

@@ -32,6 +32,7 @@ const NAV_COMPTA = [
   { href: '/tresorerie/validations', label: 'Validations', icon: CheckIcon },
   { href: '/compta/ecritures', label: 'Écritures', icon: BookIcon },
   { href: '/compta/balance', label: 'Balance', icon: DashboardIcon },
+  { href: '/compta/etats-financiers', label: 'États financiers', icon: FileIcon },
   { href: '/compta/grand-livre', label: 'Grand livre', icon: FolderIcon },
   { href: '/compta/comptes', label: 'Plan de comptes', icon: FileIcon },
   { href: '/compta/plateforme', label: 'Sync plateforme', icon: SendIcon },
