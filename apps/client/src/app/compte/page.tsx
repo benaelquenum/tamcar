@@ -4,6 +4,7 @@ import { Logo } from '@/components/Logo';
 import { LogOutIcon, WalletIcon, HistoryIcon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { getCurrentProfile, getCurrentUser } from '@/lib/session';
+import { createServerSupabase } from '@/lib/supabase-server';
 import { getLang } from '@/lib/i18n-server';
 import { logout } from '@/app/login/actions';
 import { AccountForm } from './AccountForm';
@@ -20,6 +21,10 @@ export default async function ComptePage() {
 
   // À ce stade, TypeScript sait que role ∈ 'client' | 'admin' | 'dealer'
   const isAdmin = profile.role === 'admin';
+
+  // Responsable opérations : droit issu de la table ops_city_managers, jamais
+  // du rôle du compte (le même profil peut être client, chauffeur, dealer…).
+  const { data: isOpsManager } = await createServerSupabase().rpc('ops_is_manager');
 
   return (
     <main className="relative min-h-dvh bg-neutral-50">
@@ -70,6 +75,17 @@ export default async function ComptePage() {
           <ShortcutLink href="/wallet" Icon={WalletIcon} label="Portefeuille" />
           <ShortcutLink href="/history" Icon={HistoryIcon} label="Historique" />
         </section>
+
+        {isOpsManager && (
+          <section className="mt-lg">
+            <Link
+              href="/ops"
+              className="flex w-full items-center justify-center rounded-xl bg-primary-500 py-md text-sm font-bold text-white shadow-md"
+            >
+              Mon espace responsable opérations
+            </Link>
+          </section>
+        )}
 
         {isAdmin && (
           <section className="mt-lg">

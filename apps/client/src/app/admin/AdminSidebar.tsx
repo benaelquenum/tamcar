@@ -13,6 +13,7 @@ const NAV: { href: string; label: string; exact?: boolean }[] = [
   { href: '/admin/vehicles', label: 'Véhicules' },
   { href: '/admin/candidatures', label: 'Rendez-vous' },
   { href: '/admin/dealer-advances', label: 'ADR' },
+  { href: '/admin/ops', label: 'Responsables ville' },
   { href: '/admin/litiges', label: 'Litiges' },
   { href: '/admin/dettes', label: 'Dettes chauffeur' },
   { href: '/admin/tamassur', label: 'Retraits TamAssur' },

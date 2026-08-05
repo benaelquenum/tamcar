@@ -16,6 +16,7 @@ import {
   PlusIcon,
   SendIcon,
   UsersIcon,
+  WalletIcon,
 } from '@/components/Icon';
 import { Logo } from '@/components/Logo';
 
@@ -38,7 +39,11 @@ const NAV_COMPTA = [
   { href: '/compta/plateforme', label: 'Sync plateforme', icon: SendIcon },
 ];
 
-const NAV_SOON = [{ label: 'RH & paie', icon: UsersIcon }];
+const NAV_RH = [
+  { href: '/rh', label: 'Personnel', icon: UsersIcon },
+  { href: '/rh/conges', label: 'Congés', icon: CalendarIcon },
+  { href: '/rh/paie', label: 'Paie', icon: WalletIcon },
+];
 
 export default async function BoLayout({
   children,
@@ -56,6 +61,10 @@ export default async function BoLayout({
     .select('full_name, role')
     .eq('id', user.id)
     .maybeSingle();
+
+  // Le module RH n'est visible que du fondateur : les salaires ne doivent
+  // pas apparaître au secrétariat (cf. policies is_admin() côté base).
+  const isAdmin = profile?.role === 'admin';
 
   const roleLabel =
     profile?.role === 'admin'
@@ -106,18 +115,23 @@ export default async function BoLayout({
             </Link>
           ))}
 
-          <p className="px-md pb-xs pt-lg text-[10px] font-bold uppercase tracking-wider text-primary-300">
-            Bientôt
-          </p>
-          {NAV_SOON.map(({ label, icon: IconCmp }) => (
-            <span
-              key={label}
-              className="flex cursor-not-allowed items-center gap-md rounded-lg px-md py-sm text-sm font-semibold text-primary-400"
-            >
-              <IconCmp className="h-5 w-5 shrink-0" />
-              {label}
-            </span>
-          ))}
+          {isAdmin && (
+            <>
+              <p className="px-md pb-xs pt-lg text-[10px] font-bold uppercase tracking-wider text-primary-300">
+                RH & paie
+              </p>
+              {NAV_RH.map(({ href, label, icon: IconCmp }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className="flex items-center gap-md rounded-lg px-md py-sm text-sm font-semibold text-primary-100 transition hover:bg-primary-600 hover:text-white"
+                >
+                  <IconCmp className="h-5 w-5 shrink-0" />
+                  {label}
+                </Link>
+              ))}
+            </>
+          )}
 
           <div className="mt-lg border-t border-primary-600 pt-md">
             <Link
