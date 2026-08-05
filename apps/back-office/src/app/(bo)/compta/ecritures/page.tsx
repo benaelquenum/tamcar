@@ -14,6 +14,16 @@ export default async function EcrituresPage({
 }) {
   const supabase = createServerSupabase();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user?.id ?? '')
+    .maybeSingle();
+  const isAdmin = profile?.role === 'admin';
+
   let query = supabase
     .from('bo_entries_view')
     .select('*')
@@ -34,13 +44,15 @@ export default async function EcrituresPage({
             passe par une extourne.
           </p>
         </div>
-        <Link
-          href="/compta/ecritures/nouvelle"
-          className="flex items-center gap-sm rounded-lg bg-primary-500 px-lg py-md text-sm font-bold text-white shadow-md transition hover:brightness-110"
-        >
-          <PlusIcon className="h-4 w-4" />
-          Nouvelle écriture
-        </Link>
+        {isAdmin && (
+          <Link
+            href="/compta/ecritures/nouvelle"
+            className="flex items-center gap-sm rounded-lg bg-primary-500 px-lg py-md text-sm font-bold text-white shadow-md transition hover:brightness-110"
+          >
+            <PlusIcon className="h-4 w-4" />
+            Nouvelle écriture
+          </Link>
+        )}
       </div>
 
       <div className="mt-lg flex flex-wrap gap-sm">

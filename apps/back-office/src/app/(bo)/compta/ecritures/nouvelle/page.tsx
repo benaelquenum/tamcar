@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import { createServerSupabase } from '@/lib/supabase-server';
 import { type BoAccount } from '@/lib/bo';
 import { EntryEditor } from './EntryEditor';
@@ -6,6 +7,17 @@ export const dynamic = 'force-dynamic';
 
 export default async function NouvelleEcriturePage() {
   const supabase = createServerSupabase();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user?.id ?? '')
+    .maybeSingle();
+  if (profile?.role !== 'admin') redirect('/compta/ecritures');
+
   const { data: accounts } = await supabase
     .from('bo_accounts')
     .select('code, label, class, is_active')

@@ -143,6 +143,34 @@ export const PAYMENT_ACCOUNTS = [
   { code: '', label: 'À crédit (fournisseur à payer)' },
 ] as const;
 
+export type BoPendingOperation = {
+  id: string;
+  raw_text: string | null;
+  document_id: string | null;
+  category: string;
+  amount_fcfa: number;
+  supplier: string | null;
+  op_date: string;
+  payment_account: string | null;
+  notes: string | null;
+  confidence: number | null;
+  status: 'pending' | 'posted' | 'rejected';
+  entry_id: string | null;
+  reject_reason: string | null;
+  created_at: string;
+  decided_at: string | null;
+};
+
+export type OperationAnalysis = {
+  supplier: string;
+  doc_date: string;
+  amount_fcfa: number;
+  category: string;
+  payment_account: string;
+  confidence: number;
+  notes: string;
+};
+
 export const FLOAT_KIND_LABELS: Record<string, string> = {
   tamcar_credit: 'Wallets clients (TamCar Crédit)',
   tamcar_revenus: 'Wallets Revenus (chauffeurs & partenaires)',

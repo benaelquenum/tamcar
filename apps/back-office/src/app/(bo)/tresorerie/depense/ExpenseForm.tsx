@@ -69,22 +69,29 @@ export function ExpenseForm({
         documentId = doc.id;
       }
 
-      // 2. Écriture comptable
-      const { data: entry, error: rpcErr } = await supabaseBrowser.rpc(
-        'bo_record_expense',
+      // 2. Soumission — comptabilisée direct sous le seuil (100 000 F),
+      //    sinon envoyée en validation au fondateur
+      const { data: op, error: rpcErr } = await supabaseBrowser.rpc(
+        'bo_submit_operation',
         {
-          p_date: date,
           p_category: category,
           p_amount_fcfa: amount,
+          p_date: date,
           p_supplier: supplier || null,
           p_payment_account: payment || null,
           p_document_id: documentId,
           p_notes: notes || null,
+          p_raw_text: null,
+          p_confidence: 1,
         },
       );
       if (rpcErr) throw new Error(rpcErr.message);
 
-      router.push(`/compta/ecritures/${entry.id}`);
+      if (op.status === 'posted' && op.entry_id) {
+        router.push(`/compta/ecritures/${op.entry_id}`);
+      } else {
+        router.push('/tresorerie/validations');
+      }
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur inattendue.');

@@ -6,11 +6,13 @@ import {
   BankIcon,
   BookIcon,
   CalendarIcon,
+  CheckIcon,
   DashboardIcon,
   FileIcon,
   FolderIcon,
   InboxIcon,
   LogoutIcon,
+  PlusIcon,
   SendIcon,
   UsersIcon,
 } from '@/components/Icon';
@@ -25,6 +27,8 @@ const NAV = [
 
 const NAV_COMPTA = [
   { href: '/tresorerie', label: 'Trésorerie', icon: BankIcon },
+  { href: '/tresorerie/operation', label: 'Nouvelle opération', icon: PlusIcon },
+  { href: '/tresorerie/validations', label: 'Validations', icon: CheckIcon },
   { href: '/compta/ecritures', label: 'Écritures', icon: BookIcon },
   { href: '/compta/balance', label: 'Balance', icon: DashboardIcon },
   { href: '/compta/grand-livre', label: 'Grand livre', icon: FolderIcon },

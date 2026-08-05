@@ -20,6 +20,16 @@ export default async function EcritureDetailPage({
 }) {
   const supabase = createServerSupabase();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user?.id ?? '')
+    .maybeSingle();
+  const isAdmin = profile?.role === 'admin';
+
   const [{ data: entry }, { data: lines }] = await Promise.all([
     supabase.from('bo_entries').select('*').eq('id', params.id).maybeSingle(),
     supabase
@@ -124,7 +134,7 @@ export default async function EcritureDetailPage({
                 : 'Aucun justificatif lié.'}
             </p>
           )}
-          {!e.reversed_by && e.source !== 'reversal' && (
+          {isAdmin && !e.reversed_by && e.source !== 'reversal' && (
             <ReverseButton entryId={e.id} />
           )}
         </div>
