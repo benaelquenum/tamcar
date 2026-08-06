@@ -72,7 +72,20 @@ export default function CommandePage() {
   const isProche = searchParams.get('proche') === '1';
 
   const [pickup, setPickup] = useState<SelectedAddress | null>(null);
-  const [dropoff, setDropoff] = useState<SelectedAddress | null>(null);
+
+  // Destination pré-remplie par un lien de localisation ouvert depuis une
+  // autre application (WhatsApp, Google Maps…) — cf. /ouvrir.
+  const [dropoff, setDropoff] = useState<SelectedAddress | null>(() => {
+    const lat = Number(searchParams.get('dest_lat'));
+    const lng = Number(searchParams.get('dest_lng'));
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    if (lat === 0 && lng === 0) return null;
+    return {
+      place_name:
+        searchParams.get('dest') || `${lat.toFixed(5)}, ${lng.toFixed(5)}`,
+      center: [lng, lat],
+    };
+  });
   const [route, setRoute] = useState<RouteResult | null>(null);
   const [scheduledAt, setScheduledAt] = useState<string>(isScheduled ? minScheduledLocal() : '');
   const [prices, setPrices] = useState<Record<VehicleCategory, PriceQuote | null>>(

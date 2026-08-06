@@ -55,6 +55,11 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isPublic = PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
 
+  // La destination de retour doit conserver la query string : un lien de
+  // localisation ouvert depuis WhatsApp arrive sur /ouvrir?u=… et perdrait
+  // le lieu si l'utilisateur doit d'abord se connecter.
+  const returnTo = pathname + request.nextUrl.search;
+
   // Utilisateur connecté qui va sur /login → redirect vers home
   if (user && pathname === '/login') {
     return NextResponse.redirect(new URL('/', request.url));
@@ -63,7 +68,7 @@ export async function middleware(request: NextRequest) {
   // Route protégée sans utilisateur → redirect /login
   if (!user && !isPublic) {
     const loginUrl = new URL('/login', request.url);
-    if (pathname !== '/') loginUrl.searchParams.set('next', pathname);
+    if (pathname !== '/') loginUrl.searchParams.set('next', returnTo);
     return NextResponse.redirect(loginUrl);
   }
 
@@ -79,7 +84,7 @@ export async function middleware(request: NextRequest) {
       .eq('version', TERMS_VERSION);
     if (!termsError && !count) {
       const url = new URL('/conditions', request.url);
-      if (pathname !== '/') url.searchParams.set('next', pathname);
+      if (pathname !== '/') url.searchParams.set('next', returnTo);
       return NextResponse.redirect(url);
     }
   }

@@ -55,7 +55,9 @@ export async function signInAction(formData: FormData) {
     }
   }
 
-  redirect(next.startsWith('/') ? next : '/');
+  // `//evil.com` commence bien par « / » mais est une URL protocole-relative :
+  // le navigateur partirait sur un domaine tiers. On exige un chemin interne.
+  redirect(next.startsWith('/') && !next.startsWith('//') ? next : '/');
 }
 
 /**

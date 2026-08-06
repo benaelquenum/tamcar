@@ -5,6 +5,7 @@ import { EnableNotifications } from '@/components/EnableNotifications';
 import { InstallPwaBanner } from '@/components/InstallPwaBanner';
 import { TopProgressBar } from '@/components/TopProgressBar';
 import { NativeBackHandler } from '@/components/NativeBackHandler';
+import { NativeDeepLink } from '@/components/NativeDeepLink';
 
 const sora = Sora({
   subsets: ['latin'],
@@ -48,6 +49,7 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         <TopProgressBar />
         <NativeBackHandler />
+        <NativeDeepLink />
         <EnableNotifications />
         <InstallPwaBanner />
         {children}
