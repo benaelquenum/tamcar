@@ -71,7 +71,20 @@ begin
 end $$;
 
 -- ---------- 3. Réaccords nécessaires ----------
--- tamy-webhook (clé de service) vérifie la zone de service avant de
--- proposer un prix, pour renvoyer un message clair plutôt qu'une exception.
+-- ATTENTION — deux fonctions internes sont appelées DEPUIS des fonctions
+-- publiques déclarées `security invoker` : le contrôle de privilège porte
+-- alors sur l'appelant final (rôle `authenticated`), pas sur le
+-- propriétaire. Les révoquer casse les RPC qui les enveloppent. Vérifier
+-- systématiquement ce point avant d'ajouter une fonction à la boucle.
+--
+--   public.create_ride(...)               → _is_within_service_zone
+--   public.pending_rides_for_driver(...)  → _release_due_scheduled_rides
+--
+-- Aucune des deux n'est sensible : la première ne fait qu'un calcul
+-- géométrique sur deux constantes, la seconde ne fait qu'avancer dans le
+-- temps des réservations arrivées à échéance (idempotent, aucun privilège
+-- accordé à l'appelant).
 grant execute on function public._is_within_service_zone(double precision, double precision)
-  to service_role;
+  to authenticated, service_role;
+grant execute on function public._release_due_scheduled_rides()
+  to authenticated;

@@ -23,7 +23,18 @@ export type CreateRideInput = {
   passenger_phone?: string | null;
 };
 
-export async function createRideAction(input: CreateRideInput) {
+export type CreateRideResult = { error: string };
+
+/**
+ * Crée la course puis redirige. En cas d'échec on RETOURNE l'erreur au lieu
+ * de la lancer : Next efface le message des exceptions de server action en
+ * production (« An error occurred in the Server Components render… »), ce qui
+ * privait le client de la vraie raison — heure de départ trop proche,
+ * destination hors zone, code promo invalide…
+ */
+export async function createRideAction(
+  input: CreateRideInput,
+): Promise<CreateRideResult | void> {
   const supabase = createServerSupabase();
 
   const {
@@ -54,8 +65,12 @@ export async function createRideAction(input: CreateRideInput) {
 
   if (error || !data) {
     // eslint-disable-next-line no-console
-    console.error('create_ride error:', error?.message);
-    throw new Error(error?.message ?? 'Erreur inconnue lors de la création de la course');
+    console.error('create_ride error:', error?.message, error?.details, error?.hint);
+    return {
+      error:
+        error?.message?.trim() ||
+        'Erreur inconnue lors de la création de la course',
+    };
   }
 
   const ride = data as { id: string; status: string };

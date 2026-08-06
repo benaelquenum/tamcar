@@ -58,9 +58,13 @@ function promoReasonLabel(reason: string): string {
 
 type PickingMode = 'pickup' | 'dropoff' | 'suggest' | null;
 
+// Le serveur (create_ride) refuse en dessous de 15 min. On demande 20 min à
+// l'écran pour garder 5 min de marge entre l'affichage et la validation.
+const MIN_SCHEDULE_MS = 20 * 60 * 1000;
+
 function minScheduledLocal(): string {
   // now() + 20 min, formaté YYYY-MM-DDTHH:MM (local) pour <input type="datetime-local">
-  const d = new Date(Date.now() + 20 * 60 * 1000);
+  const d = new Date(Date.now() + MIN_SCHEDULE_MS);
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
@@ -165,9 +169,31 @@ export default function CommandePage() {
         return;
       }
     }
+    if (isScheduled) {
+      const ts = new Date(scheduledAt).getTime();
+      if (!Number.isFinite(ts)) {
+        setConfirmError('Choisissez une date et une heure de départ.');
+        return;
+      }
+      // L'heure pré-remplie vieillit pendant que l'on choisit les adresses :
+      // au-delà de quelques minutes elle repasse sous le minimum accepté par
+      // le serveur. On la remonte au lieu de laisser partir une demande vouée
+      // à être refusée.
+      if (ts < Date.now() + MIN_SCHEDULE_MS) {
+        setScheduledAt(minScheduledLocal());
+        setConfirmError(
+          "L'heure de départ était trop proche — elle a été avancée au minimum (20 min). Vérifiez-la puis validez.",
+        );
+        return;
+      }
+      if (ts > Date.now() + 30 * 24 * 60 * 60 * 1000) {
+        setConfirmError("Réservation possible jusqu'à 30 jours à l'avance.");
+        return;
+      }
+    }
     startConfirm(async () => {
       try {
-        await createRideAction({
+        const result = await createRideAction({
           category: selectedCat,
           pickup_lat: pickup.center[1],
           pickup_lng: pickup.center[0],
@@ -185,11 +211,26 @@ export default function CommandePage() {
           passenger_name: forWhom === 'other' ? passengerName.trim() : null,
           passenger_phone: forWhom === 'other' ? passengerPhone.replace(/[^0-9+]/g, '') : null,
         });
+        // Succès = redirection côté serveur, la fonction ne retourne rien.
+        if (result?.error) setConfirmError(result.error);
       } catch (e) {
         setConfirmError(e instanceof Error ? e.message : 'Erreur inconnue');
       }
     });
   }
+
+  // L'heure pré-remplie doit rester valide tant que l'écran est ouvert :
+  // choisir un départ et une destination prend facilement plus de 5 minutes,
+  // et l'heure figée au montage finissait par tomber sous le minimum.
+  useEffect(() => {
+    if (!isScheduled) return;
+    const id = setInterval(() => {
+      const min = minScheduledLocal();
+      // Format YYYY-MM-DDTHH:MM : l'ordre lexicographique est chronologique.
+      setScheduledAt((cur) => (!cur || cur < min ? min : cur));
+    }, 30_000);
+    return () => clearInterval(id);
+  }, [isScheduled]);
 
   // Fetch balance TamCar Crédit au mount pour griser l'option si insuffisant
   useEffect(() => {
