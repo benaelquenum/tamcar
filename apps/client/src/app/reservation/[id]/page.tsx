@@ -26,7 +26,7 @@ export default async function ReservationPage({
   const { data } = await supabase
     .from('rides_view')
     .select(
-      'id, status, scheduled_at, pickup_address, dropoff_address, pickup_lat, pickup_lng, dropoff_lat, dropoff_lng, distance_km, duration_min, price_total_fcfa, requested_category, driver_id',
+      'id, status, scheduled_at, pickup_address, dropoff_address, price_total_fcfa, requested_category, driver_id, driver_search_started_at, driver_search_prompted_at',
     )
     .eq('id', params.id)
     .maybeSingle();
@@ -61,15 +61,11 @@ export default async function ReservationPage({
             scheduled_at: data.scheduled_at as string,
             pickup_address: data.pickup_address as string,
             dropoff_address: data.dropoff_address as string,
-            pickup_lat: data.pickup_lat as number,
-            pickup_lng: data.pickup_lng as number,
-            dropoff_lat: data.dropoff_lat as number,
-            dropoff_lng: data.dropoff_lng as number,
-            distance_km: data.distance_km as number,
-            duration_min: data.duration_min as number,
             price_total_fcfa: data.price_total_fcfa as number,
             requested_category: data.requested_category as VehicleCategory,
             driver_confirmed: data.driver_id != null,
+            driver_search_started_at: (data.driver_search_started_at as string | null) ?? null,
+            driver_search_prompted_at: (data.driver_search_prompted_at as string | null) ?? null,
           }}
         />
       </div>

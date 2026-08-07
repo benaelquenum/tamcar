@@ -38,6 +38,7 @@ type RideStopRow = {
 };
 
 type RideStatus =
+  | 'scheduled'
   | 'requested'
   | 'matched'
   | 'arrived'
@@ -92,6 +93,14 @@ export type RideForView = {
 type NearbyDriverRow = { driver_id: string; lat: number; lng: number; category?: string };
 
 const STATUS_META: Record<RideStatus, { title: string; sub: string; color: string }> = {
+  // Réservation confirmée : le chauffeur est engagé mais la course ne
+  // démarre qu'à H-10. Le client voit ici les mêmes informations que sur
+  // une course immédiate — chauffeur, véhicule, itinéraire, prix.
+  scheduled: {
+    title: 'Réservation confirmée',
+    sub: 'Votre chauffeur vous rejoindra à l\'heure prévue.',
+    color: 'bg-violet-500',
+  },
   requested: {
     title: 'Recherche d\'un chauffeur',
     sub: 'On cherche un chauffeur près de vous…',

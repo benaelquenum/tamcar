@@ -19,12 +19,19 @@ type PendingRow = {
   pickup_address: string;
   dropoff_address: string;
   price_total_fcfa: number;
+  /** Présent = réservation programmée, absent = course immédiate. */
+  scheduled_at?: string | null;
 };
 
 type LocalNotificationsPlugin = {
   requestPermissions(): Promise<{ display: string }>;
   schedule(opts: {
-    notifications: Array<{ id: number; title: string; body: string }>;
+    notifications: Array<{
+      id: number;
+      title: string;
+      body: string;
+      iconColor?: string;
+    }>;
   }): Promise<unknown>;
 };
 
@@ -66,14 +73,34 @@ function chime() {
   }
 }
 
+/** Violet TamCar : teinte d'accent des réservations (bleu-violet). */
+const BOOKING_ACCENT = '#7C3AED';
+
 async function notify(row: PendingRow) {
-  const title = '🚗 Nouvelle course TamCar';
+  const isBooking = Boolean(row.scheduled_at);
+  const when = row.scheduled_at
+    ? new Date(row.scheduled_at).toLocaleString('fr-FR', {
+        weekday: 'short', day: '2-digit', month: 'short',
+        hour: '2-digit', minute: '2-digit',
+      })
+    : '';
+  // Le libellé porte la distinction : le système ne laisse pas une
+  // application peindre le fond de son volet de notification.
+  const title = isBooking ? `Réservation — ${when}` : '🚗 Nouvelle course TamCar';
   const body = `${row.pickup_address} → ${row.dropoff_address} · ${row.price_total_fcfa.toLocaleString('fr-FR')} F`;
 
   if (isNative()) {
     try {
       await LocalNotifications.schedule({
-        notifications: [{ id: Math.floor(Date.now() % 2147483647), title, body }],
+        notifications: [
+          {
+            id: Math.floor(Date.now() % 2147483647),
+            title,
+            body,
+            // Seule teinte réglable côté Android : l'accent de l'icône.
+            ...(isBooking ? { iconColor: BOOKING_ACCENT } : {}),
+          },
+        ],
       });
       return;
     } catch {
@@ -126,11 +153,18 @@ export function NewRideWatcher() {
     let cancelled = false;
 
     const tick = async () => {
-      const { data, error } = await supabaseBrowser.rpc('pending_rides_for_driver', {
-        radius_km: 10.0,
-      });
-      if (cancelled || error || !Array.isArray(data)) return;
-      const rows = data as PendingRow[];
+      // Deux sources, un seul fil : le chauffeur ne doit pas avoir à
+      // ouvrir un onglet pour découvrir une réservation.
+      const [immediate, booked] = await Promise.all([
+        supabaseBrowser.rpc('pending_rides_for_driver', { radius_km: 10.0 }),
+        supabaseBrowser.rpc('pending_scheduled_rides_for_driver', { radius_km: 12.0 }),
+      ]);
+      if (cancelled) return;
+      if (immediate.error && booked.error) return;
+      const rows = [
+        ...(Array.isArray(immediate.data) ? (immediate.data as PendingRow[]) : []),
+        ...(Array.isArray(booked.data) ? (booked.data as PendingRow[]) : []),
+      ];
 
       // 1er passage : on mémorise sans alerter (courses déjà à l'écran).
       if (seenRef.current === null) {

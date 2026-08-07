@@ -58,12 +58,12 @@ function promoReasonLabel(reason: string): string {
 
 type PickingMode = 'pickup' | 'dropoff' | 'suggest' | null;
 
-// Le serveur (create_ride) refuse en dessous de 15 min. On demande 20 min à
-// l'écran pour garder 5 min de marge entre l'affichage et la validation.
-const MIN_SCHEDULE_MS = 20 * 60 * 1000;
+// Une réservation part au minimum dans 30 minutes — en deçà, c'est une
+// course immédiate. Le serveur tolère 28 min pour absorber la saisie.
+const MIN_SCHEDULE_MS = 30 * 60 * 1000;
 
 function minScheduledLocal(): string {
-  // now() + 20 min, formaté YYYY-MM-DDTHH:MM (local) pour <input type="datetime-local">
+  // now() + 30 min, formaté YYYY-MM-DDTHH:MM (local) pour <input type="datetime-local">
   const d = new Date(Date.now() + MIN_SCHEDULE_MS);
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
@@ -182,7 +182,7 @@ export default function CommandePage() {
       if (ts < Date.now() + MIN_SCHEDULE_MS) {
         setScheduledAt(minScheduledLocal());
         setConfirmError(
-          "L'heure de départ était trop proche — elle a été avancée au minimum (20 min). Vérifiez-la puis validez.",
+          "L'heure de départ était trop proche — elle a été avancée au minimum (30 min). Pour partir plus tôt, commandez une course immédiate.",
         );
         return;
       }
@@ -653,7 +653,8 @@ export default function CommandePage() {
                   />
                 </label>
                 <p className="mt-xs text-[11px] text-neutral-600">
-                  Réservation min. 20 min à l&apos;avance, jusqu&apos;à 30 jours.
+                  Réservation min. 30 min à l&apos;avance, jusqu&apos;à 30 jours.
+                  Pour partir plus tôt, commandez une course immédiate.
                 </p>
               </section>
             )}

@@ -74,8 +74,11 @@ export async function createRideAction(
   }
 
   const ride = data as { id: string; status: string };
+  // Une réservation enchaîne directement sur la recherche de chauffeur —
+  // même parcours qu'une course immédiate, l'écran suit la recherche en
+  // direct et propose les options si personne ne prend au bout d'une minute.
   if (ride.status === 'scheduled') {
-    redirect('/history?just_scheduled=1');
+    redirect(`/reservation/${ride.id}`);
   }
   redirect(`/ride/${ride.id}`);
 }

@@ -1,34 +1,41 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabase-browser';
-import { computePrice, type PriceQuote, type VehicleCategory } from '@/lib/pricing';
-import { CalendarIcon, CheckIcon, PinIcon } from '@/components/Icon';
+import type { VehicleCategory } from '@/lib/pricing';
+import { CalendarIcon, CheckIcon, PinIcon, UserIcon } from '@/components/Icon';
 
 type Ride = {
   id: string;
   scheduled_at: string;
   pickup_address: string;
   dropoff_address: string;
-  pickup_lat: number;
-  pickup_lng: number;
-  dropoff_lat: number;
-  dropoff_lng: number;
-  distance_km: number;
-  duration_min: number;
   price_total_fcfa: number;
   requested_category: VehicleCategory;
   driver_confirmed: boolean;
+  driver_search_started_at: string | null;
+  driver_search_prompted_at: string | null;
 };
 
-const CATEGORIES: { id: VehicleCategory; name: string; tagline: string }[] = [
-  { id: 'moto', name: 'Moto', tagline: 'Rapide, éco, zémidjan formalisé' },
-  { id: 'tricycle', name: 'Tricycle', tagline: 'Kloboto confortable à petit prix' },
-  { id: 'essentiel', name: 'Essentiel', tagline: 'Voiture basique, fonctionnelle' },
-  { id: 'confort', name: 'Confort', tagline: 'Voiture confortable, bien entretenue' },
-  { id: 'premium', name: 'VIP', tagline: 'Voiture de prestige, confort premium' },
-];
+type Alternative = {
+  category: VehicleCategory;
+  new_price_fcfa: number;
+  delta_fcfa: number;
+  drivers_online_nearby: number;
+};
+
+const CAT_LABEL: Record<string, string> = {
+  moto: 'Moto',
+  tricycle: 'Tricycle',
+  essentiel: 'Essentiel',
+  confort: 'Confort',
+  premium: 'VIP',
+};
+
+/** Délai au bout duquel on rend la main au client (aligné sur le cron). */
+const SEARCH_GRACE_MS = 60_000;
 
 function fmtFcfa(n: number | null | undefined): string {
   if (n == null) return '—';
@@ -50,43 +57,52 @@ export function ReservationActions({ ride }: { ride: Ride }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [showCategories, setShowCategories] = useState(false);
-  const [quotes, setQuotes] = useState<Record<string, PriceQuote | null>>({});
+  const [showAlternatives, setShowAlternatives] = useState(false);
+  const [alternatives, setAlternatives] = useState<Alternative[] | null>(null);
 
-  // Un chauffeur peut s'engager pendant que l'écran est ouvert : on
-  // rafraîchit régulièrement pour que la page bascule d'elle-même.
+  // La recherche a-t-elle assez duré pour qu'on propose les options ?
+  // Deux sources : le marqueur posé par le cron, et l'horloge locale —
+  // l'écran ne doit pas attendre le tick suivant pour réagir.
+  const searchStartedAt = ride.driver_search_started_at
+    ? new Date(ride.driver_search_started_at).getTime()
+    : null;
+  const [graceElapsed, setGraceElapsed] = useState(
+    () => searchStartedAt != null && Date.now() - searchStartedAt >= SEARCH_GRACE_MS,
+  );
+
+  useEffect(() => {
+    if (ride.driver_confirmed || searchStartedAt == null) return;
+    const remaining = searchStartedAt + SEARCH_GRACE_MS - Date.now();
+    if (remaining <= 0) {
+      setGraceElapsed(true);
+      return;
+    }
+    setGraceElapsed(false);
+    const t = setTimeout(() => setGraceElapsed(true), remaining);
+    return () => clearTimeout(t);
+  }, [searchStartedAt, ride.driver_confirmed]);
+
+  const decisionTime =
+    !ride.driver_confirmed && (graceElapsed || ride.driver_search_prompted_at != null);
+
+  // Un chauffeur peut s'engager pendant que l'écran est ouvert : la page
+  // bascule d'elle-même sur la course confirmée.
   useEffect(() => {
     if (ride.driver_confirmed) return;
-    const t = setInterval(() => router.refresh(), 10_000);
+    const t = setInterval(() => router.refresh(), 8_000);
     return () => clearInterval(t);
   }, [router, ride.driver_confirmed]);
 
-  // Tarifs des autres catégories, calculés à l'ouverture de la liste.
+  const loadAlternatives = useCallback(async () => {
+    const { data } = await supabaseBrowser.rpc('preview_alternative_offers', {
+      p_ride_id: ride.id,
+    });
+    setAlternatives(Array.isArray(data) ? (data as Alternative[]) : []);
+  }, [ride.id]);
+
   useEffect(() => {
-    if (!showCategories) return;
-    let cancelled = false;
-    (async () => {
-      const others = CATEGORIES.filter((c) => c.id !== ride.requested_category);
-      const results = await Promise.all(
-        others.map((c) =>
-          computePrice({
-            pickup_lat: ride.pickup_lat,
-            pickup_lng: ride.pickup_lng,
-            dropoff_lat: ride.dropoff_lat,
-            dropoff_lng: ride.dropoff_lng,
-            distance_km: ride.distance_km,
-            duration_min: ride.duration_min,
-            p_category: c.id,
-          }),
-        ),
-      );
-      if (cancelled) return;
-      const byId: Record<string, PriceQuote | null> = {};
-      others.forEach((c, i) => { byId[c.id] = results[i]; });
-      setQuotes(byId);
-    })();
-    return () => { cancelled = true; };
-  }, [showCategories, ride]);
+    if (showAlternatives && alternatives === null) void loadAlternatives();
+  }, [showAlternatives, alternatives, loadAlternatives]);
 
   async function handleContinue() {
     setBusy('continue');
@@ -98,6 +114,8 @@ export function ReservationActions({ ride }: { ride: Ride }) {
     setBusy(null);
     if (err) { setError(err.message); return; }
     setNotice('Recherche relancée — les chauffeurs autour du départ viennent d’être alertés.');
+    setAlternatives(null);
+    setShowAlternatives(false);
     router.refresh();
   }
 
@@ -111,13 +129,16 @@ export function ReservationActions({ ride }: { ride: Ride }) {
     });
     setBusy(null);
     if (err) { setError(err.message); return; }
-    setShowCategories(false);
-    setNotice('Catégorie modifiée — la recherche repart sur les chauffeurs concernés.');
+    setShowAlternatives(false);
+    setAlternatives(null);
+    setNotice(`Catégorie ${CAT_LABEL[category] ?? category} — la recherche repart sur les chauffeurs concernés.`);
     router.refresh();
   }
 
   async function handleCancel() {
-    if (!confirm('Annuler définitivement cette réservation ? C’est gratuit.')) return;
+    if (!confirm('Annuler définitivement cette réservation ? C’est gratuit jusqu’à 10 minutes avant le départ.')) {
+      return;
+    }
     setBusy('cancel');
     setError(null);
     const { error: err } = await supabaseBrowser.rpc('cancel_scheduled_ride', {
@@ -128,9 +149,7 @@ export function ReservationActions({ ride }: { ride: Ride }) {
     router.push('/history');
   }
 
-  const catName =
-    CATEGORIES.find((c) => c.id === ride.requested_category)?.name ??
-    ride.requested_category;
+  const catName = CAT_LABEL[ride.requested_category] ?? ride.requested_category;
 
   return (
     <>
@@ -172,26 +191,36 @@ export function ReservationActions({ ride }: { ride: Ride }) {
       </section>
 
       {ride.driver_confirmed ? (
-        <div className="mt-lg rounded-xl bg-primary-500 p-md text-white shadow-glow">
-          <p className="flex items-center gap-xs text-sm font-bold">
-            <CheckIcon className="h-3.5 w-3.5" strokeWidth={3} />
-            Un chauffeur est engagé
-          </p>
-          <p className="mt-xs text-xs">
-            Votre course est confirmée. Vous serez rappelé 30, 20 et 10 minutes avant
-            le départ.
-          </p>
-        </div>
+        <>
+          <div className="mt-lg rounded-xl bg-primary-500 p-md text-white shadow-glow">
+            <p className="flex items-center gap-xs text-sm font-bold">
+              <CheckIcon className="h-3.5 w-3.5" strokeWidth={3} />
+              Un chauffeur est engagé
+            </p>
+            <p className="mt-xs text-xs">
+              Vous serez rappelé 30, 20, 10 et 5 minutes avant le départ. L’annulation
+              reste gratuite jusqu’à 10 minutes avant, puis coûte 200 FCFA.
+            </p>
+          </div>
+          <Link
+            href={`/ride/${ride.id}`}
+            className="mt-md flex w-full items-center justify-center gap-xs rounded-xl border-2 border-primary-500 bg-white py-md text-sm font-bold text-primary-700 transition hover:bg-primary-50"
+          >
+            <UserIcon className="h-4 w-4" />
+            Voir le chauffeur et le détail de la course
+          </Link>
+        </>
       ) : (
         <>
           <div className="mt-lg rounded-xl bg-neutral-100 p-md">
             <p className="flex items-center gap-xs text-sm font-bold text-neutral-900">
               <span className="h-2 w-2 animate-pulse rounded-full bg-primary-500" />
-              Aucun chauffeur pour l&apos;instant
+              {decisionTime ? 'Aucun chauffeur pour l’instant' : 'Recherche en cours…'}
             </p>
             <p className="mt-xs text-xs text-neutral-600">
-              Personne n&apos;a encore pris votre réservation. Vous décidez de la suite —
-              l&apos;annulation reste gratuite.
+              {decisionTime
+                ? 'Personne n’a encore pris votre réservation. Vous décidez de la suite — l’annulation reste gratuite.'
+                : 'Les chauffeurs disponibles à moins de 12 km du départ ont été alertés. Vous êtes prévenu dès que l’un d’eux s’engage.'}
             </p>
           </div>
 
@@ -206,77 +235,95 @@ export function ReservationActions({ ride }: { ride: Ride }) {
             </p>
           )}
 
-          <div className="mt-lg space-y-sm">
-            <button
-              type="button"
-              onClick={handleContinue}
-              disabled={busy !== null}
-              className="w-full rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-md text-sm font-bold text-white shadow-glow transition hover:brightness-110 active:scale-[0.98] disabled:opacity-50"
-            >
-              {busy === 'continue' ? 'Relance…' : 'Continuer la recherche'}
-            </button>
+          {decisionTime && (
+            <div className="mt-lg space-y-sm">
+              <button
+                type="button"
+                onClick={handleContinue}
+                disabled={busy !== null}
+                className="w-full rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-md text-sm font-bold text-white shadow-glow transition hover:brightness-110 active:scale-[0.98] disabled:opacity-50"
+              >
+                {busy === 'continue' ? 'Relance…' : 'Continuer la recherche'}
+              </button>
 
-            <button
-              type="button"
-              onClick={() => setShowCategories((v) => !v)}
-              disabled={busy !== null}
-              className="w-full rounded-xl border-2 border-primary-500 bg-white py-md text-sm font-bold text-primary-700 transition hover:bg-primary-50 disabled:opacity-50"
-            >
-              {showCategories ? 'Masquer les autres catégories' : 'Chercher une alternative'}
-            </button>
+              <button
+                type="button"
+                onClick={() => setShowAlternatives((v) => !v)}
+                disabled={busy !== null}
+                className="w-full rounded-xl border-2 border-primary-500 bg-white py-md text-sm font-bold text-primary-700 transition hover:bg-primary-50 disabled:opacity-50"
+              >
+                {showAlternatives ? 'Masquer les alternatives' : 'Voir une alternative'}
+              </button>
 
-            {showCategories && (
-              <ul className="space-y-xs">
-                {CATEGORIES.filter((c) => c.id !== ride.requested_category).map((c) => {
-                  const q = quotes[c.id];
-                  const delta = q ? q.price_total_fcfa - ride.price_total_fcfa : null;
-                  return (
-                    <li key={c.id}>
+              {showAlternatives && (
+                <ul className="space-y-xs">
+                  {alternatives === null && (
+                    <li className="rounded-xl bg-neutral-100 p-md text-center text-xs text-neutral-600">
+                      Calcul des alternatives…
+                    </li>
+                  )}
+                  {alternatives?.length === 0 && (
+                    <li className="rounded-xl bg-neutral-100 p-md text-center text-xs text-neutral-600">
+                      Aucune autre catégorie disponible sur ce trajet.
+                    </li>
+                  )}
+                  {alternatives?.map((a) => (
+                    <li key={a.category}>
                       <button
                         type="button"
-                        onClick={() => handleSwitch(c.id)}
-                        disabled={busy !== null || !q}
+                        onClick={() => handleSwitch(a.category)}
+                        disabled={busy !== null}
                         className="flex w-full items-center justify-between gap-md rounded-xl border border-neutral-200 bg-white p-md text-left transition hover:border-primary-300 disabled:opacity-50"
                       >
                         <span className="flex-1">
-                          <span className="block text-sm font-bold text-neutral-900">{c.name}</span>
-                          <span className="block text-[11px] text-neutral-500">{c.tagline}</span>
+                          <span className="block text-sm font-bold text-neutral-900">
+                            {CAT_LABEL[a.category] ?? a.category}
+                          </span>
+                          <span
+                            className={`block text-[11px] font-semibold ${
+                              a.drivers_online_nearby > 0 ? 'text-success' : 'text-neutral-500'
+                            }`}
+                          >
+                            {a.drivers_online_nearby === 0
+                              ? 'Aucun chauffeur en ligne autour'
+                              : `${a.drivers_online_nearby} chauffeur${a.drivers_online_nearby > 1 ? 's' : ''} autour`}
+                          </span>
                         </span>
                         <span className="text-right">
                           <span
                             className="block text-sm font-extrabold text-neutral-900"
                             style={{ fontVariantNumeric: 'tabular-nums' }}
                           >
-                            {busy === c.id ? '…' : `${fmtFcfa(q?.price_total_fcfa)} F`}
+                            {busy === a.category ? '…' : `${fmtFcfa(a.new_price_fcfa)} F`}
                           </span>
-                          {delta != null && delta !== 0 && (
+                          {a.delta_fcfa !== 0 && (
                             <span
                               className={`block text-[10px] font-semibold ${
-                                delta < 0 ? 'text-success' : 'text-neutral-500'
+                                a.delta_fcfa < 0 ? 'text-success' : 'text-neutral-500'
                               }`}
                               style={{ fontVariantNumeric: 'tabular-nums' }}
                             >
-                              {delta < 0 ? '−' : '+'}
-                              {fmtFcfa(Math.abs(delta))} F
+                              {a.delta_fcfa < 0 ? '−' : '+'}
+                              {fmtFcfa(Math.abs(a.delta_fcfa))} F
                             </span>
                           )}
                         </span>
                       </button>
                     </li>
-                  );
-                })}
-              </ul>
-            )}
+                  ))}
+                </ul>
+              )}
 
-            <button
-              type="button"
-              onClick={handleCancel}
-              disabled={busy !== null}
-              className="w-full rounded-xl bg-neutral-100 py-md text-sm font-bold text-neutral-700 transition hover:bg-neutral-200 disabled:opacity-50"
-            >
-              {busy === 'cancel' ? 'Annulation…' : 'Annuler la réservation'}
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={handleCancel}
+                disabled={busy !== null}
+                className="w-full rounded-xl bg-neutral-100 py-md text-sm font-bold text-neutral-700 transition hover:bg-neutral-200 disabled:opacity-50"
+              >
+                {busy === 'cancel' ? 'Annulation…' : 'Annuler la réservation'}
+              </button>
+            </div>
+          )}
         </>
       )}
 
