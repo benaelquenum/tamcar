@@ -84,6 +84,11 @@ select
   r.updated_at,
   r.passenger_name,
   r.passenger_phone,
+  -- Position live du client (20260730170000) : conserver l'ordre exact des
+  -- colonnes existantes, `create or replace view` ne sait que les prolonger.
+  r.client_live_lat,
+  r.client_live_lng,
+  r.client_live_at,
   r.requested_category,
   r.driver_search_started_at,
   r.driver_search_prompted_at
