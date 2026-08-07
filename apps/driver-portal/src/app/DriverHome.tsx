@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState, useTransition } from 'react';
+import { useCallback, useEffect, useMemo, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/Logo';
@@ -12,6 +12,7 @@ import {
   PinIcon,
   RouteIcon,
   TargetIcon,
+  UserIcon,
 } from '@/components/Icon';
 import { Map } from '@/components/Map';
 import { MessagesFab } from '@/components/MessagesFab';
@@ -72,12 +73,30 @@ type ScheduledBooking = {
   id: string;
   pickup_address: string;
   dropoff_address: string;
+  pickup_lat: number;
+  pickup_lng: number;
+  dropoff_lat: number;
+  dropoff_lng: number;
   distance_from_driver_m: number | null;
   distance_km: number | null;
   duration_min: number | null;
   price_total_fcfa: number;
+  driver_share_fcfa: number;
   scheduled_at: string;
   requested_category: string;
+  client_first_name: string | null;
+  is_below_driver_category: boolean | null;
+};
+
+/**
+ * Une réservation s'affiche dans le MÊME fil qu'une course ordinaire :
+ * le chauffeur n'a pas à aller la chercher dans une section à part. Seul
+ * `scheduled_at` distingue les deux — il porte la pastille, l'heure de
+ * départ et le bouton d'acceptation correspondant.
+ */
+type FeedRide = PendingRide & {
+  scheduled_at?: string | null;
+  client_first_name?: string | null;
 };
 
 type MyBooking = {
@@ -130,7 +149,7 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
   const [pending, setPending] = useState<PendingRide[]>([]);
   const [accepting, startAccept] = useTransition();
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
-  const [crossCatConfirm, setCrossCatConfirm] = useState<PendingRide | null>(null);
+  const [crossCatConfirm, setCrossCatConfirm] = useState<FeedRide | null>(null);
   const [offers, setOffers] = useState<TamPassOffer[]>([]);
   const [acceptingOfferId, setAcceptingOfferId] = useState<string | null>(null);
   const [oneshots, setOneshots] = useState<OneshotReq[]>([]);
@@ -140,6 +159,34 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
   const [acceptingSchedId, setAcceptingSchedId] = useState<string | null>(null);
   const [cancellingSchedId, setCancellingSchedId] = useState<string | null>(null);
   const [desistConfirmId, setDesistConfirmId] = useState<string | null>(null);
+
+  // Fil unique : courses immédiates d'abord (le client attend maintenant),
+  // puis les réservations par heure de départ croissante.
+  const feed = useMemo<FeedRide[]>(() => {
+    const booked: FeedRide[] = scheduledPending
+      .slice()
+      .sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))
+      .map((s) => ({
+        id: s.id,
+        pickup_address: s.pickup_address,
+        dropoff_address: s.dropoff_address,
+        pickup_lat: s.pickup_lat,
+        pickup_lng: s.pickup_lng,
+        dropoff_lat: s.dropoff_lat,
+        dropoff_lng: s.dropoff_lng,
+        distance_from_driver_m: s.distance_from_driver_m ?? 0,
+        distance_km: s.distance_km,
+        duration_min: s.duration_min,
+        price_total_fcfa: s.price_total_fcfa,
+        driver_share_fcfa: s.driver_share_fcfa,
+        requested_at: s.scheduled_at,
+        requested_category: s.requested_category,
+        is_below_driver_category: s.is_below_driver_category,
+        scheduled_at: s.scheduled_at,
+        client_first_name: s.client_first_name,
+      }));
+    return [...pending, ...booked];
+  }, [pending, scheduledPending]);
 
   // Garde l'écran allumé tant que le chauffeur est en ligne (géoloc active).
   useWakeLock(isOnline);
@@ -177,6 +224,7 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
     setError(null);
     const { error: err } = await supabaseBrowser.rpc('accept_scheduled_ride', { p_ride_id: id });
     setAcceptingSchedId(null);
+    setCrossCatConfirm(null);
     if (err) { setError(err.message); await refreshScheduled(); return; }
     await Promise.all([refreshScheduled(), refreshMyBookings()]);
   }
@@ -486,9 +534,13 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
   function handleAccept(rideId: string) {
     // Si la course est cross-catégorie (chauffeur > catégorie ride), on ouvre
     // une confirmation. Sinon on accepte directement.
-    const target = pending.find((p) => p.id === rideId);
+    const target = feed.find((p) => p.id === rideId);
     if (target && target.is_below_driver_category) {
       setCrossCatConfirm(target);
+      return;
+    }
+    if (target?.scheduled_at) {
+      acceptScheduled(rideId);
       return;
     }
     doAccept(rideId);
@@ -741,41 +793,6 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
               </div>
             )}
 
-            {/* Réservations à venir disponibles — engagement immédiat */}
-            {scheduledPending.length > 0 && (
-              <div className="mb-lg">
-                <h2 className="mb-sm text-xs font-bold uppercase tracking-wider text-primary-600">
-                  Réservations à venir — engage-toi
-                </h2>
-                <div className="space-y-sm">
-                  {scheduledPending.map((s) => (
-                    <div key={s.id} className="rounded-xl border-2 border-primary-200 bg-primary-50 p-md">
-                      <div className="flex items-baseline justify-between">
-                        <p className="text-sm font-extrabold text-primary-700">{fmtSched(s.scheduled_at)}</p>
-                        <p className="text-sm font-bold text-neutral-900" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                          {formatFcfa(s.price_total_fcfa)} FCFA
-                        </p>
-                      </div>
-                      <p className="mt-xs text-sm text-neutral-800">{s.pickup_address} → {s.dropoff_address}</p>
-                      <p className="text-xs text-neutral-500">
-                        {s.requested_category}
-                        {s.distance_from_driver_m != null ? ` · à ${formatDistance(s.distance_from_driver_m)}` : ''}
-                        {s.distance_km != null ? ` · ${s.distance_km} km` : ''}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => acceptScheduled(s.id)}
-                        disabled={acceptingSchedId === s.id}
-                        className="mt-md w-full rounded-lg bg-gradient-to-r from-primary-500 to-primary-700 py-md text-sm font-bold text-white shadow-glow transition hover:brightness-110 active:scale-[0.98] disabled:opacity-50"
-                      >
-                        {acceptingSchedId === s.id ? '…' : 'Accepter la réservation'}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* Offres TamPass ouvertes — revenu récurrent, visibles même hors ligne */}
             {offers.length > 0 && (
               <div className="mb-lg">
@@ -831,23 +848,25 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
                     Courses autour
                   </h2>
                   <span className="text-xs text-neutral-600" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                    {pending.length} disponible{pending.length > 1 ? 's' : ''}
+                    {feed.length} disponible{feed.length > 1 ? 's' : ''}
                   </span>
                 </div>
 
-                {pending.length === 0 ? (
+                {feed.length === 0 ? (
                   <div className="rounded-xl bg-neutral-100 p-lg text-center text-sm text-neutral-600">
                     Aucune course dans un rayon de 10 km. On vous notifie dès qu&apos;il y en a une.
                   </div>
                 ) : (
                   <div className="max-h-[52vh] space-y-sm overflow-y-auto pr-xs">
-                    {pending.map((r) => (
+                    {feed.map((r) => (
                       <RideCard
                         key={r.id}
                         ride={r}
                         onAccept={() => handleAccept(r.id)}
-                        accepting={acceptingId === r.id && accepting}
-                        disabled={accepting}
+                        accepting={
+                          (acceptingId === r.id && accepting) || acceptingSchedId === r.id
+                        }
+                        disabled={accepting || acceptingSchedId !== null}
                       />
                     ))}
                   </div>
@@ -919,8 +938,12 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
               </button>
               <button
                 type="button"
-                onClick={() => doAccept(crossCatConfirm.id)}
-                disabled={accepting}
+                onClick={() =>
+                  crossCatConfirm.scheduled_at
+                    ? acceptScheduled(crossCatConfirm.id)
+                    : doAccept(crossCatConfirm.id)
+                }
+                disabled={accepting || acceptingSchedId !== null}
                 className="flex-1 rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-md text-sm font-bold text-white shadow-glow disabled:opacity-50"
               >
                 {accepting ? 'Envoi…' : 'Accepter au tarif réduit'}
@@ -951,16 +974,32 @@ function RideCard({
   accepting,
   disabled,
 }: {
-  ride: PendingRide;
+  ride: FeedRide;
   onAccept: () => void;
   accepting: boolean;
   disabled: boolean;
 }) {
   const isBelow = Boolean(ride.is_below_driver_category);
+  const isBooking = Boolean(ride.scheduled_at);
   return (
     <div className={`rounded-xl border p-md shadow-sm ${
-      isBelow ? 'border-warning/40 bg-warning/5' : 'border-neutral-200 bg-white'
+      isBooking
+        ? 'border-violet-300 bg-violet-50'
+        : isBelow
+          ? 'border-warning/40 bg-warning/5'
+          : 'border-neutral-200 bg-white'
     }`}>
+      {isBooking && (
+        <div className="mb-sm flex flex-wrap items-center justify-between gap-xs">
+          <span className="inline-flex items-center gap-xs rounded-full bg-violet-500 px-md py-xs text-[10px] font-bold uppercase tracking-wider text-white">
+            <ClockIcon className="h-3 w-3" />
+            Réservation
+          </span>
+          <span className="text-xs font-extrabold text-violet-700">
+            {fmtSched(ride.scheduled_at!)}
+          </span>
+        </div>
+      )}
       {isBelow && (
         <div className="mb-sm inline-flex items-center gap-xs rounded-full bg-warning/20 px-md py-xs text-[10px] font-bold text-warning">
           <AlertTriangleIcon className="h-3 w-3" />
@@ -994,6 +1033,12 @@ function RideCard({
         </div>
       </div>
       <div className="mt-sm flex flex-wrap items-center gap-x-md gap-y-xs text-[11px] text-neutral-600">
+        {ride.client_first_name && (
+          <span className="inline-flex items-center gap-xs font-semibold text-neutral-800">
+            <UserIcon className="h-3 w-3 text-neutral-500" />
+            {ride.client_first_name}
+          </span>
+        )}
         <span
           className="inline-flex items-center gap-xs"
           style={{ fontVariantNumeric: 'tabular-nums' }}
@@ -1031,7 +1076,7 @@ function RideCard({
           'Acceptation…'
         ) : (
           <>
-            Accepter la course
+            {isBooking ? 'Accepter la réservation' : 'Accepter la course'}
             <ArrowRightIcon className="h-4 w-4" />
           </>
         )}

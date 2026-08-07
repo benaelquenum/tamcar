@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { CalendarIcon, CheckIcon } from '@/components/Icon';
@@ -105,10 +106,13 @@ export function ScheduledRidesList({ initial, justScheduled }: { initial: Schedu
                 Chauffeur confirmé{firstName(r.driver_full_name) ? ` : ${firstName(r.driver_full_name)}` : ''}
               </p>
             ) : (
-              <p className="mt-sm flex items-center gap-xs text-xs font-semibold text-neutral-500">
+              <Link
+                href={`/reservation/${r.id}`}
+                className="mt-sm flex items-center gap-xs text-xs font-semibold text-primary-700 underline"
+              >
                 <span className="h-2 w-2 animate-pulse rounded-full bg-primary-500" />
-                Recherche d&apos;un chauffeur…
-              </p>
+                Recherche d&apos;un chauffeur… — voir les options
+              </Link>
             )}
             <button
               type="button"
