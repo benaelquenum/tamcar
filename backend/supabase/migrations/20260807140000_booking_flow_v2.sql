@@ -19,9 +19,10 @@
 --      (my_scheduled_rides filtre sur scheduled_at > now()) et ne
 --      partait jamais. Des réservations orphelines existent déjà en base.
 --
---   PÉNALITÉ — arbitrage : les 200 FCFA vont intégralement à la partie
---   lésée, la plateforme ne prend rien. Ce n'est pas une ligne de
---   revenu, c'est un moyen de dissuasion.
+--   PÉNALITÉ — 200 FCFA au débit de celui qui annule tard. Le versement
+--   suit la règle des revenue-shares : ce qui va à un CHAUFFEUR est
+--   partagé 50/50 avec la plateforme (100 F chacun), ce qui va à un
+--   CLIENT lésé lui est reversé intégralement (200 F).
 -- ============================================================
 
 -- ------------------------------------------------------------
@@ -242,21 +243,31 @@ $$;
 
 revoke all on function public._booking_is_late(public.rides) from public, anon, authenticated;
 
+-- Le débit et le versement peuvent différer : ce qui va à un CHAUFFEUR est
+-- partagé 50/50 avec la plateforme (décision Terence), ce qui va à un
+-- client lésé lui est reversé intégralement. La part plateforme n'est
+-- créditée nulle part — il n'existe pas de portefeuille plateforme, elle
+-- se lit comme le solde non reversé, exactement comme la commission des
+-- courses (le back-office la reprend via bo_sync_platform).
+drop function if exists public._booking_penalty(uuid, uuid, wallet_kind, uuid, wallet_kind, int);
+
 create or replace function public._booking_penalty(
   p_ride_id uuid,
   p_from_profile uuid,
   p_from_kind wallet_kind,
   p_to_profile uuid,
   p_to_kind wallet_kind,
-  p_amount int
+  p_debit int,
+  p_credit int default null
 )
 returns void
 language plpgsql security definer set search_path = public as $$
 declare
   v_from_wallet uuid;
   v_to_wallet uuid;
+  v_credit int := least(coalesce(p_credit, p_debit), p_debit);
 begin
-  if p_amount <= 0 or p_from_profile is null then return; end if;
+  if p_debit <= 0 or p_from_profile is null then return; end if;
 
   insert into public.wallets (profile_id, kind, balance_fcfa)
     values (p_from_profile, p_from_kind, 0)
@@ -264,12 +275,12 @@ begin
   select id into v_from_wallet
     from public.wallets where profile_id = p_from_profile and kind = p_from_kind;
   update public.wallets
-    set balance_fcfa = balance_fcfa - p_amount, updated_at = now()
+    set balance_fcfa = balance_fcfa - p_debit, updated_at = now()
     where id = v_from_wallet;
   insert into public.wallet_transactions (wallet_id, type, amount_fcfa, ride_id, status)
-    values (v_from_wallet, 'cancellation_fee', p_amount, p_ride_id, 'success');
+    values (v_from_wallet, 'cancellation_fee', p_debit, p_ride_id, 'success');
 
-  if p_to_profile is null then return; end if;
+  if p_to_profile is null or v_credit <= 0 then return; end if;
 
   insert into public.wallets (profile_id, kind, balance_fcfa)
     values (p_to_profile, p_to_kind, 0)
@@ -277,14 +288,14 @@ begin
   select id into v_to_wallet
     from public.wallets where profile_id = p_to_profile and kind = p_to_kind;
   update public.wallets
-    set balance_fcfa = balance_fcfa + p_amount, updated_at = now()
+    set balance_fcfa = balance_fcfa + v_credit, updated_at = now()
     where id = v_to_wallet;
   insert into public.wallet_transactions (wallet_id, type, amount_fcfa, ride_id, status)
-    values (v_to_wallet, 'cancellation_reimbursement', p_amount, p_ride_id, 'success');
+    values (v_to_wallet, 'cancellation_reimbursement', v_credit, p_ride_id, 'success');
 end;
 $$;
 
-revoke all on function public._booking_penalty(uuid, uuid, wallet_kind, uuid, wallet_kind, int)
+revoke all on function public._booking_penalty(uuid, uuid, wallet_kind, uuid, wallet_kind, int, int)
   from public, anon, authenticated;
 
 -- ------------------------------------------------------------
@@ -315,12 +326,13 @@ begin
         updated_at = now()
     where id = p_ride_id;
 
-  -- Moins de 10 min avant le départ : 200 FCFA au chauffeur engagé, qui
-  -- avait bloqué son créneau. Sans chauffeur engagé, rien n'est prélevé.
+  -- Moins de 10 min avant le départ : 200 FCFA au débit du client, dont
+  -- 100 au chauffeur qui avait bloqué son créneau et 100 à la plateforme.
+  -- Sans chauffeur engagé, rien n'est prélevé.
   if v_late and r.driver_id is not null then
     select profile_id into v_driver_profile from public.drivers where id = r.driver_id;
     perform public._booking_penalty(
-      p_ride_id, r.client_id, 'tamcar_credit', v_driver_profile, 'tamcar_revenus', 200
+      p_ride_id, r.client_id, 'tamcar_credit', v_driver_profile, 'tamcar_revenus', 200, 100
     );
   end if;
 end;
@@ -361,9 +373,11 @@ begin
     where id = p_ride_id
     returning * into result;
 
+  -- Le client lésé est indemnisé intégralement : le partage 50/50 ne vaut
+  -- que pour les sommes versées à un chauffeur.
   if v_late then
     perform public._booking_penalty(
-      p_ride_id, auth.uid(), 'tamcar_revenus', result.client_id, 'tamcar_credit', 200
+      p_ride_id, auth.uid(), 'tamcar_revenus', result.client_id, 'tamcar_credit', 200, 200
     );
   end if;
 
@@ -448,7 +462,9 @@ begin
   -- Réservation à moins de 10 min du départ : tarif annoncé dans les
   -- rappels H-10 et H-5, il prime sur la grille des courses immédiates.
   if public._booking_is_late(r) and r.status in ('matched', 'arrived') then
-    return query select 200, 'booking_late', 200, 0, false, false, null::text, v_disputed;
+    -- 100 au chauffeur, 100 à la plateforme : cancel_ride_by_client ne
+    -- crédite que driver_share_fcfa, le reste demeure acquis à TamCar.
+    return query select 200, 'booking_late', 100, 100, false, false, null::text, v_disputed;
     return;
   end if;
 
@@ -541,9 +557,10 @@ begin
     where id = r.driver_id;
   perform public._apply_driver_strike(r.driver_id, ride_id, 'Annulation volontaire du chauffeur');
 
+  -- Idem : le client encaisse la totalité des 200 FCFA.
   if v_late then
     perform public._booking_penalty(
-      ride_id, auth.uid(), 'tamcar_revenus', r.client_id, 'tamcar_credit', 200
+      ride_id, auth.uid(), 'tamcar_revenus', r.client_id, 'tamcar_credit', 200, 200
     );
   else
     perform public._grant_goodwill_credit(r.client_id, r.driver_id, ride_id);
