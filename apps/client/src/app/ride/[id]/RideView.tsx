@@ -486,7 +486,12 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
   }, [ride.completion_auto_accept_at, ride.completion_requested_at, ride.status, ride.id]);
 
   const meta = STATUS_META[ride.status];
-  const statusTitle = t(`ride.status.${ride.status}`);
+  // t() renvoie la CLÉ quand la traduction manque — c'est ainsi qu'un
+  // « ride.status.scheduled » brut s'est affiché en bandeau. On retombe
+  // sur le libellé de STATUS_META, qui couvre tous les statuts.
+  const statusKey = `ride.status.${ride.status}`;
+  const translatedStatus = t(statusKey);
+  const statusTitle = translatedStatus === statusKey ? meta.title : translatedStatus;
   const statusSub = (() => {
     switch (ride.status) {
       case 'requested': return t('ride.searching_near');

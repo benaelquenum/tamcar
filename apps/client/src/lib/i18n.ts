@@ -82,6 +82,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'commande.out_of_zone_dropoff': 'Votre destination est hors zone.',
 
     // Ride statuses
+    'ride.status.scheduled': 'Réservation confirmée',
     'ride.status.requested': 'Recherche d\'un chauffeur',
     'ride.status.matched': 'Chauffeur en route',
     'ride.status.arrived': 'Chauffeur arrivé',
@@ -89,6 +90,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'ride.status.completed': 'Terminée',
     'ride.status.cancelled_by_client': 'Annulée',
     'ride.status.cancelled_by_driver': 'Annulée par chauffeur',
+    'ride.status.cancelled_by_admin': 'Annulée par TamCar',
     'ride.status.expired': 'Expirée',
     'ride.searching': 'On cherche un chauffeur pour vous…',
     'ride.searching_sub': 'On cherche pour vous…',
@@ -246,6 +248,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'commande.out_of_zone_dropoff': 'Your destination is out of zone.',
 
     // Ride statuses
+    'ride.status.scheduled': 'Booking confirmed',
     'ride.status.requested': 'Finding a driver',
     'ride.status.matched': 'Driver on the way',
     'ride.status.arrived': 'Driver arrived',
@@ -253,6 +256,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'ride.status.completed': 'Completed',
     'ride.status.cancelled_by_client': 'Cancelled',
     'ride.status.cancelled_by_driver': 'Cancelled by driver',
+    'ride.status.cancelled_by_admin': 'Cancelled by TamCar',
     'ride.status.expired': 'Expired',
     'ride.searching': 'Finding a driver for you…',
     'ride.searching_sub': 'Searching for you…',
