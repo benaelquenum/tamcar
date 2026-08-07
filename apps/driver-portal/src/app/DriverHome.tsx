@@ -981,27 +981,34 @@ function RideCard({
 }) {
   const isBelow = Boolean(ride.is_below_driver_category);
   const isBooking = Boolean(ride.scheduled_at);
+
+  // Volet réservation : fond bleu-violacé plein, texte blanc, bouton
+  // inversé. Le chauffeur doit voir au premier coup d'œil qu'il ne s'agit
+  // pas d'une course à prendre maintenant. Teintes explicites : les tokens
+  // du projet ne fixent que violet-500, le reste vient de Tailwind.
+  const shell = isBooking
+    ? 'border-transparent bg-gradient-to-br from-[#4338CA] to-[#7C3AED] text-white shadow-glow-violet'
+    : isBelow
+      ? 'border-warning/40 bg-warning/5'
+      : 'border-neutral-200 bg-white shadow-sm';
+
   return (
-    <div className={`rounded-xl border p-md shadow-sm ${
-      isBooking
-        ? 'border-violet-300 bg-violet-50'
-        : isBelow
-          ? 'border-warning/40 bg-warning/5'
-          : 'border-neutral-200 bg-white'
-    }`}>
+    <div className={`rounded-xl border p-md ${shell}`}>
       {isBooking && (
-        <div className="mb-sm flex flex-wrap items-center justify-between gap-xs">
-          <span className="inline-flex items-center gap-xs rounded-full bg-violet-500 px-md py-xs text-[10px] font-bold uppercase tracking-wider text-white">
-            <ClockIcon className="h-3 w-3" />
+        <div className="mb-sm flex flex-wrap items-center justify-between gap-xs border-b border-white/25 pb-sm">
+          <span className="inline-flex items-center gap-xs rounded-full bg-white px-md py-xs text-[10px] font-extrabold uppercase tracking-widest text-[#5B21B6]">
+            <ClockIcon className="h-3 w-3" strokeWidth={2.5} />
             Réservation
           </span>
-          <span className="text-xs font-extrabold text-violet-700">
+          <span className="text-xs font-extrabold text-white">
             {fmtSched(ride.scheduled_at!)}
           </span>
         </div>
       )}
       {isBelow && (
-        <div className="mb-sm inline-flex items-center gap-xs rounded-full bg-warning/20 px-md py-xs text-[10px] font-bold text-warning">
+        <div className={`mb-sm inline-flex items-center gap-xs rounded-full px-md py-xs text-[10px] font-bold ${
+          isBooking ? 'bg-white/20 text-white' : 'bg-warning/20 text-warning'
+        }`}>
           <AlertTriangleIcon className="h-3 w-3" />
           Course {catLabel(ride.requested_category || '')} — tarif réduit
         </div>
@@ -1009,33 +1016,49 @@ function RideCard({
       <div className="flex items-start justify-between gap-md">
         <div className="flex-1 space-y-xs">
           <div className="flex items-start gap-xs">
-            <span className="mt-xs grid h-4 w-4 flex-none place-items-center rounded-full bg-primary-500 text-white">
+            <span className={`mt-xs grid h-4 w-4 flex-none place-items-center rounded-full ${
+              isBooking ? 'bg-white text-[#5B21B6]' : 'bg-primary-500 text-white'
+            }`}>
               <PinIcon className="h-2.5 w-2.5" strokeWidth={3} />
             </span>
-            <p className="flex-1 text-xs text-neutral-900">{ride.pickup_address}</p>
+            <p className={`flex-1 text-xs ${isBooking ? 'text-white' : 'text-neutral-900'}`}>
+              {ride.pickup_address}
+            </p>
           </div>
-          <div className="ml-1.5 h-3 border-l-2 border-dashed border-neutral-300" />
+          <div className={`ml-1.5 h-3 border-l-2 border-dashed ${
+            isBooking ? 'border-white/50' : 'border-neutral-300'
+          }`} />
           <div className="flex items-start gap-xs">
-            <span className="mt-xs grid h-4 w-4 flex-none place-items-center rounded-full bg-violet-500 text-white">
+            <span className={`mt-xs grid h-4 w-4 flex-none place-items-center rounded-full ${
+              isBooking ? 'bg-gold text-neutral-900' : 'bg-violet-500 text-white'
+            }`}>
               <PinIcon className="h-2.5 w-2.5" strokeWidth={3} />
             </span>
-            <p className="flex-1 text-xs text-neutral-900">{ride.dropoff_address}</p>
+            <p className={`flex-1 text-xs ${isBooking ? 'text-white' : 'text-neutral-900'}`}>
+              {ride.dropoff_address}
+            </p>
           </div>
         </div>
         <div className="text-right">
           <p
-            className="text-lg font-extrabold text-primary-500"
+            className={`text-lg font-extrabold ${isBooking ? 'text-white' : 'text-primary-500'}`}
             style={{ fontVariantNumeric: 'tabular-nums' }}
           >
             {formatFcfa(ride.driver_share_fcfa)}
           </p>
-          <p className="text-[9px] text-neutral-500">FCFA cash pour vous</p>
+          <p className={`text-[9px] ${isBooking ? 'text-white/75' : 'text-neutral-500'}`}>
+            FCFA cash pour vous
+          </p>
         </div>
       </div>
-      <div className="mt-sm flex flex-wrap items-center gap-x-md gap-y-xs text-[11px] text-neutral-600">
+      <div className={`mt-sm flex flex-wrap items-center gap-x-md gap-y-xs text-[11px] ${
+        isBooking ? 'text-white/85' : 'text-neutral-600'
+      }`}>
         {ride.client_first_name && (
-          <span className="inline-flex items-center gap-xs font-semibold text-neutral-800">
-            <UserIcon className="h-3 w-3 text-neutral-500" />
+          <span className={`inline-flex items-center gap-xs font-semibold ${
+            isBooking ? 'text-white' : 'text-neutral-800'
+          }`}>
+            <UserIcon className={`h-3 w-3 ${isBooking ? 'text-white/75' : 'text-neutral-500'}`} />
             {ride.client_first_name}
           </span>
         )}
@@ -1043,24 +1066,25 @@ function RideCard({
           className="inline-flex items-center gap-xs"
           style={{ fontVariantNumeric: 'tabular-nums' }}
         >
-          <TargetIcon className="h-3 w-3 text-primary-500" />
+          <TargetIcon className={`h-3 w-3 ${isBooking ? 'text-white' : 'text-primary-500'}`} />
           {formatDistance(ride.distance_from_driver_m)}
         </span>
         <span
           className="inline-flex items-center gap-xs"
           style={{ fontVariantNumeric: 'tabular-nums' }}
         >
-          <RouteIcon className="h-3 w-3 text-neutral-500" />
+          <RouteIcon className={`h-3 w-3 ${isBooking ? 'text-white/75' : 'text-neutral-500'}`} />
           {ride.distance_km?.toFixed(1) ?? '—'} km
         </span>
         <span
           className="inline-flex items-center gap-xs"
           style={{ fontVariantNumeric: 'tabular-nums' }}
         >
-          <ClockIcon className="h-3 w-3 text-neutral-500" />~{ride.duration_min ?? '—'} min
+          <ClockIcon className={`h-3 w-3 ${isBooking ? 'text-white/75' : 'text-neutral-500'}`} />
+          ~{ride.duration_min ?? '—'} min
         </span>
         <span
-          className="ml-auto font-semibold text-neutral-800"
+          className={`ml-auto font-semibold ${isBooking ? 'text-white' : 'text-neutral-800'}`}
           style={{ fontVariantNumeric: 'tabular-nums' }}
         >
           {formatFcfa(ride.price_total_fcfa)} F total
@@ -1070,7 +1094,11 @@ function RideCard({
         type="button"
         onClick={onAccept}
         disabled={disabled}
-        className="mt-md flex w-full items-center justify-center gap-xs rounded-lg bg-gradient-to-r from-primary-500 to-primary-700 py-md text-sm font-bold text-white shadow-glow transition hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
+        className={`mt-md flex w-full items-center justify-center gap-xs rounded-lg py-md text-sm font-bold transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none ${
+          isBooking
+            ? 'bg-white text-[#5B21B6] shadow-md hover:bg-neutral-100'
+            : 'bg-gradient-to-r from-primary-500 to-primary-700 text-white shadow-glow hover:brightness-110'
+        }`}
       >
         {accepting ? (
           'Acceptation…'
