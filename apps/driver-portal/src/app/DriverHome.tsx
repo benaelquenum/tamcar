@@ -94,7 +94,9 @@ type ScheduledBooking = {
  * `scheduled_at` distingue les deux — il porte la pastille, l'heure de
  * départ et le bouton d'acceptation correspondant.
  */
-type FeedRide = PendingRide & {
+type FeedRide = Omit<PendingRide, 'distance_from_driver_m'> & {
+  /** Null quand la position du chauffeur n'est pas encore connue. */
+  distance_from_driver_m: number | null;
   scheduled_at?: string | null;
   client_first_name?: string | null;
 };
@@ -174,7 +176,7 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
         pickup_lng: s.pickup_lng,
         dropoff_lat: s.dropoff_lat,
         dropoff_lng: s.dropoff_lng,
-        distance_from_driver_m: s.distance_from_driver_m ?? 0,
+        distance_from_driver_m: s.distance_from_driver_m,
         distance_km: s.distance_km,
         duration_min: s.duration_min,
         price_total_fcfa: s.price_total_fcfa,
@@ -1067,7 +1069,10 @@ function RideCard({
           style={{ fontVariantNumeric: 'tabular-nums' }}
         >
           <TargetIcon className={`h-3 w-3 ${isBooking ? 'text-white' : 'text-primary-500'}`} />
-          {formatDistance(ride.distance_from_driver_m)}
+          {/* Position pas encore remontée : « — » plutôt qu'un « 0 m » faux. */}
+          {ride.distance_from_driver_m == null
+            ? '—'
+            : formatDistance(ride.distance_from_driver_m)}
         </span>
         <span
           className="inline-flex items-center gap-xs"
