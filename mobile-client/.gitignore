@@ -2,3 +2,4 @@ node_modules/
 /android/
 .gradle/
 .DS_Store
+*.apk
