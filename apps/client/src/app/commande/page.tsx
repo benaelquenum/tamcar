@@ -731,6 +731,17 @@ function CategoryChoice({
           : 'border-neutral-200 bg-white hover:border-primary-300'
       }`}
     >
+      {/* Visuel de la catégorie : le client reconnaît le véhicule qu'il
+          commande avant même de lire le nom. Chargement paresseux — cinq
+          images sur un forfait 3G se paient. */}
+      <img
+        src={`/categories/${category.id}.webp`}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        className="mr-md h-16 w-20 flex-none object-contain"
+      />
+
       <div className="flex-1">
         <div className="flex items-center gap-xs">
           <p className="font-bold text-neutral-900">TamCar {category.name}</p>
