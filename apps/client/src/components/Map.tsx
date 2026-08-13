@@ -58,7 +58,7 @@ const TRICYCLE_SVG = `
  * (lib/vehicle-marker) et non photographiées : à 30 px, une photo réduite
  * devient une tache dont on ne distingue plus l'avant.
  */
-function markupForCategory(cat?: string, color?: string | null, size = 30): string {
+function markupForCategory(cat?: string, color?: string | null, size = 50): string {
   return vehicleMarkerSvg({ category: cat, color, size });
 }
 
@@ -107,7 +107,7 @@ function makePuckEl(category?: string, self = false, color?: string | null): HTM
   const el = document.createElement('div');
   el.className = 'tc-veh-marker' + (self ? ' me' : '');
   el.innerHTML =
-    `<span class="tc-veh-nub-rot">${vehicleMarkerSvg({ category, color, self, size: 34 })}</span>`;
+    `<span class="tc-veh-nub-rot">${vehicleMarkerSvg({ category, color, self, size: 56 })}</span>`;
   return el;
 }
 

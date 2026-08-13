@@ -135,7 +135,7 @@ export type MarkerOptions = {
   color?: string | null;
   /** Anneau bleu « vous êtes ici » — marqueur du chauffeur lui-même. */
   self?: boolean;
-  /** Côté du marqueur en pixels. 30 par défaut, 34 pour le véhicule suivi. */
+  /** Côté du marqueur en pixels. 50 par défaut, 56 pour le véhicule suivi. */
   size?: number;
 };
 
@@ -147,7 +147,7 @@ export function vehicleMarkerSvg({
   category,
   color,
   self = false,
-  size = 30,
+  size = 50,
 }: MarkerOptions): string {
   const c = resolveVehicleColor(category, color);
   const body =
