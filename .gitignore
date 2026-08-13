@@ -69,3 +69,8 @@ coverage/
 
 .vercel
 .env*
+
+# Artefacts de generation carto : gros binaires, regenerables
+assets/benin.pmtiles
+assets/pmtiles.exe
+assets/verif-categories.png
