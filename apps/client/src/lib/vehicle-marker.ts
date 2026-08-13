@@ -98,32 +98,38 @@ function carBody(color: string): string {
 
 function motoBody(color: string): string {
   const dark = shade(color, 0.5);
-  const jacket = shade(color, 0.82);   // blouson : même famille, plus sombre
-  const helmet = shade(color, 0.42);
+  const jacket = shade(color, 0.8);
+  const helmet = shade(color, 0.4);
+  // PROPORTIONS : la berline occupe 15 unités de large sur 40. Une moto
+  // avec son pilote doit rester nettement en dessous, sinon la silhouette
+  // se lit comme une voiture. Guidon 10 unités, épaules 7,6, tout le reste
+  // sur une colonne étroite — c'est l'étroitesse qui dit « deux-roues ».
   return (
-    // Roues avant et arrière
-    `<rect x="18.4" y="11" width="3.2" height="6.5" rx="1.6" fill="#111827"/>` +
-    `<rect x="18.4" y="28" width="3.2" height="6.5" rx="1.6" fill="#111827"/>` +
-    // Guidon
-    `<rect x="11.5" y="16.5" width="17" height="2.4" rx="1.2" fill="${dark}"/>` +
-    // Cadre et réservoir
-    `<path d="M17 15.5 L23 15.5 L24 24 C24 28.5 22.6 30.5 20 30.5 C17.4 30.5 16 28.5 16 24 Z" ` +
-    `fill="${color}" stroke="${dark}" stroke-width="1"/>` +
+    // Roues avant et arrière, débordant du cadre pour rester visibles
+    `<rect x="18.7" y="7.5" width="2.6" height="6.5" rx="1.3" fill="#111827"/>` +
+    `<rect x="18.7" y="29" width="2.6" height="6.5" rx="1.3" fill="#111827"/>` +
+    // Fourche et cadre : une colonne fine
+    `<rect x="18.2" y="13" width="3.6" height="17" rx="1.6" fill="${color}" ` +
+    `stroke="${dark}" stroke-width="0.9"/>` +
+    // Guidon — la signature du deux-roues, mais plus étroit qu'une voiture
+    `<rect x="15" y="15.4" width="10" height="2" rx="1" fill="${dark}"/>` +
+    `<circle cx="15.4" cy="16.4" r="1.5" fill="${helmet}"/>` +
+    `<circle cx="24.6" cy="16.4" r="1.5" fill="${helmet}"/>` +
     // Phare
-    `<rect x="18.2" y="14.6" width="3.6" height="1.8" rx="0.9" fill="#FFF8DC"/>` +
-    // ---- Le motocycliste, vu de dessus ----
-    // Bras tendus vers les poignées : ce sont eux qui donnent la lecture
-    // « quelqu'un conduit », bien plus qu'un casque isolé.
-    `<path d="M15.8 23 L12.8 18.2" stroke="${jacket}" stroke-width="2.6" stroke-linecap="round"/>` +
-    `<path d="M24.2 23 L27.2 18.2" stroke="${jacket}" stroke-width="2.6" stroke-linecap="round"/>` +
-    // Jambes repliées le long du réservoir
-    `<rect x="14.6" y="25.5" width="2.6" height="5.4" rx="1.3" fill="${helmet}" opacity="0.85"/>` +
-    `<rect x="22.8" y="25.5" width="2.6" height="5.4" rx="1.3" fill="${helmet}" opacity="0.85"/>` +
-    // Buste
-    `<rect x="15.4" y="20.4" width="9.2" height="8" rx="3.4" fill="${jacket}" stroke="${dark}" stroke-width="0.8"/>` +
-    // Casque, avec l'écran tourné vers l'avant
-    `<circle cx="20" cy="21.6" r="3.7" fill="${helmet}" stroke="#0B1220" stroke-width="0.9"/>` +
-    `<path d="M17.1 20 A3.7 3.7 0 0 1 22.9 20 Z" fill="#93C5FD" opacity="0.9"/>`
+    `<rect x="18.6" y="13.4" width="2.8" height="1.6" rx="0.8" fill="#FFF8DC"/>` +
+    // ---- Le pilote ----
+    // Bras en V vers les poignées : c'est ce qui dit « quelqu'un conduit ».
+    `<path d="M17.6 21.6 L15.8 17.4" stroke="${jacket}" stroke-width="2.2" stroke-linecap="round"/>` +
+    `<path d="M22.4 21.6 L24.2 17.4" stroke="${jacket}" stroke-width="2.2" stroke-linecap="round"/>` +
+    // Jambes le long du réservoir
+    `<rect x="16.1" y="24.6" width="2.2" height="4.6" rx="1.1" fill="${helmet}" opacity="0.9"/>` +
+    `<rect x="21.7" y="24.6" width="2.2" height="4.6" rx="1.1" fill="${helmet}" opacity="0.9"/>` +
+    // Buste, plus étroit que le toit d'une berline
+    `<rect x="16.4" y="19.4" width="7.2" height="6.6" rx="2.8" fill="${jacket}" ` +
+    `stroke="${dark}" stroke-width="0.8"/>` +
+    // Casque, écran clair tourné vers l'avant
+    `<circle cx="20" cy="20.4" r="3.1" fill="${helmet}" stroke="#0B1220" stroke-width="0.9"/>` +
+    `<path d="M17.6 19.1 A3.1 3.1 0 0 1 22.4 19.1 Z" fill="#93C5FD" opacity="0.95"/>`
   );
 }
 
