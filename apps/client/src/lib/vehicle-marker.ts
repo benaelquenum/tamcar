@@ -98,6 +98,8 @@ function carBody(color: string): string {
 
 function motoBody(color: string): string {
   const dark = shade(color, 0.5);
+  const jacket = shade(color, 0.82);   // blouson : même famille, plus sombre
+  const helmet = shade(color, 0.42);
   return (
     // Roues avant et arrière
     `<rect x="18.4" y="11" width="3.2" height="6.5" rx="1.6" fill="#111827"/>` +
@@ -107,10 +109,21 @@ function motoBody(color: string): string {
     // Cadre et réservoir
     `<path d="M17 15.5 L23 15.5 L24 24 C24 28.5 22.6 30.5 20 30.5 C17.4 30.5 16 28.5 16 24 Z" ` +
     `fill="${color}" stroke="${dark}" stroke-width="1"/>` +
-    // Casque du conducteur
-    `<circle cx="20" cy="23" r="3.4" fill="${shade(color, 0.75)}" stroke="#111827" stroke-width="0.9"/>` +
     // Phare
-    `<rect x="18.2" y="14.6" width="3.6" height="1.8" rx="0.9" fill="#FFF8DC"/>`
+    `<rect x="18.2" y="14.6" width="3.6" height="1.8" rx="0.9" fill="#FFF8DC"/>` +
+    // ---- Le motocycliste, vu de dessus ----
+    // Bras tendus vers les poignées : ce sont eux qui donnent la lecture
+    // « quelqu'un conduit », bien plus qu'un casque isolé.
+    `<path d="M15.8 23 L12.8 18.2" stroke="${jacket}" stroke-width="2.6" stroke-linecap="round"/>` +
+    `<path d="M24.2 23 L27.2 18.2" stroke="${jacket}" stroke-width="2.6" stroke-linecap="round"/>` +
+    // Jambes repliées le long du réservoir
+    `<rect x="14.6" y="25.5" width="2.6" height="5.4" rx="1.3" fill="${helmet}" opacity="0.85"/>` +
+    `<rect x="22.8" y="25.5" width="2.6" height="5.4" rx="1.3" fill="${helmet}" opacity="0.85"/>` +
+    // Buste
+    `<rect x="15.4" y="20.4" width="9.2" height="8" rx="3.4" fill="${jacket}" stroke="${dark}" stroke-width="0.8"/>` +
+    // Casque, avec l'écran tourné vers l'avant
+    `<circle cx="20" cy="21.6" r="3.7" fill="${helmet}" stroke="#0B1220" stroke-width="0.9"/>` +
+    `<path d="M17.1 20 A3.7 3.7 0 0 1 22.9 20 Z" fill="#93C5FD" opacity="0.9"/>`
   );
 }
 

@@ -61,10 +61,14 @@ function shade(hex: string, factor: number): string {
   return `#${c.map((v) => v.toString(16).padStart(2, '0')).join('')}`;
 }
 
-/** Le cône de cap, devant le capot. Non rempli pour les véhicules sombres. */
+/**
+ * Cap : un cône court et large posé DEVANT le nez, pas une pointe qui
+ * dépasse du capot. Il se lit d'un coup d'œil sans alourdir la silhouette.
+ */
 function headingCone(color: string): string {
   return (
-    `<path d="M20 3 L27.5 13 A9 9 0 0 0 12.5 13 Z" fill="${color}" opacity="0.28"/>`
+    `<path d="M20 2.5 L29 11.5 A10 10 0 0 0 11 11.5 Z" fill="${color}" opacity="0.22"/>` +
+    `<path d="M20 5.5 L23.6 9.6 L20 8.4 L16.4 9.6 Z" fill="${color}" opacity="0.9"/>`
   );
 }
 
@@ -94,38 +98,52 @@ function carBody(color: string): string {
 
 function motoBody(color: string): string {
   const dark = shade(color, 0.5);
+  const jacket = shade(color, 0.82);   // blouson : même famille, plus sombre
+  const helmet = shade(color, 0.42);
   return (
     // Roues avant et arrière
-    `<rect x="18.4" y="5.5" width="3.2" height="7" rx="1.6" fill="#111827"/>` +
-    `<rect x="18.4" y="27.5" width="3.2" height="7" rx="1.6" fill="#111827"/>` +
+    `<rect x="18.4" y="11" width="3.2" height="6.5" rx="1.6" fill="#111827"/>` +
+    `<rect x="18.4" y="28" width="3.2" height="6.5" rx="1.6" fill="#111827"/>` +
     // Guidon
-    `<rect x="11.5" y="13" width="17" height="2.4" rx="1.2" fill="${dark}"/>` +
+    `<rect x="11.5" y="16.5" width="17" height="2.4" rx="1.2" fill="${dark}"/>` +
     // Cadre et réservoir
-    `<path d="M17 12 L23 12 L24 22 C24 27 22.6 29.5 20 29.5 C17.4 29.5 16 27 16 22 Z" ` +
+    `<path d="M17 15.5 L23 15.5 L24 24 C24 28.5 22.6 30.5 20 30.5 C17.4 30.5 16 28.5 16 24 Z" ` +
     `fill="${color}" stroke="${dark}" stroke-width="1"/>` +
-    // Casque du conducteur
-    `<circle cx="20" cy="20.5" r="3.6" fill="${shade(color, 0.75)}" stroke="#111827" stroke-width="0.9"/>` +
     // Phare
-    `<rect x="18.2" y="11.4" width="3.6" height="1.8" rx="0.9" fill="#FFF8DC"/>`
+    `<rect x="18.2" y="14.6" width="3.6" height="1.8" rx="0.9" fill="#FFF8DC"/>` +
+    // ---- Le motocycliste, vu de dessus ----
+    // Bras tendus vers les poignées : ce sont eux qui donnent la lecture
+    // « quelqu'un conduit », bien plus qu'un casque isolé.
+    `<path d="M15.8 23 L12.8 18.2" stroke="${jacket}" stroke-width="2.6" stroke-linecap="round"/>` +
+    `<path d="M24.2 23 L27.2 18.2" stroke="${jacket}" stroke-width="2.6" stroke-linecap="round"/>` +
+    // Jambes repliées le long du réservoir
+    `<rect x="14.6" y="25.5" width="2.6" height="5.4" rx="1.3" fill="${helmet}" opacity="0.85"/>` +
+    `<rect x="22.8" y="25.5" width="2.6" height="5.4" rx="1.3" fill="${helmet}" opacity="0.85"/>` +
+    // Buste
+    `<rect x="15.4" y="20.4" width="9.2" height="8" rx="3.4" fill="${jacket}" stroke="${dark}" stroke-width="0.8"/>` +
+    // Casque, avec l'écran tourné vers l'avant
+    `<circle cx="20" cy="21.6" r="3.7" fill="${helmet}" stroke="#0B1220" stroke-width="0.9"/>` +
+    `<path d="M17.1 20 A3.7 3.7 0 0 1 22.9 20 Z" fill="#93C5FD" opacity="0.9"/>`
   );
 }
 
 function tricycleBody(color: string): string {
   const dark = shade(color, 0.5);
   return (
-    // Roue avant, roues arrière
-    `<rect x="18.6" y="5" width="2.8" height="6" rx="1.4" fill="#111827"/>` +
-    `<rect x="7.8" y="25" width="3" height="7" rx="1.5" fill="#111827"/>` +
-    `<rect x="29.2" y="25" width="3" height="7" rx="1.5" fill="#111827"/>` +
+    // Roue avant unique, puis les deux roues arrière
+    `<rect x="18.7" y="11.5" width="2.6" height="5.5" rx="1.3" fill="#111827"/>` +
+    `<rect x="8.6" y="25.5" width="2.8" height="6.5" rx="1.4" fill="#111827"/>` +
+    `<rect x="28.6" y="25.5" width="2.8" height="6.5" rx="1.4" fill="#111827"/>` +
     // Caisse : nez étroit qui s'élargit vers l'arrière — silhouette du kloboto
-    `<path d="M17 10 L23 10 L28.5 20 C29.5 24 29.5 30 28 32.5 L12 32.5 ` +
-    `C10.5 30 10.5 24 11.5 20 Z" fill="${color}" stroke="${dark}" stroke-width="1.1"/>` +
-    // Auvent
-    `<rect x="12.8" y="21" width="14.4" height="9" rx="2.4" fill="${shade(color, 0.7)}" opacity="0.9"/>` +
+    `<path d="M17.4 13.5 L22.6 13.5 L27.6 21 C28.8 24 28.8 30.5 27.6 33 ` +
+    `L12.4 33 C11.2 30.5 11.2 24 12.4 21 Z" fill="${color}" stroke="${dark}" stroke-width="1.1"/>` +
     // Pare-brise
-    `<path d="M16.6 12.2 L23.4 12.2 L25.4 18 L14.6 18 Z" fill="#1F2937" opacity="0.8"/>` +
+    `<path d="M17.9 15.4 L22.1 15.4 L24.6 20.4 L15.4 20.4 Z" fill="#1F2937" opacity="0.85"/>` +
+    // Auvent (toile tendue sur l'arceau)
+    `<rect x="13.4" y="22" width="13.2" height="9.4" rx="2.6" fill="${shade(color, 0.72)}"/>` +
+    `<rect x="13.4" y="22" width="13.2" height="2.6" rx="1.3" fill="${dark}" opacity="0.6"/>` +
     // Phare
-    `<rect x="18.4" y="9.2" width="3.2" height="1.7" rx="0.85" fill="#FFF8DC"/>`
+    `<rect x="18.6" y="12.6" width="2.8" height="1.6" rx="0.8" fill="#FFF8DC"/>`
   );
 }
 
