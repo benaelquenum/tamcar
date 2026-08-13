@@ -19,7 +19,7 @@ import { StopsListClient } from './StopsListClient';
 import { isAccurateEnough, SmoothingBuffer, getAccuratePosition } from '@/lib/geo-precision';
 import { useWakeLock } from '@/lib/useWakeLock';
 import { useBackgroundTracking } from '@/lib/backgroundTracking';
-import { SosButton } from '@/components/SosButton';
+import { SupportCallButton } from '@/components/SupportCallButton';
 import { RideChat } from '@/components/RideChat';
 import { playMessageSound } from '@/lib/message-sound';
 import { useT } from '@/lib/i18n-client';
@@ -1027,6 +1027,9 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
         >
           <span className="text-xl leading-none">←</span>
         </button>
+        <div className="pointer-events-auto ml-auto mr-sm">
+          <SupportCallButton rideId={ride.id} />
+        </div>
         <div className="pointer-events-auto flex items-center gap-xs rounded-full bg-white/95 px-md py-xs shadow-lg ring-1 ring-neutral-200 backdrop-blur">
           <Logo className="h-5 w-auto" />
         </div>
@@ -1445,11 +1448,6 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
             )}
           </div>
         </div>
-      )}
-
-      {/* SOS flottant client — visible dès qu'il y a une course active */}
-      {['matched','arrived','in_progress'].includes(ride.status) && (
-        <SosButton rideId={ride.id} />
       )}
 
       {/* Modal suggestions cross-catégorie : après 30 s sans match */}
