@@ -7,6 +7,7 @@ import { TopProgressBar } from '@/components/TopProgressBar';
 import { NativeBackHandler } from '@/components/NativeBackHandler';
 import { NativeDeepLink } from '@/components/NativeDeepLink';
 import { NativePushRegistrar } from '@/components/NativePushRegistrar';
+import { RefreshButton } from '@/components/RefreshButton';
 
 const sora = Sora({
   subsets: ['latin'],
@@ -54,6 +55,7 @@ export default function RootLayout({
         <NativePushRegistrar />
         <EnableNotifications />
         <InstallPwaBanner />
+        <RefreshButton />
         {children}
       </body>
     </html>
