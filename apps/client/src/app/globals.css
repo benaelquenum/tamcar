@@ -33,11 +33,40 @@ body {
    Pins Mapbox custom (drivers autour, chauffeur assigné, pickup pulse)
    ============================================================ */
 
-/* Véhicule libre sur la carte : l'illustration détourée se suffit à
-   elle-même, elle porte déjà son contour blanc. Pas de pastille. */
+/* Véhicule illustré sur la carte : l'image EST le marqueur, elle porte
+   déjà son contour blanc. Taille pilotée ici pour que le modificateur
+   .assigned puisse l'agrandir. */
 .tc-vehicle-pin {
   line-height: 0;
   cursor: pointer;
+}
+.tc-veh-img {
+  display: block;
+  width: 34px;
+  height: auto;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
+}
+.tc-vehicle-pin.assigned .tc-veh-img {
+  width: 46px;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.45));
+}
+
+/* Marqueur véhicule orientable : pivote vers le cap via .tc-veh-nub-rot,
+   la même couche que la pointe de l'ancienne pastille. */
+.tc-veh-photo {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.tc-veh-photo .tc-veh-nub-rot {
+  display: grid;
+  place-items: center;
+}
+.tc-veh-photo .tc-veh-img {
+  width: 38px;
 }
 
 .tc-driver-pin {
@@ -189,7 +218,8 @@ body {
   border-right: 7px solid transparent;
   border-bottom: 9px solid #2563EB;
 }
-.tc-veh-puck.me .tc-veh-halo {
+.tc-veh-puck.me .tc-veh-halo,
+.tc-veh-photo.me .tc-veh-halo {
   position: absolute;
   inset: -9px;
   border-radius: 50%;
