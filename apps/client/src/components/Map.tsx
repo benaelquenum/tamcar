@@ -73,9 +73,11 @@ function svgForCategory(cat?: string): string {
 function markupForCategory(cat?: string): string {
   const src = cat ? VEHICLE_IMG[cat] : undefined;
   if (!src) return svgForCategory(cat);
-  // Taille et ombre laissées au CSS : le modificateur .assigned doit
-  // pouvoir agrandir le marqueur, ce qu'un style inline empêcherait.
-  return `<img src="${src}" alt="" class="tc-veh-img">`;
+  return (
+    `<img src="${src}" alt="" width="34" height="34" ` +
+    'style="display:block;width:34px;height:auto;' +
+    'filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))">'
+  );
 }
 
 function pinClassForCategory(cat?: string): string {
@@ -127,20 +129,6 @@ function makeStopEl(n: number): HTMLDivElement {
 // orientable (+ halo si c'est « moi » côté chauffeur).
 function makePuckEl(category?: string, self = false): HTMLDivElement {
   const el = document.createElement('div');
-  const src = category ? VEHICLE_IMG[category] : undefined;
-
-  // Quand l'illustration existe, elle EST le marqueur : on ne l'enferme pas
-  // dans une pastille. C'est le véhicule entier qui pivote vers le cap, au
-  // lieu d'une petite pointe accolée à un disque bleu.
-  if (src) {
-    el.className = 'tc-veh-photo' + (self ? ' me' : '');
-    el.innerHTML =
-      (self ? '<span class="tc-veh-halo"></span>' : '') +
-      `<span class="tc-veh-nub-rot"><img src="${src}" alt="" class="tc-veh-img"></span>`;
-    return el;
-  }
-
-  // Catégorie inconnue : on garde la pastille historique.
   el.className = 'tc-veh-puck' + (self ? ' me' : '');
   el.innerHTML =
     (self ? '<span class="tc-veh-halo"></span>' : '') +
