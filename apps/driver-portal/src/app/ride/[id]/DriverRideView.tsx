@@ -19,7 +19,7 @@ import { useWakeLock } from '@/lib/useWakeLock';
 import { useBackgroundTracking } from '@/lib/backgroundTracking';
 import { titleCaseName } from '@/lib/name';
 import { SUPPORT_PHONE, SUPPORT_PHONE_DISPLAY } from '@/lib/support';
-import { markArrivedAction, startRideAction } from './actions';
+import { markArrivedAction, startRideAction, type ActionResult } from './actions';
 import { StopsPanel } from './StopsPanel';
 import { ReturnChangeModal } from './ReturnChangeModal';
 import { SosButton } from '@/components/SosButton';
@@ -482,11 +482,14 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
     router.push('/');
   }
 
-  function transition(fn: (id: string) => Promise<void>) {
+  // Les actions retournent leur erreur ; le try/catch ne couvre plus que
+  // l'imprévu (réseau coupé, action injoignable).
+  function transition(fn: (id: string) => Promise<ActionResult>) {
     setErr(null);
     startTransition(async () => {
       try {
-        await fn(ride.id);
+        const res = await fn(ride.id);
+        if (res?.error) setErr(res.error);
       } catch (e) {
         setErr(e instanceof Error ? e.message : 'Erreur');
       }
@@ -523,7 +526,8 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
     }
     startTransition(async () => {
       try {
-        await markArrivedAction(ride.id, distance);
+        const res = await markArrivedAction(ride.id, distance);
+        if (res?.error) setErr(res.error);
       } catch (e) {
         setErr(e instanceof Error ? e.message : 'Erreur');
       }
@@ -536,7 +540,8 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
     setArrivalConfirm(null);
     startTransition(async () => {
       try {
-        await markArrivedAction(ride.id, distance);
+        const res = await markArrivedAction(ride.id, distance);
+        if (res?.error) setErr(res.error);
       } catch (e) {
         setErr(e instanceof Error ? e.message : 'Erreur');
       }

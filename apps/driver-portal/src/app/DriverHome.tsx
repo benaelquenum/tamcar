@@ -553,7 +553,12 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
     setError(null);
     startAccept(async () => {
       try {
-        await acceptRideAction(rideId);
+        // Succès = redirection côté serveur, la fonction ne retourne rien.
+        const res = await acceptRideAction(rideId);
+        if (res?.error) {
+          setError(res.error);
+          return;
+        }
         try {
           const a = new Audio('/sounds/request-accepted.mp3');
           a.volume = 0.85;
