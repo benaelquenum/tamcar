@@ -4,12 +4,22 @@
 // Toute modification doit également mettre à jour ces docs.
 
 export const colors = {
+  // `primary` n'est pas un nom de couleur Tailwind : contrairement à
+  // `violet` ou `cyan`, la palette par défaut ne vient PAS compléter les
+  // nuances manquantes. Une classe comme bg-primary-600 ne produisait donc
+  // AUCUN style — d'où des boutons blancs sur fond clair, invisibles
+  // (bandeau de dette du chauffeur). La gamme est complétée ici plutôt que
+  // de corriger 79 occurrences dans les trois applications.
   primary: {
     50:  '#EFF6FF',
     100: '#DBEAFE',
+    200: '#BFDBFE',
     300: '#93C5FD',
+    400: '#60A5FA',
     500: '#2563EB',   // Bleu roi vif TamCar
+    600: '#2050DF',   // entre le bleu roi et le 700
     700: '#1D4ED8',
+    800: '#1E40AF',
     900: '#1E3A8A',
   },
   neutral: {
