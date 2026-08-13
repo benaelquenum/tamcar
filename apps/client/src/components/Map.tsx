@@ -50,39 +50,13 @@ const TRICYCLE_SVG = `
   <circle cx="19" cy="18" r="1.6"/>
 </svg>`;
 
-// Illustrations de véhicules vus de dessus (public/vehicules), détourées à
-// partir de la planche fournie par Terence. Elles remplacent les pastilles
-// SVG : le client reconnaît une moto d'un tricycle au premier regard, ce
-// qu'une pastille colorée ne permettait pas.
-const VEHICLE_IMG: Record<string, string> = {
-  moto: '/vehicules/moto.png',
-  tricycle: '/vehicules/tricycle.png',
-  essentiel: '/vehicules/essentiel.png',
-  confort: '/vehicules/confort.png',
-  premium: '/vehicules/premium.png',
-};
-
-/** Silhouette blanche, pour les pastilles pleines (puck chauffeur). */
 function svgForCategory(cat?: string): string {
   if (cat === 'moto') return MOTO_SVG;
   if (cat === 'tricycle') return TRICYCLE_SVG;
   return CAR_SVG;
 }
 
-/** Illustration détourée, pour les véhicules libres semés sur la carte. */
-function markupForCategory(cat?: string): string {
-  const src = cat ? VEHICLE_IMG[cat] : undefined;
-  if (!src) return svgForCategory(cat);
-  return (
-    `<img src="${src}" alt="" width="34" height="34" ` +
-    'style="display:block;width:34px;height:auto;' +
-    'filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))">'
-  );
-}
-
 function pinClassForCategory(cat?: string): string {
-  // Les illustrations portent déjà leur contour blanc : pas de pastille.
-  if (cat && VEHICLE_IMG[cat]) return 'tc-vehicle-pin';
   if (cat === 'moto') return 'tc-driver-pin moto';
   if (cat === 'tricycle') return 'tc-driver-pin tricycle';
   if (cat === 'confort') return 'tc-driver-pin confort';
@@ -470,12 +444,12 @@ export function Map({
         const nextClass = pinClassForCategory(drv.category);
         if (el.className !== nextClass) {
           el.className = nextClass;
-          el.innerHTML = markupForCategory(drv.category);
+          el.innerHTML = svgForCategory(drv.category);
         }
       } else {
         const el = document.createElement('div');
         el.className = pinClassForCategory(drv.category);
-        el.innerHTML = markupForCategory(drv.category);
+        el.innerHTML = svgForCategory(drv.category);
         const marker = new GL.Marker({ element: el, anchor: 'center' })
           .setLngLat([drv.lng, drv.lat])
           .addTo(map);

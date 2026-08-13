@@ -33,13 +33,6 @@ body {
    Pins Mapbox custom (drivers autour, chauffeur assigné, pickup pulse)
    ============================================================ */
 
-/* Véhicule libre sur la carte : l'illustration détourée se suffit à
-   elle-même, elle porte déjà son contour blanc. Pas de pastille. */
-.tc-vehicle-pin {
-  line-height: 0;
-  cursor: pointer;
-}
-
 .tc-driver-pin {
   width: 26px;
   height: 26px;
