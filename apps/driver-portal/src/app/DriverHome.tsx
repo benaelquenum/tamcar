@@ -726,9 +726,14 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
             {/* Mes réservations acceptées (engagées) — je peux me désister */}
             {myBookings.length > 0 && (
               <div className="mb-lg">
-                <h2 className="mb-sm text-xs font-bold uppercase tracking-wider text-violet-700">
-                  Mes réservations à venir
-                </h2>
+                <div className="mb-sm flex items-baseline justify-between">
+                  <h2 className="text-xs font-bold uppercase tracking-wider text-violet-700">
+                    Mes réservations à venir
+                  </h2>
+                  <Link href="/reservations" className="text-xs font-semibold text-violet-700">
+                    Tout voir
+                  </Link>
+                </div>
                 <div className="space-y-sm">
                   {myBookings.map((b) => (
                     <div key={b.id} className="rounded-xl border-2 border-violet-300 bg-violet-50 p-md">

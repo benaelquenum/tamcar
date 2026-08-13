@@ -93,8 +93,18 @@ export default async function HistoryPage({ searchParams }: { searchParams: { ju
         </p>
 
         <Link
+          href="/reservations"
+          className="mt-lg flex items-center justify-between rounded-xl border-2 border-violet-500 bg-white p-md text-violet-700 transition hover:bg-violet-500/5"
+        >
+          <span className="text-sm font-bold">Mes réservations →</span>
+          <span className="text-[11px] font-semibold text-neutral-500">
+            À venir et passées
+          </span>
+        </Link>
+
+        <Link
           href="/chauffeurs"
-          className="mt-lg flex items-center justify-between rounded-xl border-2 border-primary-500 bg-white p-md text-primary-700 transition hover:bg-primary-50"
+          className="mt-sm flex items-center justify-between rounded-xl border-2 border-primary-500 bg-white p-md text-primary-700 transition hover:bg-primary-50"
         >
           <span className="text-sm font-bold">Reprendre un chauffeur déjà eu →</span>
           <span className="text-[11px] font-semibold text-neutral-500">

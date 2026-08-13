@@ -20,6 +20,10 @@ type RideRow = {
 };
 
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
+  // Une réservation acceptée reste en 'scheduled' jusqu'à H-10 : sans
+  // cette entrée, l'historique affichait le mot « scheduled » tel quel.
+  scheduled: { label: 'Réservation', color: 'bg-violet-500/15 text-violet-700' },
+  requested: { label: 'En attente', color: 'bg-neutral-200 text-neutral-700' },
   matched: { label: 'En cours', color: 'bg-primary-500 text-white' },
   arrived: { label: 'En cours', color: 'bg-gold text-neutral-900' },
   in_progress: { label: 'En cours', color: 'bg-success/20 text-success' },
@@ -91,6 +95,16 @@ export default async function DriverHistoryPage() {
           <StatCard label="Courses" value={completed.length.toString()} />
           <StatCard label="Cash gagné" value={formatFcfa(totalRevenu)} suffix="F" highlight />
         </div>
+
+        <Link
+          href="/reservations"
+          className="mt-lg flex items-center justify-between rounded-xl border-2 border-violet-500 bg-white p-md text-violet-700 transition hover:bg-violet-500/5"
+        >
+          <span className="text-sm font-bold">Mes réservations →</span>
+          <span className="text-[11px] font-semibold text-neutral-500">
+            À venir et passées
+          </span>
+        </Link>
 
         {list.length === 0 ? (
           <div className="mt-xl rounded-xl bg-neutral-100 p-2xl text-center text-sm text-neutral-600">

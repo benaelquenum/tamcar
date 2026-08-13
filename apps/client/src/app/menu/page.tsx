@@ -4,6 +4,7 @@ import { Logo } from '@/components/Logo';
 import { BottomTabBar } from '@/components/BottomTabBar';
 import {
   ArrowRightIcon,
+  CalendarIcon,
   CarIcon,
   FileTextIcon,
   GiftIcon,
@@ -32,6 +33,12 @@ type Entry = {
 };
 
 const SERVICES: Entry[] = [
+  {
+    href: '/reservations',
+    label: 'Mes réservations',
+    hint: 'Vos courses programmées, à venir et passées',
+    Icon: CalendarIcon,
+  },
   {
     href: '/tampass',
     label: 'TamPass',
