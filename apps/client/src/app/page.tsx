@@ -4,25 +4,23 @@ import { Logo } from '@/components/Logo';
 import { getT } from '@/lib/i18n-server';
 import {
   ArrowRightIcon,
-  CalendarIcon,
   CarIcon,
-  GiftIcon,
-  HistoryIcon,
-  LifeBuoyIcon,
-  PassIcon,
   PinIcon,
   PlusIcon,
-  UserIcon,
-  UsersIcon,
   WalletIcon,
-  WaveIcon,
 } from '@/components/Icon';
 import { firstNameOf, getCurrentProfile } from '@/lib/session';
 import { createServerSupabase } from '@/lib/supabase-server';
-import { SUPPORT_PHONE } from '@/lib/support';
 import { UnreadMessagesChip } from '@/components/UnreadMessagesChip';
 import { BannerCarousel } from '@/components/BannerCarousel';
 import { ProfileMenu } from '@/components/ProfileMenu';
+import { BottomTabBar } from '@/components/BottomTabBar';
+import { HomeMap } from '@/components/HomeMap';
+import {
+  QuickDestinations,
+  type FavoritePlace,
+  type RecentDestination,
+} from '@/components/QuickDestinations';
 
 type BannerRow = {
   id: string;
@@ -58,6 +56,15 @@ function formatFcfaHome(n: number): string {
   return n.toLocaleString('fr-FR').replace(/,/g, ' ');
 }
 
+/**
+ * Accueil client — refonte du 2026-08-13.
+ *
+ * L'écran n'est plus un menu de raccourcis mais la PREMIÈRE ÉTAPE de la
+ * commande : carte vivante en haut, un seul champ « Où allez-vous ? », les
+ * lieux du client sous la main, le solde juste avant le bouton. Les
+ * rubriques secondaires descendent dans /menu, atteignable par la barre
+ * d'onglets — dont le bouton central porte la réservation.
+ */
 export default async function HomePage() {
   const t = getT();
   const profile = await getCurrentProfile();
@@ -75,23 +82,15 @@ export default async function HomePage() {
   const firstName = firstNameOf(profile);
   const isLoggedIn = profile !== null;
 
-  // Fetch balance TamCar Crédit + course active + chauffeurs en ligne réels
   let creditBalance = 0;
   let activeRide: ActiveRideRow | null = null;
-  let onlineDrivers: { count: number; label: string } | null = null;
+  let favorites: FavoritePlace[] = [];
+  let recents: RecentDestination[] = [];
+
   const supabase = createServerSupabase();
 
-  // Les 3 blocs de données sont indépendants → une seule vague parallèle
-  // (chauffeurs en ligne, wallet + course active si connecté, bannières).
-  const [driversRes, walletActive, bannersRes] = await Promise.all([
-    supabase
-      .from('drivers')
-      .select('*', { count: 'exact', head: true })
-      .eq('is_online', true)
-      .eq('status', 'active'),
-    isLoggedIn
-      ? Promise.all([supabase.rpc('my_wallets'), supabase.rpc('my_active_ride')])
-      : Promise.resolve(null),
+  // Une seule vague parallèle : bannières, puis les données du compte.
+  const [bannersRes, personal] = await Promise.all([
     supabase
       .from('home_banners')
       .select('id, title, subtitle, image_url, link_url, cta_text, gradient')
@@ -99,136 +98,117 @@ export default async function HomePage() {
       .eq('audience', 'client')
       .order('display_order', { ascending: true })
       .limit(6),
+    isLoggedIn
+      ? Promise.all([
+          supabase.rpc('my_wallets'),
+          supabase.rpc('my_active_ride'),
+          supabase.rpc('my_favorite_places'),
+          supabase.rpc('my_recent_destinations', { p_limit: 4 }),
+        ])
+      : Promise.resolve(null),
   ]);
 
-  const driverCount = driversRes.count ?? 0;
-  if (driverCount > 0) {
-    onlineDrivers = {
-      count: driverCount,
-      label: `${driverCount} chauffeur${driverCount > 1 ? 's' : ''} en ligne`,
-    };
-  }
-
-  if (walletActive) {
-    const [{ data: wallets }, { data: activeData }] = walletActive;
+  if (personal) {
+    const [{ data: wallets }, { data: activeData }, { data: favData }, { data: recentData }] =
+      personal;
     const credit = (wallets as Array<{ kind: string; balance_fcfa: number }> | null)?.find(
       (w) => w.kind === 'tamcar_credit',
     );
     if (credit) creditBalance = credit.balance_fcfa;
     const rows = (activeData ?? []) as ActiveRideRow[];
     if (rows[0]) activeRide = rows[0];
+    favorites = (Array.isArray(favData) ? favData : []) as FavoritePlace[];
+    recents = (Array.isArray(recentData) ? recentData : []) as RecentDestination[];
   }
 
   const banners = (bannersRes.data ?? []) as BannerRow[];
 
   return (
-    <main className="relative min-h-dvh overflow-hidden bg-white">
-      {/* Blobs décoratifs en fond (subtils, flous) */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 -z-0 h-96 overflow-hidden">
-        <div className="absolute -right-16 -top-32 h-64 w-64 rounded-full bg-primary-100 opacity-80 blur-3xl" />
-        <div className="absolute -left-16 top-10 h-48 w-48 rounded-full bg-violet-500/15 blur-3xl" />
-        <div className="absolute right-20 top-40 h-32 w-32 rounded-full bg-cyan-500/15 blur-3xl" />
-      </div>
+    <main className="relative min-h-dvh bg-neutral-50">
+      {/* Carte : elle occupe le haut de l'écran et prouve la disponibilité
+          avant même que le client ait saisi quoi que ce soit. */}
+      <div className="relative h-[42vh] min-h-[260px] w-full overflow-hidden bg-primary-50">
+        <HomeMap className="h-full w-full" />
 
-      <div className="relative z-10 mx-auto max-w-md px-lg py-xl">
-        {/* Header : le middleware garantit que l'user est loggé sur cette page */}
-        <header className="flex items-center justify-between">
-          <Logo className="h-9 w-auto" />
+        <header className="pointer-events-none absolute inset-x-0 top-0 z-20 mx-auto flex max-w-md items-center justify-between px-lg pt-lg">
+          <span className="pointer-events-auto rounded-full bg-white/95 px-md py-xs shadow-md ring-1 ring-neutral-200 backdrop-blur">
+            <Logo className="h-6 w-auto" />
+          </span>
           {profile && (
-            <ProfileMenu
-              avatarUrl={profile.avatar_url}
-              fullName={profile.full_name}
-              firstName={firstName ?? ''}
-            />
+            <span className="pointer-events-auto">
+              <ProfileMenu
+                avatarUrl={profile.avatar_url}
+                fullName={profile.full_name}
+                firstName={firstName ?? ''}
+              />
+            </span>
           )}
         </header>
+      </div>
 
-        {/* Bannière de communication — image seule, juste sous la barre de menus */}
-        {banners.length > 0 && (
-          <BannerCarousel banners={banners} className="mt-md" />
-        )}
+      {/* Feuille : elle chevauche la carte, comme dans la maquette. */}
+      <div className="relative z-10 -mt-lg mx-auto max-w-md rounded-t-2xl bg-white px-lg pt-lg shadow-[0_-8px_24px_rgba(0,0,0,0.06)]">
+        {banners.length > 0 && <BannerCarousel banners={banners} className="mb-md" />}
 
-        {/* Onglet notification course active */}
         {activeRide && <ActiveRideBanner ride={activeRide} t={t} />}
 
-        {/* Greeting + hero */}
-        <section className="mt-xl">
-          <p className="flex items-center gap-xs text-base font-medium text-neutral-600">
-            <WaveIcon className="h-5 w-5 text-primary-500" />
-            <span>{firstName ? `${t('home.greeting')} ${firstName}` : t('home.greeting')}</span>
+        <section>
+          <p className="text-sm font-medium text-neutral-600">
+            {firstName ? `${t('home.greeting')} ${firstName}` : t('home.greeting')}
           </p>
-          <h1 className="mt-xs text-4xl font-extrabold leading-[1.05] tracking-tight text-neutral-900">
-            {t('home.hero')}
-            <br />
-            <span className="bg-gradient-to-r from-primary-500 to-primary-700 bg-clip-text text-transparent">
-              {t('home.hero.today')}
-            </span>
-            &nbsp;?
+          <h1 className="mt-xs text-3xl font-extrabold leading-tight tracking-tight text-neutral-900">
+            Où allez-vous&nbsp;?
           </h1>
-
-          {/* Live status — affiché uniquement si des chauffeurs sont réellement online */}
-          {onlineDrivers && (
-            <div className="mt-md inline-flex items-center gap-sm rounded-full bg-primary-50 px-md py-xs">
-              <span className="relative grid h-2 w-2 place-items-center">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary-500/60" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-primary-500" />
-              </span>
-              <span
-                className="text-xs font-semibold text-primary-700"
-                style={{ fontVariantNumeric: 'tabular-nums' }}
-              >
-                {onlineDrivers.label}
-              </span>
-            </div>
-          )}
         </section>
 
-        {/* Search field */}
-        <section className="mt-lg">
+        {/* Champ unique : le départ est déduit du GPS, une seule décision. */}
+        <section className="mt-md">
           <Link
             href="/commande"
-            className="group flex w-full items-center gap-md rounded-xl bg-white p-lg text-left shadow-md ring-1 ring-neutral-200 transition hover:shadow-lg hover:ring-primary-300"
+            className="group flex w-full items-center gap-md rounded-xl bg-white p-md text-left ring-2 ring-primary-500 transition hover:shadow-md"
           >
-            <span className="grid h-11 w-11 place-items-center rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-glow">
-              <PinIcon />
+            <PinIcon className="h-5 w-5 flex-none text-primary-500" />
+            <span className="flex-1 text-sm text-neutral-400 group-hover:text-neutral-600">
+              Entrez votre destination
             </span>
-            <span className="flex-1 text-neutral-400 group-hover:text-neutral-600">
-              {t('home.search')}
+            <span className="grid h-9 w-9 flex-none place-items-center rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 text-white">
+              <ArrowRightIcon className="h-4 w-4" />
             </span>
-            <ArrowRightIcon />
           </Link>
         </section>
 
-        {/* Wallet compact — remonté juste sous la barre "Où voulez-vous aller ?" */}
+        {isLoggedIn && <QuickDestinations favorites={favorites} recents={recents} />}
+
         {isLoggedIn && (
-          <section className="mt-md">
+          <section className="mt-lg">
             <Link
               href="/wallet"
-              className="flex items-center gap-sm rounded-lg border border-neutral-200 bg-white px-md py-xs shadow-sm transition hover:shadow-md"
+              className="flex items-center gap-sm rounded-xl bg-primary-50 px-md py-sm transition hover:bg-primary-100"
             >
-              <span className="grid h-7 w-7 place-items-center rounded-md bg-gradient-to-br from-violet-500 to-primary-500 text-white">
+              <span className="grid h-9 w-9 flex-none place-items-center rounded-lg bg-gradient-to-br from-violet-500 to-primary-500 text-white">
                 <WalletIcon className="h-4 w-4" />
               </span>
-              <span className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500">
-                {t('home.credit')}
+              <span className="flex-1">
+                <span className="block text-[10px] font-semibold uppercase tracking-wide text-neutral-500">
+                  {t('home.credit')}
+                </span>
+                <span
+                  className="block text-lg font-extrabold text-neutral-900"
+                  style={{ fontVariantNumeric: 'tabular-nums' }}
+                >
+                  {formatFcfaHome(creditBalance)}
+                  <span className="ml-xs text-xs font-medium text-neutral-500">F</span>
+                </span>
               </span>
-              <span
-                className="flex-1 text-right text-sm font-extrabold text-neutral-900"
-                style={{ fontVariantNumeric: 'tabular-nums' }}
-              >
-                {formatFcfaHome(creditBalance)}
-                <span className="ml-xs text-[10px] font-medium text-neutral-500">F</span>
-              </span>
-              <span className="inline-flex items-center gap-xs rounded-md bg-primary-500 px-sm py-xs text-[11px] font-bold text-white">
-                <PlusIcon className="h-3 w-3" strokeWidth={3} />
+              <span className="inline-flex items-center gap-xs rounded-lg bg-white px-md py-xs text-[11px] font-bold text-primary-700 shadow-sm">
                 {t('home.recharge')}
+                <PlusIcon className="h-3 w-3" strokeWidth={3} />
               </span>
             </Link>
           </section>
         )}
 
-        {/* CTAs */}
-        <section className="mt-lg space-y-md">
+        <section className="mt-lg">
           <Link
             href="/commande"
             className="flex w-full items-center justify-center gap-sm rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-lg text-base font-bold text-white shadow-glow transition hover:brightness-110 active:scale-[0.98]"
@@ -236,166 +216,49 @@ export default async function HomePage() {
             <CarIcon className="h-5 w-5" />
             {t('home.book_now')}
           </Link>
-          <Link
-            href="/commande?scheduled=1"
-            className="flex w-full items-center justify-center gap-sm rounded-xl border-2 border-primary-500 bg-white py-lg text-base font-semibold text-primary-700 transition hover:bg-primary-50"
-          >
-            <CalendarIcon className="h-5 w-5" />
-            {t('home.book_later')}
-          </Link>
         </section>
 
-        {/* Quick actions — sur 2 lignes (3 + 2) */}
-        <section className="mt-lg grid grid-cols-3 gap-sm">
-          <QuickActionLink href="/tampass" Icon={PassIcon} label="TamPass" tint="cyan" />
-          <QuickActionLink href="/chauffeurs" Icon={UserIcon} label="Chauffeur" tint="primary" />
-          <QuickActionLink href="/history" Icon={HistoryIcon} label={t('home.history')} tint="primary" />
-          <QuickActionLink href="/parrainer" Icon={GiftIcon} label={t('home.refer')} tint="violet" />
-          <a
-            href={`https://wa.me/${SUPPORT_PHONE.replace(/^\+/, '')}?text=${encodeURIComponent("Bonjour, j'ai besoin d'aide sur TamCar.")}`}
-            target="_blank"
-            rel="noreferrer"
-            className="relative flex flex-col items-center gap-xs rounded-xl border border-neutral-200 bg-white p-md text-center shadow-sm transition hover:shadow-md"
-          >
-            <span className="grid h-10 w-10 place-items-center rounded-lg bg-cyan-500/10 text-cyan-500">
-              <LifeBuoyIcon className="h-5 w-5" />
-            </span>
-            <span className="text-xs font-semibold text-neutral-900">{t('home.help')}</span>
-          </a>
-          <QuickActionLink
-            href="/commande?proche=1"
-            Icon={UsersIcon}
-            label="Pour un proche"
-            tint="violet"
-          />
-        </section>
-
-        {/* Devenir chauffeur */}
-        <section className="mt-lg">
-          <Link
-            href="/devenir-chauffeur"
-            className="flex items-center gap-md rounded-xl border border-neutral-200 bg-white p-md shadow-sm transition hover:shadow-md"
-          >
-            <div className="grid h-10 w-10 flex-none place-items-center rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 text-white">
-              <CarIcon className="h-5 w-5" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-bold text-neutral-900">{t('home.become_driver')}</p>
-              <p className="text-[10px] text-neutral-600">
-                2 formules · cession 24 mois ou propriétaire libre
-              </p>
-            </div>
-            <span className="text-neutral-400">→</span>
-          </Link>
-        </section>
-
-        <div className="h-2xl" />
+        <BottomTabBar />
       </div>
+
       <UnreadMessagesChip />
     </main>
   );
 }
 
-function ActiveRideBanner({ ride, t }: { ride: ActiveRideRow; t: (key: string, vars?: Record<string, string | number>) => string }) {
+function ActiveRideBanner({
+  ride,
+  t,
+}: {
+  ride: ActiveRideRow;
+  t: (key: string, vars?: Record<string, string | number>) => string;
+}) {
   const tint = ACTIVE_STATUS_TINT[ride.status];
-  const label = t(`ride.status.${ride.status}`);
+  const label =
+    ride.status === 'requested'
+      ? t('ride.status.requested')
+      : ride.status === 'matched'
+        ? t('ride.status.matched')
+        : ride.status === 'arrived'
+          ? t('ride.status.arrived')
+          : t('ride.status.in_progress');
+
   return (
     <Link
       href={`/ride/${ride.id}`}
-      className={`mt-lg block overflow-hidden rounded-2xl bg-gradient-to-r ${tint} text-white shadow-glow transition hover:brightness-110`}
+      className={`mb-md flex items-center gap-md rounded-xl bg-gradient-to-r ${tint} p-md text-white shadow-glow`}
     >
-      <div className="flex items-center gap-md p-md">
-        <span className="relative grid h-10 w-10 flex-none place-items-center">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white/40" />
-          <span className="relative grid h-10 w-10 place-items-center rounded-full bg-white/20 backdrop-blur">
-            <CarIcon className="h-5 w-5" />
-          </span>
-        </span>
-        <div className="flex-1 min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-white/80">
-            {t('home.active_ride')}
-          </p>
-          <p className="truncate text-sm font-extrabold">{label}</p>
-          <p className="truncate text-[11px] text-white/90">
-            {ride.status === 'in_progress' || ride.status === 'arrived'
-              ? `→ ${ride.dropoff_address}`
-              : ride.driver_full_name
-                ? `${ride.driver_full_name.split(' ')[0]} · ${ride.pickup_address}`
-                : ride.pickup_address}
-          </p>
-        </div>
-        <div className="text-right">
-          <p
-            className="text-lg font-extrabold leading-none"
-            style={{ fontVariantNumeric: 'tabular-nums' }}
-          >
-            {ride.price_total_fcfa.toLocaleString('fr-FR').replace(/,/g, ' ')}
-          </p>
-          <p className="text-[9px] text-white/80">FCFA</p>
-        </div>
-        <ArrowRightIcon className="h-5 w-5 flex-none opacity-90" />
-      </div>
-    </Link>
-  );
-}
-
-type Tint = 'primary' | 'violet' | 'cyan';
-
-const TINT_CLASSES: Record<Tint, string> = {
-  primary: 'text-primary-500 bg-primary-50',
-  violet: 'text-violet-500 bg-violet-500/10',
-  cyan: 'text-cyan-500 bg-cyan-500/10',
-};
-
-function QuickAction({
-  Icon,
-  label,
-  tag,
-  tint,
-}: {
-  Icon: (props: { className?: string }) => JSX.Element;
-  label: string;
-  tag?: string;
-  tint: Tint;
-}) {
-  return (
-    <button
-      type="button"
-      className="relative flex flex-col items-center gap-xs rounded-xl border border-neutral-200 bg-white p-md text-center shadow-sm transition hover:shadow-md"
-    >
-      <span className={`grid h-10 w-10 place-items-center rounded-lg ${TINT_CLASSES[tint]}`}>
-        <Icon className="h-5 w-5" />
+      <span className="relative grid h-2.5 w-2.5 flex-none place-items-center">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white/70" />
+        <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white" />
       </span>
-      <span className="text-xs font-semibold text-neutral-900">{label}</span>
-      {tag && (
-        <span className="absolute -right-1 -top-1 rounded-full bg-violet-500 px-xs py-0.5 text-[10px] font-bold text-white shadow-glow-violet">
-          {tag}
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-bold">{label}</span>
+        <span className="block truncate text-[11px] opacity-90">
+          {ride.dropoff_address}
         </span>
-      )}
-    </button>
-  );
-}
-
-function QuickActionLink({
-  href,
-  Icon,
-  label,
-  tint,
-}: {
-  href: string;
-  Icon: (props: { className?: string }) => JSX.Element;
-  label: string;
-  tint: Tint;
-}) {
-  return (
-    <Link
-      href={href}
-      className="relative flex flex-col items-center gap-xs rounded-xl border border-neutral-200 bg-white p-md text-center shadow-sm transition hover:shadow-md"
-    >
-      <span className={`grid h-10 w-10 place-items-center rounded-lg ${TINT_CLASSES[tint]}`}>
-        <Icon className="h-5 w-5" />
       </span>
-      <span className="text-xs font-semibold text-neutral-900">{label}</span>
+      <ArrowRightIcon className="h-4 w-4 flex-none" />
     </Link>
   );
 }

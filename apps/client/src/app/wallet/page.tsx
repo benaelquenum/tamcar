@@ -3,6 +3,7 @@ import { getCurrentProfile } from '@/lib/session';
 import { createServerSupabase } from '@/lib/supabase-server';
 import type { Wallet, WalletTransaction } from '@/lib/wallet';
 import { WalletView } from './WalletView';
+import { BottomTabBar } from '@/components/BottomTabBar';
 
 export default async function WalletPage() {
   const profile = await getCurrentProfile();
@@ -24,11 +25,16 @@ export default async function WalletPage() {
       ?.application_type ?? null;
 
   return (
-    <WalletView
-      wallets={(wallets ?? []) as Wallet[]}
-      transactions={(transactions ?? []) as WalletTransaction[]}
-      isDriver={isDriver}
-      driverApplicationType={applicationType}
-    />
+    <>
+      <WalletView
+        wallets={(wallets ?? []) as Wallet[]}
+        transactions={(transactions ?? []) as WalletTransaction[]}
+        isDriver={isDriver}
+        driverApplicationType={applicationType}
+      />
+      {/* Le portefeuille est un onglet de premier niveau : la barre doit y
+          rester, sinon on ne peut en sortir qu'avec le bouton retour. */}
+      <BottomTabBar />
+    </>
   );
 }

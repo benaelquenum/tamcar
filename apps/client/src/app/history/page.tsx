@@ -5,6 +5,7 @@ import { PinIcon, FileTextIcon } from '@/components/Icon';
 import { getCurrentUser } from '@/lib/session';
 import { createServerSupabase } from '@/lib/supabase-server';
 import { ScheduledRidesList } from './ScheduledRidesList';
+import { BottomTabBar } from '@/components/BottomTabBar';
 
 type RideRow = {
   id: string;
@@ -82,9 +83,13 @@ export default async function HistoryPage({ searchParams }: { searchParams: { ju
           <Logo className="h-8 w-auto" />
         </header>
 
-        <h1 className="mt-lg text-2xl font-extrabold text-neutral-900">Historique</h1>
+        {/* « Courses » et non « Historique » : l'écran porte aussi les
+            réservations à venir, qui sont des courses futures. Les séparer
+            avait rendu les tests confus. */}
+        <h1 className="mt-lg text-2xl font-extrabold text-neutral-900">Courses</h1>
         <p className="mt-xs text-sm text-neutral-600">
-          Vos {list.length} dernière{list.length > 1 ? 's' : ''} course{list.length > 1 ? 's' : ''}.
+          Vos réservations à venir et vos {list.length} dernière
+          {list.length > 1 ? 's' : ''} course{list.length > 1 ? 's' : ''}.
         </p>
 
         <Link
@@ -170,7 +175,7 @@ export default async function HistoryPage({ searchParams }: { searchParams: { ju
           </div>
         )}
 
-        <div className="h-2xl" />
+        <BottomTabBar />
       </div>
     </main>
   );

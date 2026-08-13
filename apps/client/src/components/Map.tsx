@@ -50,13 +50,39 @@ const TRICYCLE_SVG = `
   <circle cx="19" cy="18" r="1.6"/>
 </svg>`;
 
+// Illustrations de véhicules vus de dessus (public/vehicules), détourées à
+// partir de la planche fournie par Terence. Elles remplacent les pastilles
+// SVG : le client reconnaît une moto d'un tricycle au premier regard, ce
+// qu'une pastille colorée ne permettait pas.
+const VEHICLE_IMG: Record<string, string> = {
+  moto: '/vehicules/moto.png',
+  tricycle: '/vehicules/tricycle.png',
+  essentiel: '/vehicules/essentiel.png',
+  confort: '/vehicules/confort.png',
+  premium: '/vehicules/premium.png',
+};
+
+/** Silhouette blanche, pour les pastilles pleines (puck chauffeur). */
 function svgForCategory(cat?: string): string {
   if (cat === 'moto') return MOTO_SVG;
   if (cat === 'tricycle') return TRICYCLE_SVG;
   return CAR_SVG;
 }
 
+/** Illustration détourée, pour les véhicules libres semés sur la carte. */
+function markupForCategory(cat?: string): string {
+  const src = cat ? VEHICLE_IMG[cat] : undefined;
+  if (!src) return svgForCategory(cat);
+  return (
+    `<img src="${src}" alt="" width="34" height="34" ` +
+    'style="display:block;width:34px;height:auto;' +
+    'filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))">'
+  );
+}
+
 function pinClassForCategory(cat?: string): string {
+  // Les illustrations portent déjà leur contour blanc : pas de pastille.
+  if (cat && VEHICLE_IMG[cat]) return 'tc-vehicle-pin';
   if (cat === 'moto') return 'tc-driver-pin moto';
   if (cat === 'tricycle') return 'tc-driver-pin tricycle';
   if (cat === 'confort') return 'tc-driver-pin confort';
@@ -162,6 +188,14 @@ type Props = {
    * Repasser à null → cap remis au nord + retour aux recadrages classiques.
    */
   follow?: [number, number] | null;
+  /**
+   * Recentrage à la demande, sans suivi : à chaque changement de
+   * `recenterKey`, la caméra revient sur `recenterOn`. Sert au bouton
+   * « ma position » de l'accueil, où il n'y a ni départ ni itinéraire à
+   * englober — `frameKey` n'y aurait rien à recadrer.
+   */
+  recenterOn?: [number, number] | null;
+  recenterKey?: number;
 };
 
 // Cap (bearing) entre deux points, en degrés 0-360.
@@ -203,6 +237,8 @@ export function Map({
   pickupPulse = false,
   frameKey,
   follow = null,
+  recenterOn = null,
+  recenterKey,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -378,6 +414,14 @@ export function Map({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [frameKey, follow]);
 
+  // Recentrage à la demande (bouton « ma position »).
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || recenterKey == null || !recenterOn || follow) return;
+    map.easeTo({ center: recenterOn, zoom: Math.max(map.getZoom(), 14), duration: 600 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recenterKey]);
+
   // Mode NAVIGATION : caméra collée à la position suivie, carte pivotée pour
   // garder le sens de marche vers le haut (cap lissé, recalculé après ≥ 8 m
   // de déplacement pour éviter les rotations parasites à l'arrêt). Le curseur
@@ -426,12 +470,12 @@ export function Map({
         const nextClass = pinClassForCategory(drv.category);
         if (el.className !== nextClass) {
           el.className = nextClass;
-          el.innerHTML = svgForCategory(drv.category);
+          el.innerHTML = markupForCategory(drv.category);
         }
       } else {
         const el = document.createElement('div');
         el.className = pinClassForCategory(drv.category);
-        el.innerHTML = svgForCategory(drv.category);
+        el.innerHTML = markupForCategory(drv.category);
         const marker = new GL.Marker({ element: el, anchor: 'center' })
           .setLngLat([drv.lng, drv.lat])
           .addTo(map);
