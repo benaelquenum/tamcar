@@ -78,7 +78,15 @@ end $$;
 -- systématiquement ce point avant d'ajouter une fonction à la boucle.
 --
 --   public.create_ride(...)               → _is_within_service_zone
+--   public.save_favorite_place(...)       → _is_within_service_zone
 --   public.pending_rides_for_driver(...)  → _release_due_scheduled_rides
+--   public.driver_arrived(...)            → _assert_ride_driver
+--   public.driver_start_ride(...)         → _assert_ride_driver
+--   public.driver_complete_ride(...)      → _assert_ride_driver
+--
+--   J'avais manqué _assert_ride_driver, ce qui a bloqué tout le déroulé
+--   d'une course côté chauffeur (voir 20260813160000, qui répare et
+--   automatise la détection de ce cas de figure).
 --
 -- Aucune des deux n'est sensible : la première ne fait qu'un calcul
 -- géométrique sur deux constantes, la seconde ne fait qu'avancer dans le
@@ -87,4 +95,6 @@ end $$;
 grant execute on function public._is_within_service_zone(double precision, double precision)
   to authenticated, service_role;
 grant execute on function public._release_due_scheduled_rides()
+  to authenticated;
+grant execute on function public._assert_ride_driver(uuid, ride_status[])
   to authenticated;
