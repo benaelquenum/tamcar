@@ -33,40 +33,16 @@ body {
    Pins Mapbox custom (drivers autour, chauffeur assigné, pickup pulse)
    ============================================================ */
 
-/* Véhicule illustré sur la carte : l'image EST le marqueur, elle porte
-   déjà son contour blanc. Taille pilotée ici pour que le modificateur
-   .assigned puisse l'agrandir. */
-.tc-vehicle-pin {
+/* Marqueur véhicule : la silhouette SVG EST le marqueur. Pas de pastille,
+   pas d'ombre CSS — le SVG porte la sienne. `.tc-veh-nub-rot` reste la
+   couche qui pivote vers le cap, le code de rotation est inchangé. */
+.tc-veh-marker {
   line-height: 0;
   cursor: pointer;
 }
-.tc-veh-img {
+.tc-veh-marker .tc-veh-nub-rot {
   display: block;
-  width: 34px;
-  height: auto;
-  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
-}
-.tc-vehicle-pin.assigned .tc-veh-img {
-  width: 46px;
-  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.45));
-}
-
-/* Marqueur véhicule orientable : pivote vers le cap via .tc-veh-nub-rot,
-   la même couche que la pointe de l'ancienne pastille. */
-.tc-veh-photo {
-  position: relative;
-  width: 44px;
-  height: 44px;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-}
-.tc-veh-photo .tc-veh-nub-rot {
-  display: grid;
-  place-items: center;
-}
-.tc-veh-photo .tc-veh-img {
-  width: 38px;
+  transition: transform 0.6s ease;
 }
 
 .tc-driver-pin {

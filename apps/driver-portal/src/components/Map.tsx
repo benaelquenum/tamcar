@@ -8,6 +8,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 
 import { COTONOU_CENTER, MAPBOX_TOKEN } from '@/lib/mapbox';
 import { MAP_ENGINE, maplibreConfigured, maplibreStyle } from '@/lib/map-config';
+import { vehicleMarkerSvg } from '@/lib/vehicle-marker';
 
 // Moteur de rendu : MapLibre (Phase 1) ou Mapbox si NEXT_PUBLIC_MAP_ENGINE=mapbox.
 // Les deux exposent la même API (Map/Marker/LngLatBounds/addSource/addLayer…) ;
@@ -20,6 +21,8 @@ export type DriverPin = {
   lat: number;
   lng: number;
   category?: string;
+  /** `vehicles.color`, texte libre. À défaut : la teinte de la catégorie. */
+  color?: string | null;
 };
 
 export type PendingPickup = {
@@ -55,39 +58,17 @@ const TRICYCLE_SVG = `
   <circle cx="19" cy="18" r="1.6"/>
 </svg>`;
 
-// Illustrations vues de dessus (public/vehicules), détourées à partir de
-// la planche fournie par Terence. Le chauffeur se reconnaît sur la carte
-// au véhicule qu'il conduit réellement, pas à une pastille bleue.
-const VEHICLE_IMG: Record<string, string> = {
-  moto: '/vehicules/moto.png',
-  tricycle: '/vehicules/tricycle.png',
-  essentiel: '/vehicules/essentiel.png',
-  confort: '/vehicules/confort.png',
-  premium: '/vehicules/premium.png',
-};
-
-/** Silhouette blanche, repli quand aucune illustration ne correspond. */
-function svgForCategory(cat?: string): string {
-  if (cat === 'moto') return MOTO_SVG;
-  if (cat === 'tricycle') return TRICYCLE_SVG;
-  return CAR_SVG;
+/**
+ * Marqueur d'un véhicule sur la carte. Les silhouettes sont dessinées
+ * (lib/vehicle-marker) et non photographiées : à 30 px, une photo réduite
+ * devient une tache dont on ne distingue plus l'avant.
+ */
+function markupForCategory(cat?: string, color?: string | null, size = 30): string {
+  return vehicleMarkerSvg({ category: cat, color, size });
 }
 
-function markupForCategory(cat?: string): string {
-  const src = cat ? VEHICLE_IMG[cat] : undefined;
-  if (!src) return svgForCategory(cat);
-  // Taille et ombre laissées au CSS : le modificateur .assigned doit
-  // pouvoir agrandir le marqueur, ce qu'un style inline empêcherait.
-  return `<img src="${src}" alt="" class="tc-veh-img">`;
-}
-
-function pinClassForCategory(cat?: string): string {
-  if (cat && VEHICLE_IMG[cat]) return 'tc-vehicle-pin';
-  if (cat === 'moto') return 'tc-driver-pin moto';
-  if (cat === 'tricycle') return 'tc-driver-pin tricycle';
-  if (cat === 'confort') return 'tc-driver-pin confort';
-  if (cat === 'premium') return 'tc-driver-pin premium';
-  return 'tc-driver-pin';
+function pinClassForCategory(_cat?: string): string {
+  return 'tc-veh-marker';
 }
 
 // Pin départ (vert, pastille pleine) — ancré en bas (pointe sur le lieu).
@@ -125,27 +106,13 @@ function makeStopEl(n: number): HTMLDivElement {
   return el;
 }
 
-// Pastille chauffeur : disque bleu + silhouette véhicule + pointe de cap
-// orientable (+ halo si c'est « moi »).
-function makePuckEl(category?: string, self = false): HTMLDivElement {
+// Marqueur du véhicule suivi : la silhouette pivote vers le cap, l'anneau
+// bleu « vous êtes ici » reste fixe autour d'elle.
+function makePuckEl(category?: string, self = false, color?: string | null): HTMLDivElement {
   const el = document.createElement('div');
-  const src = category ? VEHICLE_IMG[category] : undefined;
-
-  // L'illustration EST le marqueur : c'est le véhicule entier qui pivote
-  // vers le cap, au lieu d'une pointe accolée à un disque bleu.
-  if (src) {
-    el.className = 'tc-veh-photo' + (self ? ' me' : '');
-    el.innerHTML =
-      (self ? '<span class="tc-veh-halo"></span>' : '') +
-      `<span class="tc-veh-nub-rot"><img src="${src}" alt="" class="tc-veh-img"></span>`;
-    return el;
-  }
-
-  el.className = 'tc-veh-puck' + (self ? ' me' : '');
+  el.className = 'tc-veh-marker' + (self ? ' me' : '');
   el.innerHTML =
-    (self ? '<span class="tc-veh-halo"></span>' : '') +
-    '<span class="tc-veh-nub-rot"><span class="tc-veh-nub"></span></span>' +
-    svgForCategory(category);
+    `<span class="tc-veh-nub-rot">${vehicleMarkerSvg({ category, color, self, size: 34 })}</span>`;
   return el;
 }
 
@@ -466,12 +433,12 @@ export function Map({
         const nextClass = pinClassForCategory(drv.category);
         if (el.className !== nextClass) {
           el.className = nextClass;
-          el.innerHTML = markupForCategory(drv.category);
+          el.innerHTML = markupForCategory(drv.category, drv.color);
         }
       } else {
         const el = document.createElement('div');
         el.className = pinClassForCategory(drv.category);
-        el.innerHTML = markupForCategory(drv.category);
+        el.innerHTML = markupForCategory(drv.category, drv.color);
         const marker = new GL.Marker({ element: el, anchor: 'center' })
           .setLngLat([drv.lng, drv.lat])
           .addTo(map);
@@ -530,7 +497,7 @@ export function Map({
     if (assignedDriver) {
       const el = document.createElement('div');
       el.className = pinClassForCategory(assignedDriver.category) + ' assigned';
-      el.innerHTML = markupForCategory(assignedDriver.category);
+      el.innerHTML = markupForCategory(assignedDriver.category, assignedDriver.color, 34);
       assignedMarkerRef.current = new GL.Marker({ element: el, anchor: 'center' })
         .setLngLat([assignedDriver.lng, assignedDriver.lat])
         .addTo(map);
