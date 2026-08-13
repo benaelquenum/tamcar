@@ -92,6 +92,9 @@ function formatDistance(m: number | null | undefined): string {
   return m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`;
 }
 
+/** Un relevé GPS et sa qualité : `precise` = sous le seuil des 50 m. */
+type Fix = { coords: [number, number]; precise: boolean };
+
 export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverRideForView; myUserId: string }) {
   const [ride, setRide] = useState<DriverRideForView>(initialRide);
   const [chatOpen, setChatOpen] = useState(false);
@@ -110,6 +113,8 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
   const [nextManeuver, setNextManeuver] = useState<NavStep | null>(null);
   const spokenRef = useRef('');
   const [routeGeo, setRouteGeo] = useState<GeoJSON.LineString | null>(null);
+  // 'ok' précis · 'coarse' imprécis (affichage seul) · 'none' pas de position
+  const [fixState, setFixState] = useState<'ok' | 'coarse' | 'none'>('none');
   const [distanceToTarget, setDistanceToTarget] = useState<number | null>(null);
   const [durationToTarget, setDurationToTarget] = useState<number | null>(null);
   const [pending, startTransition] = useTransition();
@@ -218,22 +223,29 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
   }, [ride.status]);
 
   // Get my position + heartbeat.
-  // Filtre les fixes imprécis (accuracy > 50 m) et lisse sur 3 samples
-  // (poll toutes les 15 s, un buffer plus large créerait trop d'inertie).
+  //
+  // Le seuil de 50 m protège ce qu'on ÉCRIT (position en base, diffusion au
+  // client, contrôle d'arrivée) : un point à 3 km fausserait le matching.
+  // Mais il ne doit PAS conditionner l'affichage : tant qu'il servait de
+  // porte d'entrée, un fixe imprécis — ordinateur en Wi-Fi, téléphone à
+  // l'intérieur — renvoyait null et le tick abandonnait tout, itinéraire,
+  // suivi de caméra et voix compris, sans rien dire au chauffeur.
+  //
+  // On renvoie donc toujours la position, avec sa précision, et c'est
+  // l'appelant qui décide de ce qu'il en fait.
   const smoothingBufferRef = useRef(new SmoothingBuffer(3));
-  const getMyPos = useCallback(async (): Promise<[number, number] | null> => {
+  const getMyFix = useCallback(async (): Promise<Fix | null> => {
     if (!('geolocation' in navigator)) return null;
     return new Promise((resolve) => {
       navigator.geolocation.getCurrentPosition(
         (p) => {
-          if (!isAccurateEnough(p)) return resolve(null);
           const smoothed = smoothingBufferRef.current.push({
             lng: p.coords.longitude,
             lat: p.coords.latitude,
             accuracy: p.coords.accuracy,
             ts: p.timestamp,
           });
-          resolve(smoothed);
+          resolve({ coords: smoothed, precise: isAccurateEnough(p) });
         },
         () => resolve(null),
         { enableHighAccuracy: true, timeout: 15000 },
@@ -241,24 +253,51 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
     });
   }, []);
 
+  /** Position seule, uniquement si assez précise pour être écrite. */
+  const getMyPos = useCallback(async (): Promise<[number, number] | null> => {
+    const fix = await getMyFix();
+    return fix?.precise ? fix.coords : null;
+  }, [getMyFix]);
+
   // Heartbeat position + recalcul route toutes les 15s
   useEffect(() => {
     let cancelled = false;
 
     async function tick() {
-      const p = await getMyPos();
-      if (!p || cancelled) return;
-      setDriverPos(p);
-      supabaseBrowser.rpc('driver_update_location', { current_lng: p[0], current_lat: p[1] });
-      trackChannelRef.current?.send({ type: 'broadcast', event: 'driver-pos', payload: { lng: p[0], lat: p[1] } });
+      const fix = await getMyFix();
+      if (cancelled) return;
+      setFixState(fix ? (fix.precise ? 'ok' : 'coarse') : 'none');
 
-      // Route jusqu'à la target
-      const r = await getNavRoute(p, target);
+      if (fix) {
+        setDriverPos(fix.coords);
+        // On n'écrit et on ne diffuse QUE les fixes précis : la base sert au
+        // matching et au contrôle d'arrivée.
+        if (fix.precise) {
+          supabaseBrowser.rpc('driver_update_location', {
+            current_lng: fix.coords[0],
+            current_lat: fix.coords[1],
+          });
+          trackChannelRef.current?.send({
+            type: 'broadcast',
+            event: 'driver-pos',
+            payload: { lng: fix.coords[0], lat: fix.coords[1] },
+          });
+        }
+      }
+
+      // L'itinéraire part de la position quand on l'a, sinon du point de
+      // départ de la course : le chauffeur doit voir le trajet dès qu'il
+      // accepte, sans attendre un premier fix GPS.
+      const origin = fix?.coords ?? [ride.pickup_lng, ride.pickup_lat] as [number, number];
+      const r = await getNavRoute(origin, target);
       if (r && !cancelled) {
         setRouteGeo(r.geometry);
         setDistanceToTarget(r.distance_km * 1000);
         setDurationToTarget(r.duration_min);
         setNextManeuver(r.steps.find((s) => s.type !== 'depart') ?? null);
+      } else if (!r && !cancelled) {
+        // eslint-disable-next-line no-console
+        console.error('[getNavRoute] aucun itinéraire — jeton Mapbox absent ou API en échec');
       }
     }
 
@@ -268,7 +307,7 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
       cancelled = true;
       clearInterval(interval);
     };
-  }, [target, getMyPos]);
+  }, [target, getMyFix, ride.pickup_lng, ride.pickup_lat]);
 
   // Canal temps réel réciproque : diffuse la position du chauffeur et reçoit
   // celle du client → le chauffeur le voit bouger. Éphémère (broadcast).
@@ -513,7 +552,10 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
   async function handleArrival() {
     setErr(null);
     // Position live si dispo, sinon on prend driverPos du heartbeat
-    const pos = driverPos ?? (await getMyPos());
+    // Le contrôle des 100 m exige un fixe PRÉCIS : driverPos peut
+    // désormais porter une position approximative, bonne pour la carte
+    // mais pas pour décider si le chauffeur est bien sur place.
+    const pos = (fixState === 'ok' ? driverPos : null) ?? (await getMyPos());
     if (!pos) {
       // Fallback : impossible de vérifier → on envoie sans distance
       transition((id) => markArrivedAction(id));
@@ -854,6 +896,22 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
                   </div>
                 </div>
               </>
+            )}
+
+            {/* Sans position, la carte ne suit pas et la voix se tait : le
+                chauffeur doit savoir pourquoi, pas rester devant un écran
+                inerte. */}
+            {!isTerminated && fixState !== 'ok' && (
+              <div className="mb-md rounded-md bg-warning/10 p-md text-xs text-neutral-700">
+                <p className="font-bold text-warning">
+                  {fixState === 'none' ? 'Position GPS indisponible' : 'Position GPS imprécise'}
+                </p>
+                <p className="mt-xs">
+                  {fixState === 'none'
+                    ? "Autorisez la localisation pour TamCar : sans elle, la carte ne vous suit pas et le guidage vocal reste muet. L'itinéraire affiché part du point de départ de la course."
+                    : 'Le guidage fonctionne, mais votre position est trop approximative pour être transmise au client. Sortez à découvert si possible.'}
+                </p>
+              </div>
             )}
 
             {err && (
