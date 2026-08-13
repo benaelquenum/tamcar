@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { currentPermission, pushSupported, subscribeToPush } from '@/lib/push-subscribe';
+import { AlertTriangleIcon } from '@/components/Icon';
 
 export function EnableNotifications() {
   const [state, setState] = useState<NotificationPermission | 'unsupported' | 'loading'>('loading');
@@ -26,10 +27,13 @@ export function EnableNotifications() {
   // débloquer dans les réglages. On l'affiche clairement.
   if (state === 'denied') {
     return (
-      <div className="fixed inset-x-lg top-md z-50 mx-auto max-w-md rounded-xl bg-error px-lg py-md text-center text-xs font-bold text-white shadow-lg ring-2 ring-white/30">
-        ⚠️ Alertes de course bloquées — autorisez les notifications pour ce site
-        dans les réglages de votre navigateur (Paramètres → Notifications), sinon
-        vous ne verrez aucune course.
+      <div className="fixed inset-x-lg top-md z-50 mx-auto flex max-w-md items-center justify-center gap-sm rounded-xl bg-error px-lg py-md text-center text-xs font-bold text-white shadow-lg ring-2 ring-white/30">
+        <AlertTriangleIcon className="h-4 w-4 flex-none" />
+        <span>
+          Alertes de course bloquées — autorisez les notifications pour ce site
+          dans les réglages de votre navigateur (Paramètres → Notifications), sinon
+          vous ne verrez aucune course.
+        </span>
       </div>
     );
   }
