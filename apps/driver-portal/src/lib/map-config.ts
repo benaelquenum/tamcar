@@ -33,9 +33,26 @@ export const MAP_ENGINE: 'mapbox' | 'maplibre' =
         ? 'maplibre'
         : 'mapbox';
 
-// Polices + sprites Protomaps (statiques, libres). À auto-héberger en
-// Phase 1b pour zéro dépendance externe résiduelle.
+// Polices + sprites Protomaps (statiques, libres). À auto-héberger plus
+// tard pour zéro dépendance externe résiduelle.
 const PM_ASSETS = 'https://protomaps.github.io/basemaps-assets';
+
+// Glyphes SDF. Le style les exigeait sous /fonts/{fontstack}/{range}.pbf
+// alors que ce dossier n'a jamais été généré : la carte se serait affichée
+// SANS AUCUN LIBELLÉ — ni nom de rue, ni nom de quartier — dès la bascule
+// sur PMTiles. On sert donc les glyphes Protomaps par défaut, et on garde
+// une variable pour basculer sur des glyphes maison le jour où on génère
+// les SDF de Sora (police de la marque).
+export const GLYPHS_URL =
+  process.env.NEXT_PUBLIC_MAP_GLYPHS_URL ?? `${PM_ASSETS}/fonts/{fontstack}/{range}.pbf`;
+
+// Les noms de fontstack doivent exister chez l'hébergeur de glyphes.
+// Protomaps publie Noto Sans ; Sora n'y est pas. Tant que les SDF Sora ne
+// sont pas générés, demander « Sora » revient à n'afficher aucun texte.
+const SELF_HOSTED_GLYPHS = Boolean(process.env.NEXT_PUBLIC_MAP_GLYPHS_URL);
+const FONT_REGULAR = SELF_HOSTED_GLYPHS ? 'Sora' : 'Noto Sans Regular';
+const FONT_BOLD = SELF_HOSTED_GLYPHS ? 'Sora' : 'Noto Sans Medium';
+const FONT_ITALIC = SELF_HOSTED_GLYPHS ? 'Sora' : 'Noto Sans Italic';
 
 // Thème « TamCar Clair » — fond blanc chaud, eau calme, or réservé aux
 // autoroutes, verts unifiés, bâtiments discrets, noms de rues contrastés.
@@ -55,8 +72,7 @@ const TAMCAR_THEME = {
   roads_label_minor: '#6C6B65', roads_label_minor_halo: '#FFFFFF',
   city_label: '#26251F', city_label_halo: '#FFFFFF',
   subplace_label: '#4A4941', subplace_label_halo: '#FFFFFF',
-  // Police TamCar : Sora (glyphes SDF auto-hébergés dans /public/fonts/Sora).
-  regular: 'Sora', bold: 'Sora', italic: 'Sora',
+  regular: FONT_REGULAR, bold: FONT_BOLD, italic: FONT_ITALIC,
 };
 
 let protocolRegistered = false;
@@ -77,7 +93,7 @@ export function maplibreStyle(): string | StyleSpecification {
     ensurePmtilesProtocol();
     return {
       version: 8,
-      glyphs: '/fonts/{fontstack}/{range}.pbf',
+      glyphs: GLYPHS_URL,
       sprite: `${PM_ASSETS}/sprites/v4/light`,
       sources: {
         protomaps: {
