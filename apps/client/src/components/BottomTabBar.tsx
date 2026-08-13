@@ -89,18 +89,17 @@ export function BottomTabBar() {
             <TabLink key={tab.href} tab={tab} pathname={pathname} />
           ))}
 
-          {/* Bouton central : réserver à l'avance */}
-          <div className="relative flex w-16 flex-none justify-center">
+          {/* Bouton central : réserver à l'avance. Pas de libellé sous le
+              bouton — l'icône calendrier et l'aria-label suffisent. Le bloc
+              conserve sa largeur pour ménager la place entre les onglets. */}
+          <div className="relative w-16 flex-none">
             <Link
               href="/commande?scheduled=1"
               aria-label="Réserver une course à l'avance"
-              className="absolute -top-5 grid h-14 w-14 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-primary-700 text-white shadow-glow-violet ring-4 ring-white transition active:scale-95"
+              className="absolute -top-5 left-1/2 grid h-14 w-14 -translate-x-1/2 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-primary-700 text-white shadow-glow-violet ring-4 ring-white transition active:scale-95"
             >
               <CalendarIcon className="h-6 w-6" />
             </Link>
-            <span className="mt-auto pb-sm text-[10px] font-semibold text-neutral-500">
-              Réserver
-            </span>
           </div>
 
           {RIGHT.map((tab) => (

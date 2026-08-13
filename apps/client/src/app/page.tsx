@@ -15,7 +15,6 @@ import { UnreadMessagesChip } from '@/components/UnreadMessagesChip';
 import { BannerCarousel } from '@/components/BannerCarousel';
 import { ProfileMenu } from '@/components/ProfileMenu';
 import { BottomTabBar } from '@/components/BottomTabBar';
-import { HomeMap } from '@/components/HomeMap';
 import {
   QuickDestinations,
   type FavoritePlace,
@@ -90,7 +89,7 @@ export default async function HomePage() {
   const supabase = createServerSupabase();
 
   // Une seule vague parallèle : bannières, puis les données du compte.
-  const [bannersRes, personal] = await Promise.all([
+  const [bannersRes, driversRes, personal] = await Promise.all([
     supabase
       .from('home_banners')
       .select('id, title, subtitle, image_url, link_url, cta_text, gradient')
@@ -98,6 +97,14 @@ export default async function HomePage() {
       .eq('audience', 'client')
       .order('display_order', { ascending: true })
       .limit(6),
+    // Sans carte, on n'a plus la position du client : on ne peut donc plus
+    // écrire « à proximité » sans mentir. Simple décompte des chauffeurs en
+    // service, comme avant la refonte — la promesse reste vérifiable.
+    supabase
+      .from('drivers')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_online', true)
+      .eq('status', 'active'),
     isLoggedIn
       ? Promise.all([
           supabase.rpc('my_wallets'),
@@ -122,43 +129,48 @@ export default async function HomePage() {
   }
 
   const banners = (bannersRes.data ?? []) as BannerRow[];
+  const onlineCount = driversRes.count ?? 0;
 
   return (
-    <main className="relative min-h-dvh bg-neutral-50">
-      {/* Carte : elle occupe le haut de l'écran et prouve la disponibilité
-          avant même que le client ait saisi quoi que ce soit. */}
-      <div className="relative h-[42vh] min-h-[260px] w-full overflow-hidden bg-primary-50">
-        <HomeMap className="h-full w-full" />
-
-        <header className="pointer-events-none absolute inset-x-0 top-0 z-20 mx-auto flex max-w-md items-center justify-between px-lg pt-lg">
-          <span className="pointer-events-auto rounded-full bg-white/95 px-md py-xs shadow-md ring-1 ring-neutral-200 backdrop-blur">
-            <Logo className="h-6 w-auto" />
-          </span>
+    <main className="relative min-h-dvh bg-white">
+      <div className="relative z-10 mx-auto max-w-md px-lg pt-lg">
+        <header className="flex items-center justify-between">
+          <Logo className="h-8 w-auto" />
           {profile && (
-            <span className="pointer-events-auto">
-              <ProfileMenu
-                avatarUrl={profile.avatar_url}
-                fullName={profile.full_name}
-                firstName={firstName ?? ''}
-              />
-            </span>
+            <ProfileMenu
+              avatarUrl={profile.avatar_url}
+              fullName={profile.full_name}
+              firstName={firstName ?? ''}
+            />
           )}
         </header>
-      </div>
 
-      {/* Feuille : elle chevauche la carte, comme dans la maquette. */}
-      <div className="relative z-10 -mt-lg mx-auto max-w-md rounded-t-2xl bg-white px-lg pt-lg shadow-[0_-8px_24px_rgba(0,0,0,0.06)]">
-        {banners.length > 0 && <BannerCarousel banners={banners} className="mb-md" />}
+        {banners.length > 0 && <BannerCarousel banners={banners} className="mt-md" />}
 
         {activeRide && <ActiveRideBanner ride={activeRide} t={t} />}
 
-        <section>
+        <section className="mt-lg">
           <p className="text-sm font-medium text-neutral-600">
             {firstName ? `${t('home.greeting')} ${firstName}` : t('home.greeting')}
           </p>
           <h1 className="mt-xs text-3xl font-extrabold leading-tight tracking-tight text-neutral-900">
             Où allez-vous&nbsp;?
           </h1>
+
+          {onlineCount > 0 && (
+            <div className="mt-md inline-flex items-center gap-sm rounded-full bg-success/10 px-md py-xs">
+              <span className="relative grid h-2 w-2 place-items-center">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success/60" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
+              </span>
+              <span
+                className="text-xs font-semibold text-success"
+                style={{ fontVariantNumeric: 'tabular-nums' }}
+              >
+                {onlineCount} chauffeur{onlineCount > 1 ? 's' : ''} en service
+              </span>
+            </div>
+          )}
         </section>
 
         {/* Champ unique : le départ est déduit du GPS, une seule décision. */}
