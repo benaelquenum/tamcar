@@ -280,13 +280,14 @@ export default function CguPage() {
 
         <Section n="19" title="Sécurité et urgences">
           <p>
-            Un bouton SOS géolocalisé est disponible pendant la course ; il
-            alerte l’équipe TamCar et les contacts désignés, mais ne se
-            substitue pas aux services publics de secours (police : 117,
-            pompiers : 118). Les trajets sont tracés (heure, itinéraire,
-            identité des parties) à des fins de sécurité et d’arbitrage. Les
-            dommages corporels subis par les passagers relèvent de l’assurance
-            responsabilité civile du véhicule.
+            Un bouton d’assistance est disponible pendant la course : il
+            permet de joindre l’équipe TamCar immédiatement, par appel vocal ou
+            par WhatsApp. Il <strong>ne se substitue pas aux services publics de
+            secours</strong> (police : 117, pompiers : 118), qui doivent être
+            appelés en premier en cas de danger. Les trajets sont tracés (heure,
+            itinéraire, identité des parties) à des fins de sécurité et
+            d’arbitrage. Les dommages corporels subis par les passagers relèvent
+            de l’assurance responsabilité civile du véhicule.
           </p>
         </Section>
 
