@@ -17,7 +17,7 @@ export default function ConfidentialitePage() {
           Politique de confidentialité
         </h1>
         <p className="text-xs text-neutral-500">
-          Version {TERMS_VERSION} · Tam Logistics SARL (en cours de constitution) · Cotonou, Bénin
+          Version {TERMS_VERSION} · Tam Logistics SARL · Cotonou, Bénin
         </p>
       </header>
 
@@ -80,7 +80,7 @@ export default function ConfidentialitePage() {
           <ul className="ml-lg list-disc space-y-xs">
             <li>Pendant une course, le Chauffeur et le Client voient réciproquement le prénom, la note, le numéro de téléphone et la position de l’autre, pour la seule durée de la course ;</li>
             <li>Si vous partagez le lien de suivi d’une course, toute personne disposant de ce lien peut voir le trajet en temps réel jusqu’à la fin de la course. Vous seul décidez de l’envoyer ;</li>
-            <li>Prestataires techniques strictement nécessaires : <strong>Supabase</strong> et <strong>Vercel</strong> (hébergement et base de données), <strong>Mapbox</strong> (cartographie, itinéraires et recherche d’adresses), <strong>Google</strong> (recherche de lieux, en secours lorsque notre propre base ne trouve pas une adresse, et acheminement des notifications sur Android), <strong>FedaPay</strong> (paiement Mobile Money) ;</li>
+            <li>Prestataires techniques strictement nécessaires : <strong>Supabase</strong> et <strong>Vercel</strong> (hébergement et base de données), <strong>Mapbox</strong> (cartographie, itinéraires et recherche d’adresses), <strong>Google</strong> (recherche de lieux, en secours lorsque notre propre base ne trouve pas une adresse, et acheminement des notifications sur Android), <strong>FeexPay</strong> (paiement Mobile Money) ;</li>
             <li>Si vous nous écrivez sur WhatsApp, l’échange est soumis à la politique de confidentialité de Meta ;</li>
             <li>Autorités : uniquement sur réquisition légale.</li>
           </ul>
@@ -130,7 +130,7 @@ export default function ConfidentialitePage() {
       </div>
 
       <footer className="mt-2xl border-t border-neutral-200 pt-lg text-center text-xs text-neutral-400">
-        Tam Logistics SARL (en cours de constitution) · Cotonou, Bénin ·
+        Tam Logistics SARL · Cotonou, Bénin ·
         contact@tamcar.app
       </footer>
     </main>

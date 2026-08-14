@@ -17,7 +17,7 @@ export default function CguPage() {
           Conditions Générales d’Utilisation
         </h1>
         <p className="text-xs text-neutral-500">
-          Version {TERMS_VERSION} · Tam Logistics SARL (en cours de constitution) · Cotonou, Bénin
+          Version {TERMS_VERSION} · Tam Logistics SARL · Cotonou, Bénin
         </p>
       </header>
 
@@ -395,7 +395,7 @@ export default function CguPage() {
       </div>
 
       <footer className="mt-2xl border-t border-neutral-200 pt-lg text-center text-xs text-neutral-400">
-        Tam Logistics SARL (en cours de constitution) · Cotonou, Bénin ·
+        Tam Logistics SARL · Cotonou, Bénin ·
         contact@tamcar.app
       </footer>
     </main>
