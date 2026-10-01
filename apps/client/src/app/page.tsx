@@ -11,7 +11,7 @@ import {
 import { firstNameOf, getCurrentProfile } from '@/lib/session';
 import { createServerSupabase } from '@/lib/supabase-server';
 import { UnreadMessagesChip } from '@/components/UnreadMessagesChip';
-import { BannerCarousel } from '@/components/BannerCarousel';
+import { BannerCarousel, type BannerItem } from '@/components/BannerCarousel';
 import { NotificationBell } from '@/components/NotificationBell';
 import { ProfileMenu } from '@/components/ProfileMenu';
 import { BottomTabBar } from '@/components/BottomTabBar';
@@ -21,16 +21,6 @@ import {
   type FavoritePlace,
   type RecentDestination,
 } from '@/components/QuickDestinations';
-
-type BannerRow = {
-  id: string;
-  title: string;
-  subtitle: string | null;
-  image_url: string | null;
-  link_url: string | null;
-  cta_text: string | null;
-  gradient: string | null;
-};
 
 type ActiveRideRow = {
   id: string;
@@ -51,10 +41,13 @@ const ACTIVE_STATUS_TINT: Record<ActiveRideRow['status'], string> = {
 };
 
 /**
- * Les deux bannières de la marque, toujours en tête du carrousel. Les
- * bannières créées dans le back-office (home_banners) viennent après.
+ * Les deux bannières de la marque : tout le carrousel. Les bannières du
+ * back-office (home_banners) ne sont plus affichées sur l'accueil client — la
+ * vieille bannière « Commande ton Tam » (fond bleu et texte) en a été retirée
+ * à la demande de Terence le 2026-10-01. Les partenaires véhicule gardent les
+ * leurs sur /dealer.
  */
-const BRAND_BANNERS: BannerRow[] = [
+const BRAND_BANNERS: BannerItem[] = [
   {
     id: 'brand-claire',
     title: 'Ta course est claire, ta course éclair.',
@@ -118,24 +111,14 @@ export default async function HomePage() {
 
   const supabase = createServerSupabase();
 
-  // Une seule vague parallèle : bannières, puis les données du compte.
-  const [bannersRes, personal] = await Promise.all([
-    supabase
-      .from('home_banners')
-      .select('id, title, subtitle, image_url, link_url, cta_text, gradient')
-      .eq('is_active', true)
-      .eq('audience', 'client')
-      .order('display_order', { ascending: true })
-      .limit(6),
-    isLoggedIn
-      ? Promise.all([
-          supabase.rpc('my_wallets'),
-          supabase.rpc('my_active_ride'),
-          supabase.rpc('my_favorite_places'),
-          supabase.rpc('my_recent_destinations', { p_limit: 4 }),
-        ])
-      : Promise.resolve(null),
-  ]);
+  const personal = isLoggedIn
+    ? await Promise.all([
+        supabase.rpc('my_wallets'),
+        supabase.rpc('my_active_ride'),
+        supabase.rpc('my_favorite_places'),
+        supabase.rpc('my_recent_destinations', { p_limit: 4 }),
+      ])
+    : null;
 
   if (personal) {
     const [{ data: wallets }, { data: activeData }, { data: favData }, { data: recentData }] =
@@ -149,8 +132,6 @@ export default async function HomePage() {
     favorites = (Array.isArray(favData) ? favData : []) as FavoritePlace[];
     recents = (Array.isArray(recentData) ? recentData : []) as RecentDestination[];
   }
-
-  const banners = [...BRAND_BANNERS, ...((bannersRes.data ?? []) as BannerRow[])];
 
   return (
     <main className="relative min-h-dvh bg-gradient-to-b from-primary-50/70 via-white to-white">
@@ -169,7 +150,7 @@ export default async function HomePage() {
           )}
         </header>
 
-        <BannerCarousel banners={banners} aspectClass="aspect-[5/2]" className="mt-lg" />
+        <BannerCarousel banners={BRAND_BANNERS} aspectClass="aspect-[5/2]" className="mt-lg" />
 
         {activeRide && (
           <div className="mt-lg">
