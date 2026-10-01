@@ -1,11 +1,11 @@
 import Link from 'next/link';
 import {
   BriefcaseIcon,
+  ChevronRightIcon,
   ClockIcon,
   HomeIcon,
   PinIcon,
-  PlusIcon,
-  StarIcon,
+  StarOutlineIcon,
 } from '@/components/Icon';
 
 export type FavoritePlace = {
@@ -28,11 +28,13 @@ export type RecentDestination = {
  *
  * Favoris et récentes sont DEUX choses : les premiers sont enregistrés
  * explicitement et nommés, les secondes déduites des courses terminées.
- * On les affiche dans cet ordre, sans les mélanger sous un titre unique.
+ * Les quatre raccourcis (maison, travail, favoris, historique) tiennent sur
+ * une seule ligne dans la carte de recherche ; les récentes forment une liste
+ * à part, en dessous.
  *
- * Chaque carte pointe vers /commande avec la destination pré-remplie —
- * les mêmes paramètres que les liens de localisation ouverts depuis
- * WhatsApp, déjà gérés par l'écran de commande.
+ * Chaque lieu pointe vers /commande avec la destination pré-remplie — les
+ * mêmes paramètres que les liens de localisation ouverts depuis WhatsApp,
+ * déjà gérés par l'écran de commande.
  */
 
 function destHref(lat: number, lng: number, label: string): string {
@@ -44,140 +46,92 @@ function destHref(lat: number, lng: number, label: string): string {
   return `/commande?${p.toString()}`;
 }
 
-function iconFor(kind: FavoritePlace['kind']) {
-  if (kind === 'home') return HomeIcon;
-  if (kind === 'work') return BriefcaseIcon;
-  return StarIcon;
-}
-
-function Card({
+function Shortcut({
   href,
   Icon,
   title,
   subtitle,
 }: {
   href: string;
-  Icon: (props: { className?: string }) => JSX.Element;
+  Icon: (props: { className?: string; strokeWidth?: number }) => JSX.Element;
   title: string;
   subtitle: string;
 }) {
   return (
     <Link
       href={href}
-      className="flex min-w-[9.5rem] flex-none items-center gap-sm rounded-xl border border-neutral-200 bg-white p-md shadow-sm transition hover:border-primary-300 hover:shadow-md"
+      className="flex min-w-0 flex-col items-center gap-xs px-xs text-center transition active:scale-95"
     >
-      <span className="grid h-9 w-9 flex-none place-items-center rounded-lg bg-primary-50 text-primary-700">
-        <Icon className="h-4 w-4" />
+      <span className="grid h-11 w-11 place-items-center rounded-2xl bg-primary-50 text-primary-500">
+        <Icon className="h-5 w-5" strokeWidth={2} />
       </span>
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-bold text-neutral-900">{title}</span>
-        <span className="block truncate text-[11px] text-neutral-500">{subtitle}</span>
+      <span className="block text-[12px] font-bold leading-tight text-neutral-900">{title}</span>
+      <span className="line-clamp-2 block text-[10px] leading-tight text-neutral-400">
+        {subtitle}
       </span>
     </Link>
   );
 }
 
-export function QuickDestinations({
-  favorites,
-  recents,
-}: {
-  favorites: FavoritePlace[];
-  recents: RecentDestination[];
-}) {
-  const hasHome = favorites.some((f) => f.kind === 'home');
-  const hasWork = favorites.some((f) => f.kind === 'work');
-
-  if (favorites.length === 0 && recents.length === 0) {
-    // Premier lancement : on invite à enregistrer plutôt que d'afficher un vide.
-    return (
-      <section className="mt-lg">
-        <Link
-          href="/lieux"
-          className="flex items-center gap-md rounded-xl border border-dashed border-neutral-300 bg-white p-md text-left transition hover:border-primary-300"
-        >
-          <span className="grid h-9 w-9 flex-none place-items-center rounded-lg bg-primary-50 text-primary-700">
-            <PlusIcon className="h-4 w-4" strokeWidth={2.5} />
-          </span>
-          <span className="flex-1">
-            <span className="block text-sm font-bold text-neutral-900">
-              Enregistrez votre maison
-            </span>
-            <span className="block text-[11px] text-neutral-500">
-              Une adresse enregistrée, c&apos;est une course en deux touches.
-            </span>
-          </span>
-        </Link>
-      </section>
-    );
-  }
+/** Maison · Travail · Favoris · Historique, pour la carte « Où allez-vous ? ». */
+export function ShortcutsRow({ favorites }: { favorites: FavoritePlace[] }) {
+  const home = favorites.find((f) => f.kind === 'home');
+  const work = favorites.find((f) => f.kind === 'work');
 
   return (
-    <>
-      {favorites.length > 0 && (
-        <section className="mt-lg">
-          <div className="mb-sm flex items-baseline justify-between">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-              Mes lieux
-            </h2>
-            <Link href="/lieux" className="text-xs font-semibold text-primary-700">
-              Gérer
-            </Link>
-          </div>
-          <div className="-mx-lg flex gap-sm overflow-x-auto px-lg pb-xs">
-            {favorites.map((f) => {
-              const Icon = iconFor(f.kind);
-              return (
-                <Card
-                  key={f.id}
-                  href={destHref(f.lat, f.lng, f.label)}
-                  Icon={Icon}
-                  title={f.label}
-                  subtitle={f.address}
-                />
-              );
-            })}
-            {/* Domicile et travail absents : on propose de les définir, ce
-                sont les deux qui font gagner le plus de temps. */}
-            {!hasHome && (
-              <Card href="/lieux?kind=home" Icon={HomeIcon} title="Maison" subtitle="À définir" />
-            )}
-            {!hasWork && (
-              <Card href="/lieux?kind=work" Icon={BriefcaseIcon} title="Travail" subtitle="À définir" />
-            )}
-          </div>
-        </section>
-      )}
+    <div className="mt-md grid grid-cols-4 divide-x divide-neutral-200/70 rounded-2xl bg-neutral-100/70 py-md">
+      <Shortcut
+        href={home ? destHref(home.lat, home.lng, home.label) : '/lieux?kind=home'}
+        Icon={HomeIcon}
+        title="Maison"
+        subtitle={home ? home.address : 'Ajouter une adresse'}
+      />
+      <Shortcut
+        href={work ? destHref(work.lat, work.lng, work.label) : '/lieux?kind=work'}
+        Icon={BriefcaseIcon}
+        title="Travail"
+        subtitle={work ? work.address : 'Ajouter une adresse'}
+      />
+      <Shortcut href="/lieux" Icon={StarOutlineIcon} title="Favoris" subtitle="Vos lieux enregistrés" />
+      <Shortcut href="/history" Icon={ClockIcon} title="Historique" subtitle="Vos dernières courses" />
+    </div>
+  );
+}
 
-      {recents.length > 0 && (
-        <section className="mt-lg">
-          <div className="mb-sm flex items-baseline justify-between">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-              Destinations récentes
-            </h2>
-            <Link href="/history" className="text-xs font-semibold text-primary-700">
-              Voir tout
+/** Dernières destinations (déduites des courses terminées). */
+export function RecentDestinations({ recents }: { recents: RecentDestination[] }) {
+  if (recents.length === 0) return null;
+
+  return (
+    <section className="mt-xl">
+      <div className="flex items-baseline justify-between">
+        <h2 className="text-lg font-extrabold text-neutral-900">Destinations récentes</h2>
+        <Link
+          href="/history"
+          className="inline-flex items-center gap-0.5 text-sm font-semibold text-primary-600"
+        >
+          Voir tout
+          <ChevronRightIcon className="h-4 w-4" />
+        </Link>
+      </div>
+      <ul className="mt-md space-y-sm">
+        {recents.slice(0, 3).map((r) => (
+          <li key={`${r.lat},${r.lng}`}>
+            <Link
+              href={destHref(r.lat, r.lng, r.address)}
+              className="flex items-center gap-md rounded-2xl bg-white px-md py-md shadow-sm ring-1 ring-neutral-100 transition active:scale-[0.99]"
+            >
+              <span className="grid h-10 w-10 flex-none place-items-center rounded-full bg-primary-50 text-primary-500">
+                <PinIcon className="h-5 w-5" strokeWidth={2} />
+              </span>
+              <span className="min-w-0 flex-1 truncate text-[15px] text-neutral-800">
+                {r.address}
+              </span>
+              <ChevronRightIcon className="h-4 w-4 flex-none text-neutral-400" />
             </Link>
-          </div>
-          <ul className="space-y-xs">
-            {recents.slice(0, 3).map((r) => (
-              <li key={`${r.lat},${r.lng}`}>
-                <Link
-                  href={destHref(r.lat, r.lng, r.address)}
-                  className="flex items-center gap-sm rounded-xl border border-neutral-200 bg-white px-md py-sm transition hover:border-primary-300"
-                >
-                  <span className="grid h-7 w-7 flex-none place-items-center rounded-lg bg-neutral-100 text-neutral-500">
-                    <ClockIcon className="h-3.5 w-3.5" />
-                  </span>
-                  <span className="min-w-0 flex-1 truncate text-sm text-neutral-800">
-                    {r.address}
-                  </span>
-                  <PinIcon className="h-4 w-4 flex-none text-neutral-300" />
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-    </>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   CalendarIcon,
-  HistoryIcon,
+  HomeIcon,
   MenuIcon,
   PinIcon,
   WalletIcon,
@@ -35,8 +35,8 @@ type Tab = {
 };
 
 const LEFT: Tab[] = [
-  { href: '/', label: 'Accueil', Icon: PinIcon, match: ['/'] },
-  { href: '/history', label: 'Courses', Icon: HistoryIcon, match: ['/history', '/reservation', '/ride'] },
+  { href: '/', label: 'Accueil', Icon: HomeIcon, match: ['/'] },
+  { href: '/history', label: 'Courses', Icon: PinIcon, match: ['/history', '/reservation', '/ride'] },
 ];
 
 const RIGHT: Tab[] = [
@@ -60,11 +60,11 @@ function TabLink({ tab, pathname }: { tab: Tab; pathname: string }) {
         <span className="absolute -top-px h-0.5 w-8 rounded-full bg-primary-500" />
       )}
       <tab.Icon
-        className={`h-5 w-5 ${active ? 'text-primary-500' : 'text-neutral-400'}`}
+        className={`h-6 w-6 ${active ? 'text-primary-500' : 'text-neutral-400'}`}
         strokeWidth={active ? 2.5 : 2}
       />
       <span
-        className={`text-[10px] font-semibold ${
+        className={`text-[11px] font-semibold ${
           active ? 'text-primary-500' : 'text-neutral-500'
         }`}
       >
@@ -83,7 +83,7 @@ export function BottomTabBar() {
           chaque page passe dessous, y compris sur les petits écrans. */}
       <div aria-hidden className="h-[76px]" />
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200 bg-white/95 backdrop-blur">
+      <nav className="fixed inset-x-0 bottom-0 z-40 rounded-t-3xl border-t border-neutral-100 bg-white/95 shadow-[0_-8px_24px_-12px_rgba(15,23,42,0.12)] backdrop-blur">
         <div className="mx-auto flex max-w-md items-stretch px-sm pb-[env(safe-area-inset-bottom)]">
           {LEFT.map((tab) => (
             <TabLink key={tab.href} tab={tab} pathname={pathname} />
@@ -92,13 +92,13 @@ export function BottomTabBar() {
           {/* Bouton central : réserver à l'avance. Pas de libellé sous le
               bouton — l'icône calendrier et l'aria-label suffisent. Le bloc
               conserve sa largeur pour ménager la place entre les onglets. */}
-          <div className="relative w-16 flex-none">
+          <div className="relative w-[4.5rem] flex-none">
             <Link
               href="/commande?scheduled=1"
               aria-label="Réserver une course à l'avance"
-              className="absolute -top-5 left-1/2 grid h-14 w-14 -translate-x-1/2 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-primary-700 text-white shadow-glow-violet ring-4 ring-white transition active:scale-95"
+              className="absolute -top-6 left-1/2 grid h-16 w-16 -translate-x-1/2 place-items-center rounded-full bg-primary-500 text-white shadow-glow ring-4 ring-white transition active:scale-95"
             >
-              <CalendarIcon className="h-6 w-6" />
+              <CalendarIcon className="h-7 w-7" />
             </Link>
           </div>
 

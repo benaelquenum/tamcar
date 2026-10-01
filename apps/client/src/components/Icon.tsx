@@ -471,3 +471,29 @@ export function MicIcon({ className = 'h-5 w-5', strokeWidth = 2 }: IconProps) {
     </svg>
   );
 }
+
+export function BellIcon({ className = 'h-5 w-5', strokeWidth = 2 }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={`${base} ${className}`}>
+      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </svg>
+  );
+}
+
+export function ChevronRightIcon({ className = 'h-4 w-4', strokeWidth = 2.5 }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={`${base} ${className}`}>
+      <polyline points="9 6 15 12 9 18" />
+    </svg>
+  );
+}
+
+/** Étoile au trait (le StarIcon plein sert aux notes). */
+export function StarOutlineIcon({ className = 'h-5 w-5', strokeWidth = 2 }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={`${base} ${className}`}>
+      <polygon points="12 2.5 15.09 8.76 22 9.77 17 14.64 18.18 21.52 12 18.27 5.82 21.52 7 14.64 2 9.77 8.91 8.76 12 2.5" />
+    </svg>
+  );
+}

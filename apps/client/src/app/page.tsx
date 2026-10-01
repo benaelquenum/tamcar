@@ -1,10 +1,9 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { Logo } from '@/components/Logo';
+import { LogoHorizontal } from '@/components/Logo';
 import { getT } from '@/lib/i18n-server';
 import {
   ArrowRightIcon,
-  CarIcon,
   PinIcon,
   PlusIcon,
   WalletIcon,
@@ -13,10 +12,12 @@ import { firstNameOf, getCurrentProfile } from '@/lib/session';
 import { createServerSupabase } from '@/lib/supabase-server';
 import { UnreadMessagesChip } from '@/components/UnreadMessagesChip';
 import { BannerCarousel } from '@/components/BannerCarousel';
+import { NotificationBell } from '@/components/NotificationBell';
 import { ProfileMenu } from '@/components/ProfileMenu';
 import { BottomTabBar } from '@/components/BottomTabBar';
 import {
-  QuickDestinations,
+  RecentDestinations,
+  ShortcutsRow,
   type FavoritePlace,
   type RecentDestination,
 } from '@/components/QuickDestinations';
@@ -49,6 +50,31 @@ const ACTIVE_STATUS_TINT: Record<ActiveRideRow['status'], string> = {
   in_progress: 'from-primary-500 to-primary-700',
 };
 
+/**
+ * Les deux bannières de la marque, toujours en tête du carrousel. Les
+ * bannières créées dans le back-office (home_banners) viennent après.
+ */
+const BRAND_BANNERS: BannerRow[] = [
+  {
+    id: 'brand-claire',
+    title: 'Ta course est claire, ta course éclair.',
+    subtitle: null,
+    image_url: '/banners/accueil-1.webp',
+    link_url: '/commande',
+    cta_text: null,
+    gradient: null,
+  },
+  {
+    id: 'brand-tampass',
+    title: 'TamPass : plus de trajets, plus d’avantages.',
+    subtitle: null,
+    image_url: '/banners/accueil-2.webp',
+    link_url: '/tampass',
+    cta_text: null,
+    gradient: null,
+  },
+];
+
 const DEFAULT_NAMES = new Set(['utilisateur', 'Nouveau client', 'Ami TamCar']);
 
 function formatFcfaHome(n: number): string {
@@ -59,10 +85,14 @@ function formatFcfaHome(n: number): string {
  * Accueil client — refonte du 2026-08-13.
  *
  * L'écran n'est plus un menu de raccourcis mais la PREMIÈRE ÉTAPE de la
- * commande : carte vivante en haut, un seul champ « Où allez-vous ? », les
- * lieux du client sous la main, le solde juste avant le bouton. Les
- * rubriques secondaires descendent dans /menu, atteignable par la barre
- * d'onglets — dont le bouton central porte la réservation.
+ * commande : un seul champ « Où allez-vous ? », les lieux du client sous la
+ * main, le solde juste après. Les rubriques secondaires descendent dans
+ * /menu, atteignable par la barre d'onglets — dont le bouton central porte
+ * la réservation.
+ *
+ * Aération du 2026-10-01 : plus de salutation ni de décompte de chauffeurs,
+ * plus de bouton « Commander maintenant » en double du champ de destination ;
+ * la bannière est un carrousel (3 s) des deux visuels de la marque.
  */
 export default async function HomePage() {
   const t = getT();
@@ -89,7 +119,7 @@ export default async function HomePage() {
   const supabase = createServerSupabase();
 
   // Une seule vague parallèle : bannières, puis les données du compte.
-  const [bannersRes, driversRes, personal] = await Promise.all([
+  const [bannersRes, personal] = await Promise.all([
     supabase
       .from('home_banners')
       .select('id, title, subtitle, image_url, link_url, cta_text, gradient')
@@ -97,14 +127,6 @@ export default async function HomePage() {
       .eq('audience', 'client')
       .order('display_order', { ascending: true })
       .limit(6),
-    // Sans carte, on n'a plus la position du client : on ne peut donc plus
-    // écrire « à proximité » sans mentir. Simple décompte des chauffeurs en
-    // service, comme avant la refonte — la promesse reste vérifiable.
-    supabase
-      .from('drivers')
-      .select('*', { count: 'exact', head: true })
-      .eq('is_online', true)
-      .eq('status', 'active'),
     isLoggedIn
       ? Promise.all([
           supabase.rpc('my_wallets'),
@@ -128,107 +150,89 @@ export default async function HomePage() {
     recents = (Array.isArray(recentData) ? recentData : []) as RecentDestination[];
   }
 
-  const banners = (bannersRes.data ?? []) as BannerRow[];
-  const onlineCount = driversRes.count ?? 0;
+  const banners = [...BRAND_BANNERS, ...((bannersRes.data ?? []) as BannerRow[])];
 
   return (
-    <main className="relative min-h-dvh bg-white">
+    <main className="relative min-h-dvh bg-gradient-to-b from-primary-50/70 via-white to-white">
       <div className="relative z-10 mx-auto max-w-md px-lg pt-lg">
         <header className="flex items-center justify-between">
-          <Logo className="h-8 w-auto" />
+          <LogoHorizontal />
           {profile && (
-            <ProfileMenu
-              avatarUrl={profile.avatar_url}
-              fullName={profile.full_name}
-              firstName={firstName ?? ''}
-            />
+            <div className="flex items-center gap-sm">
+              <NotificationBell />
+              <ProfileMenu
+                avatarUrl={profile.avatar_url}
+                fullName={profile.full_name}
+                firstName={firstName ?? ''}
+              />
+            </div>
           )}
         </header>
 
-        {banners.length > 0 && <BannerCarousel banners={banners} className="mt-md" />}
+        <BannerCarousel banners={banners} aspectClass="aspect-[5/2]" className="mt-lg" />
 
-        {activeRide && <ActiveRideBanner ride={activeRide} t={t} />}
+        {activeRide && (
+          <div className="mt-lg">
+            <ActiveRideBanner ride={activeRide} t={t} />
+          </div>
+        )}
 
-        <section className="mt-lg">
-          <p className="text-sm font-medium text-neutral-600">
-            {firstName ? `${t('home.greeting')} ${firstName}` : t('home.greeting')}
-          </p>
-          <h1 className="mt-xs text-3xl font-extrabold leading-tight tracking-tight text-neutral-900">
-            Où allez-vous&nbsp;?
-          </h1>
+        {/* Carte unique : le départ est déduit du GPS, une seule décision. */}
+        <section className="mt-lg rounded-[26px] bg-white p-lg shadow-md ring-1 ring-primary-100/60">
+          <div className="flex items-center gap-md">
+            <span className="grid h-10 w-10 flex-none place-items-center rounded-full bg-primary-50 text-primary-500">
+              <PinIcon className="h-5 w-5" strokeWidth={2.25} />
+            </span>
+            <h1 className="text-xl font-extrabold tracking-tight text-neutral-900">
+              Où allez-vous&nbsp;?
+            </h1>
+          </div>
 
-          {onlineCount > 0 && (
-            <div className="mt-md inline-flex items-center gap-sm rounded-full bg-success/10 px-md py-xs">
-              <span className="relative grid h-2 w-2 place-items-center">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success/60" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
-              </span>
-              <span
-                className="text-xs font-semibold text-success"
-                style={{ fontVariantNumeric: 'tabular-nums' }}
-              >
-                {onlineCount} chauffeur{onlineCount > 1 ? 's' : ''} en service
-              </span>
-            </div>
-          )}
-        </section>
-
-        {/* Champ unique : le départ est déduit du GPS, une seule décision. */}
-        <section className="mt-md">
           <Link
             href="/commande"
-            className="group flex w-full items-center gap-md rounded-xl bg-white p-md text-left ring-2 ring-primary-500 transition hover:shadow-md"
+            className="group mt-md flex w-full items-center gap-md rounded-full bg-white py-xs pl-lg pr-xs text-left ring-2 ring-primary-100 transition hover:ring-primary-300"
           >
-            <PinIcon className="h-5 w-5 flex-none text-primary-500" />
-            <span className="flex-1 text-sm text-neutral-400 group-hover:text-neutral-600">
+            <span className="flex-1 truncate text-[15px] text-neutral-400 group-hover:text-neutral-600">
               Entrez votre destination
             </span>
-            <span className="grid h-9 w-9 flex-none place-items-center rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 text-white">
-              <ArrowRightIcon className="h-4 w-4" />
+            <span className="grid h-11 w-11 flex-none place-items-center rounded-full bg-primary-500 text-white shadow-glow">
+              <ArrowRightIcon className="h-5 w-5" />
             </span>
           </Link>
+
+          {isLoggedIn && <ShortcutsRow favorites={favorites} />}
         </section>
 
-        {isLoggedIn && <QuickDestinations favorites={favorites} recents={recents} />}
+        {isLoggedIn && <RecentDestinations recents={recents} />}
 
         {isLoggedIn && (
           <section className="mt-lg">
             <Link
               href="/wallet"
-              className="flex items-center gap-sm rounded-xl bg-primary-50 px-md py-sm transition hover:bg-primary-100"
+              className="flex items-center gap-md rounded-2xl bg-primary-50 p-md transition hover:bg-primary-100"
             >
-              <span className="grid h-9 w-9 flex-none place-items-center rounded-lg bg-gradient-to-br from-violet-500 to-primary-500 text-white">
-                <WalletIcon className="h-4 w-4" />
+              <span className="grid h-12 w-12 flex-none place-items-center rounded-2xl bg-primary-500 text-white">
+                <WalletIcon className="h-6 w-6" />
               </span>
               <span className="flex-1">
-                <span className="block text-[10px] font-semibold uppercase tracking-wide text-neutral-500">
+                <span className="block text-sm font-medium text-neutral-600">
                   {t('home.credit')}
                 </span>
                 <span
-                  className="block text-lg font-extrabold text-neutral-900"
+                  className="block text-2xl font-extrabold leading-tight text-neutral-900"
                   style={{ fontVariantNumeric: 'tabular-nums' }}
                 >
                   {formatFcfaHome(creditBalance)}
-                  <span className="ml-xs text-xs font-medium text-neutral-500">F</span>
+                  <span className="ml-xs text-base font-medium text-neutral-500">F</span>
                 </span>
               </span>
-              <span className="inline-flex items-center gap-xs rounded-lg bg-white px-md py-xs text-[11px] font-bold text-primary-700 shadow-sm">
+              <span className="inline-flex items-center gap-xs rounded-full bg-white px-lg py-sm text-sm font-bold text-primary-600 shadow-sm">
                 {t('home.recharge')}
-                <PlusIcon className="h-3 w-3" strokeWidth={3} />
+                <PlusIcon className="h-4 w-4" strokeWidth={3} />
               </span>
             </Link>
           </section>
         )}
-
-        <section className="mt-lg">
-          <Link
-            href="/commande"
-            className="flex w-full items-center justify-center gap-sm rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-lg text-base font-bold text-white shadow-glow transition hover:brightness-110 active:scale-[0.98]"
-          >
-            <CarIcon className="h-5 w-5" />
-            {t('home.book_now')}
-          </Link>
-        </section>
 
         <BottomTabBar />
       </div>
@@ -258,7 +262,7 @@ function ActiveRideBanner({
   return (
     <Link
       href={`/ride/${ride.id}`}
-      className={`mb-md flex items-center gap-md rounded-xl bg-gradient-to-r ${tint} p-md text-white shadow-glow`}
+      className={`flex items-center gap-md rounded-2xl bg-gradient-to-r ${tint} p-md text-white shadow-glow`}
     >
       <span className="relative grid h-2.5 w-2.5 flex-none place-items-center">
         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white/70" />
