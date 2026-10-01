@@ -109,7 +109,7 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
   const [driverPos, setDriverPos] = useState<[number, number] | null>(null);
   const [clientLive, setClientLive] = useState<[number, number] | null>(null);
   const trackChannelRef = useRef<ReturnType<typeof supabaseBrowser.channel> | null>(null);
-  const [mapStops, setMapStops] = useState<{ lat: number; lng: number; status: string }[]>([]);
+  const [mapStops, setMapStops] = useState<{ lat: number; lng: number; status: string; address?: string }[]>([]);
   const [nextManeuver, setNextManeuver] = useState<NavStep | null>(null);
   const spokenRef = useRef('');
   const [routeGeo, setRouteGeo] = useState<GeoJSON.LineString | null>(null);
@@ -128,10 +128,23 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
     ride.status === 'cancelled_by_driver' ||
     ride.status === 'expired';
 
+  // Prochain arrêt à desservir : le premier (dans l'ordre) ni atteint ni annulé.
+  // Course démarrée, le guidage va d'abord là, puis à la destination — avant,
+  // il fonçait vers la destination en ignorant les arrêts du client.
+  const nextStop = useMemo(
+    () => mapStops.find((st) => st.status === 'pending' || st.status === 'accepted') ?? null,
+    [mapStops],
+  );
+
+  const nextStopAddress = nextStop?.address ?? null;
+
   const target = useMemo<[number, number]>(() => {
-    if (ride.status === 'in_progress') return [ride.dropoff_lng, ride.dropoff_lat];
+    if (ride.status === 'in_progress') {
+      if (nextStop) return [nextStop.lng, nextStop.lat];
+      return [ride.dropoff_lng, ride.dropoff_lat];
+    }
     return [ride.pickup_lng, ride.pickup_lat];
-  }, [ride.status, ride.pickup_lat, ride.pickup_lng, ride.dropoff_lat, ride.dropoff_lng]);
+  }, [ride.status, nextStop, ride.pickup_lat, ride.pickup_lng, ride.dropoff_lat, ride.dropoff_lng]);
 
   // Garde l'écran allumé pendant la course active → la géoloc ne se coupe pas.
   useWakeLock(['matched', 'arrived', 'in_progress'].includes(ride.status));
@@ -151,7 +164,7 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
   useEffect(() => {
     const load = async () => {
       const { data } = await supabaseBrowser.rpc('ride_stops_of', { p_ride_id: ride.id });
-      if (Array.isArray(data)) setMapStops(data as { lat: number; lng: number; status: string }[]);
+      if (Array.isArray(data)) setMapStops(data as { lat: number; lng: number; status: string; address?: string }[]);
     };
     load();
     const ch = freshChannel(`driver-stops:${ride.id}`)
@@ -438,6 +451,48 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
     };
   }, [ride.id]);
 
+  // Le client change l'itinéraire : le chauffeur voit tout ce qui bouge pour lui
+  // (prix, sa part, distance), pas seulement un bip.
+  const prevRouteRef = useRef({
+    price: ride.price_total_fcfa,
+    share: ride.driver_share_fcfa,
+    km: ride.distance_km,
+    drop: ride.dropoff_address,
+  });
+  const [routeBanner, setRouteBanner] = useState<{
+    price: number;
+    share: number;
+    km: number | null;
+    dPrice: number;
+    dShare: number;
+    destinationChanged: boolean;
+  } | null>(null);
+
+  useEffect(() => {
+    const prev = prevRouteRef.current;
+    const changed =
+      prev.price !== ride.price_total_fcfa ||
+      prev.share !== ride.driver_share_fcfa ||
+      prev.drop !== ride.dropoff_address ||
+      (ride.distance_km != null && prev.km !== ride.distance_km);
+    if (changed && ['matched', 'arrived', 'in_progress'].includes(ride.status)) {
+      setRouteBanner({
+        price: ride.price_total_fcfa,
+        share: ride.driver_share_fcfa,
+        km: ride.distance_km,
+        dPrice: ride.price_total_fcfa - prev.price,
+        dShare: ride.driver_share_fcfa - prev.share,
+        destinationChanged: prev.drop !== ride.dropoff_address,
+      });
+    }
+    prevRouteRef.current = {
+      price: ride.price_total_fcfa,
+      share: ride.driver_share_fcfa,
+      km: ride.distance_km,
+      drop: ride.dropoff_address,
+    };
+  }, [ride.price_total_fcfa, ride.driver_share_fcfa, ride.distance_km, ride.dropoff_address, ride.status]);
+
   const [arrivalConfirm, setArrivalConfirm] = useState<{ distance: number } | null>(null);
   const [returnChangeOpen, setReturnChangeOpen] = useState(false);
   const [acceptingCompletion, setAcceptingCompletion] = useState(false);
@@ -675,6 +730,37 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
         </div>
       </header>
 
+      {routeBanner && (
+        <div className="pointer-events-none absolute inset-x-0 top-[76px] z-20 flex justify-center px-lg">
+          <div className="pointer-events-auto w-full max-w-md rounded-xl bg-primary-700 p-md text-white shadow-xl ring-1 ring-white/20">
+            <div className="flex items-start gap-md">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-extrabold">
+                  {routeBanner.destinationChanged ? 'Nouvelle destination' : 'Itinéraire modifié par le client'}
+                </p>
+                <p className="mt-xs text-xs text-white/90" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  Course : {formatFcfa(routeBanner.price)} F
+                  {routeBanner.dPrice !== 0 && ` (${routeBanner.dPrice > 0 ? '+' : '−'}${formatFcfa(Math.abs(routeBanner.dPrice))} F)`}
+                  {' · '}vous gagnez {formatFcfa(routeBanner.share)} F
+                  {routeBanner.dShare !== 0 && ` (${routeBanner.dShare > 0 ? '+' : '−'}${formatFcfa(Math.abs(routeBanner.dShare))} F)`}
+                  {routeBanner.km != null && ` · ${routeBanner.km.toFixed(1)} km`}
+                </p>
+                <p className="mt-xs text-[11px] text-white/70">
+                  Arrêts, itinéraire de guidage, prix et commission sont à jour.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setRouteBanner(null)}
+                className="flex-none rounded-full bg-white/15 px-md py-xs text-xs font-bold"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {['matched', 'arrived', 'in_progress'].includes(ride.status) && (
         <NavBanner step={nextManeuver} distanceM={maneuverDistM} />
       )}
@@ -879,7 +965,9 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
                 {/* Cible + distance/durée */}
                 <div className="mb-md rounded-xl bg-primary-50 p-md">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-primary-700">
-                    {ride.status === 'in_progress' ? 'Destination client' : 'Allez chercher le client'}
+                    {ride.status === 'in_progress'
+                      ? (nextStop ? `Prochain arrêt (${mapStops.filter((st) => st.status !== 'cancelled').indexOf(nextStop) + 1}/${mapStops.filter((st) => st.status !== 'cancelled').length})` : 'Destination client')
+                      : 'Allez chercher le client'}
                   </p>
                   <p className="mt-xs flex items-start gap-xs text-sm font-semibold text-neutral-900">
                     <PinIcon
@@ -887,8 +975,15 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
                       strokeWidth={3}
                       {...({} as { style?: React.CSSProperties })}
                     />
-                    {ride.status === 'in_progress' ? ride.dropoff_address : ride.pickup_address}
+                    {ride.status === 'in_progress'
+                      ? (nextStop ? (nextStopAddress ?? 'Arrêt demandé par le client') : ride.dropoff_address)
+                      : ride.pickup_address}
                   </p>
+                  {ride.status === 'in_progress' && nextStop && (
+                    <p className="mt-xs text-[11px] text-neutral-500">
+                      Destination finale : {ride.dropoff_address}
+                    </p>
+                  )}
                   <div className="mt-sm flex justify-between text-xs text-neutral-600">
                     <span style={{ fontVariantNumeric: 'tabular-nums' }}>
                       📍 {formatDistance(distanceToTarget)} restants

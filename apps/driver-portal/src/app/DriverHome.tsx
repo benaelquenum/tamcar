@@ -421,18 +421,28 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
             radius_km: 10.0,
           });
           setPending((data ?? []) as PendingRide[]);
+          // Une course directe qui m'est destinée arrive aussi par un INSERT
+          // (la RLS ne m'envoie que les miennes) : la carte « Demandes
+          // directes » s'affiche sans attendre le sondage de 20 s.
+          void refreshOneshots();
         },
+      )
+      // Relance ou bascule en commande ordinaire par le client.
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'rides' },
+        () => { void refreshOneshots(); },
       )
       .subscribe();
     return () => {
       supabaseBrowser.removeChannel(channel);
     };
-  }, [isOnline]);
+  }, [isOnline, refreshOneshots]);
 
   // Son d'alerte : joue /sounds/alert.mp3 si présent, sinon fallback Web Audio (ta-da).
   // Boucle sans jamais couper la fin du fichier : attend l'event 'ended' + 1,5 s de pause.
   useEffect(() => {
-    if (!isOnline || pending.length === 0) return;
+    if (!isOnline || (pending.length === 0 && oneshots.length === 0)) return;
 
     let stopped = false;
     let audioEl: HTMLAudioElement | null = null;
@@ -531,7 +541,7 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
       audioEl = null;
       ctx?.close().catch(() => undefined);
     };
-  }, [pending.length, isOnline]);
+  }, [pending.length, oneshots.length, isOnline]);
 
   function handleAccept(rideId: string) {
     // Si la course est cross-catégorie (chauffeur > catégorie ride), on ouvre
