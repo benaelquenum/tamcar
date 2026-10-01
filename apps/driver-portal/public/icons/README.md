@@ -1,25 +1,12 @@
-# Icons PWA
+# Icônes PWA du portail chauffeur (TamCar Pro)
 
-À générer avant production. Deux méthodes :
+Fond bleu `#0255FC`, logo vectoriel en blanc. Source : `design/TamCar_logo_vectoriel_cyan.svg`
+(tous les tracés passés en blanc, le liseré cyan compris).
 
-## Méthode 1 : Real Favicon Generator (web, 2 min)
+- `icon.svg` : version vectorielle (entrée « any » du manifest)
+- `icon-192.png`, `icon-512.png` : plein cadre
+- `icon-maskable-512.png` : logo réduit à 80 % pour la zone de sécurité des icônes masquables
+- `../apple-touch-icon.png` (180 px) et `../favicon.ico` : iOS et onglet du navigateur
 
-1. Aller sur https://realfavicongenerator.net/
-2. Upload `../logo.svg`
-3. Configurer les tailles + couleur de fond `#FFFAF5`
-4. Télécharger le pack, copier dans ce dossier :
-   - `icon-192.png` (192×192)
-   - `icon-512.png` (512×512)
-   - `icon-maskable-512.png` (512×512 avec safe zone)
-
-## Méthode 2 : ImageMagick local
-
-```bash
-cd public/icons
-convert ../logo.svg -resize 192x192 icon-192.png
-convert ../logo.svg -resize 512x512 icon-512.png
-```
-
-## En attendant
-
-Le manifest référence `../logo.svg` en fallback (fonctionne dans Chrome / Edge / Firefox — Safari iOS préfère PNG).
+Un chauffeur qui a déjà installé l'application garde l'ancienne icône jusqu'à ce qu'il la
+réinstalle (Chrome ne rafraîchit pas l'icône d'une PWA installée de façon fiable).

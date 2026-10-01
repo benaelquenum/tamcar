@@ -21,6 +21,13 @@ export const metadata: Metadata = {
   description: "Espace chauffeur TamCar : acceptez des courses, suivez vos gains, gérez votre portefeuille.",
   manifest: '/manifest.webmanifest',
   applicationName: 'TamCar Pro',
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+    ],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',

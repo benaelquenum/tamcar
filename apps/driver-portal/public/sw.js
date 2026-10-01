@@ -36,7 +36,7 @@ self.addEventListener('push', (event) => {
     tag,
     vibrate,
     requireInteraction,
-    icon: '/logo.svg',
+    icon: '/icons/icon-192.png',
     data: { url },
   };
 

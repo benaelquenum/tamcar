@@ -5,13 +5,13 @@
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#FFFFFF",
+  "background_color": "#0255FC",
   "theme_color": "#2563EB",
   "lang": "fr",
   "categories": ["travel", "transport", "utilities"],
   "icons": [
     {
-      "src": "/logo.svg",
+      "src": "/icons/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
