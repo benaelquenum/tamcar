@@ -1035,6 +1035,8 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
         </div>
       </header>
 
+      {isActive && <ConnectionBanner searching={isWaiting} />}
+
       {/* Bottom sheet */}
       <div className="absolute inset-x-0 bottom-0 z-10">
         <div className="mx-auto max-w-md rounded-t-2xl bg-white shadow-2xl ring-1 ring-neutral-200">
@@ -2008,6 +2010,40 @@ function Mini({ label, value }: { label: string; value: string }) {
         style={{ fontVariantNumeric: 'tabular-nums' }}
       >
         {value}
+      </p>
+    </div>
+  );
+}
+
+/**
+ * Bandeau « connexion perdue » : sans réseau, l'écran ne reçoit plus les
+ * changements d'état — le client doit le savoir, sans quoi il croirait la
+ * recherche (ou la course) figée dans l'état affiché. On ne dit jamais qu'un
+ * chauffeur a accepté : c'est le statut reçu du serveur qui l'affirme.
+ */
+function ConnectionBanner({ searching }: { searching: boolean }) {
+  const [online, setOnline] = useState(true);
+  useEffect(() => {
+    const sync = () => setOnline(navigator.onLine);
+    sync();
+    window.addEventListener('online', sync);
+    window.addEventListener('offline', sync);
+    return () => {
+      window.removeEventListener('online', sync);
+      window.removeEventListener('offline', sync);
+    };
+  }, []);
+  if (online) return null;
+  return (
+    <div
+      role="alert"
+      className="pointer-events-none absolute inset-x-0 top-[76px] z-20 flex justify-center px-lg"
+    >
+      <p className="pointer-events-auto max-w-md rounded-xl bg-error px-md py-sm text-center text-xs font-bold text-white shadow-lg">
+        Connexion perdue.{' '}
+        {searching
+          ? 'Votre demande est enregistrée, mais son état n’est plus mis à jour : il reprendra au retour du réseau.'
+          : 'L’état de la course n’est plus mis à jour : il reprendra au retour du réseau.'}
       </p>
     </div>
   );

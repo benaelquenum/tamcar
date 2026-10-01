@@ -1,15 +1,15 @@
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { AddressAutocomplete, type SelectedAddress } from '@/components/AddressAutocomplete';
-import { ArrowRightIcon, CarIcon, SnowflakeIcon, StarIcon } from '@/components/Icon';
-import { Logo } from '@/components/Logo';
+import { ArrowRightIcon, CarIcon, StarIcon } from '@/components/Icon';
 import { Map } from '@/components/Map';
 import { useLivePosition } from '@/lib/useLivePosition';
 import { SuggestPlaceModal } from '@/components/SuggestPlaceModal';
 import { getRoute, reverseGeocode, type RouteResult } from '@/lib/mapbox';
+import { googlePlacesConfigured, googleReverseGeocode } from '@/lib/google-places';
 import { computePrice, type PriceQuote, type VehicleCategory } from '@/lib/pricing';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { isWithinServiceZone, SERVICE_ZONE_LABEL } from '@/lib/service-zone';
@@ -43,6 +43,10 @@ function formatFcfa(n: number | undefined | null): string {
   return n.toLocaleString('fr-FR').replace(/,/g, ' ');
 }
 
+function formatKm(km: number): string {
+  return km.toFixed(1).replace('.', ',');
+}
+
 function promoReasonLabel(reason: string): string {
   switch (reason) {
     case 'unknown': return 'Code inconnu';
@@ -58,6 +62,9 @@ function promoReasonLabel(reason: string): string {
 
 type PickingMode = 'pickup' | 'dropoff' | 'suggest' | null;
 
+/** Les trois écrans de la commande : définir le trajet, choisir le véhicule, confirmer. */
+type Step = 'route' | 'vehicle' | 'confirm';
+
 // Une réservation part au minimum dans 30 minutes — en deçà, c'est une
 // course immédiate. Le serveur tolère 28 min pour absorber la saisie.
 const MIN_SCHEDULE_MS = 30 * 60 * 1000;
@@ -69,11 +76,26 @@ function minScheduledLocal(): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+/**
+ * Commande en trois écrans, un seul sujet par écran :
+ *   1. Trajet — départ, destination, carte, distance et durée. Aucune
+ *      catégorie ici : on ne propose un véhicule qu'une fois le trajet connu.
+ *   2. Véhicule — liste courte, une carte par catégorie, prix et délai
+ *      d'arrivée. Le bouton du bas porte le prix de la catégorie choisie.
+ *   3. Confirmation — récapitulatif, paiement, code promo, pour qui. Rien
+ *      n'est ressaisi : tout ce qui a été validé avant est conservé.
+ *
+ * L'écran courant vit dans l'URL (?step=) : le bouton retour du téléphone
+ * revient à l'écran précédent au lieu de quitter la commande. Les écrans 2 et
+ * 3 n'existent que si le trajet est calculé — recharger la page ramène à
+ * l'écran 1, où l'état (lui, en mémoire) a de toute façon disparu.
+ */
 export default function CommandePage() {
   const t = useT();
   const searchParams = useSearchParams();
   const isScheduled = searchParams.get('scheduled') === '1';
   const isProche = searchParams.get('proche') === '1';
+  const urlStep = searchParams.get('step');
 
   const [pickup, setPickup] = useState<SelectedAddress | null>(null);
 
@@ -91,6 +113,11 @@ export default function CommandePage() {
     };
   });
   const [route, setRoute] = useState<RouteResult | null>(null);
+  // « failed » : les deux adresses sont valides mais l'itinéraire n'a pas pu
+  // être calculé — on l'explique au lieu de laisser un écran muet.
+  const [routeStatus, setRouteStatus] = useState<'idle' | 'loading' | 'ok' | 'failed'>('idle');
+  const [pricesFailed, setPricesFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const [scheduledAt, setScheduledAt] = useState<string>(isScheduled ? minScheduledLocal() : '');
   const [prices, setPrices] = useState<Record<VehicleCategory, PriceQuote | null>>(
     {} as Record<VehicleCategory, PriceQuote | null>,
@@ -126,6 +153,14 @@ export default function CommandePage() {
   // et réutilisée par « Ma position » (précision GPS, pas centre géocodé).
   const liveCoord = useLivePosition(true);
 
+  // Le départ par défaut est la position actuelle. On ne le pose qu'une fois,
+  // et jamais par-dessus un choix du client (y compris un champ vidé).
+  const pickupTouched = useRef(false);
+  function changePickup(v: SelectedAddress | null) {
+    pickupTouched.current = true;
+    setPickup(v);
+  }
+
   // Modal Suggest place
   const [suggestOpen, setSuggestOpen] = useState(false);
   const [suggestInitialName, setSuggestInitialName] = useState('');
@@ -134,6 +169,43 @@ export default function CommandePage() {
   // Confirmation ride (server action + redirect)
   const [confirming, startConfirm] = useTransition();
   const [confirmError, setConfirmError] = useState<string | null>(null);
+
+  const outOfZone =
+    (pickup ? !isWithinServiceZone(pickup.center[1], pickup.center[0]) : false) ||
+    (dropoff ? !isWithinServiceZone(dropoff.center[1], dropoff.center[0]) : false);
+  const pickupOut = pickup ? !isWithinServiceZone(pickup.center[1], pickup.center[0]) : false;
+  const dropoffOut = dropoff ? !isWithinServiceZone(dropoff.center[1], dropoff.center[0]) : false;
+
+  const selectedPrice = prices[selectedCat] ?? null;
+  const finalPrice = promoPreview?.valid
+    ? promoPreview.final_price_fcfa
+    : selectedPrice?.price_total_fcfa;
+
+  // Écran courant : un écran avancé n'existe que si le trajet est calculé.
+  const step: Step =
+    route && !outOfZone && (urlStep === 'vehicle' || urlStep === 'confirm') ? urlStep : 'route';
+
+  function goStep(next: Step) {
+    const p = new URLSearchParams(window.location.search);
+    if (next === 'route') p.delete('step');
+    else p.set('step', next);
+    const qs = p.toString();
+    // pushState natif : Next le synchronise avec useSearchParams, sans
+    // aller-retour serveur — l'état de la commande reste en mémoire.
+    window.history.pushState(null, '', `${window.location.pathname}${qs ? `?${qs}` : ''}`);
+  }
+
+  // Un écran avancé demandé par l'URL alors que rien n'est calculé (page
+  // rechargée, lien copié) est effacé de l'URL : sinon il s'ouvrirait tout
+  // seul dès que le trajet serait calculé.
+  useEffect(() => {
+    if (urlStep !== 'vehicle' && urlStep !== 'confirm') return;
+    const p = new URLSearchParams(window.location.search);
+    p.delete('step');
+    const qs = p.toString();
+    window.history.replaceState(null, '', `${window.location.pathname}${qs ? `?${qs}` : ''}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleCheckPromo() {
     const code = promoCode.trim().toUpperCase();
@@ -214,7 +286,14 @@ export default function CommandePage() {
         // Succès = redirection côté serveur, la fonction ne retourne rien.
         if (result?.error) setConfirmError(result.error);
       } catch (e) {
-        setConfirmError(e instanceof Error ? e.message : 'Erreur inconnue');
+        // Réseau coupé pendant l'envoi : on ne sait pas si la demande est
+        // partie. Le message le dit — et renvoie vers « Courses » plutôt que
+        // d'inviter à recommander à l'aveugle.
+        setConfirmError(
+          e instanceof Error && e.message && !/fetch|network|failed/i.test(e.message)
+            ? e.message
+            : 'Connexion interrompue : votre demande n’est peut-être pas partie. Vérifiez « Courses » avant de commander à nouveau.',
+        );
       }
     });
   }
@@ -244,35 +323,83 @@ export default function CommandePage() {
     })();
   }, []);
 
+  // Départ par défaut = position actuelle, dès qu'un fix précis est disponible.
+  useEffect(() => {
+    if (!liveCoord || pickup || pickupTouched.current) return;
+    let cancelled = false;
+    (async () => {
+      const [lng, lat] = liveCoord;
+      let feature = null;
+      try {
+        feature =
+          (googlePlacesConfigured() ? await googleReverseGeocode(lng, lat) : null) ||
+          (await reverseGeocode(lng, lat));
+      } catch {
+        feature = null;
+      }
+      if (cancelled || pickupTouched.current) return;
+      // Le géocodage inverse ne fournit que le NOM : on garde les coordonnées
+      // GPS exactes (le centre du lieu géocodé peut être à 100 m+ du point).
+      setPickup({
+        place_name: feature?.place_name ?? `Ma position (${lat.toFixed(4)}, ${lng.toFixed(4)})`,
+        center: [lng, lat],
+      });
+    })();
+    return () => { cancelled = true; };
+  }, [liveCoord, pickup]);
+
+  // Une autre catégorie = un autre prix de base : le code promo vérifié
+  // sur l'ancien ne vaut plus.
+  useEffect(() => {
+    setPromoPreview(null);
+  }, [selectedCat]);
+
+  // Le crédit n'est proposé que s'il couvre la course ; sinon on revient aux espèces.
+  useEffect(() => {
+    const price = finalPrice ?? 0;
+    if (paymentMethod === 'tamcar_credit' && creditBalance < price) setPaymentMethod('cash');
+  }, [paymentMethod, creditBalance, finalPrice]);
+
   useEffect(() => {
     if (!pickup || !dropoff) {
       setRoute(null);
+      setRouteStatus('idle');
+      setPricesFailed(false);
       setPrices({} as Record<VehicleCategory, PriceQuote | null>);
       return;
     }
 
     let cancelled = false;
     setLoading(true);
+    setRouteStatus('loading');
+    setPricesFailed(false);
 
     (async () => {
-      const r = await getRoute(pickup.center, dropoff.center);
+      let r: RouteResult | null = null;
+      try {
+        r = await getRoute(pickup.center, dropoff.center);
+      } catch {
+        r = null;
+      }
       if (cancelled) return;
       setRoute(r);
 
       if (!r) {
+        setRouteStatus('failed');
         setPrices({} as Record<VehicleCategory, PriceQuote | null>);
         setLoading(false);
         return;
       }
+      setRouteStatus('ok');
 
       const quotes = await Promise.all(
         CATEGORIES.map((c) =>
           computePrice({
             pickup_lat: pickup.center[1], pickup_lng: pickup.center[0],
             dropoff_lat: dropoff.center[1], dropoff_lng: dropoff.center[0],
-            distance_km: r.distance_km, duration_min: r.duration_min,
+            distance_km: r!.distance_km, duration_min: r!.duration_min,
             p_category: c.id,
-          }),
+          }).catch(() => null),
         ),
       );
 
@@ -280,11 +407,12 @@ export default function CommandePage() {
       const byId = {} as Record<VehicleCategory, PriceQuote | null>;
       CATEGORIES.forEach((c, i) => { byId[c.id] = quotes[i]; });
       setPrices(byId);
+      setPricesFailed(quotes.every((q) => q === null));
       setLoading(false);
     })();
 
     return () => { cancelled = true; };
-  }, [pickup, dropoff]);
+  }, [pickup, dropoff, attempt]);
 
   // Dispo chauffeurs par catégorie autour du pickup — refresh toutes les 30 s
   useEffect(() => {
@@ -329,7 +457,7 @@ export default function CommandePage() {
     };
 
     if (target === 'pickup') {
-      setPickup(place);
+      changePickup(place);
       setPickingMode(null);
       setCandidate(null);
     } else if (target === 'dropoff') {
@@ -340,16 +468,6 @@ export default function CommandePage() {
       setSuggestCenter(lngLat);
       setSuggestOpen(true);
       setPickingMode(null);
-    }
-    // Scroll doux vers le champ concerné pour que le user voie que sa
-    // sélection a été prise en compte
-    if (target === 'pickup' || target === 'dropoff') {
-      setTimeout(() => {
-        document.querySelector('input[type="text"]')?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center',
-        });
-      }, 100);
     }
   }
 
@@ -362,336 +480,451 @@ export default function CommandePage() {
     setSuggestOpen(true);
   }
 
-  return (
-    <main className="relative min-h-dvh overflow-hidden bg-white">
-      <div className="pointer-events-none absolute inset-x-0 top-0 -z-0 h-64 overflow-hidden">
-        <div className="absolute -right-16 -top-32 h-64 w-64 rounded-full bg-primary-100 opacity-70 blur-3xl" />
-      </div>
+  const catDef = CATEGORIES.find((c) => c.id === selectedCat)!;
+  const tripLine = route
+    ? `${formatKm(route.distance_km)} km · ${route.duration_min} min ${t('commande.min_distance')}`
+    : null;
 
-      <div className="relative z-10 mx-auto max-w-md px-lg py-lg">
-        <header className="flex items-center gap-md">
-          <Link
-            href="/"
-            aria-label="Retour à l'accueil"
-            className="grid h-11 w-11 place-items-center rounded-full bg-white text-neutral-900 shadow-md ring-1 ring-neutral-200"
-          >
-            <span className="text-xl leading-none">←</span>
-          </Link>
-          <Logo className="h-8 w-auto" />
-        </header>
+  // ------------------------------------------------------------------ écran 1 : trajet
+  const routeScreen = (
+    <main className="flex h-dvh flex-col bg-white">
+      <StepHeader
+        title={t('commande.route_title')}
+        back={<BackLink href="/" label="Retour à l'accueil" />}
+      />
 
-        <h1 className="mt-lg text-2xl font-extrabold leading-tight text-neutral-900">
-          {t('commande.title')}
-        </h1>
+      <section className="relative z-20 space-y-sm px-lg">
+        <AddressAutocomplete
+          compact
+          label={t('commande.pickup')}
+          placeholder={t('commande.pickup_placeholder')}
+          value={pickup}
+          onChange={changePickup}
+          markerColor="#2563EB"
+          showLocationButton
+          livePosition={liveCoord}
+          onPickOnMap={() => setPickingMode('pickup')}
+          onSuggestPlace={startSuggest}
+        />
+        <AddressAutocomplete
+          compact
+          label={t('commande.dropoff')}
+          placeholder={t('commande.dropoff_placeholder')}
+          value={dropoff}
+          onChange={setDropoff}
+          markerColor="#8B5CF6"
+          onPickOnMap={() => setPickingMode('dropoff')}
+          onSuggestPlace={startSuggest}
+        />
+      </section>
 
-        <section className="mt-lg space-y-md">
-          <AddressAutocomplete
-            label={t('commande.pickup')}
-            placeholder={t('commande.pickup_placeholder')}
-            value={pickup}
-            onChange={setPickup}
-            markerColor="#2563EB"
-            showLocationButton
-            livePosition={liveCoord}
-            onPickOnMap={() => setPickingMode('pickup')}
-            onSuggestPlace={startSuggest}
-          />
-          <AddressAutocomplete
-            label={t('commande.dropoff')}
-            placeholder={t('commande.dropoff_placeholder')}
-            value={dropoff}
-            onChange={setDropoff}
-            markerColor="#8B5CF6"
-            onPickOnMap={() => setPickingMode('dropoff')}
-            onSuggestPlace={startSuggest}
-          />
+      {outOfZone && (
+        <section className="mx-lg mt-sm rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">
+          <p className="font-bold">{t('commande.out_of_zone_title')}</p>
+          <p className="mt-xs text-xs">
+            {t('commande.out_of_zone_body', { zone: SERVICE_ZONE_LABEL })}
+            {pickupOut && ` ${t('commande.out_of_zone_pickup')}`}
+            {dropoffOut && ` ${t('commande.out_of_zone_dropoff')}`}
+          </p>
         </section>
+      )}
 
-        {(() => {
-          const pickupOut = pickup ? !isWithinServiceZone(pickup.center[1], pickup.center[0]) : false;
-          const dropoffOut = dropoff ? !isWithinServiceZone(dropoff.center[1], dropoff.center[0]) : false;
-          if (!pickupOut && !dropoffOut) return null;
-          return (
-            <section className="mt-md rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">
-              <p className="font-bold">Hors zone de service</p>
-              <p className="mt-xs text-xs">
-                TamCar couvre actuellement <strong>{SERVICE_ZONE_LABEL}</strong> uniquement.
-                {pickupOut && ' Votre point de départ est hors zone.'}
-                {dropoffOut && ' Votre destination est hors zone.'}
-              </p>
-            </section>
-          );
-        })()}
+      {pickingMode && (
+        <div className="mx-lg mt-sm flex items-center justify-between gap-md rounded-xl bg-primary-50 p-md text-sm ring-1 ring-primary-200">
+          <span className="font-semibold text-neutral-900">
+            Touchez la carte pour poser votre point de{' '}
+            {pickingMode === 'pickup' ? 'départ' : pickingMode === 'dropoff' ? 'destination' : 'lieu à proposer'}.
+          </span>
+          <button
+            type="button"
+            onClick={() => { setPickingMode(null); setCandidate(null); }}
+            className="rounded-full bg-white px-md py-xs text-xs font-bold text-neutral-900 shadow-sm"
+          >
+            Annuler
+          </button>
+        </div>
+      )}
 
-        {pickingMode && (
-          <div className="mt-md flex items-center justify-between gap-md rounded-xl bg-primary-50 p-md text-sm ring-1 ring-primary-200">
-            <span className="font-semibold text-neutral-900">
-              Touchez la carte pour poser votre point de{' '}
-              {pickingMode === 'pickup' ? 'départ' : pickingMode === 'dropoff' ? 'destination' : 'lieu à proposer'}.
-            </span>
-            <button
-              type="button"
-              onClick={() => { setPickingMode(null); setCandidate(null); }}
-              className="rounded-full bg-white px-md py-xs text-xs font-bold text-neutral-900 shadow-sm"
+      {/* La carte prend tout l'espace restant ; distance et durée en petit bandeau. */}
+      <section className="relative z-0 mt-md min-h-[180px] flex-1">
+        <Map
+          pickup={pickup?.center ?? null}
+          dropoff={dropoff?.center ?? null}
+          route={route?.geometry ?? null}
+          candidate={candidate}
+          clientLocation={liveCoord}
+          onMapClick={pickingMode ? handleMapClick : undefined}
+          className="absolute inset-0 h-full w-full bg-neutral-100"
+        />
+
+        {tripLine && (
+          <div className="pointer-events-none absolute inset-x-0 top-md flex justify-center">
+            <span
+              className="rounded-full bg-white px-lg py-xs text-sm font-bold text-primary-900 shadow-lg ring-1 ring-primary-100"
+              style={{ fontVariantNumeric: 'tabular-nums' }}
             >
-              Annuler
-            </button>
+              {tripLine}
+            </span>
+          </div>
+        )}
+        {routeStatus === 'loading' && (
+          <div className="pointer-events-none absolute inset-x-0 top-md flex justify-center">
+            <span className="rounded-full bg-white px-lg py-xs text-sm font-semibold text-neutral-600 shadow-lg ring-1 ring-neutral-200">
+              Calcul du trajet…
+            </span>
           </div>
         )}
 
-        <section className="mt-lg">
-          <Map
-            pickup={pickup?.center ?? null}
-            dropoff={dropoff?.center ?? null}
-            route={route?.geometry ?? null}
-            candidate={candidate}
-            clientLocation={liveCoord}
-            onMapClick={pickingMode ? handleMapClick : undefined}
-            className="h-64 w-full rounded-xl bg-neutral-100 shadow-sm ring-1 ring-neutral-200"
+        {routeStatus === 'failed' && (
+          <div className="absolute inset-x-md top-md rounded-xl bg-white p-md text-sm shadow-lg ring-1 ring-error/30">
+            <p className="font-bold text-error">{t('commande.route_failed_title')}</p>
+            <p className="mt-xs text-xs text-neutral-700">{t('commande.route_failed_body')}</p>
+            <button
+              type="button"
+              onClick={() => setAttempt((n) => n + 1)}
+              className="mt-sm rounded-full bg-primary-500 px-lg py-xs text-xs font-bold text-white"
+            >
+              {t('commande.retry')}
+            </button>
+          </div>
+        )}
+      </section>
+
+      <BottomBar>
+        {!route && routeStatus === 'idle' && (
+          <p className="mb-sm text-center text-xs text-neutral-500">{t('commande.route_hint')}</p>
+        )}
+        <PrimaryButton
+          onClick={() => goStep('vehicle')}
+          disabled={!route || outOfZone || routeStatus !== 'ok'}
+        >
+          <CarIcon className="h-5 w-5" />
+          {t('commande.choose_vehicle')}
+          <ArrowRightIcon />
+        </PrimaryButton>
+      </BottomBar>
+    </main>
+  );
+
+  // ------------------------------------------------------------------ écran 2 : véhicule
+  const vehicleScreen = (
+    <main className="flex h-dvh flex-col bg-white">
+      <StepHeader
+        title={t('commande.vehicle_title')}
+        back={<BackButton onClick={() => window.history.back()} label="Revenir au trajet" />}
+      />
+
+      <div className="mx-lg rounded-xl bg-primary-50 px-md py-sm">
+        <p className="text-sm font-bold text-primary-900" style={{ fontVariantNumeric: 'tabular-nums' }}>
+          {tripLine}
+        </p>
+        <p className="mt-0.5 truncate text-[11px] text-primary-900/70">
+          {pickup?.place_name.replace(/, Bénin$/i, '')} → {dropoff?.place_name.replace(/, Bénin$/i, '')}
+        </p>
+      </div>
+
+      <div className="mt-md flex-1 space-y-sm overflow-y-auto px-lg pb-md" role="radiogroup" aria-label={t('commande.choose_category')}>
+        {pricesFailed && (
+          <div className="rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">
+            <p className="font-bold">{t('commande.price_unavailable')}</p>
+            <button
+              type="button"
+              onClick={() => setAttempt((n) => n + 1)}
+              className="mt-sm rounded-full bg-white px-lg py-xs text-xs font-bold text-error ring-1 ring-error/30"
+            >
+              {t('commande.retry')}
+            </button>
+          </div>
+        )}
+        {CATEGORIES.map((cat) => (
+          <CategoryChoice
+            key={cat.id}
+            category={{ ...cat, tagline: t(`cat.${cat.id}.tagline`) }}
+            price={prices[cat.id] ?? null}
+            priceLoading={loading}
+            availability={availability[cat.id] ?? null}
+            selected={selectedCat === cat.id}
+            onSelect={() => setSelectedCat(cat.id)}
+            noDriverLabel={t('commande.no_driver_nearby')}
+            etaLabel={(min) => t('commande.eta_arrival', { min })}
+            unavailableLabel={t('commande.price_unavailable')}
           />
+        ))}
+      </div>
+
+      <BottomBar>
+        <PrimaryButton
+          onClick={() => goStep('confirm')}
+          disabled={loading || !selectedPrice}
+        >
+          {t('commande.continue')} · {formatFcfa(selectedPrice?.price_total_fcfa)} FCFA
+          <ArrowRightIcon />
+        </PrimaryButton>
+      </BottomBar>
+    </main>
+  );
+
+  // ------------------------------------------------------------------ écran 3 : confirmation
+  const creditEnough = creditBalance >= (finalPrice ?? 0);
+  const balanceFmt = formatFcfa(creditBalance);
+  const confirmScreen = (
+    <main className="flex h-dvh flex-col bg-white">
+      <StepHeader
+        title={t('commande.recap_title')}
+        back={<BackButton onClick={() => window.history.back()} label="Revenir au choix du véhicule" />}
+      />
+
+      <div className="flex-1 space-y-md overflow-y-auto px-lg pb-md">
+        {/* Trajet */}
+        <section className="rounded-2xl bg-white p-md ring-1 ring-neutral-200">
+          <div className="flex items-start gap-md">
+            <div className="mt-1.5 flex flex-none flex-col items-center">
+              <span className="h-2.5 w-2.5 rounded-full bg-primary-500" />
+              <span className="my-0.5 h-6 w-px bg-neutral-300" />
+              <span className="h-2.5 w-2.5 rounded-full bg-violet-500" />
+            </div>
+            <div className="min-w-0 flex-1 space-y-sm">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">{t('commande.pickup')}</p>
+                <p className="text-sm font-semibold leading-snug text-neutral-900">{pickup?.place_name.replace(/, Bénin$/i, '')}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">{t('commande.dropoff')}</p>
+                <p className="text-sm font-semibold leading-snug text-neutral-900">{dropoff?.place_name.replace(/, Bénin$/i, '')}</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => goStep('route')}
+              className="flex-none text-xs font-bold text-primary-600"
+            >
+              {t('commande.edit')}
+            </button>
+          </div>
+          <p className="mt-sm text-xs text-neutral-500" style={{ fontVariantNumeric: 'tabular-nums' }}>
+            {tripLine}
+          </p>
         </section>
 
-        {route && (() => {
-          const pickupOut = pickup ? !isWithinServiceZone(pickup.center[1], pickup.center[0]) : false;
-          const dropoffOut = dropoff ? !isWithinServiceZone(dropoff.center[1], dropoff.center[0]) : false;
-          const outOfZone = pickupOut || dropoffOut;
-          return (
-          <>
-            <section className="mt-lg rounded-xl bg-primary-50 p-md text-sm text-primary-900">
-              <span className="font-bold" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                {route.distance_km.toFixed(1)} km
-              </span>
-              &nbsp;·&nbsp;{route.duration_min} min {t('commande.min_distance')}
-              {loading && <span className="ml-md text-primary-500">{t('commande.calculating_price')}</span>}
-            </section>
-
-            {outOfZone && (
-              <section className="mt-lg rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">
-                <p className="font-bold">{t('commande.out_of_zone_title')}</p>
-                <p className="mt-xs text-xs">
-                  {t('commande.out_of_zone_body', { zone: SERVICE_ZONE_LABEL })}
-                  {pickupOut && ' Votre point de départ est hors zone.'}
-                  {dropoffOut && ' Votre destination est hors zone.'}
-                </p>
-              </section>
+        {/* Véhicule et tarif */}
+        <section className="flex items-center gap-md rounded-2xl bg-primary-50/70 p-md ring-2 ring-primary-500">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={`/categories/${catDef.id}.webp`} alt="" className="h-12 w-16 flex-none object-contain" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[15px] font-bold text-neutral-900">TamCar {catDef.name}</p>
+            <p className="truncate text-xs text-neutral-600">{t(`cat.${catDef.id}.tagline`)}</p>
+            {selectedPrice?.is_corridor && (
+              <p className="text-[11px] font-semibold text-primary-600">Prix fixe corridor</p>
             )}
-
-            <section className="mt-lg space-y-sm">
-              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-600">
-                {t('commande.choose_category')}
+          </div>
+          <div className="flex-none text-right">
+            <p className="text-lg font-extrabold text-neutral-900" style={{ fontVariantNumeric: 'tabular-nums' }}>
+              {formatFcfa(finalPrice)}
+              <span className="ml-xs text-[10px] font-medium text-neutral-600">FCFA</span>
+            </p>
+            {promoPreview?.valid && (
+              <p className="text-[11px] text-neutral-400 line-through" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                {formatFcfa(selectedPrice?.price_total_fcfa)}
               </p>
-              {CATEGORIES.map((cat) => (
-                <CategoryChoice
-                  key={cat.id}
-                  category={{ ...cat, tagline: t(`cat.${cat.id}.tagline`) }}
-                  price={prices[cat.id] ?? null}
-                  availability={availability[cat.id] ?? null}
-                  selected={selectedCat === cat.id}
-                  onSelect={() => setSelectedCat(cat.id)}
-                  climateLabel={t(`cat.${cat.id}.climate`)}
-                  noDriverLabel={t('commande.no_driver_nearby')}
-                  availableLabel={t('commande.available')}
-                />
-              ))}
+            )}
+            <button type="button" onClick={() => window.history.back()} className="text-xs font-bold text-primary-600">
+              {t('commande.edit')}
+            </button>
+          </div>
+        </section>
 
-            </section>
+        {isScheduled && (
+          <section className="rounded-xl bg-violet-500/10 p-md ring-1 ring-violet-500/30">
+            <label className="block">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-violet-700">
+                Date & heure de départ
+              </span>
+              <input
+                type="datetime-local"
+                value={scheduledAt}
+                min={minScheduledLocal()}
+                onChange={(e) => setScheduledAt(e.target.value)}
+                className="mt-xs w-full rounded-lg bg-white px-md py-sm text-sm font-semibold text-neutral-900 ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-violet-500"
+              />
+            </label>
+            <p className="mt-xs text-[11px] text-neutral-600">
+              Réservation min. 30 min à l&apos;avance, jusqu&apos;à 30 jours.
+              Pour partir plus tôt, commandez une course immédiate.
+            </p>
+          </section>
+        )}
 
-            <section className="mt-lg">
-              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-600">
-                {t('commande.promo_code')}
+        {/* Paiement : une option indisponible est dite telle, sans bloquer les espèces. */}
+        <section>
+          <p className="text-xs font-semibold uppercase tracking-wide text-neutral-600">
+            {t('commande.payment_method')}
+          </p>
+          <div className="mt-sm grid grid-cols-2 gap-sm">
+            <PaymentChoice
+              id="cash"
+              label={t('commande.payment_cash')}
+              sub={t('commande.payment_cash_sub')}
+              selected={paymentMethod === 'cash'}
+              onSelect={() => setPaymentMethod('cash')}
+            />
+            <PaymentChoice
+              id="tamcar_credit"
+              label={t('commande.payment_credit')}
+              sub={creditEnough ? `${balanceFmt} F` : `${t('commande.payment_credit_low')} · ${balanceFmt} F`}
+              disabled={!creditEnough}
+              selected={paymentMethod === 'tamcar_credit'}
+              onSelect={() => creditEnough && setPaymentMethod('tamcar_credit')}
+            />
+          </div>
+          {!creditEnough && (
+            <Link
+              href="/wallet"
+              className="mt-sm inline-flex items-center gap-xs text-xs font-bold text-primary-600"
+            >
+              {t('commande.payment_recharge')} TamCar Crédit
+              <ArrowRightIcon className="h-3 w-3" />
+            </Link>
+          )}
+          <p className="mt-xs text-[10px] text-neutral-400">{t('commande.payment_momo_soon')}</p>
+        </section>
+
+        {/* Code promo, facultatif */}
+        <section>
+          <p className="text-xs font-semibold uppercase tracking-wide text-neutral-600">
+            {t('commande.promo_optional')}
+          </p>
+          <div className="mt-sm flex gap-sm">
+            <input
+              type="text"
+              value={promoCode}
+              onChange={(e) => { setPromoCode(e.target.value); setPromoPreview(null); }}
+              placeholder="Ex : LANCEMENT"
+              maxLength={20}
+              className="flex-1 rounded-lg border border-neutral-200 bg-white px-md py-sm text-sm font-mono uppercase tracking-widest text-neutral-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              style={{ fontVariantNumeric: 'tabular-nums' }}
+            />
+            <button
+              type="button"
+              onClick={handleCheckPromo}
+              disabled={promoChecking || !promoCode.trim() || !selectedPrice}
+              className="rounded-lg bg-primary-500 px-md text-xs font-bold text-white shadow-sm disabled:opacity-50"
+            >
+              {promoChecking ? '…' : t('commande.promo_apply')}
+            </button>
+          </div>
+          {promoPreview && (
+            promoPreview.valid ? (
+              <p className="mt-xs text-xs font-semibold text-primary-700">
+                Code valide — remise de{' '}
+                <strong style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {formatFcfa(promoPreview.discount_fcfa)} F
+                </strong>{' '}
+                · nouveau prix{' '}
+                <strong style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {formatFcfa(promoPreview.final_price_fcfa)} F
+                </strong>
               </p>
-              <div className="mt-sm flex gap-sm">
+            ) : (
+              <p className="mt-xs text-xs font-semibold text-error">
+                {promoReasonLabel(promoPreview.reason)}
+              </p>
+            )
+          )}
+        </section>
+
+        {/* Pour qui */}
+        <section>
+          <p className="text-xs font-semibold uppercase tracking-wide text-neutral-600">
+            Pour qui est cette course ?
+          </p>
+          <div className="mt-sm grid grid-cols-2 gap-sm">
+            <button
+              type="button"
+              onClick={() => setForWhom('me')}
+              className={`rounded-xl border-2 p-md text-left transition ${
+                forWhom === 'me'
+                  ? 'border-primary-500 bg-primary-50'
+                  : 'border-neutral-200 bg-white hover:border-primary-300'
+              }`}
+            >
+              <p className="text-sm font-bold text-neutral-900">Pour moi</p>
+              <p className="text-[10px] text-neutral-600">Je suis le passager</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => setForWhom('other')}
+              className={`rounded-xl border-2 p-md text-left transition ${
+                forWhom === 'other'
+                  ? 'border-primary-500 bg-primary-50'
+                  : 'border-neutral-200 bg-white hover:border-primary-300'
+              }`}
+            >
+              <p className="text-sm font-bold text-neutral-900">Pour un proche</p>
+              <p className="text-[10px] text-neutral-600">Quelqu&apos;un d&apos;autre voyage</p>
+            </button>
+          </div>
+          {forWhom === 'other' && (
+            <div className="mt-sm space-y-sm rounded-xl bg-primary-50/60 p-md ring-1 ring-primary-100">
+              <label className="block">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+                  Nom du passager
+                </span>
                 <input
                   type="text"
-                  value={promoCode}
-                  onChange={(e) => { setPromoCode(e.target.value); setPromoPreview(null); }}
-                  placeholder="Ex : LANCEMENT"
-                  maxLength={20}
-                  className="flex-1 rounded-lg border border-neutral-200 bg-white px-md py-sm text-sm font-mono uppercase tracking-widest text-neutral-900 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  value={passengerName}
+                  onChange={(e) => setPassengerName(e.target.value)}
+                  placeholder="Ex : Maman Rose"
+                  className="mt-xs w-full rounded-lg bg-white px-md py-sm text-sm font-semibold text-neutral-900 ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </label>
+              <label className="block">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+                  Téléphone du passager
+                </span>
+                <input
+                  type="tel"
+                  inputMode="tel"
+                  value={passengerPhone}
+                  onChange={(e) => setPassengerPhone(e.target.value)}
+                  placeholder="+229 01 XX XX XX XX"
+                  className="mt-xs w-full rounded-lg bg-white px-md py-sm text-sm font-semibold text-neutral-900 ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
                   style={{ fontVariantNumeric: 'tabular-nums' }}
                 />
-                <button
-                  type="button"
-                  onClick={handleCheckPromo}
-                  disabled={promoChecking || !promoCode.trim() || !prices[selectedCat]}
-                  className="rounded-lg bg-primary-500 px-md text-xs font-bold text-white shadow-sm disabled:opacity-50"
-                >
-                  {promoChecking ? '…' : t('commande.promo_apply')}
-                </button>
-              </div>
-              {promoPreview && (
-                promoPreview.valid ? (
-                  <p className="mt-xs text-xs font-semibold text-primary-700">
-                    Code valide — remise de{' '}
-                    <strong style={{ fontVariantNumeric: 'tabular-nums' }}>
-                      {formatFcfa(promoPreview.discount_fcfa)} F
-                    </strong>{' '}
-                    · nouveau prix{' '}
-                    <strong style={{ fontVariantNumeric: 'tabular-nums' }}>
-                      {formatFcfa(promoPreview.final_price_fcfa)} F
-                    </strong>
-                  </p>
-                ) : (
-                  <p className="mt-xs text-xs font-semibold text-error">
-                    {promoReasonLabel(promoPreview.reason)}
-                  </p>
-                )
-              )}
-            </section>
-
-            <section className="mt-lg">
-              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-600">
-                Pour qui est cette course ?
+              </label>
+              <p className="text-[11px] text-neutral-600">
+                Le chauffeur verra le nom du passager et l&apos;appellera directement à ce
+                numéro. Vous suivez la course et payez depuis votre compte.
               </p>
-              <div className="mt-sm grid grid-cols-2 gap-sm">
-                <button
-                  type="button"
-                  onClick={() => setForWhom('me')}
-                  className={`rounded-xl border-2 p-md text-left transition ${
-                    forWhom === 'me'
-                      ? 'border-primary-500 bg-primary-50'
-                      : 'border-neutral-200 bg-white hover:border-primary-300'
-                  }`}
-                >
-                  <p className="text-sm font-bold text-neutral-900">Pour moi</p>
-                  <p className="text-[10px] text-neutral-600">Je suis le passager</p>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setForWhom('other')}
-                  className={`rounded-xl border-2 p-md text-left transition ${
-                    forWhom === 'other'
-                      ? 'border-primary-500 bg-primary-50'
-                      : 'border-neutral-200 bg-white hover:border-primary-300'
-                  }`}
-                >
-                  <p className="text-sm font-bold text-neutral-900">Pour un proche</p>
-                  <p className="text-[10px] text-neutral-600">Quelqu&apos;un d&apos;autre voyage</p>
-                </button>
-              </div>
-              {forWhom === 'other' && (
-                <div className="mt-sm space-y-sm rounded-xl bg-primary-50/60 p-md ring-1 ring-primary-100">
-                  <label className="block">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
-                      Nom du passager
-                    </span>
-                    <input
-                      type="text"
-                      value={passengerName}
-                      onChange={(e) => setPassengerName(e.target.value)}
-                      placeholder="Ex : Maman Rose"
-                      className="mt-xs w-full rounded-lg bg-white px-md py-sm text-sm font-semibold text-neutral-900 ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
-                      Téléphone du passager
-                    </span>
-                    <input
-                      type="tel"
-                      inputMode="tel"
-                      value={passengerPhone}
-                      onChange={(e) => setPassengerPhone(e.target.value)}
-                      placeholder="+229 01 XX XX XX XX"
-                      className="mt-xs w-full rounded-lg bg-white px-md py-sm text-sm font-semibold text-neutral-900 ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      style={{ fontVariantNumeric: 'tabular-nums' }}
-                    />
-                  </label>
-                  <p className="text-[11px] text-neutral-600">
-                    Le chauffeur verra le nom du passager et l&apos;appellera directement à ce
-                    numéro. Vous suivez la course et payez depuis votre compte.
-                  </p>
-                </div>
-              )}
-            </section>
-
-            <section className="mt-lg">
-              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-600">
-                {t('commande.payment_method')}
-              </p>
-              <div className="mt-sm grid grid-cols-2 gap-sm">
-                <PaymentChoice
-                  id="cash"
-                  label={t('commande.payment_cash')}
-                  sub={t('commande.payment_cash_sub')}
-                  selected={paymentMethod === 'cash'}
-                  onSelect={() => setPaymentMethod('cash')}
-                />
-                {(() => {
-                  const price = prices[selectedCat]?.price_total_fcfa ?? 0;
-                  const enough = creditBalance >= price;
-                  const balanceFmt = creditBalance.toLocaleString('fr-FR').replace(/,/g, ' ');
-                  return (
-                    <PaymentChoice
-                      id="tamcar_credit"
-                      label={t('commande.payment_credit')}
-                      sub={enough ? `${balanceFmt} F` : `${t('commande.payment_credit_insufficient')} (${balanceFmt} F)`}
-                      disabled={!enough}
-                      selected={paymentMethod === 'tamcar_credit'}
-                      onSelect={() => enough && setPaymentMethod('tamcar_credit')}
-                    />
-                  );
-                })()}
-              </div>
-              <p className="mt-xs text-[10px] text-neutral-400">
-                {t('commande.payment_momo_soon')}
-              </p>
-            </section>
-
-            {isScheduled && (
-              <section className="mt-lg rounded-xl bg-violet-500/10 p-md ring-1 ring-violet-500/30">
-                <label className="block">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-violet-700">
-                    Date & heure de départ
-                  </span>
-                  <input
-                    type="datetime-local"
-                    value={scheduledAt}
-                    min={minScheduledLocal()}
-                    onChange={(e) => setScheduledAt(e.target.value)}
-                    className="mt-xs w-full rounded-lg bg-white px-md py-sm text-sm font-semibold text-neutral-900 ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-violet-500"
-                  />
-                </label>
-                <p className="mt-xs text-[11px] text-neutral-600">
-                  Réservation min. 30 min à l&apos;avance, jusqu&apos;à 30 jours.
-                  Pour partir plus tôt, commandez une course immédiate.
-                </p>
-              </section>
-            )}
-
-            <section className="mt-lg">
-              <button
-                type="button"
-                onClick={handleConfirm}
-                disabled={loading || confirming || !prices[selectedCat] || outOfZone || (isScheduled && !scheduledAt)}
-                className="flex w-full items-center justify-center gap-sm rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-lg text-base font-bold text-white shadow-glow transition hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <CarIcon className="h-5 w-5" />
-                {(() => {
-                  const finalPrice = promoPreview?.valid
-                    ? promoPreview.final_price_fcfa
-                    : prices[selectedCat]?.price_total_fcfa;
-                  if (confirming) return '…';
-                  const label = isScheduled ? t('commande.reserve') : t('commande.confirm_ride');
-                  return `${label} · ${formatFcfa(finalPrice)} FCFA`;
-                })()}
-                {!confirming && <ArrowRightIcon />}
-              </button>
-              {confirmError && (
-                <p className="mt-md text-center text-sm font-medium text-error">
-                  {confirmError}
-                </p>
-              )}
-              <p className="mt-md text-center text-[11px] text-neutral-400">
-                {t('commande.next_step')}
-              </p>
-            </section>
-          </>
-          );
-        })()}
-
-        <div className="h-2xl" />
+            </div>
+          )}
+        </section>
       </div>
+
+      <BottomBar>
+        {confirmError && (
+          <p className="mb-sm text-center text-sm font-medium text-error">{confirmError}</p>
+        )}
+        <PrimaryButton
+          onClick={handleConfirm}
+          disabled={loading || confirming || !selectedPrice || outOfZone || (isScheduled && !scheduledAt)}
+        >
+          <CarIcon className="h-5 w-5" />
+          {confirming
+            ? '…'
+            : `${isScheduled ? t('commande.reserve') : t('commande.confirm_ride')} · ${formatFcfa(finalPrice)} FCFA`}
+        </PrimaryButton>
+        {!isScheduled && (
+          <p className="mt-sm text-center text-[11px] text-neutral-400">
+            Votre course n’est confirmée que lorsqu’un chauffeur l’accepte.
+          </p>
+        )}
+      </BottomBar>
+    </main>
+  );
+
+  return (
+    <>
+      {step === 'route' ? routeScreen : step === 'vehicle' ? vehicleScreen : confirmScreen}
 
       {suggestOpen && suggestCenter && (
         <SuggestPlaceModal
@@ -704,97 +937,153 @@ export default function CommandePage() {
           }}
         />
       )}
-    </main>
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Éléments communs aux trois écrans
+
+function StepHeader({ title, back }: { title: string; back: React.ReactNode }) {
+  return (
+    <header className="flex items-center gap-md px-lg pb-md pt-lg">
+      {back}
+      <h1 className="text-xl font-extrabold leading-tight text-neutral-900">{title}</h1>
+    </header>
+  );
+}
+
+const BACK_CLASS =
+  'grid h-11 w-11 flex-none place-items-center rounded-full bg-white text-neutral-900 shadow-md ring-1 ring-neutral-200 transition active:scale-95';
+
+function BackLink({ href, label }: { href: string; label: string }) {
+  return (
+    <Link href={href} aria-label={label} className={BACK_CLASS}>
+      <span className="text-xl leading-none">←</span>
+    </Link>
+  );
+}
+
+function BackButton({ onClick, label }: { onClick: () => void; label: string }) {
+  return (
+    <button type="button" onClick={onClick} aria-label={label} className={BACK_CLASS}>
+      <span className="text-xl leading-none">←</span>
+    </button>
+  );
+}
+
+/** Barre d'action du bas : toujours visible, en dehors de la zone qui défile. */
+function BottomBar({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex-none border-t border-neutral-100 bg-white px-lg pt-md pb-[calc(env(safe-area-inset-bottom)+12px)] shadow-[0_-8px_24px_-12px_rgba(15,23,42,0.12)]">
+      {children}
+    </div>
+  );
+}
+
+function PrimaryButton({
+  onClick, disabled, children,
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="flex w-full items-center justify-center gap-sm rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-lg text-base font-bold text-white shadow-glow transition hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      {children}
+    </button>
   );
 }
 
 function CategoryChoice({
-  category, price, availability, selected, onSelect, climateLabel, noDriverLabel, availableLabel,
+  category, price, priceLoading, availability, selected, onSelect, noDriverLabel, etaLabel, unavailableLabel,
 }: {
   category: CategoryDef;
   price: PriceQuote | null;
+  priceLoading: boolean;
   availability: AvailabilityRow | null;
   selected: boolean;
   onSelect: () => void;
-  climateLabel: string;
   noDriverLabel: string;
-  availableLabel: string;
+  etaLabel: (min: number) => string;
+  unavailableLabel: string;
 }) {
-  const climateTint = category.id === 'confort' || category.id === 'premium' ? 'text-cyan-500' : 'text-neutral-500';
   return (
     <button
       type="button"
+      role="radio"
+      aria-checked={selected}
       onClick={onSelect}
-      className={`flex w-full items-center justify-between rounded-xl border-2 p-md text-left transition ${
+      className={`flex w-full items-center gap-md rounded-2xl border-2 px-md py-sm text-left transition ${
         selected
-          ? 'border-primary-500 bg-primary-50 shadow-md'
+          ? 'border-primary-500 bg-primary-50/70'
           : 'border-neutral-200 bg-white hover:border-primary-300'
       }`}
     >
       {/* Visuel de la catégorie : le client reconnaît le véhicule qu'il
           commande avant même de lire le nom. Chargement paresseux — cinq
           images sur un forfait 3G se paient. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={`/categories/${category.id}.webp`}
         alt=""
         loading="lazy"
         decoding="async"
-        className="mr-md h-16 w-20 flex-none object-contain"
+        className="h-12 w-16 flex-none object-contain"
       />
 
-      <div className="flex-1">
-        <div className="flex items-center gap-xs">
-          <p className="font-bold text-neutral-900">TamCar {category.name}</p>
-          {category.badge && (
-            <span className="inline-flex items-center gap-xs rounded-full bg-primary-500 px-sm py-0.5 text-[10px] font-bold text-white">
-              <StarIcon className="h-2.5 w-2.5" />
-              {category.badge}
-            </span>
-          )}
-        </div>
-        <p className="mt-xs text-xs text-neutral-600">{category.tagline}</p>
-        <p className={`mt-xs inline-flex items-center gap-xs text-[11px] font-semibold ${climateTint}`}>
-          <SnowflakeIcon className="h-3 w-3" strokeWidth={2.5} />
-          {climateLabel}
-        </p>
+      <div className="min-w-0 flex-1">
+        <p className="whitespace-nowrap text-[15px] font-bold text-neutral-900">TamCar {category.name}</p>
+        <p className="line-clamp-2 text-xs leading-snug text-neutral-600">{category.tagline}</p>
         {availability && (
-          <p className="mt-sm">
-            {availability.online_count > 0 ? (
-              <span className="inline-flex items-center gap-xs rounded-full bg-primary-50 px-md py-0.5 text-[11px] font-bold text-primary-700 ring-1 ring-primary-100">
-                <span className="relative grid h-1.5 w-1.5 flex-none place-items-center">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary-500/60" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary-500" />
-                </span>
-                <span style={{ fontVariantNumeric: 'tabular-nums' }}>
-                  {availability.online_count} {availableLabel}
-                  {availability.online_count > 1 ? 's' : ''}
-                </span>
-                {availability.eta_min != null && (
-                  <span className="font-semibold text-primary-500" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                    · ~{availability.eta_min} min
-                  </span>
-                )}
-              </span>
-            ) : (
-              <span className="inline-flex items-center rounded-full bg-neutral-100 px-md py-0.5 text-[11px] font-semibold text-neutral-500">
-                {noDriverLabel}
-              </span>
-            )}
+          <p
+            className={`mt-0.5 text-[11px] font-semibold ${
+              availability.online_count > 0 && availability.eta_min != null
+                ? 'text-primary-600'
+                : 'text-neutral-400'
+            }`}
+            style={{ fontVariantNumeric: 'tabular-nums' }}
+          >
+            {availability.online_count > 0
+              ? availability.eta_min != null
+                ? etaLabel(availability.eta_min)
+                : ''
+              : noDriverLabel}
           </p>
         )}
         {price?.is_corridor && (
-          <p className="mt-xs text-xs font-semibold text-primary-500">
-            Prix fixe corridor
-          </p>
+          <p className="text-[11px] font-semibold text-primary-500">Prix fixe corridor</p>
         )}
       </div>
-      <p
-        className="text-xl font-extrabold text-neutral-900"
-        style={{ fontVariantNumeric: 'tabular-nums' }}
-      >
-        {formatFcfa(price?.price_total_fcfa)}
-        <span className="ml-xs text-xs font-medium text-neutral-600">FCFA</span>
-      </p>
+
+      <div className="flex flex-none flex-col items-end gap-0.5">
+        {category.badge && (
+          <span className="inline-flex items-center gap-0.5 rounded-full bg-primary-500 px-sm py-0.5 text-[10px] font-bold text-white">
+            <StarIcon className="h-2.5 w-2.5" />
+            {category.badge}
+          </span>
+        )}
+        <p
+          className="text-right text-lg font-extrabold text-neutral-900"
+          style={{ fontVariantNumeric: 'tabular-nums' }}
+        >
+          {price ? (
+            <>
+              {formatFcfa(price.price_total_fcfa)}
+              <span className="ml-xs text-[10px] font-medium text-neutral-600">FCFA</span>
+            </>
+          ) : priceLoading ? (
+            <span className="text-neutral-300">…</span>
+          ) : (
+            <span className="text-[11px] font-semibold text-neutral-400">{unavailableLabel}</span>
+          )}
+        </p>
+      </div>
     </button>
   );
 }

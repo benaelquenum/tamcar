@@ -47,6 +47,13 @@ type Props = {
   onPickOnMap?: () => void;
   /** Callback pour demander au parent d'ouvrir le modal "Suggérer un lieu" avec le query saisi */
   onSuggestPlace?: (query: string) => void;
+  /**
+   * Version courte pour l'écran du trajet : le champ tient en une ligne
+   * (libellé minuscule + saisie + deux boutons icône) et les raccourcis —
+   * récents ou lieux populaires — n'apparaissent qu'à la prise de focus, en
+   * liste flottante, au lieu de pousser la carte vers le bas de l'écran.
+   */
+  compact?: boolean;
 };
 
 function truncateChip(s: string): string {
@@ -65,8 +72,10 @@ export function AddressAutocomplete({
   livePosition,
   onPickOnMap,
   onSuggestPlace,
+  compact = false,
 }: Props) {
   const t = useT();
+  const [focused, setFocused] = useState(false);
   const [query, setQuery] = useState(value?.place_name || '');
   const [results, setResults] = useState<
     Array<GeocodeFeature & { origin: 'tamcar' | 'google' | 'mapbox'; verified?: boolean }>
@@ -223,6 +232,147 @@ export function AddressAutocomplete({
     setQuery(f.place_name);
     setResults([]);
     setOpen(false);
+  }
+
+  if (compact) {
+    // Raccourcis flottants : seulement champ vide + focus, jamais en plus des
+    // résultats de la recherche.
+    const showShortcuts = focused && query.trim().length === 0 && !value;
+    return (
+      <div className="relative">
+        <div className="flex items-center overflow-hidden rounded-xl bg-neutral-100 ring-1 ring-neutral-200 transition focus-within:bg-white focus-within:ring-2 focus-within:ring-primary-500">
+          <span
+            className="grid h-10 w-10 flex-none place-items-center"
+            style={{ color: markerColor }}
+          >
+            <PinIcon className="h-5 w-5" strokeWidth={2.5} />
+          </span>
+          <div className="min-w-0 flex-1 py-xs">
+            <label className="block text-[10px] font-bold uppercase leading-none tracking-wider text-neutral-500">
+              {label}
+            </label>
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                if (!e.target.value) onChange(null);
+              }}
+              onFocus={() => {
+                setFocused(true);
+                if (results.length > 0) setOpen(true);
+              }}
+              onBlur={() =>
+                setTimeout(() => {
+                  setFocused(false);
+                  setOpen(false);
+                }, 200)
+              }
+              placeholder={placeholder}
+              className="mt-0.5 w-full bg-transparent text-[15px] font-semibold text-neutral-900 outline-none placeholder:font-normal placeholder:text-neutral-400"
+            />
+          </div>
+          {loading && <span className="mr-xs text-xs text-neutral-400">…</span>}
+          <div className="flex flex-none items-center gap-xs pr-sm">
+            {onPickOnMap && (
+              <button
+                type="button"
+                onClick={onPickOnMap}
+                aria-label={t('commande.on_map')}
+                title={t('commande.on_map')}
+                className="grid h-9 w-9 place-items-center rounded-full bg-white text-neutral-700 shadow-sm ring-1 ring-neutral-200 transition active:scale-95"
+              >
+                <PinIcon className="h-4 w-4" strokeWidth={2.25} />
+              </button>
+            )}
+            {showLocationButton && (
+              <button
+                type="button"
+                onClick={useMyLocation}
+                disabled={geolocating}
+                aria-label={t('commande.my_position')}
+                title={t('commande.my_position')}
+                className="grid h-9 w-9 place-items-center rounded-full bg-primary-50 text-primary-700 shadow-sm ring-1 ring-primary-100 transition active:scale-95 disabled:opacity-50"
+              >
+                {geolocating ? (
+                  <span className="text-xs font-bold">…</span>
+                ) : (
+                  <CrosshairIcon className="h-4 w-4" strokeWidth={2.25} />
+                )}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {geoError && <p className="mt-xs text-xs text-error">{geoError}</p>}
+
+        {showShortcuts && (
+          <ul className="absolute z-30 mt-xs max-h-64 w-full overflow-y-auto rounded-xl bg-white shadow-lg ring-1 ring-neutral-200">
+            <li className="px-md pb-xs pt-sm text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+              {recents.length > 0 ? t('commande.recents') : 'Lieux populaires'}
+            </li>
+            {(recents.length > 0
+              ? recents.slice(0, 5).map((r) => ({ key: r.address, text: r.address, pick: () => selectPlace(recentToFeature(r)) }))
+              : BENIN_POPULAR_PLACES.slice(0, 6).map((p) => ({ key: p.id, text: `${p.name}, ${p.city}`, pick: () => selectPlace(popularPlaceToFeature(p)) }))
+            ).map((it) => (
+              <li key={it.key}>
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={it.pick}
+                  className="flex w-full items-center gap-md px-md py-sm text-left text-sm text-neutral-900 hover:bg-neutral-100"
+                >
+                  <PinIcon className="h-4 w-4 flex-none text-neutral-400" strokeWidth={2} />
+                  <span className="min-w-0 flex-1 truncate">{it.text}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {/* Suggestions de la recherche (mêmes que la version pleine) */}
+        {open && (results.length > 0 || (query.trim().length >= 2 && onSuggestPlace)) && (
+          <ul className="absolute z-30 mt-xs max-h-72 w-full overflow-y-auto rounded-xl bg-white shadow-lg ring-1 ring-neutral-200">
+            {results.map((r) => (
+              <li key={r.id}>
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => selectPlace(r)}
+                  className="flex w-full items-start gap-md px-md py-md text-left text-sm text-neutral-900 hover:bg-neutral-100"
+                >
+                  <PinIcon className="mt-xs h-4 w-4 flex-none text-neutral-400" strokeWidth={2} />
+                  <span className="flex-1">{r.place_name}</span>
+                  {r.verified && (
+                    <span
+                      className="mt-xs inline-flex items-center gap-xs rounded-full bg-primary-100 px-xs py-0.5 text-[10px] font-bold text-primary-700"
+                      title="Lieu vérifié par TamCar"
+                    >
+                      <CheckIcon className="h-2.5 w-2.5" strokeWidth={3} />
+                    </span>
+                  )}
+                </button>
+              </li>
+            ))}
+            {onSuggestPlace && query.trim().length >= 2 && (
+              <li className="border-t border-neutral-200 bg-neutral-100/50">
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => onSuggestPlace(query.trim())}
+                  className="flex w-full items-center gap-md px-md py-md text-left text-sm font-semibold text-primary-700 hover:bg-primary-50"
+                >
+                  <span className="grid h-4 w-4 place-items-center rounded-full bg-primary-500 text-white">
+                    <span className="text-[10px] leading-none">＋</span>
+                  </span>
+                  <span className="flex-1">Ajouter « {query.trim()} » à TamCar</span>
+                </button>
+              </li>
+            )}
+          </ul>
+        )}
+      </div>
+    );
   }
 
   return (
