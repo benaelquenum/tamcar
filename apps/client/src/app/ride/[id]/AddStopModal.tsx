@@ -2,7 +2,12 @@
 
 import { useState } from 'react';
 import { AddressAutocomplete, type SelectedAddress } from '@/components/AddressAutocomplete';
-import { getRoute } from '@/lib/mapbox';
+import {
+  projectTotals,
+  quoteRouteChange,
+  type LngLat,
+  type RouteChangeQuote,
+} from '@/lib/route-change';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 
 type StopMode = 'stopover' | 'new_destination';
@@ -11,10 +16,17 @@ type Props = {
   open: boolean;
   onClose: () => void;
   rideId: string;
-  pickup: [number, number];
-  dropoff: [number, number];
+  pickup: LngLat;
+  dropoff: LngLat;
+  /** Arrêts encore à faire (pending / accepted), dans l'ordre. */
   existingStops: Array<{ lat: number; lng: number }>;
   currentPrice: number;
+  /** Totaux actuels de la course (le nouveau prix s'en déduit). */
+  rideKm: number;
+  rideMin: number;
+  inProgress: boolean;
+  /** Position du véhicule : c'est d'elle que part le recalcul d'une course démarrée. */
+  vehicle: LngLat | null;
   onAdded: () => void;
 };
 
@@ -30,47 +42,57 @@ export function AddStopModal({
   dropoff,
   existingStops,
   currentPrice,
+  rideKm,
+  rideMin,
+  inProgress,
+  vehicle,
   onAdded,
 }: Props) {
   const [mode, setMode] = useState<StopMode>('stopover');
   const [selected, setSelected] = useState<SelectedAddress | null>(null);
   const [computing, setComputing] = useState(false);
-  const [newTotalKm, setNewTotalKm] = useState<number | null>(null);
-  const [newTotalMin, setNewTotalMin] = useState<number | null>(null);
+  const [totals, setTotals] = useState<{ km: number; min: number } | null>(null);
+  const [quote, setQuote] = useState<RouteChangeQuote | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function computeItinerary(addr: SelectedAddress, chosenMode: StopMode) {
-    // stopover  : pickup → stops → nouveau → dropoff
-    // new_dest  : pickup → stops → nouveau (dropoff ignoré)
-    const waypoints: Array<[number, number]> = [
-      pickup,
-      ...existingStops.map((s) => [s.lng, s.lat] as [number, number]),
-      addr.center,
-    ];
-    if (chosenMode === 'stopover') waypoints.push(dropoff);
-
-    let totalKm = 0;
-    let totalMin = 0;
-    for (let i = 0; i < waypoints.length - 1; i++) {
-      const seg = await getRoute(waypoints[i], waypoints[i + 1]);
-      if (!seg) throw new Error(`Impossible de calculer le segment ${i + 1}`);
-      totalKm += seg.distance_km;
-      totalMin += seg.duration_min;
-    }
-    return { totalKm, totalMin };
-  }
-
   async function refreshEstimate(addr: SelectedAddress | null, chosenMode: StopMode) {
-    setNewTotalKm(null);
-    setNewTotalMin(null);
+    setTotals(null);
+    setQuote(null);
     setError(null);
     if (!addr) return;
     setComputing(true);
     try {
-      const { totalKm, totalMin } = await computeItinerary(addr, chosenMode);
-      setNewTotalKm(totalKm);
-      setNewTotalMin(Math.round(totalMin));
+      const stopCoords = existingStops.map((s) => [s.lng, s.lat] as LngLat);
+      // escale : … → arrêts → nouveau → destination ; nouvelle destination :
+      // … → arrêts → nouveau (l'ancienne destination n'est plus desservie).
+      const next = await projectTotals({
+        rideKm,
+        rideMin,
+        inProgress,
+        vehicle,
+        pickup,
+        oldStops: stopCoords,
+        oldDropoff: dropoff,
+        newStops: chosenMode === 'stopover' ? [...stopCoords, addr.center] : stopCoords,
+        newDropoff: chosenMode === 'stopover' ? dropoff : addr.center,
+      });
+      // Base pas encore à jour (fonction absente) : on ajoute sans afficher le
+      // nouveau prix — il est calculé côté serveur à la confirmation.
+      let q: RouteChangeQuote | null = null;
+      try {
+        q = await quoteRouteChange(
+          rideId,
+          next.km,
+          next.min,
+          chosenMode === 'new_destination' ? addr.center : undefined,
+        );
+      } catch (qe) {
+        const msg = qe instanceof Error ? qe.message : '';
+        if (!/quote_ride_route_change|schema cache|could not find/i.test(msg)) throw qe;
+      }
+      setTotals(next);
+      setQuote(q);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erreur calcul itinéraire');
     } finally {
@@ -89,7 +111,7 @@ export function AddStopModal({
   }
 
   async function submit() {
-    if (!selected || newTotalKm == null || newTotalMin == null) return;
+    if (!selected || !totals) return;
     setSubmitting(true);
     setError(null);
     const { error: rpcErr } = await supabaseBrowser.rpc('add_ride_stop', {
@@ -97,8 +119,8 @@ export function AddStopModal({
       p_address: selected.place_name,
       p_lat: selected.center[1],
       p_lng: selected.center[0],
-      p_new_total_km: newTotalKm,
-      p_new_total_min: newTotalMin,
+      p_new_total_km: Number(totals.km.toFixed(2)),
+      p_new_total_min: Math.round(totals.min),
       p_mode: mode,
     });
     setSubmitting(false);
@@ -106,11 +128,16 @@ export function AddStopModal({
       setError(rpcErr.message);
       return;
     }
+    setSelected(null);
+    setTotals(null);
+    setQuote(null);
     onAdded();
     onClose();
   }
 
   if (!open) return null;
+
+  const delta = quote ? quote.delta_fcfa : 0;
 
   return (
     <div
@@ -169,11 +196,11 @@ export function AddStopModal({
 
         {computing && (
           <p className="mt-md text-center text-xs text-neutral-500">
-            Calcul du nouvel itinéraire…
+            Calcul du nouvel itinéraire et du nouveau prix…
           </p>
         )}
 
-        {newTotalKm != null && newTotalMin != null && !computing && (
+        {totals && !computing && (
           <div className="mt-md rounded-xl border border-primary-200 bg-primary-50 p-md">
             <p className="text-[10px] font-bold uppercase tracking-wider text-primary-700">
               Nouvel itinéraire
@@ -182,25 +209,36 @@ export function AddStopModal({
               <div className="flex justify-between">
                 <span className="text-neutral-700">Distance totale</span>
                 <span className="font-semibold" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                  {newTotalKm.toFixed(1)} km
+                  {totals.km.toFixed(1)} km
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-neutral-700">Durée estimée</span>
                 <span className="font-semibold" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                  {newTotalMin} min
+                  {Math.round(totals.min)} min
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-neutral-700">Total actuel</span>
-                <span className="font-semibold text-neutral-500 line-through" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                <span className="text-neutral-700">Prix actuel</span>
+                <span className={`font-semibold text-neutral-500 ${quote ? 'line-through' : ''}`} style={{ fontVariantNumeric: 'tabular-nums' }}>
                   {formatFcfa(currentPrice)} F
                 </span>
               </div>
+              {quote && (
+                <div className="flex items-baseline justify-between border-t border-primary-200 pt-xs">
+                  <span className="font-bold text-neutral-900">Nouveau prix</span>
+                  <span className="text-lg font-extrabold text-primary-700" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                    {formatFcfa(quote.new_total_fcfa)} F
+                    <span className="ml-xs text-xs font-semibold text-neutral-500">
+                      ({delta >= 0 ? '+' : '−'}{formatFcfa(Math.abs(delta))} F)
+                    </span>
+                  </span>
+                </div>
+              )}
             </div>
             <p className="mt-md text-[10px] text-neutral-500">
-              Le nouveau prix sera calculé par TamCar selon la distance additionnelle
-              et la catégorie de votre véhicule.
+              Calculé par TamCar avec la même grille que votre commande. Votre
+              chauffeur est prévenu : nouvel arrêt, nouveau prix et sa part.
             </p>
           </div>
         )}
@@ -223,14 +261,16 @@ export function AddStopModal({
           <button
             type="button"
             onClick={submit}
-            disabled={submitting || !selected || newTotalKm == null || computing}
+            disabled={submitting || !selected || !totals || computing}
             className="flex-1 rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-md text-sm font-bold text-white shadow-glow disabled:opacity-50"
           >
             {submitting
               ? 'Envoi…'
-              : mode === 'stopover'
-                ? 'Ajouter cette escale'
-                : 'Définir comme destination'}
+              : quote
+                ? `Confirmer · ${formatFcfa(quote.new_total_fcfa)} F`
+                : mode === 'stopover'
+                  ? 'Ajouter cette escale'
+                  : 'Définir comme destination'}
           </button>
         </div>
       </div>

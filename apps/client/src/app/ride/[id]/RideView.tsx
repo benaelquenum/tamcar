@@ -9,7 +9,8 @@ import { Avatar } from '@/components/Avatar';
 import { RideTalkie } from '@/components/RideTalkie';
 import { Map } from '@/components/Map';
 import { RatingModal } from '@/components/RatingModal';
-import { getRoute } from '@/lib/mapbox';
+import { getRoute, getRouteThrough } from '@/lib/mapbox';
+import { MAX_STOPS } from '@/lib/route-change';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { freshChannel } from '@/lib/realtime';
 import { SUPPORT_PHONE, SUPPORT_PHONE_DISPLAY } from '@/lib/support';
@@ -88,7 +89,15 @@ export type RideForView = {
   vehicle_color?: string | null;
   passenger_name?: string | null;
   passenger_phone?: string | null;
+  /** Course directe : le chauffeur visé tant qu'aucun n'a accepté, et son éventuel refus. */
+  requested_driver_id?: string | null;
+  requested_driver_name?: string | null;
+  direct_declined_at?: string | null;
+  stops_count?: number | null;
 };
+
+/** Délai laissé au chauffeur visé d'une course directe avant de proposer relance / commande ordinaire. */
+const DIRECT_WAIT_MS = 120_000;
 
 type NearbyDriverRow = { driver_id: string; lat: number; lng: number; category?: string };
 
@@ -228,6 +237,9 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
   const trackChannelRef = useRef<ReturnType<typeof supabaseBrowser.channel> | null>(null);
   const [searchTimedOut, setSearchTimedOut] = useState(false);
   const [retrying, setRetrying] = useState(false);
+  // Course directe : action en cours (relance / bascule en commande ordinaire)
+  const [directBusy, setDirectBusy] = useState<'relaunch' | 'release' | null>(null);
+  const [directError, setDirectError] = useState<string | null>(null);
   const [alternativeOffers, setAlternativeOffers] = useState<AlternativeOffer[] | null>(null);
   const [timeoutOffers, setTimeoutOffers] = useState<AlternativeOffer[] | null>(null);
   const [switching, setSwitching] = useState(false);
@@ -491,10 +503,19 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
   // sur le libellé de STATUS_META, qui couvre tous les statuts.
   const statusKey = `ride.status.${ride.status}`;
   const translatedStatus = t(statusKey);
-  const statusTitle = translatedStatus === statusKey ? meta.title : translatedStatus;
+  // Course directe en attente : on dit à QUI la demande a été envoyée — jamais
+  // « chauffeur trouvé » tant que personne n'a accepté.
+  const isDirect = ride.status === 'requested' && Boolean(ride.requested_driver_id);
+  const directName = (ride.requested_driver_name ?? '').trim().split(/\s+/)[0] || 'votre chauffeur';
+  const statusTitle =
+    isDirect ? `Demande envoyée à ${directName}`
+    : translatedStatus === statusKey ? meta.title : translatedStatus;
   const statusSub = (() => {
     switch (ride.status) {
-      case 'requested': return t('ride.searching_near');
+      case 'requested':
+        return isDirect
+          ? (ride.direct_declined_at ? `${directName} n'est pas disponible.` : `En attente de la réponse de ${directName}…`)
+          : t('ride.searching_near');
       case 'matched': return t('ride.driver_on_way');
       case 'arrived': return t('ride.driver_arrived');
       case 'in_progress': return t('ride.in_progress_sub');
@@ -595,20 +616,22 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
       return;
     }
     const start = new Date(ride.requested_at).getTime();
-    const deadline = start + 60_000;
+    // Une course directe laisse 2 minutes au chauffeur visé pour répondre ;
+    // son refus ouvre tout de suite le choix, sans attendre le délai.
+    const deadline = start + (ride.requested_driver_id ? DIRECT_WAIT_MS : 60_000);
     const remaining = Math.max(0, deadline - Date.now());
-    if (remaining === 0) {
+    if (remaining === 0 || ride.direct_declined_at) {
       setSearchTimedOut(true);
       return;
     }
     const timer = setTimeout(() => setSearchTimedOut(true), remaining);
     return () => clearTimeout(timer);
-  }, [ride.status, ride.requested_at]);
+  }, [ride.status, ride.requested_at, ride.requested_driver_id, ride.direct_declined_at]);
 
   // Au timeout : on récupère les catégories alternatives disponibles (avec
   // prix) pour les proposer directement dans la modale « aucun chauffeur ».
   useEffect(() => {
-    if (!searchTimedOut || ride.status !== 'requested') {
+    if (!searchTimedOut || ride.status !== 'requested' || ride.requested_driver_id) {
       setTimeoutOffers(null);
       return;
     }
@@ -626,6 +649,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
   // on propose au client toutes les alternatives disponibles (avec nb chauffeurs proches).
   useEffect(() => {
     if (ride.status !== 'requested') return;
+    if (ride.requested_driver_id) return; // course directe : pas d'autre catégorie proposée
     if (ride.downgrade_accepted_at) return; // déjà switché
     if (alternativeOffers !== null) return;  // déjà proposé
     const start = new Date(ride.requested_at).getTime();
@@ -664,18 +688,59 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
     await refetchDetails();
   }
 
+  // Relance : remet le délai à zéro ET prévient de nouveau les chauffeurs
+  // (le chauffeur visé pour une course directe, tous ceux du secteur sinon).
+  async function relaunchSearch(): Promise<string | null> {
+    const { error } = await supabaseBrowser.rpc('client_relaunch_search', { p_ride_id: ride.id });
+    if (!error) return null;
+    // Base pas encore à jour (fonction absente) : l'ancien comportement
+    // — le délai repart, sans nouvelle alerte.
+    if (/client_relaunch_search|schema cache|could not find/i.test(error.message)) {
+      const { error: e2 } = await supabaseBrowser
+        .from('rides')
+        .update({ requested_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .eq('id', ride.id)
+        .eq('status', 'requested');
+      return e2 ? e2.message : null;
+    }
+    return error.message;
+  }
+
   async function handleRetrySearch() {
     if (retrying) return;
     setRetrying(true);
-    // On reset le timer côté serveur en remettant requested_at à now()
-    await supabaseBrowser
-      .from('rides')
-      .update({ requested_at: new Date().toISOString(), updated_at: new Date().toISOString() })
-      .eq('id', ride.id)
-      .eq('status', 'requested');
+    await relaunchSearch();
     setSearchTimedOut(false);
     await refetchDetails();
     setRetrying(false);
+  }
+
+  async function handleDirectRelaunch() {
+    if (directBusy) return;
+    setDirectBusy('relaunch');
+    setDirectError(null);
+    const err = await relaunchSearch();
+    setDirectBusy(null);
+    if (err) {
+      setDirectError(err);
+      return;
+    }
+    setSearchTimedOut(false);
+    await refetchDetails();
+  }
+
+  async function handleDirectRelease() {
+    if (directBusy) return;
+    setDirectBusy('release');
+    setDirectError(null);
+    const { error } = await supabaseBrowser.rpc('client_release_direct', { p_ride_id: ride.id });
+    setDirectBusy(null);
+    if (error) {
+      setDirectError(error.message);
+      return;
+    }
+    setSearchTimedOut(false);
+    await refetchDetails();
   }
 
   async function handleAbortSearch() {
@@ -979,7 +1044,15 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
     }
     const toPickup = ride.status === 'matched' || ride.status === 'arrived';
     let cancelled = false;
-    getRoute(origin, dest).then((r) => {
+    // Course démarrée : position → arrêts restants (dans l'ordre) → destination.
+    const remainingStops: Array<[number, number]> =
+      ride.status === 'in_progress'
+        ? stops
+            .filter((st) => st.status === 'pending' || st.status === 'accepted')
+            .sort((a, b) => a.order_idx - b.order_idx)
+            .map((st) => [st.lng, st.lat] as [number, number])
+        : [];
+    (remainingStops.length > 0 ? getRouteThrough([origin, ...remainingStops, dest]) : getRoute(origin, dest)).then((r) => {
       if (cancelled) return;
       setRouteGeo(r?.geometry ?? null);
       setDistanceToPickup(toPickup && r ? r.distance_km * 1000 : null);
@@ -990,7 +1063,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
       else setRemainingMin(null);
     });
     return () => { cancelled = true; };
-  }, [routeOrigin, driverCoord, pickupCoord, dropoffCoord, ride.status]);
+  }, [routeOrigin, driverCoord, pickupCoord, dropoffCoord, ride.status, stops]);
 
   return (
     <main className="fixed inset-0 overflow-hidden bg-white">
@@ -1095,7 +1168,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                   </p>
                 )}
               </div>
-              {isWaiting && (() => {
+              {isWaiting && !isDirect && (() => {
                 const matchingCat = ride.requested_category;
                 const matching = matchingCat
                   ? nearbyDrivers.filter((d) => d.category === matchingCat)
@@ -1263,7 +1336,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
               </span>
             </div>
             {/* Bouton "Ajouter un arrêt" — visible pendant la course, max 2 */}
-            {['matched', 'arrived', 'in_progress'].includes(ride.status) && stops.filter((s) => s.status !== 'cancelled').length < 2 && (
+            {['matched', 'arrived', 'in_progress'].includes(ride.status) && stops.filter((s) => s.status !== 'cancelled').length < MAX_STOPS && (
               <button
                 type="button"
                 onClick={() => setAddStopOpen(true)}
@@ -1286,6 +1359,11 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
               dropoff={dropoffCoord}
               dropoffAddress={ride.dropoff_address}
               stops={stops}
+              currentPrice={ride.price_total_fcfa}
+              rideKm={ride.distance_km ?? 0}
+              rideMin={ride.duration_min ?? 0}
+              inProgress={ride.status === 'in_progress'}
+              vehicle={effectiveDriverCoord}
               onChanged={() => { void refetchStops(); void refetchDetails(); }}
             />
 
@@ -1542,7 +1620,61 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
         </div>
       )}
 
-      {searchTimedOut && ride.status === 'requested' && (
+      {/* Course directe sans réponse (2 min) ou refusée : relancer, ou la
+          basculer en commande ordinaire (ouverte à tous les chauffeurs). */}
+      {searchTimedOut && isDirect && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-neutral-900/75 backdrop-blur-sm sm:items-center">
+          <div className="w-full max-w-md rounded-t-2xl bg-white p-lg shadow-xl sm:rounded-2xl">
+            <div className="mb-lg text-center">
+              <div className="mx-auto mb-md grid h-14 w-14 place-items-center rounded-full bg-primary-50 text-primary-700">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="h-7 w-7">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+              </div>
+              <h2 className="text-lg font-extrabold text-neutral-900">
+                {ride.direct_declined_at ? `${directName} n’est pas disponible` : `${directName} n’a pas répondu`}
+              </h2>
+              <p className="mt-xs text-sm text-neutral-600">
+                {ride.direct_declined_at
+                  ? 'Commandez une course ordinaire : elle sera proposée à tous les chauffeurs, au même prix.'
+                  : 'Relancez la demande, ou commandez une course ordinaire : elle sera proposée à tous les chauffeurs de la catégorie, au même prix.'}
+              </p>
+            </div>
+            <div className="space-y-sm">
+              {!ride.direct_declined_at && (
+                <button
+                  type="button"
+                  onClick={handleDirectRelaunch}
+                  disabled={directBusy !== null}
+                  className="w-full rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-md text-sm font-bold text-white shadow-glow disabled:opacity-50"
+                >
+                  {directBusy === 'relaunch' ? '…' : `Relancer la demande à ${directName}`}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handleDirectRelease}
+                disabled={directBusy !== null}
+                className="w-full rounded-xl border-2 border-primary-500 bg-white py-md text-sm font-bold text-primary-700 hover:bg-primary-50 disabled:opacity-50"
+              >
+                {directBusy === 'release' ? '…' : 'Commander une course ordinaire'}
+              </button>
+              <button
+                type="button"
+                onClick={handleAbortSearch}
+                disabled={directBusy !== null}
+                className="w-full rounded-xl border-2 border-neutral-200 py-md text-sm font-bold text-neutral-600 hover:border-error hover:text-error disabled:opacity-50"
+              >
+                Annuler la course
+              </button>
+            </div>
+            {directError && <p className="mt-sm text-center text-xs text-error">{directError}</p>}
+          </div>
+        </div>
+      )}
+
+      {searchTimedOut && ride.status === 'requested' && !isDirect && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-neutral-900/75 backdrop-blur-sm sm:items-center">
           <div className="w-full max-w-md rounded-t-2xl bg-white p-lg shadow-xl sm:rounded-2xl">
             <div className="mb-lg text-center">
@@ -1663,9 +1795,14 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
         pickup={pickupCoord}
         dropoff={dropoffCoord}
         existingStops={stops
-          .filter((s) => s.status !== 'cancelled' && s.status !== 'departed')
+          .filter((s) => s.status === 'pending' || s.status === 'accepted')
+          .sort((a, b) => a.order_idx - b.order_idx)
           .map((s) => ({ lat: s.lat, lng: s.lng }))}
         currentPrice={ride.price_total_fcfa}
+        rideKm={ride.distance_km ?? 0}
+        rideMin={ride.duration_min ?? 0}
+        inProgress={ride.status === 'in_progress'}
+        vehicle={effectiveDriverCoord}
         onAdded={() => { void refetchStops(); void refetchDetails(); }}
       />
 

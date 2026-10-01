@@ -4,11 +4,12 @@ import { useEffect, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { AddressAutocomplete, type SelectedAddress } from '@/components/AddressAutocomplete';
-import { ArrowRightIcon, CarIcon, StarIcon } from '@/components/Icon';
+import { ArrowRightIcon, CarIcon, PlusIcon, StarIcon } from '@/components/Icon';
 import { Map } from '@/components/Map';
 import { useLivePosition } from '@/lib/useLivePosition';
 import { SuggestPlaceModal } from '@/components/SuggestPlaceModal';
-import { getRoute, reverseGeocode, type RouteResult } from '@/lib/mapbox';
+import { getRouteThrough, reverseGeocode, type RouteResult } from '@/lib/mapbox';
+import { MAX_STOPS } from '@/lib/route-change';
 import { googlePlacesConfigured, googleReverseGeocode } from '@/lib/google-places';
 import { computePrice, type PriceQuote, type VehicleCategory } from '@/lib/pricing';
 import { supabaseBrowser } from '@/lib/supabase-browser';
@@ -62,6 +63,16 @@ function promoReasonLabel(reason: string): string {
 
 type PickingMode = 'pickup' | 'dropoff' | 'suggest' | null;
 
+/** Course directe : un chauffeur que le client a déjà eu (liste « Mes chauffeurs »). */
+type DirectDriver = {
+  driver_id: string;
+  driver_name: string;
+  driver_rating: number | null;
+  vehicle_category: VehicleCategory;
+  vehicle_label: string | null;
+  is_online: boolean;
+};
+
 /** Les trois écrans de la commande : définir le trajet, choisir le véhicule, confirmer. */
 type Step = 'route' | 'vehicle' | 'confirm';
 
@@ -96,6 +107,10 @@ export default function CommandePage() {
   const isScheduled = searchParams.get('scheduled') === '1';
   const isProche = searchParams.get('proche') === '1';
   const urlStep = searchParams.get('step');
+  // ?driver=<id> : commande DIRECTE à un chauffeur déjà eu (depuis « Mes
+  // chauffeurs »). Pas de choix de véhicule — c'est le sien — et une
+  // réservation à l'avance ne peut pas être directe.
+  const driverParam = isScheduled ? null : searchParams.get('driver');
 
   const [pickup, setPickup] = useState<SelectedAddress | null>(null);
 
@@ -112,6 +127,16 @@ export default function CommandePage() {
       center: [lng, lat],
     };
   });
+  // Arrêts demandés dès la commande (3 au plus). Une case vide est une case
+  // ouverte, pas encore remplie : seuls les arrêts renseignés comptent.
+  const [stops, setStops] = useState<Array<SelectedAddress | null>>([]);
+  const filledStops = stops.filter((x): x is SelectedAddress => x !== null);
+  const stopsKey = filledStops.map((x) => x.center.join(',')).join('|');
+
+  const [directDriver, setDirectDriver] = useState<DirectDriver | null>(null);
+  const [directState, setDirectState] = useState<'none' | 'loading' | 'ready' | 'missing'>(
+    driverParam ? 'loading' : 'none',
+  );
   const [route, setRoute] = useState<RouteResult | null>(null);
   // « failed » : les deux adresses sont valides mais l'itinéraire n'a pas pu
   // être calculé — on l'explique au lieu de laisser un écran muet.
@@ -170,12 +195,15 @@ export default function CommandePage() {
   const [confirming, startConfirm] = useTransition();
   const [confirmError, setConfirmError] = useState<string | null>(null);
 
+  const stopsOut = filledStops.some((x) => !isWithinServiceZone(x.center[1], x.center[0]));
   const outOfZone =
     (pickup ? !isWithinServiceZone(pickup.center[1], pickup.center[0]) : false) ||
-    (dropoff ? !isWithinServiceZone(dropoff.center[1], dropoff.center[0]) : false);
+    (dropoff ? !isWithinServiceZone(dropoff.center[1], dropoff.center[0]) : false) ||
+    stopsOut;
   const pickupOut = pickup ? !isWithinServiceZone(pickup.center[1], pickup.center[0]) : false;
   const dropoffOut = dropoff ? !isWithinServiceZone(dropoff.center[1], dropoff.center[0]) : false;
 
+  const isDirect = directDriver !== null;
   const selectedPrice = prices[selectedCat] ?? null;
   const finalPrice = promoPreview?.valid
     ? promoPreview.final_price_fcfa
@@ -282,6 +310,12 @@ export default function CommandePage() {
           promo_code: promoPreview?.valid ? promoCode.trim().toUpperCase() : null,
           passenger_name: forWhom === 'other' ? passengerName.trim() : null,
           passenger_phone: forWhom === 'other' ? passengerPhone.replace(/[^0-9+]/g, '') : null,
+          target_driver_id: directDriver?.driver_id ?? null,
+          stops: filledStops.map((x) => ({
+            address: x.place_name,
+            lat: x.center[1],
+            lng: x.center[0],
+          })),
         });
         // Succès = redirection côté serveur, la fonction ne retourne rien.
         if (result?.error) setConfirmError(result.error);
@@ -322,6 +356,26 @@ export default function CommandePage() {
       }
     })();
   }, []);
+
+  // Course directe : retrouve le chauffeur dans « Mes chauffeurs » ; sa
+  // catégorie devient celle de la course.
+  useEffect(() => {
+    if (!driverParam) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabaseBrowser.rpc('my_recent_drivers', { p_limit: 50 });
+      if (cancelled) return;
+      const found = ((data as DirectDriver[] | null) ?? []).find((d) => d.driver_id === driverParam);
+      if (!found) {
+        setDirectState('missing');
+        return;
+      }
+      setDirectDriver(found);
+      setSelectedCat(found.vehicle_category);
+      setDirectState('ready');
+    })();
+    return () => { cancelled = true; };
+  }, [driverParam]);
 
   // Départ par défaut = position actuelle, dès qu'un fix précis est disponible.
   useEffect(() => {
@@ -377,7 +431,14 @@ export default function CommandePage() {
     (async () => {
       let r: RouteResult | null = null;
       try {
-        r = await getRoute(pickup.center, dropoff.center);
+        // départ → arrêts (dans l'ordre) → destination, en un seul appel :
+        // la distance et la durée sont celles de TOUT l'itinéraire, donc le
+        // prix aussi.
+        r = await getRouteThrough([
+          pickup.center,
+          ...filledStops.map((x) => x.center),
+          dropoff.center,
+        ]);
       } catch {
         r = null;
       }
@@ -412,7 +473,8 @@ export default function CommandePage() {
     })();
 
     return () => { cancelled = true; };
-  }, [pickup, dropoff, attempt]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pickup, dropoff, stopsKey, attempt]);
 
   // Dispo chauffeurs par catégorie autour du pickup — refresh toutes les 30 s
   useEffect(() => {
@@ -482,8 +544,18 @@ export default function CommandePage() {
 
   const catDef = CATEGORIES.find((c) => c.id === selectedCat)!;
   const tripLine = route
-    ? `${formatKm(route.distance_km)} km · ${route.duration_min} min ${t('commande.min_distance')}`
+    ? `${formatKm(route.distance_km)} km · ${route.duration_min} min ${t('commande.min_distance')}` +
+      (filledStops.length > 0 ? ` · ${filledStops.length} arrêt${filledStops.length > 1 ? 's' : ''}` : '')
     : null;
+  const directFirst = directDriver ? directDriver.driver_name.split(' ')[0] : '';
+  const nextStepAfterRoute: Step = isDirect ? 'confirm' : 'vehicle';
+
+  function setStopAt(i: number, v: SelectedAddress | null) {
+    setStops((cur) => cur.map((x, k) => (k === i ? v : x)));
+  }
+  function removeStopAt(i: number) {
+    setStops((cur) => cur.filter((_, k) => k !== i));
+  }
 
   // ------------------------------------------------------------------ écran 1 : trajet
   const routeScreen = (
@@ -492,6 +564,22 @@ export default function CommandePage() {
         title={t('commande.route_title')}
         back={<BackLink href="/" label="Retour à l'accueil" />}
       />
+
+      {directState === 'ready' && directDriver && (
+        <div className="mx-lg mb-sm rounded-xl bg-primary-50 px-md py-sm text-xs text-primary-900">
+          Course directe avec <strong>{directDriver.driver_name}</strong>
+          {directDriver.driver_rating != null && ` · ★ ${Number(directDriver.driver_rating).toFixed(1)}`}
+          {directDriver.vehicle_label ? ` · ${directDriver.vehicle_label}` : ''}
+          {!directDriver.is_online && (
+            <span className="font-semibold text-amber-700"> · actuellement hors ligne : il peut tarder à répondre</span>
+          )}
+        </div>
+      )}
+      {directState === 'missing' && (
+        <div className="mx-lg mb-sm rounded-xl border border-amber-300 bg-amber-50 px-md py-sm text-xs text-amber-900">
+          Ce chauffeur ne fait pas partie de vos chauffeurs : la course sera une commande ordinaire.
+        </div>
+      )}
 
       <section className="relative z-20 space-y-sm px-lg">
         <AddressAutocomplete
@@ -506,6 +594,29 @@ export default function CommandePage() {
           onPickOnMap={() => setPickingMode('pickup')}
           onSuggestPlace={startSuggest}
         />
+        {stops.map((st, i) => (
+          <div key={i} className="flex items-center gap-sm">
+            <div className="min-w-0 flex-1">
+              <AddressAutocomplete
+                compact
+                label={`Arrêt ${i + 1}`}
+                placeholder="Où voulez-vous passer ?"
+                value={st}
+                onChange={(v) => setStopAt(i, v)}
+                markerColor="#F59E0B"
+                onSuggestPlace={startSuggest}
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => removeStopAt(i)}
+              aria-label={`Retirer l'arrêt ${i + 1}`}
+              className="grid h-9 w-9 flex-none place-items-center rounded-full bg-neutral-100 text-lg text-neutral-600 transition active:scale-95"
+            >
+              ×
+            </button>
+          </div>
+        ))}
         <AddressAutocomplete
           compact
           label={t('commande.dropoff')}
@@ -516,6 +627,19 @@ export default function CommandePage() {
           onPickOnMap={() => setPickingMode('dropoff')}
           onSuggestPlace={startSuggest}
         />
+        {stops.length < MAX_STOPS && (
+          <button
+            type="button"
+            onClick={() => setStops((cur) => [...cur, null])}
+            className="inline-flex items-center gap-xs text-xs font-bold text-primary-600"
+          >
+            <PlusIcon className="h-3.5 w-3.5" strokeWidth={3} />
+            Ajouter un arrêt
+            <span className="font-medium text-neutral-400">
+              ({stops.length}/{MAX_STOPS})
+            </span>
+          </button>
+        )}
       </section>
 
       {outOfZone && (
@@ -551,6 +675,7 @@ export default function CommandePage() {
           pickup={pickup?.center ?? null}
           dropoff={dropoff?.center ?? null}
           route={route?.geometry ?? null}
+          stops={filledStops.map((x, i) => ({ lat: x.center[1], lng: x.center[0], label: i + 1 }))}
           candidate={candidate}
           clientLocation={liveCoord}
           onMapClick={pickingMode ? handleMapClick : undefined}
@@ -595,11 +720,15 @@ export default function CommandePage() {
           <p className="mb-sm text-center text-xs text-neutral-500">{t('commande.route_hint')}</p>
         )}
         <PrimaryButton
-          onClick={() => goStep('vehicle')}
-          disabled={!route || outOfZone || routeStatus !== 'ok'}
+          onClick={() => goStep(nextStepAfterRoute)}
+          disabled={
+            !route || outOfZone || routeStatus !== 'ok' ||
+            (isDirect ? !selectedPrice : false) ||
+            directState === 'loading'
+          }
         >
           <CarIcon className="h-5 w-5" />
-          {t('commande.choose_vehicle')}
+          {isDirect ? t('commande.continue') : t('commande.choose_vehicle')}
           <ArrowRightIcon />
         </PrimaryButton>
       </BottomBar>
@@ -681,6 +810,12 @@ export default function CommandePage() {
             <div className="mt-1.5 flex flex-none flex-col items-center">
               <span className="h-2.5 w-2.5 rounded-full bg-primary-500" />
               <span className="my-0.5 h-6 w-px bg-neutral-300" />
+              {filledStops.map((_, i) => (
+                <span key={i} className="contents">
+                  <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />
+                  <span className="my-0.5 h-6 w-px bg-neutral-300" />
+                </span>
+              ))}
               <span className="h-2.5 w-2.5 rounded-full bg-violet-500" />
             </div>
             <div className="min-w-0 flex-1 space-y-sm">
@@ -688,6 +823,12 @@ export default function CommandePage() {
                 <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">{t('commande.pickup')}</p>
                 <p className="text-sm font-semibold leading-snug text-neutral-900">{pickup?.place_name.replace(/, Bénin$/i, '')}</p>
               </div>
+              {filledStops.map((x, i) => (
+                <div key={i}>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700">Arrêt {i + 1}</p>
+                  <p className="text-sm font-semibold leading-snug text-neutral-900">{x.place_name.replace(/, Bénin$/i, '')}</p>
+                </div>
+              ))}
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">{t('commande.dropoff')}</p>
                 <p className="text-sm font-semibold leading-snug text-neutral-900">{dropoff?.place_name.replace(/, Bénin$/i, '')}</p>
@@ -711,8 +852,14 @@ export default function CommandePage() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={`/categories/${catDef.id}.webp`} alt="" className="h-12 w-16 flex-none object-contain" />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[15px] font-bold text-neutral-900">TamCar {catDef.name}</p>
-            <p className="truncate text-xs text-neutral-600">{t(`cat.${catDef.id}.tagline`)}</p>
+            <p className="truncate text-[15px] font-bold text-neutral-900">
+              {isDirect ? directDriver!.driver_name : `TamCar ${catDef.name}`}
+            </p>
+            <p className="truncate text-xs text-neutral-600">
+              {isDirect
+                ? `Course directe · TamCar ${catDef.name}${directDriver!.driver_rating != null ? ` · ★ ${Number(directDriver!.driver_rating).toFixed(1)}` : ''}`
+                : t(`cat.${catDef.id}.tagline`)}
+            </p>
             {selectedPrice?.is_corridor && (
               <p className="text-[11px] font-semibold text-primary-600">Prix fixe corridor</p>
             )}
@@ -727,9 +874,11 @@ export default function CommandePage() {
                 {formatFcfa(selectedPrice?.price_total_fcfa)}
               </p>
             )}
-            <button type="button" onClick={() => window.history.back()} className="text-xs font-bold text-primary-600">
-              {t('commande.edit')}
-            </button>
+            {!isDirect && (
+              <button type="button" onClick={() => window.history.back()} className="text-xs font-bold text-primary-600">
+                {t('commande.edit')}
+              </button>
+            )}
           </div>
         </section>
 
@@ -911,11 +1060,15 @@ export default function CommandePage() {
           <CarIcon className="h-5 w-5" />
           {confirming
             ? '…'
-            : `${isScheduled ? t('commande.reserve') : t('commande.confirm_ride')} · ${formatFcfa(finalPrice)} FCFA`}
+            : isDirect
+              ? `Envoyer la demande à ${directFirst} · ${formatFcfa(finalPrice)} FCFA`
+              : `${isScheduled ? t('commande.reserve') : t('commande.confirm_ride')} · ${formatFcfa(finalPrice)} FCFA`}
         </PrimaryButton>
         {!isScheduled && (
           <p className="mt-sm text-center text-[11px] text-neutral-400">
-            Votre course n’est confirmée que lorsqu’un chauffeur l’accepte.
+            {isDirect
+              ? `Votre course est confirmée quand ${directFirst} l’accepte. Sans réponse après 2 minutes, vous pourrez relancer ou commander une course ordinaire.`
+              : 'Votre course n’est confirmée que lorsqu’un chauffeur l’accepte.'}
           </p>
         )}
       </BottomBar>

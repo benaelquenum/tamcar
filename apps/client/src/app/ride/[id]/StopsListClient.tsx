@@ -1,7 +1,12 @@
 'use client';
 
 import { useState, useTransition, useRef, useEffect } from 'react';
-import { getRoute } from '@/lib/mapbox';
+import {
+  projectTotals,
+  quoteRouteChange,
+  type LngLat,
+  type RouteChangeQuote,
+} from '@/lib/route-change';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { useT } from '@/lib/i18n-client';
 
@@ -24,28 +29,26 @@ type Props = {
   dropoff: [number, number];
   dropoffAddress: string;
   stops: ClientStopRow[];
+  /** Prix et totaux actuels de la course, position du véhicule : le nouveau prix s'en déduit. */
+  currentPrice: number;
+  rideKm: number;
+  rideMin: number;
+  inProgress: boolean;
+  vehicle: LngLat | null;
   onChanged: () => void;
+};
+
+/** Une modification d'itinéraire en attente de confirmation du client. */
+type Proposal = {
+  title: string;
+  km: number;
+  min: number;
+  quote: RouteChangeQuote | null;
+  apply: () => Promise<void>;
 };
 
 function fmt(n: number): string {
   return n.toLocaleString('fr-FR').replace(/,/g, ' ');
-}
-
-async function totalItineraryKm(
-  pickup: [number, number],
-  stopCoords: Array<[number, number]>,
-  dropoff: [number, number],
-): Promise<{ totalKm: number; totalMin: number }> {
-  const waypoints: Array<[number, number]> = [pickup, ...stopCoords, dropoff];
-  let totalKm = 0;
-  let totalMin = 0;
-  for (let i = 0; i < waypoints.length - 1; i++) {
-    const seg = await getRoute(waypoints[i], waypoints[i + 1]);
-    if (!seg) throw new Error(`Segment ${i + 1} injoignable`);
-    totalKm += seg.distance_km;
-    totalMin += seg.duration_min;
-  }
-  return { totalKm, totalMin: Math.round(totalMin) };
 }
 
 export function StopsListClient({
@@ -56,6 +59,11 @@ export function StopsListClient({
   dropoff,
   dropoffAddress,
   stops,
+  currentPrice,
+  rideKm,
+  rideMin,
+  inProgress,
+  vehicle,
   onChanged,
 }: Props) {
   const t = useT();
@@ -73,86 +81,124 @@ export function StopsListClient({
   const modifiable = active.filter(isModifiable);
   const canEdit = ['matched', 'arrived', 'in_progress'].includes(rideStatus);
 
-  async function handleRemove(stopId: string) {
+  const [proposal, setProposal] = useState<Proposal | null>(null);
+  const [applying, setApplying] = useState(false);
+
+  const toCoord = (x: { lng: number; lat: number }) => [x.lng, x.lat] as LngLat;
+
+  // Calcule le nouvel itinéraire ET le nouveau prix, puis demande confirmation :
+  // rien n'est modifié (ni facturé) avant le « Confirmer » du client.
+  function propose(
+    title: string,
+    next: { stops: LngLat[]; dropoff: LngLat },
+    apply: (km: number, min: number) => Promise<void>,
+  ) {
     setErr(null);
-    const remaining = active.filter((s) => s.id !== stopId).map((s) => [s.lng, s.lat] as [number, number]);
     startTransition(async () => {
       try {
-        const { totalKm, totalMin } = await totalItineraryKm(pickup, remaining, dropoff);
-        const { error } = await supabaseBrowser.rpc('remove_ride_stop', {
-          p_stop_id: stopId,
-          p_new_total_km: totalKm,
-          p_new_total_min: totalMin,
-        });
-        if (error) throw new Error(error.message);
-        onChanged();
-      } catch (e) {
-        setErr(e instanceof Error ? e.message : 'Erreur suppression');
-      }
-    });
-  }
-
-  async function commitReorder(reordered: ClientStopRow[]) {
-    const nonMod = active.filter((s) => !isModifiable(s));
-    const finalOrder = [...nonMod, ...reordered];
-    startTransition(async () => {
-      try {
-        const { totalKm, totalMin } = await totalItineraryKm(
+        const totals = await projectTotals({
+          rideKm,
+          rideMin,
+          inProgress,
+          vehicle,
           pickup,
-          finalOrder.map((s) => [s.lng, s.lat] as [number, number]),
-          dropoff,
-        );
-        const { error } = await supabaseBrowser.rpc('reorder_ride_stops', {
-          p_ride_id: rideId,
-          p_ordered_stop_ids: reordered.map((s) => s.id),
-          p_new_total_km: totalKm,
-          p_new_total_min: totalMin,
+          oldStops: modifiable.map(toCoord),
+          oldDropoff: dropoff,
+          newStops: next.stops,
+          newDropoff: next.dropoff,
         });
-        if (error) throw new Error(error.message);
-        onChanged();
+        let quote: RouteChangeQuote | null = null;
+        try {
+          quote = await quoteRouteChange(
+            rideId,
+            totals.km,
+            totals.min,
+            next.dropoff[0] === dropoff[0] && next.dropoff[1] === dropoff[1] ? undefined : next.dropoff,
+          );
+        } catch (qe) {
+          const msg = qe instanceof Error ? qe.message : '';
+          // Base pas encore à jour : on propose sans nouveau prix affiché.
+          if (!/quote_ride_route_change|schema cache|could not find/i.test(msg)) throw qe;
+        }
+        setProposal({
+          title,
+          km: totals.km,
+          min: totals.min,
+          quote,
+          apply: () => apply(Number(totals.km.toFixed(2)), Math.round(totals.min)),
+        });
       } catch (e) {
-        setErr(e instanceof Error ? e.message : 'Erreur réordonnancement');
+        setErr(e instanceof Error ? e.message : 'Erreur de calcul');
       }
     });
   }
 
-  async function handleReorderByIdx(fromIdx: number, toIdx: number) {
+  async function confirmProposal() {
+    if (!proposal || applying) return;
+    setApplying(true);
+    try {
+      await proposal.apply();
+      setProposal(null);
+      onChanged();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'Erreur');
+      setProposal(null);
+    } finally {
+      setApplying(false);
+    }
+  }
+
+  function handleRemove(stopId: string) {
+    const remaining = modifiable.filter((s) => s.id !== stopId).map(toCoord);
+    propose('Retirer cet arrêt', { stops: remaining, dropoff }, async (km, min) => {
+      const { error } = await supabaseBrowser.rpc('remove_ride_stop', {
+        p_stop_id: stopId,
+        p_new_total_km: km,
+        p_new_total_min: min,
+      });
+      if (error) throw new Error(error.message);
+    });
+  }
+
+  function commitReorder(reordered: ClientStopRow[]) {
+    propose('Changer l’ordre des arrêts', { stops: reordered.map(toCoord), dropoff }, async (km, min) => {
+      const { error } = await supabaseBrowser.rpc('reorder_ride_stops', {
+        p_ride_id: rideId,
+        p_ordered_stop_ids: reordered.map((s) => s.id),
+        p_new_total_km: km,
+        p_new_total_min: min,
+      });
+      if (error) throw new Error(error.message);
+    });
+  }
+
+  function handleReorderByIdx(fromIdx: number, toIdx: number) {
     setErr(null);
     if (fromIdx < 0 || toIdx < 0 || fromIdx >= modifiable.length || toIdx >= modifiable.length) return;
     if (fromIdx === toIdx) return;
     const reordered = [...modifiable];
     const [moved] = reordered.splice(fromIdx, 1);
     reordered.splice(toIdx, 0, moved);
-    await commitReorder(reordered);
+    commitReorder(reordered);
   }
 
-  async function handlePromoteToDropoff(stopId: string) {
-    setErr(null);
-    const promoted = active.find((s) => s.id === stopId);
+  function handlePromoteToDropoff(stopId: string) {
+    const promoted = modifiable.find((s) => s.id === stopId);
     if (!promoted) return;
-    const otherStops = active.filter((s) => s.id !== stopId && s.status !== 'cancelled');
-    const newRouteStops = [
-      ...otherStops.map((s) => [s.lng, s.lat] as [number, number]),
-      dropoff,
-    ];
-    startTransition(async () => {
-      try {
-        const { totalKm, totalMin } = await totalItineraryKm(
-          pickup,
-          newRouteStops,
-          [promoted.lng, promoted.lat] as [number, number],
-        );
+    // L'ancienne destination devient le dernier arrêt, le point promu la destination.
+    const others = modifiable.filter((s) => s.id !== stopId).map(toCoord);
+    propose(
+      'En faire la destination finale',
+      { stops: [...others, dropoff], dropoff: toCoord(promoted) },
+      async (km, min) => {
         const { error } = await supabaseBrowser.rpc('swap_stop_and_dropoff', {
           p_stop_id: stopId,
-          p_new_total_km: totalKm,
-          p_new_total_min: totalMin,
+          p_new_total_km: km,
+          p_new_total_min: min,
         });
         if (error) throw new Error(error.message);
-        onChanged();
-      } catch (e) {
-        setErr(e instanceof Error ? e.message : 'Erreur promotion en destination');
-      }
-    });
+      },
+    );
   }
 
   // Drag & drop tactile (pointer events)
@@ -204,7 +250,7 @@ export function StopsListClient({
       const fromIdx = modifiable.findIndex((s) => s.id === draggingId);
       const toIdx = modifiable.findIndex((s) => s.id === dragOverId);
       if (fromIdx >= 0 && toIdx >= 0) {
-        void handleReorderByIdx(fromIdx, toIdx);
+        handleReorderByIdx(fromIdx, toIdx);
       }
     }
     setDraggingId(null);
@@ -287,7 +333,7 @@ export function StopsListClient({
                     {canPromote && (
                       <button
                         type="button"
-                        onClick={() => void handlePromoteToDropoff(s.id)}
+                        onClick={() => handlePromoteToDropoff(s.id)}
                         disabled={pending}
                         aria-label="En faire ma destination finale"
                         title="En faire ma destination finale"
@@ -300,7 +346,7 @@ export function StopsListClient({
                       <div className="flex flex-none flex-col gap-xs">
                         <button
                           type="button"
-                          onClick={() => void handleReorderByIdx(modIdx, modIdx - 1)}
+                          onClick={() => handleReorderByIdx(modIdx, modIdx - 1)}
                           disabled={!canMoveUp || pending}
                           aria-label="Remonter"
                           className="grid h-7 w-7 place-items-center rounded-md bg-white text-neutral-700 ring-1 ring-neutral-200 hover:bg-primary-50 hover:text-primary-700 disabled:opacity-30"
@@ -309,7 +355,7 @@ export function StopsListClient({
                         </button>
                         <button
                           type="button"
-                          onClick={() => void handleReorderByIdx(modIdx, modIdx + 1)}
+                          onClick={() => handleReorderByIdx(modIdx, modIdx + 1)}
                           disabled={!canMoveDown || pending}
                           aria-label="Descendre"
                           className="grid h-7 w-7 place-items-center rounded-md bg-white text-neutral-700 ring-1 ring-neutral-200 hover:bg-primary-50 hover:text-primary-700 disabled:opacity-30"
@@ -321,7 +367,7 @@ export function StopsListClient({
                     {canRemove && (
                       <button
                         type="button"
-                        onClick={() => void handleRemove(s.id)}
+                        onClick={() => handleRemove(s.id)}
                         disabled={pending}
                         aria-label="Retirer cet arrêt"
                         className="grid h-8 w-8 flex-none place-items-center rounded-full bg-error/10 text-lg text-error hover:bg-error/20 disabled:opacity-40"
@@ -360,6 +406,78 @@ export function StopsListClient({
         </p>
       )}
       {err && <p className="mt-xs text-[10px] text-error">{err}</p>}
+      {pending && !proposal && (
+        <p className="mt-xs text-center text-[10px] text-neutral-500">Calcul du nouveau prix…</p>
+      )}
+
+      {proposal && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-neutral-900/70 backdrop-blur-sm sm:items-center"
+          onClick={() => { if (!applying) setProposal(null); }}
+        >
+          <div
+            className="w-full max-w-md rounded-t-2xl bg-white p-lg shadow-xl sm:rounded-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-center text-lg font-extrabold text-neutral-900">{proposal.title}</h2>
+            <div className="mt-md space-y-xs rounded-xl border border-primary-200 bg-primary-50 p-md text-sm">
+              <div className="flex justify-between">
+                <span className="text-neutral-700">Distance totale</span>
+                <span className="font-semibold" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {proposal.km.toFixed(1)} km
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-neutral-700">Durée estimée</span>
+                <span className="font-semibold" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {Math.round(proposal.min)} min
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-neutral-700">Prix actuel</span>
+                <span
+                  className={`font-semibold text-neutral-500 ${proposal.quote ? 'line-through' : ''}`}
+                  style={{ fontVariantNumeric: 'tabular-nums' }}
+                >
+                  {fmt(currentPrice)} F
+                </span>
+              </div>
+              {proposal.quote && (
+                <div className="flex items-baseline justify-between border-t border-primary-200 pt-xs">
+                  <span className="font-bold text-neutral-900">Nouveau prix</span>
+                  <span className="text-lg font-extrabold text-primary-700" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                    {fmt(proposal.quote.new_total_fcfa)} F
+                    <span className="ml-xs text-xs font-semibold text-neutral-500">
+                      ({proposal.quote.delta_fcfa >= 0 ? '+' : '−'}{fmt(Math.abs(proposal.quote.delta_fcfa))} F)
+                    </span>
+                  </span>
+                </div>
+              )}
+            </div>
+            <p className="mt-sm text-center text-[10px] text-neutral-500">
+              Votre chauffeur est prévenu de la modification, du nouveau prix et de sa part.
+            </p>
+            <div className="mt-lg flex gap-md">
+              <button
+                type="button"
+                onClick={() => setProposal(null)}
+                disabled={applying}
+                className="flex-1 rounded-xl border-2 border-neutral-200 py-md text-sm font-bold text-neutral-600 hover:border-neutral-300"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={() => void confirmProposal()}
+                disabled={applying}
+                className="flex-1 rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-md text-sm font-bold text-white shadow-glow disabled:opacity-50"
+              >
+                {applying ? 'Envoi…' : proposal.quote ? `Confirmer · ${fmt(proposal.quote.new_total_fcfa)} F` : 'Confirmer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

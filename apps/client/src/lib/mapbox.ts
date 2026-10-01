@@ -165,9 +165,21 @@ export async function getRoute(
   from: [number, number],
   to: [number, number],
 ): Promise<RouteResult | null> {
-  if (!MAPBOX_TOKEN) return null;
+  return getRouteThrough([from, to]);
+}
 
-  const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${from[0]},${from[1]};${to[0]},${to[1]}?geometries=geojson&overview=full&access_token=${MAPBOX_TOKEN}`;
+/**
+ * Route à travers plusieurs points ([lng, lat] chacun) : départ, arrêts dans
+ * l'ordre, destination. UN seul appel Directions (25 points au plus) — le
+ * total (distance, durée) et le tracé couvrent tout l'itinéraire.
+ */
+export async function getRouteThrough(
+  points: Array<[number, number]>,
+): Promise<RouteResult | null> {
+  if (!MAPBOX_TOKEN || points.length < 2 || points.length > 25) return null;
+
+  const coords = points.map((p) => `${p[0]},${p[1]}`).join(';');
+  const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${coords}?geometries=geojson&overview=full&access_token=${MAPBOX_TOKEN}`;
   const res = await fetch(url);
   if (!res.ok) return null;
 

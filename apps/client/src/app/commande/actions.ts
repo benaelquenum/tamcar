@@ -21,6 +21,10 @@ export type CreateRideInput = {
   promo_code?: string | null;
   passenger_name?: string | null;
   passenger_phone?: string | null;
+  /** Course directe : le chauffeur visé (un chauffeur que le client a déjà eu). */
+  target_driver_id?: string | null;
+  /** Arrêts demandés dès la commande, dans l'ordre. */
+  stops?: Array<{ address: string; lat: number; lng: number }>;
 };
 
 export type CreateRideResult = { error: string };
@@ -61,11 +65,24 @@ export async function createRideAction(
     p_promo_code: input.promo_code ?? null,
     p_passenger_name: input.passenger_name ?? null,
     p_passenger_phone: input.passenger_phone ?? null,
+    // Seulement quand ils servent : une base qui n'a pas encore la version à
+    // 18 paramètres de create_ride continue d'accepter les commandes simples.
+    ...(input.target_driver_id ? { p_target_driver_id: input.target_driver_id } : {}),
+    ...(input.stops && input.stops.length > 0 ? { p_stops: input.stops } : {}),
   });
 
   if (error || !data) {
     // eslint-disable-next-line no-console
     console.error('create_ride error:', error?.message, error?.details, error?.hint);
+    // Course directe ou arrêts demandés alors que la base n'a pas encore la
+    // version à 18 paramètres : on le dit simplement.
+    if (error && /schema cache|could not find the function/i.test(error.message) &&
+        (input.target_driver_id || (input.stops && input.stops.length > 0))) {
+      return {
+        error:
+          'Les arrêts et la commande directe sont en cours de mise en service. Réessayez dans quelques minutes, ou commandez sans arrêt.',
+      };
+    }
     return {
       error:
         error?.message?.trim() ||
