@@ -1,0 +1,2 @@
+# Les scripts .bat doivent garder des fins de ligne Windows (CRLF), sinon cmd.exe les lit de travers.
+*.bat text eol=crlf
