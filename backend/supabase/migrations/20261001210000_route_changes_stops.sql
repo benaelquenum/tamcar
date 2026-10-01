@@ -29,7 +29,7 @@
 --     confirmer ;
 --   • chaque modification notifie le chauffeur (arrêt, nouveau prix, sa part,
 --     part TamCar) et l'écran du chauffeur se met à jour en temps réel ;
---   • jusqu'à 3 arrêts par course.
+--   • jusqu'à 5 arrêts par course.
 -- ============================================================
 
 -- ------------------------------------------------------------
@@ -230,7 +230,7 @@ declare
   q record;
   active_stops int;
   result_stop public.ride_stops;
-  c_max_stops constant int := 3;
+  c_max_stops constant int := 5;
 begin
   if auth.uid() is null then raise exception 'Auth required'; end if;
   if p_mode not in ('stopover', 'new_destination') then
@@ -330,7 +330,7 @@ end;
 $fn_add$;
 
 comment on function public.add_ride_stop is
-  'v3 : escale (auto-acceptée, 3 max) ou nouvelle destination. Prix = ancien + écart du moteur tarifaire ; parts via _ride_shares ; chauffeur notifié.';
+  'v3 : escale (auto-acceptée, 5 max) ou nouvelle destination. Prix = ancien + écart du moteur tarifaire ; parts via _ride_shares ; chauffeur notifié.';
 
 -- ------------------------------------------------------------
 -- 6. remove_ride_stop

@@ -4,7 +4,7 @@ import { supabaseBrowser } from './supabase-browser';
 export type LngLat = [number, number];
 
 /** Nombre maximum d'arrêts par course (même valeur côté base : create_ride / add_ride_stop). */
-export const MAX_STOPS = 3;
+export const MAX_STOPS = 5;
 
 export type RouteChangeQuote = {
   current_total_fcfa: number;

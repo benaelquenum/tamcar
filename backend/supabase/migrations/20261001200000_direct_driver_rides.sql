@@ -92,7 +92,7 @@ declare
   v_s_lat double precision;
   v_s_lng double precision;
   v_s_addr text;
-  c_max_stops constant int := 3;
+  c_max_stops constant int := 5;
 begin
   if auth.uid() is null then raise exception 'Auth required'; end if;
 
@@ -149,7 +149,7 @@ begin
     end if;
   end if;
 
-  -- Arrêts : jusqu'à 3, tous dans la zone de service.
+  -- Arrêts : jusqu'à 5, tous dans la zone de service.
   if p_stops is not null and jsonb_typeof(p_stops) = 'array' then
     v_n_stops := jsonb_array_length(p_stops);
     if v_n_stops > c_max_stops then
