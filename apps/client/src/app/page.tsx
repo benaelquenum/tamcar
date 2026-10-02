@@ -11,7 +11,8 @@ import {
 import { firstNameOf, getCurrentProfile } from '@/lib/session';
 import { createServerSupabase } from '@/lib/supabase-server';
 import { UnreadMessagesChip } from '@/components/UnreadMessagesChip';
-import { BannerCarousel, type BannerItem } from '@/components/BannerCarousel';
+import { BannerCarousel } from '@/components/BannerCarousel';
+import { resolveHomeBanners, type HomeBannerRow } from '@/lib/home-banners';
 import { NotificationBell } from '@/components/NotificationBell';
 import { ProfileMenu } from '@/components/ProfileMenu';
 import { BottomTabBar } from '@/components/BottomTabBar';
@@ -39,34 +40,6 @@ const ACTIVE_STATUS_TINT: Record<ActiveRideRow['status'], string> = {
   arrived: 'from-primary-700 to-cyan-500',
   in_progress: 'from-primary-500 to-primary-700',
 };
-
-/**
- * Les deux bannières de la marque : tout le carrousel. Les bannières du
- * back-office (home_banners) ne sont plus affichées sur l'accueil client — la
- * vieille bannière « Commande ton Tam » (fond bleu et texte) en a été retirée
- * à la demande de Terence le 2026-10-01. Les partenaires véhicule gardent les
- * leurs sur /dealer.
- */
-const BRAND_BANNERS: BannerItem[] = [
-  {
-    id: 'brand-claire',
-    title: 'Ta course est claire, ta course éclair.',
-    subtitle: null,
-    image_url: '/banners/accueil-1.webp',
-    link_url: '/commande',
-    cta_text: null,
-    gradient: null,
-  },
-  {
-    id: 'brand-tampass',
-    title: 'TamPass : plus de trajets, plus d’avantages.',
-    subtitle: null,
-    image_url: '/banners/accueil-2.webp',
-    link_url: '/tampass',
-    cta_text: null,
-    gradient: null,
-  },
-];
 
 const DEFAULT_NAMES = new Set(['utilisateur', 'Nouveau client', 'Ami TamCar']);
 
@@ -111,6 +84,17 @@ export default async function HomePage() {
 
   const supabase = createServerSupabase();
 
+  // Bannières de l'accueil : pilotées depuis /admin/banners (audience « Client »).
+  // Sans aucune bannière active avec image, les deux bannières par défaut du site s'affichent.
+  const { data: bannerRows } = await supabase
+    .from('home_banners')
+    .select('id, title, subtitle, image_url, link_url, cta_text, gradient, is_active, active_from, active_until')
+    .eq('audience', 'client')
+    .eq('is_active', true)
+    .order('display_order', { ascending: true })
+    .limit(10);
+  const { banners: homeBanners } = resolveHomeBanners((bannerRows ?? []) as HomeBannerRow[]);
+
   const personal = isLoggedIn
     ? await Promise.all([
         supabase.rpc('my_wallets'),
@@ -150,7 +134,7 @@ export default async function HomePage() {
           )}
         </header>
 
-        <BannerCarousel banners={BRAND_BANNERS} aspectClass="aspect-[5/2]" className="mt-lg" />
+        <BannerCarousel banners={homeBanners} aspectClass="aspect-[5/2]" className="mt-lg" />
 
         {activeRide && (
           <div className="mt-lg">
