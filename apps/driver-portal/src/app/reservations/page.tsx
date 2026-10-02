@@ -70,13 +70,13 @@ type Rental = {
   contact_phone: string | null;
   price_fcfa: number;
   driver_share_fcfa: number;
-  payment_mode: 'cash' | 'prepaid';
   km_included_per_day: number;
   fuel_by_client: boolean;
   odometer_start: number | null;
   odometer_end: number | null;
   km_used: number | null;
   is_upcoming: boolean;
+  is_paid: boolean;
 };
 
 const RENTAL_STATUS: Record<string, { label: string; cls: string }> = {
@@ -147,10 +147,10 @@ function RentalCard({ r }: { r: Rental }) {
             {r.km_included_per_day} km inclus
             {r.fuel_by_client ? ' · carburant payé par le client' : ''}.
           </li>
-          <li>
-            {r.payment_mode === 'prepaid'
+          <li className={r.is_paid ? '' : 'font-semibold text-warning'}>
+            {r.is_paid
               ? 'Réglée à TamCar : votre part est créditée à la fin.'
-              : 'Le client vous règle en espèces : la part TamCar est prélevée sur votre wallet.'}
+              : 'En attente du règlement du client à TamCar : vous ne pouvez pas démarrer tant que ce n’est pas réglé.'}
           </li>
         </ul>
       )}
@@ -169,7 +169,7 @@ function RentalCard({ r }: { r: Rental }) {
         </a>
       )}
 
-      <RentalActions id={r.id} status={r.status} startsAt={r.starts_at} odometerStart={r.odometer_start} />
+      <RentalActions id={r.id} status={r.status} startsAt={r.starts_at} odometerStart={r.odometer_start} isPaid={r.is_paid} />
     </li>
   );
 }

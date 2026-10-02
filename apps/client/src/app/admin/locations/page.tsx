@@ -1,6 +1,7 @@
 import { createServerSupabase } from '@/lib/supabase-server';
 import { ConfirmRentalForm } from './ConfirmRentalForm';
 import { CreateRentalForm } from './CreateRentalForm';
+import { KmReview } from './KmReview';
 import { RentalRowActions } from './RentalRowActions';
 
 type AdminRental = {
@@ -22,13 +23,20 @@ type AdminRental = {
   vehicle_model: string | null;
   vehicle_plate: string | null;
   price_fcfa: number;
-  payment_mode: 'cash' | 'prepaid';
   paid_fcfa: number;
   km_used: number | null;
   extra_km: number | null;
   extra_fcfa: number | null;
   late_cancel: boolean;
   cancel_reason: string | null;
+  odometer_start: number | null;
+  odometer_end: number | null;
+  odometer_start_photo: string | null;
+  odometer_end_photo: string | null;
+  km_status: 'none' | 'pending' | 'validated';
+  extra_settled: boolean;
+  km_included_per_day: number;
+  km_extra_fcfa: number;
 };
 
 const STATUS: Record<AdminRental['status'], { label: string; cls: string }> = {
@@ -67,6 +75,15 @@ function Head({ r }: { r: AdminRental }) {
         <span className="text-sm font-extrabold text-neutral-900" style={{ fontVariantNumeric: 'tabular-nums' }}>
           {fmt(r.price_fcfa)} F
         </span>
+        {(r.status === 'requested' || r.status === 'confirmed' || r.status === 'in_progress') && (
+          <span
+            className={`rounded-full px-sm py-0.5 text-[10px] font-bold ${
+              r.paid_fcfa >= r.price_fcfa ? 'bg-success/15 text-success' : 'bg-warning/15 text-warning'
+            }`}
+          >
+            {r.paid_fcfa >= r.price_fcfa ? 'Réglée' : `Réglé ${fmt(r.paid_fcfa)} / ${fmt(r.price_fcfa)} F`}
+          </span>
+        )}
       </div>
     </div>
   );
@@ -110,6 +127,18 @@ export default async function AdminLocationsPage() {
   const requested = open.filter((r) => r.status === 'requested');
   const active = open.filter((r) => r.status !== 'requested');
 
+  // Photos du compteur : bucket privé → liens signés d'une heure.
+  const photoPaths = [...open, ...past]
+    .flatMap((r) => [r.odometer_start_photo, r.odometer_end_photo])
+    .filter((p): p is string => Boolean(p));
+  const photoUrls: Record<string, string> = {};
+  if (photoPaths.length > 0) {
+    const { data: signed } = await supabase.storage.from('rental-photos').createSignedUrls(photoPaths, 3600);
+    for (const item of signed ?? []) {
+      if (item.path && item.signedUrl) photoUrls[item.path] = item.signedUrl;
+    }
+  }
+
   return (
     <div>
       <div className="mb-xl flex items-baseline justify-between">
@@ -152,7 +181,7 @@ export default async function AdminLocationsPage() {
                 <Head r={r} />
                 <Who r={r} />
                 <div className="mt-sm border-t border-neutral-100 pt-sm">
-                  <RentalRowActions id={r.id} status={r.status} paymentMode={r.payment_mode} paidFcfa={r.paid_fcfa} />
+                  <RentalRowActions id={r.id} status={r.status} priceFcfa={r.price_fcfa} paidFcfa={r.paid_fcfa} />
                 </div>
               </li>
             ))}
@@ -175,17 +204,21 @@ export default async function AdminLocationsPage() {
               <li key={r.id} className="rounded-xl bg-white p-md shadow-sm ring-1 ring-neutral-200">
                 <Head r={r} />
                 <Who r={r} />
-                {r.status === 'completed' && r.km_used != null && (
-                  <p className="mt-xs text-xs text-neutral-700">
-                    {r.km_used} km parcourus
-                    {r.extra_km ? (
-                      <strong className="ml-xs text-warning">
-                        · {r.extra_km} km en plus à facturer : {fmt(r.extra_fcfa ?? 0)} F
-                      </strong>
-                    ) : (
-                      ' · dans le forfait'
-                    )}
-                  </p>
+                {r.status === 'completed' && (
+                  <KmReview
+                    id={r.id}
+                    hours={r.hours}
+                    odometerStart={r.odometer_start}
+                    odometerEnd={r.odometer_end}
+                    startPhotoUrl={r.odometer_start_photo ? photoUrls[r.odometer_start_photo] ?? null : null}
+                    endPhotoUrl={r.odometer_end_photo ? photoUrls[r.odometer_end_photo] ?? null : null}
+                    kmIncludedPerDay={r.km_included_per_day}
+                    kmExtraFcfa={r.km_extra_fcfa}
+                    kmStatus={r.km_status}
+                    extraFcfa={r.extra_fcfa}
+                    extraKm={r.extra_km}
+                    extraSettled={r.extra_settled}
+                  />
                 )}
                 {r.status === 'cancelled' && (
                   <p className="mt-xs text-xs text-neutral-500">

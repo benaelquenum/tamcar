@@ -54,7 +54,7 @@ export type CreateRentalInput = {
   pickup_lng: number;
   driver_id: string;
   price_fcfa?: number | null;
-  payment_mode: 'cash' | 'prepaid';
+  payment_mode: 'prepaid';
   paid_fcfa?: number | null;
   notes?: string | null;
   contact_name?: string | null;
@@ -87,14 +87,13 @@ export async function confirmRentalAction(
   id: string,
   driverId: string,
   priceFcfa: number | null,
-  paymentMode: 'cash' | 'prepaid',
 ): Promise<ActionResult> {
   const supabase = createServerSupabase();
   const { error } = await supabase.rpc('admin_confirm_vehicle_rental', {
     p_id: id,
     p_driver_id: driverId,
     p_price_fcfa: priceFcfa,
-    p_payment_mode: paymentMode,
+    p_payment_mode: 'prepaid',
   });
   if (error) return { error: error.message };
   revalidatePath('/admin/locations');
@@ -103,13 +102,13 @@ export async function confirmRentalAction(
 
 export async function updateRentalAction(
   id: string,
-  patch: { price_fcfa?: number | null; payment_mode?: 'cash' | 'prepaid' | null; paid_fcfa?: number | null; notes?: string | null },
+  patch: { price_fcfa?: number | null; paid_fcfa?: number | null; notes?: string | null },
 ): Promise<ActionResult> {
   const supabase = createServerSupabase();
   const { error } = await supabase.rpc('admin_update_vehicle_rental', {
     p_id: id,
     p_price_fcfa: patch.price_fcfa ?? null,
-    p_payment_mode: patch.payment_mode ?? null,
+    p_payment_mode: null,
     p_paid_fcfa: patch.paid_fcfa ?? null,
     p_notes: patch.notes ?? null,
   });
@@ -121,6 +120,28 @@ export async function updateRentalAction(
 export async function cancelRentalAdminAction(id: string, reason: string): Promise<ActionResult> {
   const supabase = createServerSupabase();
   const { error } = await supabase.rpc('admin_cancel_vehicle_rental', { p_id: id, p_reason: reason || null });
+  if (error) return { error: error.message };
+  revalidatePath('/admin/locations');
+  return {};
+}
+
+/** Valide les kilomètres (après contrôle des photos du compteur) : recalcule le supplément. */
+export async function validateKmAction(id: string, odometerStart: number, odometerEnd: number): Promise<ActionResult> {
+  const supabase = createServerSupabase();
+  const { error } = await supabase.rpc('admin_validate_rental_km', {
+    p_id: id,
+    p_odometer_start: odometerStart,
+    p_odometer_end: odometerEnd,
+  });
+  if (error) return { error: error.message };
+  revalidatePath('/admin/locations');
+  return {};
+}
+
+/** Le supplément kilométrique a été encaissé : il suit le partage habituel (chauffeur, concessionnaire, TamCar). */
+export async function settleExtraAction(id: string): Promise<ActionResult> {
+  const supabase = createServerSupabase();
+  const { error } = await supabase.rpc('admin_settle_rental_extra', { p_id: id });
   if (error) return { error: error.message };
   revalidatePath('/admin/locations');
   return {};

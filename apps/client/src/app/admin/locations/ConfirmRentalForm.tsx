@@ -25,7 +25,6 @@ export function ConfirmRentalForm({
   const [drivers, setDrivers] = useState<AvailableDriver[] | null>(null);
   const [driverId, setDriverId] = useState('');
   const [price, setPrice] = useState(String(priceFcfa));
-  const [mode, setMode] = useState<'cash' | 'prepaid'>('prepaid');
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -48,7 +47,7 @@ export function ConfirmRentalForm({
     const p = parseInt(price, 10);
     if (!Number.isFinite(p) || p < 0) return setError('Prix invalide.');
     startTransition(async () => {
-      const res = await confirmRentalAction(id, driverId, p, mode);
+      const res = await confirmRentalAction(id, driverId, p);
       if (res.error) setError(res.error);
       else router.refresh();
     });
@@ -72,7 +71,7 @@ export function ConfirmRentalForm({
       ) : drivers.length === 0 ? (
         <p className="text-xs font-semibold text-error">Aucun chauffeur VIP actif.</p>
       ) : (
-        <div className="grid grid-cols-1 gap-sm md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-sm md:grid-cols-2">
           <label className="block text-xs font-semibold text-neutral-600 md:col-span-3">
             Chauffeur et véhicule
             <select
@@ -91,24 +90,13 @@ export function ConfirmRentalForm({
             </select>
           </label>
           <label className="block text-xs font-semibold text-neutral-600">
-            Prix (F)
+            Prix (F) — réglé d&apos;avance à TamCar
             <input
               value={price}
               onChange={(e) => setPrice(e.target.value)}
               inputMode="numeric"
               className="mt-xs w-full rounded-lg border border-neutral-300 bg-white px-sm py-sm text-sm"
             />
-          </label>
-          <label className="block text-xs font-semibold text-neutral-600">
-            Paiement
-            <select
-              value={mode}
-              onChange={(e) => setMode(e.target.value as 'cash' | 'prepaid')}
-              className="mt-xs w-full rounded-lg border border-neutral-300 bg-white px-sm py-sm text-sm"
-            >
-              <option value="cash">Le client règle le chauffeur</option>
-              <option value="prepaid">Réglé à TamCar d&apos;avance</option>
-            </select>
           </label>
           <div className="flex items-end gap-xs">
             <button

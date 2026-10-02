@@ -35,7 +35,6 @@ export function CreateRentalForm({ hourFcfa, minHours }: { hourFcfa: number; min
   const [drivers, setDrivers] = useState<AvailableDriver[] | null>(null);
   const [driverId, setDriverId] = useState('');
   const [price, setPrice] = useState('');
-  const [mode, setMode] = useState<'cash' | 'prepaid'>('prepaid');
   const [paid, setPaid] = useState('0');
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -105,7 +104,7 @@ export function CreateRentalForm({ hourFcfa, minHours }: { hourFcfa: number; min
         pickup_lng: pickup.center[0],
         driver_id: driverId,
         price_fcfa: priceNum,
-        payment_mode: mode,
+        payment_mode: 'prepaid',
         paid_fcfa: Number.isFinite(paidNum) ? paidNum : 0,
         notes: notes.trim() || null,
         contact_name: contactName.trim() || null,
@@ -218,19 +217,10 @@ export function CreateRentalForm({ hourFcfa, minHours }: { hourFcfa: number; min
         Prix (F) — vide = {autoPrice.toLocaleString('fr-FR').replace(/,/g, ' ')} F ({hourFcfa} F × {Math.max(hoursNum || 0, minHours)} h)
         <input value={price} onChange={(e) => setPrice(e.target.value)} inputMode="numeric" className={inputCls} />
       </label>
-      <div className="grid grid-cols-2 gap-sm">
-        <label className="block text-xs font-semibold text-neutral-600">
-          Paiement
-          <select value={mode} onChange={(e) => setMode(e.target.value as 'cash' | 'prepaid')} className={inputCls}>
-            <option value="cash">Client → chauffeur</option>
-            <option value="prepaid">Réglé à TamCar</option>
-          </select>
-        </label>
-        <label className="block text-xs font-semibold text-neutral-600">
-          Déjà réglé (F)
-          <input value={paid} onChange={(e) => setPaid(e.target.value)} inputMode="numeric" className={inputCls} />
-        </label>
-      </div>
+      <label className="block text-xs font-semibold text-neutral-600">
+        Déjà réglé à TamCar (F) — la location ne peut démarrer qu&apos;une fois soldée
+        <input value={paid} onChange={(e) => setPaid(e.target.value)} inputMode="numeric" className={inputCls} />
+      </label>
 
       <label className="block text-xs font-semibold text-neutral-600 md:col-span-2">
         Notes

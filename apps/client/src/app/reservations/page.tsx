@@ -152,9 +152,15 @@ type Rental = {
   notes: string | null;
   contact_name: string | null;
   price_fcfa: number;
+  paid_fcfa: number;
   km_included_per_day: number;
   km_extra_fcfa: number;
   fuel_by_client: boolean;
+  km_used: number | null;
+  extra_km: number | null;
+  extra_fcfa: number | null;
+  km_status: string;
+  extra_settled: boolean;
   driver_full_name: string | null;
   driver_phone: string | null;
   vehicle_brand: string | null;
@@ -255,10 +261,37 @@ function RentalCard({ r }: { r: Rental }) {
         </div>
       )}
 
+      {(r.status === 'requested' || r.status === 'confirmed' || r.status === 'in_progress') && (
+        <p
+          className={`mt-sm rounded-lg px-sm py-xs text-[11px] font-semibold ${
+            r.paid_fcfa >= r.price_fcfa ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'
+          }`}
+        >
+          {r.paid_fcfa >= r.price_fcfa
+            ? 'Location réglée.'
+            : r.status === 'requested'
+              ? 'Le règlement se fait à TamCar, d’avance, une fois la location confirmée.'
+              : `À régler à TamCar avant le début : ${fmtFcfa(r.price_fcfa - r.paid_fcfa)} F (virement ou Mobile Money). L’équipe vous contacte.`}
+        </p>
+      )}
+
       {(r.status === 'requested' || r.status === 'confirmed') && (
         <p className="mt-sm text-[11px] text-neutral-500">
           {r.km_included_per_day} km inclus, au-delà {fmtFcfa(r.km_extra_fcfa)} F le km
           {r.fuel_by_client ? ' · carburant à votre charge' : ''}.
+        </p>
+      )}
+
+      {r.status === 'completed' && r.km_used != null && (
+        <p className="mt-sm text-[11px] text-neutral-600">
+          {r.km_used} km parcourus
+          {r.km_status === 'pending'
+            ? ' · supplément éventuel en cours de vérification par TamCar.'
+            : r.extra_km && r.extra_fcfa
+              ? ` · ${r.extra_km} km au-delà du forfait : supplément de ${fmtFcfa(r.extra_fcfa)} F ${
+                  r.extra_settled ? '(réglé)' : 'à régler à TamCar'
+                }.`
+              : ' · dans le forfait.'}
         </p>
       )}
 
