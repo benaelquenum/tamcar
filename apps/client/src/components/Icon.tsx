@@ -219,6 +219,15 @@ export function BadgeIcon({ className = 'h-4 w-4', strokeWidth = 2 }: IconProps)
   );
 }
 
+export function CompassIcon({ className = 'h-5 w-5', strokeWidth = 2 }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={`${base} ${className}`}>
+      <path d="M12 3 16.5 12h-9Z" fill="currentColor" />
+      <path d="M12 21 7.5 12h9Z" />
+    </svg>
+  );
+}
+
 export function CrosshairIcon({ className = 'h-5 w-5', strokeWidth = 2 }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={`${base} ${className}`}>

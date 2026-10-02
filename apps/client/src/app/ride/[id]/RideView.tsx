@@ -4,13 +4,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/Logo';
-import { CarIcon, CheckIcon, PinIcon, StarIcon, AlertTriangleIcon, WhatsAppIcon, MessageIcon, ShareIcon } from '@/components/Icon';
+import { CarIcon, CheckIcon, CompassIcon, CrosshairIcon, PinIcon, StarIcon, AlertTriangleIcon, WhatsAppIcon, MessageIcon, ShareIcon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { RideTalkie } from '@/components/RideTalkie';
 import { RideCall } from '@/components/RideCall';
 import { Map } from '@/components/Map';
 import { RatingModal } from '@/components/RatingModal';
 import { getRoute, getRouteThrough } from '@/lib/mapbox';
+import { angleDiff, HeadingFilter } from '@/lib/navCamera';
+import { buildNavState, progressAlong, type NavState } from '@/lib/navRoute';
 import { MAX_STOPS } from '@/lib/route-change';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { freshChannel } from '@/lib/realtime';
@@ -1071,6 +1073,98 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
     return () => { cancelled = true; };
   }, [routeOrigin, driverCoord, pickupCoord, dropoffCoord, ride.status, stops]);
 
+  // ---------------------------------------------------------------------------
+  // Navigation « cap en haut » pendant la course, comme sur l'app chauffeur : la
+  // carte pivote pour garder le sens de marche vers le haut de l'écran, le
+  // véhicule reste fixe au tiers inférieur, seul le tracé restant est dessiné
+  // devant lui. La position vient du chauffeur (diffusion temps réel ~3 s) :
+  // la caméra et le véhicule glissent sur tout l'intervalle pour rester fluides.
+  // ---------------------------------------------------------------------------
+  const navStateRef = useRef<NavState | null>(null);
+  const headingRef = useRef(new HeadingFilter());
+  const lastFixRef = useRef<{ pos: [number, number]; t: number } | null>(null);
+  const lastTrimRef = useRef(0);
+  const [navHeading, setNavHeading] = useState<number | null>(null);
+  const [navSpeedKmh, setNavSpeedKmh] = useState<number | null>(null);
+  const [navGlideMs, setNavGlideMs] = useState(950);
+  const [navTrimmed, setNavTrimmed] = useState<GeoJSON.LineString | null>(null);
+  const [navMode, setNavMode] = useState<'heading-up' | 'north-up'>('heading-up');
+  const [navPaused, setNavPaused] = useState(false);
+  const compassRef = useRef<HTMLSpanElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const [sheetH, setSheetH] = useState(0);
+
+  // Nouvel itinéraire : on le projette en local pour ne dessiner que le reste.
+  useEffect(() => {
+    if (ride.status !== 'in_progress' || !routeGeo || routeGeo.coordinates.length < 2) {
+      navStateRef.current = null;
+      setNavTrimmed(null);
+      return;
+    }
+    const st = buildNavState({ geometry: routeGeo, distance_km: 0, duration_min: 1, steps: [] }, dropoffCoord, Date.now());
+    navStateRef.current = st;
+    lastTrimRef.current = 0;
+    const pos = lastFixRef.current?.pos ?? effCoordRef.current;
+    setNavTrimmed(pos ? progressAlong(st, pos).geometry : null);
+  }, [routeGeo, ride.status, dropoffCoord]);
+
+  // Chaque nouvelle position du véhicule : cap lissé, vitesse, durée du glissement, tracé restant.
+  useEffect(() => {
+    if (ride.status !== 'in_progress' || !effectiveDriverCoord) {
+      headingRef.current.reset();
+      lastFixRef.current = null;
+      setNavHeading(null);
+      setNavSpeedKmh(null);
+      return;
+    }
+    const pos = effectiveDriverCoord;
+    const now = Date.now();
+    const prev = lastFixRef.current;
+    let speedMps: number | null = null;
+    if (prev) {
+      const dt = (now - prev.t) / 1000;
+      if (dt >= 0.5) {
+        speedMps = Math.min(60, haversineMeters(prev.pos, pos) / dt);
+        setNavGlideMs(Math.round(Math.min(3500, Math.max(1000, dt * 1000))));
+      }
+    }
+    if (!prev || now - prev.t >= 500) lastFixRef.current = { pos, t: now };
+
+    let routeBrg: number | null = null;
+    const st = navStateRef.current;
+    if (st) {
+      // Le tracé part de l'ancienne position : le véhicule la quitte en glissant vers la nouvelle.
+      const trimmed = prev ? progressAlong(st, prev.pos).geometry : null;
+      const pr = progressAlong(st, pos);
+      if (pr.offM < 30) routeBrg = pr.bearingAhead;
+      if (now - lastTrimRef.current > 2_500 || pr.remainingM < 60) {
+        lastTrimRef.current = now;
+        setNavTrimmed(trimmed ?? pr.geometry);
+      }
+    }
+    const h = headingRef.current.update({ pos, speedMps, heading: null, t: now }, routeBrg);
+    if (h != null) setNavHeading((cur) => (cur != null && Math.abs(angleDiff(cur, h)) < 0.5 ? cur : h));
+    if (speedMps != null) setNavSpeedKmh(Math.round(speedMps * 3.6));
+  }, [effectiveDriverCoord, ride.status]);
+
+  // Le client a déplacé la carte : le suivi reprend seul après 10 s.
+  useEffect(() => {
+    if (!navPaused) return;
+    const timer = setTimeout(() => setNavPaused(false), 10_000);
+    return () => clearTimeout(timer);
+  }, [navPaused]);
+
+  // Hauteur du panneau du bas : le véhicule se place dans la zone de carte restée visible.
+  useEffect(() => {
+    const el = sheetRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const measure = () => setSheetH(Math.round(el.getBoundingClientRect().height));
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   return (
     <main className="fixed inset-0 overflow-hidden bg-white">
       {/* Carte plein écran */}
@@ -1083,18 +1177,55 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
             : []
           }
           assignedDriver={hasDriver && effectiveDriverCoord ? { driver_id: ride.driver_id!, lng: effectiveDriverCoord[0], lat: effectiveDriverCoord[1], category: ride.vehicle_category ?? ride.requested_category ?? undefined } : null}
-          clientLocation={myLocation}
-          route={routeGeo}
+          clientLocation={ride.status === 'in_progress' && effectiveDriverCoord ? null : myLocation}
+          route={ride.status === 'in_progress' && navTrimmed ? navTrimmed : routeGeo}
           stops={stops
             .filter((s) => s.status !== 'cancelled')
             .map((s, i) => ({ lat: s.lat, lng: s.lng, label: i + 1 }))}
           pickupPulse={isWaiting}
           autoFit={isWaiting}
-          follow={ride.status === 'in_progress' ? (myLocation ?? effectiveDriverCoord) : null}
+          follow={ride.status === 'in_progress' ? (effectiveDriverCoord ?? myLocation) : null}
+          navHeading={navHeading}
+          navSpeedKmh={navSpeedKmh}
+          navMode={navMode}
+          navInsets={{ top: 76, bottom: sheetH }}
+          navGlideMs={navGlideMs}
+          followPaused={navPaused}
+          onUserMove={() => setNavPaused(true)}
+          onBearingChange={(b) => {
+            if (compassRef.current) compassRef.current.style.transform = `rotate(${-b}deg)`;
+          }}
           frameKey={`${ride.status}:${routeGeo ? 1 : 0}`}
           className="h-full w-full"
         />
       </div>
+
+      {/* Boussole (bascule cap en haut / nord en haut) et recentrage — pendant la course */}
+      {ride.status === 'in_progress' && (effectiveDriverCoord ?? myLocation) && (
+        <div className="absolute right-3 top-[128px] z-20 flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={() => setNavMode((m) => (m === 'heading-up' ? 'north-up' : 'heading-up'))}
+            className="grid h-11 w-11 place-items-center rounded-full bg-white text-primary-700 shadow-lg ring-1 ring-neutral-200"
+            aria-label={navMode === 'heading-up' ? 'Carte avec le nord en haut' : 'Carte tournée dans le sens de marche'}
+            title={navMode === 'heading-up' ? 'Nord en haut' : 'Sens de marche en haut'}
+          >
+            <span ref={compassRef} className="grid place-items-center" style={{ transition: 'transform 0.2s linear' }}>
+              <CompassIcon className="h-6 w-6" />
+            </span>
+          </button>
+          {navPaused && (
+            <button
+              type="button"
+              onClick={() => setNavPaused(false)}
+              className="grid h-11 w-11 place-items-center rounded-full bg-primary-600 text-white shadow-lg"
+              aria-label="Recentrer la carte sur le véhicule"
+            >
+              <CrosshairIcon className="h-6 w-6" />
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Header */}
       <header className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center justify-between p-lg">
@@ -1117,7 +1248,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
       {isActive && <ConnectionBanner searching={isWaiting} />}
 
       {/* Bottom sheet */}
-      <div className="absolute inset-x-0 bottom-0 z-10">
+      <div ref={sheetRef} className="absolute inset-x-0 bottom-0 z-10">
         <div className="mx-auto max-w-md rounded-t-2xl bg-white shadow-2xl ring-1 ring-neutral-200">
           <button
             type="button"

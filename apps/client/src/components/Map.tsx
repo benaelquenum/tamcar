@@ -9,6 +9,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { COTONOU_CENTER, MAPBOX_TOKEN } from '@/lib/mapbox';
 import { MAP_ENGINE, maplibreConfigured, maplibreStyle } from '@/lib/map-config';
 import { vehicleMarkerSvg } from '@/lib/vehicle-marker';
+import { angleDiff, NAV_ZOOM_LEVELS, zoomLevelForSpeed } from '@/lib/navCamera';
 
 // Moteur de rendu : MapLibre (Phase 1) ou Mapbox si NEXT_PUBLIC_MAP_ENGINE=mapbox.
 // Les deux exposent la même API (Map/Marker/LngLatBounds/addSource/addLayer…) ;
@@ -156,12 +157,33 @@ type Props = {
   /** Change de valeur → recadre la carte sur les points pertinents (transition de phase). */
   frameKey?: string | number;
   /**
-   * Mode NAVIGATION : la caméra suit cette position et pivote pour garder le
-   * sens de marche vers le haut de l'écran (le curseur, lui, reste fixe —
-   * rotationAlignment viewport par défaut). Prime sur autoFit/frameKey.
-   * Repasser à null → cap remis au nord + retour aux recadrages classiques.
+   * Mode NAVIGATION (comme le GPS du chauffeur) : la caméra suit cette position,
+   * la carte pivote pour garder le sens de marche vers le HAUT de l'écran, le
+   * véhicule reste fixe au tiers inférieur et le tracé s'étend devant lui.
+   * Prime sur autoFit/frameKey. Repasser à null → cap remis au nord + retour
+   * aux recadrages classiques.
    */
   follow?: [number, number] | null;
+  /** Cap lissé du véhicule (°), fourni par lib/navCamera. */
+  navHeading?: number | null;
+  /** Vitesse (km/h) : le zoom s'élargit quand on roule vite. */
+  navSpeedKmh?: number | null;
+  /** 'heading-up' : la carte tourne avec le véhicule. 'north-up' : nord en haut. */
+  navMode?: 'heading-up' | 'north-up';
+  /** Zones de la carte masquées par l'interface (px) : le véhicule se place dans la zone libre. */
+  navInsets?: { top: number; bottom: number };
+  /**
+   * Durée (ms) du glissement caméra + véhicule entre deux positions. Le client
+   * reçoit la position du chauffeur toutes les ~3 s (pas 1 s comme le GPS du
+   * chauffeur) : on étale le mouvement sur l'intervalle pour qu'il reste fluide.
+   */
+  navGlideMs?: number;
+  /** Suivi suspendu : le client a déplacé la carte lui-même. */
+  followPaused?: boolean;
+  /** Appelé quand le client déplace, zoome ou tourne la carte. */
+  onUserMove?: () => void;
+  /** Appelé à chaque rotation de la carte (°) — pour la boussole. */
+  onBearingChange?: (bearing: number) => void;
   /**
    * Recentrage à la demande, sans suivi : à chaque changement de
    * `recenterKey`, la caméra revient sur `recenterOn`. Sert au bouton
@@ -171,30 +193,6 @@ type Props = {
   recenterOn?: [number, number] | null;
   recenterKey?: number;
 };
-
-// Cap (bearing) entre deux points, en degrés 0-360.
-function navBearing(a: [number, number], b: [number, number]): number {
-  const toRad = Math.PI / 180;
-  const [lng1, lat1] = a;
-  const [lng2, lat2] = b;
-  const dLng = (lng2 - lng1) * toRad;
-  const y = Math.sin(dLng) * Math.cos(lat2 * toRad);
-  const x =
-    Math.cos(lat1 * toRad) * Math.sin(lat2 * toRad) -
-    Math.sin(lat1 * toRad) * Math.cos(lat2 * toRad) * Math.cos(dLng);
-  return (Math.atan2(y, x) * (180 / Math.PI) + 360) % 360;
-}
-
-function navMeters(a: [number, number], b: [number, number]): number {
-  const R = 6371000;
-  const toRad = Math.PI / 180;
-  const dLat = (b[1] - a[1]) * toRad;
-  const dLng = (b[0] - a[0]) * toRad;
-  const s =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(a[1] * toRad) * Math.cos(b[1] * toRad) * Math.sin(dLng / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(s));
-}
 
 export function Map({
   pickup,
@@ -211,13 +209,31 @@ export function Map({
   pickupPulse = false,
   frameKey,
   follow = null,
+  navHeading = null,
+  navSpeedKmh = null,
+  navMode = 'heading-up',
+  navInsets,
+  navGlideMs = 950,
+  followPaused = false,
+  onUserMove,
+  onBearingChange,
   recenterOn = null,
   recenterKey,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
-  const followPrevRef = useRef<[number, number] | null>(null);
-  const followBearingRef = useRef(0);
+  const followActiveRef = useRef(false);
+  const followingRef = useRef(false);
+  const zoomLevelRef = useRef(0);
+  const navHeadingRef = useRef<number | null>(null);
+  navHeadingRef.current = navHeading;
+  const navGlideRef = useRef(navGlideMs);
+  navGlideRef.current = navGlideMs;
+  const puckAngleRef = useRef(0);
+  const onUserMoveRef = useRef(onUserMove);
+  onUserMoveRef.current = onUserMove;
+  const onBearingRef = useRef(onBearingChange);
+  onBearingRef.current = onBearingChange;
   const pickupMarkerRef = useRef<maplibregl.Marker | null>(null);
   const dropoffMarkerRef = useRef<maplibregl.Marker | null>(null);
   const candidateMarkerRef = useRef<maplibregl.Marker | null>(null);
@@ -263,12 +279,40 @@ export function Map({
       onMapClickRef.current?.([e.lngLat.lng, e.lngLat.lat]);
     });
 
+    // Le client déplace, zoome ou tourne la carte : le suivi se met en pause
+    // (bouton « recentrer »). Les mouvements de la caméra de navigation n'ont
+    // pas d'originalEvent, ils ne déclenchent donc rien.
+    const userMoved = (e: { originalEvent?: unknown }) => {
+      if (e.originalEvent && followingRef.current) onUserMoveRef.current?.();
+    };
+    map.on('dragstart', userMoved);
+    map.on('zoomstart', userMoved);
+    map.on('rotatestart', userMoved);
+
+    // Boussole + cap relatif du véhicule pendant que la carte tourne.
+    let rafBearing = 0;
+    map.on('rotate', () => {
+      if (rafBearing) return;
+      rafBearing = requestAnimationFrame(() => {
+        rafBearing = 0;
+        onBearingRef.current?.(map.getBearing());
+        applyPuckRotation(map);
+      });
+    });
+
     mapRef.current = map;
 
     return () => {
       map.remove();
       mapRef.current = null;
+      // Les marqueurs vivent sur la carte détruite : on les oublie, sinon un
+      // remontage (mode strict de React en dev) ne les recréerait jamais.
+      assignedMarkerRef.current = null;
+      assignedPosRef.current = null;
+      assignedTargetRef.current = null;
+      clientMarkerRef.current = null;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Curseur crosshair quand on est en mode sélection
@@ -349,6 +393,78 @@ export function Map({
     }
   }, [stops]);
 
+  // Pose la silhouette du véhicule suivi : en navigation, la carte tourne avec
+  // lui, donc elle pointe vers le haut de l'écran (cap du véhicule − cap de la
+  // carte). Hors navigation, elle pointe vers son cap réel sur la carte.
+  function applyPuckRotation(map: maplibregl.Map) {
+    const rot = assignedMarkerRef.current?.getElement().querySelector('.tc-veh-nub-rot') as HTMLElement | null;
+    const heading = navHeadingRef.current;
+    if (!rot || heading == null) return;
+    const rel = angleDiff(map.getBearing(), heading);
+    // Angle continu : on tourne par le plus court chemin, sans tour complet à 359° → 0°.
+    puckAngleRef.current += angleDiff(puckAngleRef.current, rel);
+    rot.style.transition = followingRef.current ? 'none' : '';
+    rot.style.transform = `rotate(${puckAngleRef.current}deg)`;
+  }
+
+  // Mode NAVIGATION : la caméra suit le véhicule, la carte pivote pour garder
+  // le sens de marche en haut, le véhicule est placé au tiers inférieur de la
+  // zone libre (au-dessus du panneau du bas), le tracé s'étend devant lui.
+  // Déclaré AVANT les recadrages par phase : à la fin de la course, le retour
+  // au nord se fait d'abord, puis le recadrage d'ensemble reprend la main.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const zeroPadding = { top: 0, bottom: 0, left: 0, right: 0 };
+
+    if (!follow) {
+      if (followActiveRef.current) {
+        followActiveRef.current = false;
+        followingRef.current = false;
+        puckAngleRef.current = 0;
+        // Fin de course : cap remis au nord, la vue d'ensemble reprend la main.
+        map.easeTo({ bearing: 0, pitch: 0, padding: zeroPadding, duration: 700 });
+      }
+      return;
+    }
+    followActiveRef.current = true;
+    followingRef.current = !followPaused;
+    if (followPaused) {
+      applyPuckRotation(map);
+      return;
+    }
+
+    const headingUp = navMode !== 'north-up';
+    const bearing = headingUp ? (navHeading ?? map.getBearing()) : 0;
+
+    zoomLevelRef.current = zoomLevelForSpeed(zoomLevelRef.current, navSpeedKmh);
+    const zoom = NAV_ZOOM_LEVELS[zoomLevelRef.current];
+
+    // Placement du véhicule : 68 % de la zone libre en partant du haut.
+    const h = map.getContainer().clientHeight;
+    const top = Math.max(0, navInsets?.top ?? 0);
+    const bottom = Math.max(0, navInsets?.bottom ?? 0);
+    const free = Math.max(120, h - top - bottom);
+    const yTarget = top + 0.68 * free;
+    const padding = headingUp
+      ? yTarget >= h / 2
+        ? { top: Math.round(2 * yTarget - h), bottom: 0, left: 0, right: 0 }
+        : { top: 0, bottom: Math.round(h - 2 * yTarget), left: 0, right: 0 }
+      : zeroPadding;
+
+    map.easeTo({
+      center: follow,
+      bearing,
+      zoom,
+      padding,
+      duration: navGlideRef.current,
+      easing: (t) => t,
+      essential: true,
+    });
+    applyPuckRotation(map);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [follow, navHeading, navSpeedKmh, navMode, navInsets?.top, navInsets?.bottom, followPaused]);
+
   // Fit bounds ou fly (uniquement si autoFit)
   useEffect(() => {
     const map = mapRef.current;
@@ -395,39 +511,6 @@ export function Map({
     map.easeTo({ center: recenterOn, zoom: Math.max(map.getZoom(), 14), duration: 600 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recenterKey]);
-
-  // Mode NAVIGATION : caméra collée à la position suivie, carte pivotée pour
-  // garder le sens de marche vers le haut (cap lissé, recalculé après ≥ 8 m
-  // de déplacement pour éviter les rotations parasites à l'arrêt). Le curseur
-  // reste droit : les markers GL ne tournent pas avec la carte (viewport).
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-    if (!follow) {
-      if (followPrevRef.current) {
-        followPrevRef.current = null;
-        // Fin de course : cap remis au nord, la vue d'ensemble reprend la main.
-        map.easeTo({ bearing: 0, pitch: 0, duration: 700 });
-      }
-      return;
-    }
-    const prev = followPrevRef.current;
-    let bearing = followBearingRef.current;
-    if (prev && navMeters(prev, follow) >= 8) {
-      bearing = navBearing(prev, follow);
-      followBearingRef.current = bearing;
-      followPrevRef.current = follow;
-    } else if (!prev) {
-      followPrevRef.current = follow;
-    }
-    map.easeTo({
-      center: follow,
-      bearing,
-      zoom: Math.max(map.getZoom(), 16),
-      duration: 800,
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [follow]);
 
   // Pins chauffeurs autour (petits, cyan pâle)
   useEffect(() => {
@@ -499,18 +582,23 @@ export function Map({
 
     const from = assignedPosRef.current ?? target;
 
-    // Oriente la pointe de cap si le déplacement est significatif.
-    if (metersBetween(from, target) > 3) {
+    // Oriente la pointe de cap si le déplacement est significatif. En navigation,
+    // le cap lissé fourni (navHeading) est appliqué par applyPuckRotation.
+    if (navHeadingRef.current == null && metersBetween(from, target) > 3) {
       const rot = assignedMarkerRef.current.getElement().querySelector('.tc-veh-nub-rot') as HTMLElement | null;
       if (rot) rot.style.transform = `rotate(${bearingDeg(from, target)}deg)`;
     }
 
     if (assignedRafRef.current != null) cancelAnimationFrame(assignedRafRef.current);
     const startT = performance.now();
-    const DUR = 900;
+    // En navigation, le véhicule glisse à la même vitesse que la caméra
+    // (linéaire, même durée) : il reste immobile à l'écran au lieu de trembler
+    // autour du centre.
+    const following = followingRef.current;
+    const DUR = following ? navGlideRef.current : 900;
     const step = (now: number) => {
       const p = Math.min(1, (now - startT) / DUR);
-      const e = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2; // easeInOutQuad
+      const e = following ? p : p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2; // linéaire en navigation, sinon easeInOutQuad
       const lng = from[0] + (target[0] - from[0]) * e;
       const lat = from[1] + (target[1] - from[1]) * e;
       assignedMarkerRef.current?.setLngLat([lng, lat]);
@@ -519,11 +607,19 @@ export function Map({
       else assignedRafRef.current = null;
     };
     assignedRafRef.current = requestAnimationFrame(step);
-
-    return () => {
-      if (assignedRafRef.current != null) { cancelAnimationFrame(assignedRafRef.current); assignedRafRef.current = null; }
-    };
+    // Pas de nettoyage ici : `assignedDriver` est un nouvel objet à chaque rendu
+    // du parent, et annuler le glissement à chaque re-rendu figerait le véhicule
+    // à mi-parcours (la cible n'ayant pas changé, rien ne le relancerait).
+    // L'animation est annulée au démontage (effet ci-dessous) ou remplacée par
+    // la suivante.
   }, [assignedDriver]);
+
+  useEffect(
+    () => () => {
+      if (assignedRafRef.current != null) { cancelAnimationFrame(assignedRafRef.current); assignedRafRef.current = null; }
+    },
+    [],
+  );
 
   // Client live location marker (pulse cyan)
   useEffect(() => {
@@ -549,27 +645,49 @@ export function Map({
     }
   }, [clientLocation]);
 
-  // Draw / clear route
+  // Tracé de l'itinéraire : source et couches créées UNE fois, puis simplement
+  // mises à jour (en navigation, le tracé restant est redonné à chaque position —
+  // recréer les couches à chaque fois ferait clignoter la ligne).
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
     const apply = () => {
-      if (map.getLayer('route')) map.removeLayer('route');
-      if (map.getSource('route')) map.removeSource('route');
-      if (route) {
-        map.addSource('route', {
-          type: 'geojson',
-          data: { type: 'Feature', properties: {}, geometry: route },
-        });
-        map.addLayer({
-          id: 'route',
-          type: 'line',
-          source: 'route',
-          layout: { 'line-join': 'round', 'line-cap': 'round' },
-          paint: { 'line-color': '#2563EB', 'line-width': 5, 'line-opacity': 0.85 },
-        });
+      const data: GeoJSON.Feature = {
+        type: 'Feature',
+        properties: {},
+        geometry: route ?? { type: 'LineString', coordinates: [] },
+      };
+      const src = map.getSource('route') as maplibregl.GeoJSONSource | undefined;
+      if (src) {
+        src.setData(data);
+        return;
       }
+      if (!route) return; // rien à tracer, rien à créer
+      map.addSource('route', { type: 'geojson', data });
+      // Liseré blanc sous la ligne bleue : le tracé reste lisible sur tous les fonds.
+      map.addLayer({
+        id: 'route-casing',
+        type: 'line',
+        source: 'route',
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: {
+          'line-color': '#FFFFFF',
+          'line-opacity': 0.95,
+          'line-width': ['interpolate', ['linear'], ['zoom'], 10, 5, 14, 9, 17, 14],
+        },
+      });
+      map.addLayer({
+        id: 'route',
+        type: 'line',
+        source: 'route',
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: {
+          'line-color': '#2563EB',
+          'line-opacity': 1,
+          'line-width': ['interpolate', ['linear'], ['zoom'], 10, 3, 14, 6, 17, 9],
+        },
+      });
     };
 
     if (map.isStyleLoaded()) apply();
