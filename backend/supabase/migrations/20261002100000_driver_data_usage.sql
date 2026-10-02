@@ -105,7 +105,8 @@ select
   round(avg(bytes_tiles)    / 1e6, 1) as mo_cartes,
   round(avg(bytes_realtime) / 1e6, 1) as mo_temps_reel,
   round(avg(bytes_other)    / 1e6, 1) as mo_autres,
-  round((percentile_cont(0.5) within group (order by bytes_api + bytes_nav + bytes_tiles + bytes_realtime + bytes_other)) / 1e6, 1) as mo_mediane
+  -- percentile_cont renvoie un double precision : round() n'existe qu'en numeric, d'où le ::numeric.
+  round((percentile_cont(0.5) within group (order by bytes_api + bytes_nav + bytes_tiles + bytes_realtime + bytes_other))::numeric / 1e6, 1) as mo_mediane
 from public.driver_data_usage
 group by day
 order by day desc;
