@@ -217,10 +217,21 @@ export function NewRideWatcher() {
       }, realtimeOk ? 45_000 : online === null ? 30_000 : 10_000);
     };
 
-    // Une course créée dans le pool réveille le veilleur tout de suite.
+    // Une course créée dans le pool réveille le veilleur tout de suite. Cascade de
+    // catégories : une demande Confort devient visible au VIP, une demande Essentiel
+    // au Confort, 30 s plus tard (aucun événement à ce moment-là) → une relecture à +31 s.
+    const lateTimers = new Set<ReturnType<typeof setTimeout>>();
     const channel = freshChannel('watcher-pool')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'rides' }, () => {
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'rides' }, (payload) => {
         void tick();
+        const cat = (payload.new as { requested_category?: string } | null)?.requested_category;
+        if (cat === 'confort' || cat === 'essentiel') {
+          const t = setTimeout(() => {
+            lateTimers.delete(t);
+            if (!cancelled) void tick();
+          }, 31_000);
+          lateTimers.add(t);
+        }
       })
       .subscribe((status) => {
         realtimeOk = status === 'SUBSCRIBED';
@@ -235,6 +246,8 @@ export function NewRideWatcher() {
     return () => {
       cancelled = true;
       if (timer) clearTimeout(timer);
+      lateTimers.forEach((t) => clearTimeout(t));
+      lateTimers.clear();
       document.removeEventListener('visibilitychange', onVisible);
       supabaseBrowser.removeChannel(channel);
     };

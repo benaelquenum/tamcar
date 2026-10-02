@@ -434,15 +434,30 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
   // Realtime : nouveaux INSERTs rides dans le pool → refresh immédiat
   useEffect(() => {
     if (!isOnline) return;
+    const refetchPool = async () => {
+      const { data } = await supabaseBrowser.rpc('pending_rides_for_driver', {
+        radius_km: 10.0,
+      });
+      setPending((data ?? []) as PendingRide[]);
+    };
+    // Cascade de catégories : une demande Confort devient visible au VIP, une demande
+    // Essentiel au Confort, 30 s après sa création — sans aucun événement à ce moment-là.
+    // On relit donc le pool une fois à +31 s (uniquement pour ces deux catégories).
+    const lateRefetchTimers = new Set<ReturnType<typeof setTimeout>>();
     const channel = freshChannel('driver-pool')
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'rides' },
-        async () => {
-          const { data } = await supabaseBrowser.rpc('pending_rides_for_driver', {
-            radius_km: 10.0,
-          });
-          setPending((data ?? []) as PendingRide[]);
+        async (payload) => {
+          await refetchPool();
+          const cat = (payload.new as { requested_category?: string } | null)?.requested_category;
+          if (cat === 'confort' || cat === 'essentiel') {
+            const t = setTimeout(() => {
+              lateRefetchTimers.delete(t);
+              void refetchPool();
+            }, 31_000);
+            lateRefetchTimers.add(t);
+          }
           // Une course directe qui m'est destinée arrive aussi par un INSERT
           // (la RLS ne m'envoie que les miennes) : la carte « Demandes
           // directes » s'affiche sans attendre le sondage de 20 s.
@@ -460,6 +475,8 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
       });
     return () => {
       poolRealtimeOkRef.current = false;
+      lateRefetchTimers.forEach((t) => clearTimeout(t));
+      lateRefetchTimers.clear();
       supabaseBrowser.removeChannel(channel);
     };
   }, [isOnline, refreshOneshots]);

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/Logo';
-import { CarIcon, CheckIcon, CompassIcon, CrosshairIcon, PinIcon, StarIcon, AlertTriangleIcon, WhatsAppIcon, MessageIcon, ShareIcon } from '@/components/Icon';
+import { CarIcon, CheckIcon, CompassIcon, CrosshairIcon, PinIcon, SparkleIcon, StarIcon, AlertTriangleIcon, WhatsAppIcon, MessageIcon, ShareIcon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { RideTalkie } from '@/components/RideTalkie';
 import { RideCall } from '@/components/RideCall';
@@ -192,6 +192,18 @@ function catLabel(cat: string): string {
     case 'premium': return 'VIP';
     default: return cat;
   }
+}
+
+// Rang des catégories voiture : un véhicule de rang supérieur à la catégorie
+// commandée est un « surclassement » (cascade de catégories : après 30 s sans
+// preneur, un VIP peut prendre une demande Confort, un Confort une demande Essentiel).
+const CAR_CATEGORY_RANK: Record<string, number> = { essentiel: 1, confort: 2, premium: 3 };
+
+function isUpgrade(requested?: string | null, vehicle?: string | null): boolean {
+  if (!requested || !vehicle) return false;
+  const a = CAR_CATEGORY_RANK[requested];
+  const b = CAR_CATEGORY_RANK[vehicle];
+  return a != null && b != null && b > a;
 }
 
 function firstNameOf(fullName: string | null | undefined): string {
@@ -661,7 +673,11 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
     if (ride.downgrade_accepted_at) return; // déjà switché
     if (alternativeOffers !== null) return;  // déjà proposé
     const start = new Date(ride.requested_at).getTime();
-    const deadline = start + 30_000;
+    // Cascade de catégories : à 30 s la demande s'ouvre à la catégorie supérieure
+    // (Confort → Essentiel, VIP → Confort). On laisse 15 s de plus avant de proposer
+    // au client de changer de catégorie, pour que ce surclassement gratuit ait sa chance.
+    const cascadeAhead = ride.requested_category === 'essentiel' || ride.requested_category === 'confort';
+    const deadline = start + (cascadeAhead ? 45_000 : 30_000);
     const remaining = Math.max(0, deadline - Date.now());
     const timer = setTimeout(async () => {
       const { data, error } = await supabaseBrowser.rpc('preview_alternative_offers', {
@@ -674,7 +690,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
       setAlternativeOffers(data as AlternativeOffer[]);
     }, remaining);
     return () => clearTimeout(timer);
-  }, [ride.status, ride.requested_at, ride.downgrade_accepted_at, ride.id, alternativeOffers]);
+  }, [ride.status, ride.requested_at, ride.requested_category, ride.downgrade_accepted_at, ride.id, alternativeOffers]);
 
   async function handleSwitchCategory(newCategory: string) {
     if (switching) return;
@@ -1400,6 +1416,18 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                   )}
                 </div>
               </div>
+
+              {/* Surclassement : un véhicule de catégorie supérieure prend la course, au prix commandé. */}
+              {isUpgrade(ride.requested_category, ride.vehicle_category) && (
+                <div className="mt-sm flex items-start gap-xs rounded-lg bg-primary-50 px-sm py-xs text-xs text-primary-700 ring-1 ring-primary-300">
+                  <SparkleIcon className="mt-0.5 h-4 w-4 flex-none text-gold-500" />
+                  <p>
+                    <strong className="font-bold">Surclassement offert.</strong>{' '}
+                    Un véhicule {catLabel(ride.vehicle_category ?? '')} prend votre course, au prix{' '}
+                    {catLabel(ride.requested_category ?? '')} annoncé.
+                  </p>
+                </div>
+              )}
 
               {/* Boutons de contact — alignés, icônes SVG */}
               <div className="mt-md flex items-stretch gap-xs">
