@@ -11,6 +11,19 @@ type Run = {
   total_rows: number | null;
   total_bytes: number | null;
   tables: Array<{ name: string; rows: number; bytes: number }>;
+  files: {
+    source_files: number;
+    source_bytes: number;
+    copied: number;
+    failed: number;
+    remaining: number;
+    failed_names?: string[];
+  } | null;
+};
+
+const LABELS: Record<string, string> = {
+  auth_users: 'Comptes de connexion (sans mots de passe)',
+  auth_identities: 'Identités de connexion (e-mail, téléphone)',
 };
 
 function fmtSize(bytes: number): string {
@@ -43,7 +56,8 @@ export default async function AdminBackupDetailPage({ params }: { params: { id: 
         })}
       </h1>
       <p className="mt-xs text-sm text-neutral-600">
-        {run.trigger === 'cron' ? 'Automatique' : 'Manuelle'} · {run.tables.length} tables · {fmtNum(run.total_rows ?? 0)} lignes ·{' '}
+        {run.trigger === 'cron' ? 'Automatique' : 'Manuelle'} · {run.tables.filter((t) => !t.name.startsWith('auth_')).length} tables ·{' '}
+        {fmtNum(run.total_rows ?? 0)} lignes ·{' '}
         {fmtSize(run.total_bytes ?? 0)} compressés
       </p>
       <p className="mt-xs text-xs text-neutral-500">
@@ -55,6 +69,30 @@ export default async function AdminBackupDetailPage({ params }: { params: { id: 
           </>
         )}
       </p>
+
+      <section className="mt-lg rounded-xl bg-white p-md shadow-sm ring-1 ring-neutral-200">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">Fichiers stockés (photos, pièces, documents)</p>
+        {run.files ? (
+          <>
+            <p className="mt-xs text-sm text-neutral-900">
+              {fmtNum(run.files.source_files)} fichiers ({fmtSize(run.files.source_bytes)}) dans la plateforme ·{' '}
+              <strong>{fmtNum(run.files.copied)}</strong> copiés cette fois ·{' '}
+              {run.files.remaining > 0 ? (
+                <span className="font-semibold text-warning">{fmtNum(run.files.remaining)} restent à copier (repris à la prochaine sauvegarde)</span>
+              ) : (
+                <span className="font-semibold text-success">tous présents dans la copie</span>
+              )}
+              {run.files.failed > 0 && <span className="font-semibold text-error"> · {fmtNum(run.files.failed)} en échec</span>}
+            </p>
+            <p className="mt-xs text-xs text-neutral-500">
+              Copie miroir : chaque fichier n&apos;est copié qu&apos;une fois (ou quand il change), dans le dossier privé « backups »,
+              sous <code>files/</code> (Supabase → Storage). Elle n&apos;est pas purgée au bout de 30 jours. Les fonds de carte, régénérables, sont exclus.
+            </p>
+          </>
+        ) : (
+          <p className="mt-xs text-sm text-neutral-600">Cette sauvegarde est antérieure à la copie des fichiers.</p>
+        )}
+      </section>
 
       <section className="mt-lg overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-neutral-200">
         <table className="w-full">
@@ -71,7 +109,10 @@ export default async function AdminBackupDetailPage({ params }: { params: { id: 
               const url = urls[`${run.folder}/${t.name}.json.gz`];
               return (
                 <tr key={t.name} className="border-b border-neutral-100 last:border-0">
-                  <td className="px-md py-xs font-mono text-xs text-neutral-900">{t.name}</td>
+                  <td className="px-md py-xs font-mono text-xs text-neutral-900">
+                    {t.name}
+                    {LABELS[t.name] && <span className="ml-sm font-sans text-neutral-500">· {LABELS[t.name]}</span>}
+                  </td>
                   <td className="px-md py-xs text-right text-sm tabular-nums">{fmtNum(t.rows)}</td>
                   <td className="px-md py-xs text-right text-xs text-neutral-500">{fmtSize(t.bytes)}</td>
                   <td className="px-md py-xs text-right">

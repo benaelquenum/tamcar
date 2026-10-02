@@ -15,8 +15,17 @@ type Run = {
   total_rows: number | null;
   total_bytes: number | null;
   tables: Array<{ name: string; rows: number; bytes: number }>;
+  files: { source_files: number; source_bytes: number; copied: number; failed: number; remaining: number } | null;
   error: string | null;
 };
+
+/** Tables de données (hors fichiers auth_*, qui sont les comptes de connexion). */
+function dataTables(r: Run): number {
+  return r.tables.filter((t) => !t.name.startsWith('auth_')).length;
+}
+function hasAccounts(r: Run): boolean {
+  return r.tables.some((t) => t.name === 'auth_users');
+}
 
 const TZ = 'Africa/Porto-Novo';
 
@@ -104,7 +113,15 @@ export default async function AdminBackupsPage({
                   <>
                     <p className="mt-xs text-xl font-extrabold text-neutral-900">{fmtDateTime(lastOk.started_at)}</p>
                     <p className="text-xs text-neutral-500">
-                      {ago(lastOk.started_at)} · {lastOk.tables.length} tables · {fmtNum(lastOk.total_rows)} lignes · {fmtSize(lastOk.total_bytes)}
+                      {ago(lastOk.started_at)} · {dataTables(lastOk)} tables · {fmtNum(lastOk.total_rows)} lignes · {fmtSize(lastOk.total_bytes)}
+                    </p>
+                    <p className="text-xs text-neutral-500">
+                      {hasAccounts(lastOk) ? 'Comptes de connexion inclus' : 'Comptes de connexion non inclus'} ·{' '}
+                      {lastOk.files
+                        ? `${fmtNum(lastOk.files.source_files)} fichiers stockés (${fmtSize(lastOk.files.source_bytes)})${
+                            lastOk.files.remaining > 0 ? `, ${fmtNum(lastOk.files.remaining)} restent à copier` : ' tous copiés'
+                          }`
+                        : 'fichiers stockés non inclus'}
                     </p>
                   </>
                 ) : (
@@ -166,7 +183,7 @@ on conflict (key) do update set value = excluded.value, updated_at = now();`}</p
                           <span className={`rounded-full px-sm py-0.5 text-[10px] font-bold ${st.cls}`}>{st.label}</span>
                           {r.error && <p className="mt-0.5 max-w-xs truncate text-[10px] text-error" title={r.error}>{r.error}</p>}
                         </td>
-                        <td className="px-md py-sm text-right text-sm tabular-nums">{r.tables.length || '—'}</td>
+                        <td className="px-md py-sm text-right text-sm tabular-nums">{dataTables(r) || '—'}</td>
                         <td className="px-md py-sm text-right text-sm tabular-nums">{fmtNum(r.total_rows)}</td>
                         <td className="px-md py-sm text-right text-sm tabular-nums">{fmtSize(r.total_bytes)}</td>
                         <td className="px-md py-sm text-right text-xs text-neutral-500">{duration(r)}</td>
@@ -187,7 +204,8 @@ on conflict (key) do update set value = excluded.value, updated_at = now();`}</p
 
           <p className="mt-lg text-xs text-neutral-500">
             Cette sauvegarde exporte les données de toutes les tables de la plateforme (courses, chauffeurs, portefeuilles, locations…),
-            hors secrets et jetons d&apos;appareils. Elle complète les sauvegardes physiques quotidiennes de Supabase (Database → Backups).
+            les comptes de connexion (sans mots de passe) et une copie des fichiers stockés (pièces, photos, documents), hors secrets et
+            jetons d&apos;appareils. Elle complète les sauvegardes physiques quotidiennes de Supabase (Database → Backups).
           </p>
         </>
       )}
