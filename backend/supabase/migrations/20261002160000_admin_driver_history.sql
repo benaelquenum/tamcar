@@ -2,17 +2,37 @@
 -- Admin : historique complet d'un chauffeur DEPUIS SON ENRÔLEMENT (2026-10-02)
 --
 -- Une chronologie unique qui rassemble, pour un chauffeur :
---   enrôlement (rendez-vous, candidature, création du compte), courses (toutes
+--   enrôlement (rendez-vous, décision, création du compte), courses (toutes
 --   issues), locations VIP, mouvements de portefeuille, retraits, notes reçues,
 --   avertissements, primes d'assurance, retraits TamAssur, demandes directes,
 --   alertes SOS, archivage.
+--
+-- Chaque source est lue séparément : une table absente de cette base (migration
+-- pas encore passée, ou table retirée depuis) est simplement ignorée.
 --
 -- Trois fonctions réservées à l'équipe TamCar :
 --   admin_driver_summary(id)           — fiche + chiffres depuis l'enrôlement (jsonb)
 --   admin_driver_history(id, …)        — la chronologie, filtrable et paginée
 --   admin_driver_history_counts(id)    — nombre d'événements par type
--- La fonction interne _driver_events n'est pas appelable depuis l'application.
+-- Les fonctions internes (_driver_events, _safe_count) ne sont pas appelables
+-- depuis l'application.
 -- ============================================================
+
+-- Compte tolérant : 0 si la table ou la colonne n'existe pas dans cette base.
+create or replace function public._safe_count(p_sql text, p_arg uuid)
+returns bigint
+language plpgsql stable set search_path = public as $fn_sc$
+declare
+  v bigint;
+begin
+  execute p_sql into v using p_arg;
+  return coalesce(v, 0);
+exception when undefined_table or undefined_column or undefined_object then
+  return 0;
+end;
+$fn_sc$;
+
+revoke all on function public._safe_count(text, uuid) from public, anon, authenticated;
 
 create or replace function public._driver_events(p_driver_id uuid)
 returns table (
@@ -24,134 +44,128 @@ returns table (
   status text,
   ref_id uuid
 )
-language sql stable set search_path = public as $fn_de$
-  with d as (
-    select id, profile_id, created_at, application_type, status, archived_at, archive_reason
-      from public.drivers where id = p_driver_id
-  )
+language plpgsql stable set search_path = public as $fn_de$
+declare
+  v_leg text;
+  v_legs text[] := array[
 
-  -- Enrôlement : rendez-vous
-  select a.created_at, 'enrolment'::text, 'Rendez-vous d''enrôlement'::text,
-         ('Visiteur ' || a.visitor_number || ' · créneau du '
-            || to_char(a.slot_at at time zone 'Africa/Porto-Novo', 'DD/MM/YYYY HH24"h"MI'))::text,
-         null::int, a.status::text, a.id
-    from public.driver_appointments a, d
-   where a.profile_id = d.profile_id
+    -- Enrôlement : rendez-vous
+    $q$ select a.created_at::timestamptz, 'enrolment'::text, 'Rendez-vous d''enrôlement'::text,
+               ('Visiteur ' || a.visitor_number || ' · créneau du '
+                  || to_char(a.slot_at at time zone 'Africa/Porto-Novo', 'DD/MM/YYYY HH24"h"MI'))::text,
+               null::int, a.status::text, a.id::uuid
+          from public.driver_appointments a
+          join public.drivers d on d.profile_id = a.profile_id
+         where d.id = $1 $q$,
 
-  union all
-  -- Enrôlement : candidature déposée
-  select ap.submitted_at, 'enrolment', 'Candidature déposée',
-         ap.vehicle_brand || ' ' || ap.vehicle_model || ' (' || ap.vehicle_plate || ')',
-         null, 'submitted', ap.id
-    from public.driver_applications ap, d
-   where ap.profile_id = d.profile_id
+    -- Enrôlement : décision sur le rendez-vous
+    $q$ select a.approved_at::timestamptz, 'enrolment'::text,
+               (case when a.rejection_reason is not null then 'Enrôlement refusé' else 'Enrôlement approuvé' end)::text,
+               coalesce(a.rejection_reason, a.notes, '')::text,
+               null::int, a.status::text, a.id::uuid
+          from public.driver_appointments a
+          join public.drivers d on d.profile_id = a.profile_id
+         where d.id = $1 and a.approved_at is not null $q$,
 
-  union all
-  -- Enrôlement : décision sur la candidature
-  select ap.reviewed_at, 'enrolment',
-         case ap.status::text
-           when 'approved' then 'Candidature approuvée'
-           when 'rejected' then 'Candidature refusée'
-           else 'Candidature examinée'
-         end,
-         coalesce(ap.rejection_reason, ''), null, ap.status::text, ap.id
-    from public.driver_applications ap, d
-   where ap.profile_id = d.profile_id and ap.reviewed_at is not null
+    -- Enrôlement : compte chauffeur créé
+    $q$ select d.created_at::timestamptz, 'enrolment'::text, 'Enrôlement : compte chauffeur créé'::text,
+               ('Formule ' || d.application_type::text)::text,
+               null::int, d.status::text, d.id::uuid
+          from public.drivers d
+         where d.id = $1 $q$,
 
-  union all
-  -- Enrôlement : compte chauffeur créé
-  select d.created_at, 'enrolment', 'Enrôlement : compte chauffeur créé',
-         'Formule ' || d.application_type::text, null, d.status::text, d.id
-    from d
+    -- Courses, quelle que soit leur issue
+    $q$ select coalesce(r.ended_at, r.cancelled_at, r.started_at, r.matched_at, r.requested_at)::timestamptz,
+               'ride'::text, ('Course ' || r.status::text)::text,
+               (left(r.pickup_address, 60) || ' → ' || left(r.dropoff_address, 60)
+                  || ' · ' || r.price_total_fcfa || ' F'
+                  || coalesce(' · ' || r.requested_category::text, ''))::text,
+               (case when r.status = 'completed' then r.driver_share_fcfa end)::int,
+               r.status::text, r.id::uuid
+          from public.rides r
+         where r.driver_id = $1 $q$,
 
-  union all
-  -- Courses, quelle que soit leur issue
-  select coalesce(r.ended_at, r.cancelled_at, r.started_at, r.matched_at, r.requested_at),
-         'ride', 'Course ' || r.status::text,
-         left(r.pickup_address, 60) || ' → ' || left(r.dropoff_address, 60)
-           || ' · ' || r.price_total_fcfa || ' F'
-           || coalesce(' · ' || r.requested_category::text, ''),
-         case when r.status = 'completed' then r.driver_share_fcfa end,
-         r.status::text, r.id
-    from public.rides r, d
-   where r.driver_id = d.id
+    -- Locations VIP
+    $q$ select coalesce(vr.completed_at, vr.started_at, vr.confirmed_at, vr.created_at)::timestamptz,
+               'rental'::text, ('Location VIP ' || vr.status)::text,
+               (to_char(vr.starts_at at time zone 'Africa/Porto-Novo', 'DD/MM/YYYY HH24"h"MI')
+                  || ' · ' || vr.hours || ' h · ' || vr.price_fcfa || ' F')::text,
+               null::int, vr.status::text, vr.id::uuid
+          from public.vehicle_rentals vr
+         where vr.driver_id = $1 $q$,
 
-  union all
-  -- Locations VIP
-  select coalesce(vr.completed_at, vr.started_at, vr.confirmed_at, vr.created_at),
-         'rental', 'Location VIP ' || vr.status,
-         to_char(vr.starts_at at time zone 'Africa/Porto-Novo', 'DD/MM/YYYY HH24"h"MI')
-           || ' · ' || vr.hours || ' h · ' || vr.price_fcfa || ' F',
-         null, vr.status, vr.id
-    from public.vehicle_rentals vr
-   where vr.driver_id = p_driver_id
+    -- Mouvements de portefeuille (type brut : l'écran le traduit)
+    $q$ select wt.created_at::timestamptz, 'wallet'::text, wt.type::text,
+               (w.kind::text || ' · ' || wt.status::text)::text,
+               wt.amount_fcfa::int, wt.status::text, wt.ride_id::uuid
+          from public.wallet_transactions wt
+          join public.wallets w on w.id = wt.wallet_id
+          join public.drivers d on d.profile_id = w.profile_id
+         where d.id = $1 $q$,
 
-  union all
-  -- Mouvements de portefeuille (type brut : l'écran le traduit)
-  select wt.created_at, 'wallet', wt.type::text,
-         w.kind::text || ' · ' || wt.status::text,
-         wt.amount_fcfa, wt.status::text, wt.ride_id
-    from public.wallet_transactions wt
-    join public.wallets w on w.id = wt.wallet_id, d
-   where w.profile_id = d.profile_id
+    -- Retraits Mobile Money
+    $q$ select po.created_at::timestamptz, 'payout'::text, 'Retrait Mobile Money'::text,
+               (po.provider::text || ' · ' || po.msisdn || ' · ' || po.status)::text,
+               po.amount_fcfa::int, po.status::text, po.id::uuid
+          from public.driver_payouts po
+         where po.driver_id = $1 $q$,
 
-  union all
-  -- Retraits Mobile Money
-  select po.created_at, 'payout', 'Retrait Mobile Money',
-         po.provider::text || ' · ' || po.msisdn || ' · ' || po.status,
-         po.amount_fcfa, po.status, po.id
-    from public.driver_payouts po
-   where po.driver_id = p_driver_id
+    -- Notes reçues
+    $q$ select rt.created_at::timestamptz, 'rating'::text, ('Note reçue : ' || rt.stars || '/5')::text,
+               coalesce(rt.comment, '')::text, null::int, rt.stars::text, rt.ride_id::uuid
+          from public.ratings rt
+          join public.drivers d on d.profile_id = rt.rated_id
+         where d.id = $1 $q$,
 
-  union all
-  -- Notes reçues
-  select rt.created_at, 'rating', 'Note reçue : ' || rt.stars || '/5',
-         coalesce(rt.comment, ''), null, rt.stars::text, rt.ride_id
-    from public.ratings rt, d
-   where rt.rated_id = d.profile_id
+    -- Avertissements
+    $q$ select w.issued_at::timestamptz, 'warning'::text, ('Avertissement (' || w.level::text || ')')::text,
+               (w.reason || coalesce(' · ' || w.notes, ''))::text, null::int,
+               (case when w.resolved_at is null then 'open' else 'resolved' end)::text, w.id::uuid
+          from public.driver_warnings w
+         where w.driver_id = $1 $q$,
 
-  union all
-  -- Avertissements
-  select w.issued_at, 'warning', 'Avertissement (' || w.level::text || ')',
-         w.reason || coalesce(' · ' || w.notes, ''), null,
-         case when w.resolved_at is null then 'open' else 'resolved' end, w.id
-    from public.driver_warnings w
-   where w.driver_id = p_driver_id
+    -- Primes d'assurance
+    $q$ select coalesce(ic.collected_at, ic.created_at)::timestamptz, 'insurance'::text,
+               ('Prime d''assurance ' || to_char(ic.period, 'MM/YYYY'))::text,
+               ic.status::text, ic.collected_fcfa::int, ic.status::text, ic.id::uuid
+          from public.driver_insurance_charges ic
+         where ic.driver_id = $1 $q$,
 
-  union all
-  -- Primes d'assurance
-  select coalesce(ic.collected_at, ic.created_at), 'insurance',
-         'Prime d''assurance ' || to_char(ic.period, 'MM/YYYY'),
-         ic.status, ic.collected_fcfa, ic.status, ic.id
-    from public.driver_insurance_charges ic
-   where ic.driver_id = p_driver_id
+    -- Retraits TamAssur
+    $q$ select tw.requested_at::timestamptz, 'tamassur'::text, ('Retrait TamAssur (' || tw.status || ')')::text,
+               coalesce(tw.method, '')::text, tw.amount_fcfa::int, tw.status::text, tw.id::uuid
+          from public.tamassur_withdrawals tw
+         where tw.driver_id = $1 $q$,
 
-  union all
-  -- Retraits TamAssur
-  select tw.requested_at, 'tamassur', 'Retrait TamAssur (' || tw.status || ')',
-         coalesce(tw.method, ''), tw.amount_fcfa, tw.status, tw.id
-    from public.tamassur_withdrawals tw
-   where tw.driver_id = p_driver_id
+    -- Demandes directes de clients
+    $q$ select dr.created_at::timestamptz, 'request'::text, ('Demande directe (' || dr.status || ')')::text,
+               (left(dr.pickup_address, 60) || ' → ' || left(dr.dropoff_address, 60))::text,
+               dr.price_total_fcfa::int, dr.status::text, dr.id::uuid
+          from public.driver_requests dr
+         where dr.driver_id = $1 $q$,
 
-  union all
-  -- Demandes directes de clients
-  select dr.created_at, 'request', 'Demande directe (' || dr.status || ')',
-         left(dr.pickup_address, 60) || ' → ' || left(dr.dropoff_address, 60),
-         dr.price_total_fcfa, dr.status, dr.id
-    from public.driver_requests dr
-   where dr.driver_id = p_driver_id
+    -- Alertes SOS déclenchées par le chauffeur
+    $q$ select s.created_at::timestamptz, 'sos'::text, 'Alerte SOS'::text,
+               coalesce(s.reason, '')::text, null::int, s.status::text, s.id::uuid
+          from public.sos_alerts s
+          join public.drivers d on d.profile_id = s.triggered_by
+         where d.id = $1 and s.role = 'driver' $q$,
 
-  union all
-  -- Alertes SOS déclenchées par le chauffeur
-  select s.created_at, 'sos', 'Alerte SOS', coalesce(s.reason, ''), null, s.status, s.id
-    from public.sos_alerts s, d
-   where s.triggered_by = d.profile_id and s.role = 'driver'
-
-  union all
-  -- Archivage
-  select d.archived_at, 'status', 'Chauffeur archivé', coalesce(d.archive_reason, ''), null, 'archived', d.id
-    from d
-   where d.archived_at is not null;
+    -- Archivage
+    $q$ select d.archived_at::timestamptz, 'status'::text, 'Chauffeur archivé'::text,
+               coalesce(d.archive_reason, '')::text, null::int, 'archived'::text, d.id::uuid
+          from public.drivers d
+         where d.id = $1 and d.archived_at is not null $q$
+  ];
+begin
+  foreach v_leg in array v_legs loop
+    begin
+      return query execute v_leg using p_driver_id;
+    exception when undefined_table or undefined_column or undefined_object then
+      null; -- source absente de cette base : on passe à la suivante
+    end;
+  end loop;
+end;
 $fn_de$;
 
 revoke all on function public._driver_events(uuid) from public, anon, authenticated;
@@ -283,9 +297,12 @@ begin
            group by wt.type
         ) q
     ),
-    'warnings', (select count(*) from public.driver_warnings w where w.driver_id = d.id),
-    'sos', (select count(*) from public.sos_alerts s where s.triggered_by = d.profile_id and s.role = 'driver'),
-    'rentals', (select count(*) from public.vehicle_rentals vr where vr.driver_id = d.id)
+    -- Sources optionnelles : 0 si la table n'existe pas dans cette base.
+    'warnings', public._safe_count('select count(*) from public.driver_warnings where driver_id = $1', d.id),
+    'sos', public._safe_count(
+      'select count(*) from public.sos_alerts s join public.drivers x on x.profile_id = s.triggered_by where x.id = $1 and s.role = ''driver''',
+      d.id),
+    'rentals', public._safe_count('select count(*) from public.vehicle_rentals where driver_id = $1', d.id)
   );
 end;
 $fn_ads$;
