@@ -22,6 +22,7 @@ import { setDriverOnline } from '@/lib/driverPresence';
 import { writeDriverLocation } from '@/lib/positionUplink';
 import { useVisibleInterval } from '@/lib/useVisibleInterval';
 import { DataUsageChip } from '@/components/DataMeter';
+import { RentalBanner } from '@/components/RentalBanner';
 import { useWakeLock } from '@/lib/useWakeLock';
 import { useBackgroundTracking } from '@/lib/backgroundTracking';
 import { isAccurateEnough } from '@/lib/geo-precision';
@@ -695,6 +696,14 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
             </div>
 
             <DataUsageChip />
+
+            {/* Location VIP : véhicule réservé (plus de demandes) ou prochaine location */}
+            <RentalBanner
+              onBlocked={() => {
+                setIsOnline(false);
+                setPending([]);
+              }}
+            />
 
             {!hasVehicle && (
               <div className="mb-md rounded-md bg-error/10 p-md text-sm text-error">

@@ -11,6 +11,7 @@ const NAV: { href: string; label: string; exact?: boolean }[] = [
   { href: '/admin/drivers', label: 'Chauffeurs' },
   { href: '/admin/dealers', label: 'Partenaires véhicule' },
   { href: '/admin/vehicles', label: 'Véhicules' },
+  { href: '/admin/locations', label: 'Locations VIP' },
   { href: '/admin/candidatures', label: 'Rendez-vous' },
   { href: '/admin/dealer-advances', label: 'ADR' },
   { href: '/admin/ops', label: 'Responsables ville' },

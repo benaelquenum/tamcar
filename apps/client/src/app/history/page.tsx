@@ -103,6 +103,14 @@ export default async function HistoryPage({ searchParams }: { searchParams: { ju
         </Link>
 
         <Link
+          href="/location"
+          className="mt-sm flex items-center justify-between rounded-xl bg-neutral-900 p-md text-white transition hover:brightness-110"
+        >
+          <span className="text-sm font-bold">Louer un VIP avec chauffeur →</span>
+          <span className="text-[11px] font-semibold text-white/70">À l&apos;heure</span>
+        </Link>
+
+        <Link
           href="/chauffeurs"
           className="mt-sm flex items-center justify-between rounded-xl border-2 border-primary-500 bg-white p-md text-primary-700 transition hover:bg-primary-50"
         >
