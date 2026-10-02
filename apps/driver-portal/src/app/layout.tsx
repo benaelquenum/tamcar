@@ -6,6 +6,7 @@ import { InstallPwaBanner } from '@/components/InstallPwaBanner';
 import { TopProgressBar } from '@/components/TopProgressBar';
 import { NativeBackHandler } from '@/components/NativeBackHandler';
 import { NewRideWatcher } from '@/components/NewRideWatcher';
+import { DataMeter } from '@/components/DataMeter';
 import { NativePushRegistrar } from '@/components/NativePushRegistrar';
 import { RefreshButton } from '@/components/RefreshButton';
 
@@ -57,6 +58,7 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         <TopProgressBar />
         <NativeBackHandler />
+        <DataMeter />
         <NewRideWatcher />
         <NativePushRegistrar />
         <EnableNotifications />

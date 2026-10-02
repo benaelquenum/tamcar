@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState, useTransition } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/Logo';
@@ -18,6 +18,10 @@ import { Map } from '@/components/Map';
 import { MessagesFab } from '@/components/MessagesFab';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { freshChannel } from '@/lib/realtime';
+import { setDriverOnline } from '@/lib/driverPresence';
+import { writeDriverLocation } from '@/lib/positionUplink';
+import { useVisibleInterval } from '@/lib/useVisibleInterval';
+import { DataUsageChip } from '@/components/DataMeter';
 import { useWakeLock } from '@/lib/useWakeLock';
 import { useBackgroundTracking } from '@/lib/backgroundTracking';
 import { isAccurateEnough } from '@/lib/geo-precision';
@@ -149,6 +153,7 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
   const [error, setError] = useState<string | null>(null);
   const [position, setPosition] = useState<[number, number] | null>(null);
   const [pending, setPending] = useState<PendingRide[]>([]);
+  const poolRealtimeOkRef = useRef(false);
   const [accepting, startAccept] = useTransition();
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
   const [crossCatConfirm, setCrossCatConfirm] = useState<FeedRide | null>(null);
@@ -193,11 +198,16 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
   // Garde l'écran allumé tant que le chauffeur est en ligne (géoloc active).
   useWakeLock(isOnline);
 
+  // Le veilleur global de nouvelles courses (layout) lit cet état : hors ligne, il n'interroge plus la base.
+  useEffect(() => {
+    setDriverOnline(isOnline);
+  }, [isOnline]);
+
   // Suivi natif en arrière-plan (app native) tant qu'en ligne → la position
   // remonte même app en fond, pour rester visible/matchable.
   useBackgroundTracking(isOnline, (lng, lat) => {
     setPosition([lng, lat]);
-    supabaseBrowser.rpc('driver_update_location', { current_lng: lng, current_lat: lat });
+    writeDriverLocation(lng, lat, 'idle');
   });
 
   // Offres TamPass ouvertes : visibles même hors ligne (revenu récurrent).
@@ -252,14 +262,17 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
     refreshOneshots();
     refreshScheduled();
     refreshMyBookings();
-    const t = setInterval(() => {
-      refreshOffers();
-      refreshOneshots();
-      refreshScheduled();
-      refreshMyBookings();
-    }, 20_000);
-    return () => clearInterval(t);
   }, [refreshOffers, refreshOneshots, refreshScheduled, refreshMyBookings]);
+
+  // Rafraîchissement de sécurité : toutes les 60 s, page visible seulement. Avant :
+  // 4 requêtes toutes les 20 s, écran éteint ou hors ligne compris. Les demandes
+  // directes et les nouvelles courses arrivent déjà en temps réel.
+  useVisibleInterval(() => {
+    refreshOffers();
+    refreshOneshots();
+    refreshScheduled();
+    refreshMyBookings();
+  }, 60_000);
 
   async function respondOneshot(id: string, accept: boolean) {
     setRespondingId(id);
@@ -368,10 +381,8 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
       const p = await getMyPosition();
       if (!p || cancelled) return;
       setPosition(p);
-      await supabaseBrowser.rpc('driver_update_location', {
-        current_lng: p[0],
-        current_lat: p[1],
-      });
+      // Cadence limitée (lib/positionUplink) : 20 s mini, et seulement si le chauffeur a bougé.
+      writeDriverLocation(p[0], p[1], 'idle');
     }
 
     async function pollPending() {
@@ -389,13 +400,24 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
 
     updatePosition();
     pollPending();
-    const posInterval = setInterval(updatePosition, 20_000);
-    const pendingInterval = setInterval(pollPending, 5_000);
+    const posInterval = setInterval(updatePosition, 30_000);
+
+    // Sondage de sécurité du pool : 45 s quand le temps réel est connecté (les
+    // nouvelles courses arrivent par lui), 8 s sinon ; page cachée : on saute.
+    // Avant : toutes les 5 s en permanence.
+    let pendingTimer: ReturnType<typeof setTimeout> | null = null;
+    const schedulePoll = () => {
+      pendingTimer = setTimeout(async () => {
+        if (document.visibilityState === 'visible') await pollPending();
+        if (!cancelled) schedulePoll();
+      }, poolRealtimeOkRef.current ? 45_000 : 8_000);
+    };
+    schedulePoll();
 
     return () => {
       cancelled = true;
       clearInterval(posInterval);
-      clearInterval(pendingInterval);
+      if (pendingTimer) clearTimeout(pendingTimer);
     };
   }, [isOnline, getMyPosition]);
 
@@ -433,8 +455,11 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
         { event: 'UPDATE', schema: 'public', table: 'rides' },
         () => { void refreshOneshots(); },
       )
-      .subscribe();
+      .subscribe((status) => {
+        poolRealtimeOkRef.current = status === 'SUBSCRIBED';
+      });
     return () => {
+      poolRealtimeOkRef.current = false;
       supabaseBrowser.removeChannel(channel);
     };
   }, [isOnline, refreshOneshots]);
@@ -651,6 +676,8 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
                 {busy ? '…' : isOnline ? 'Se déconnecter' : 'Se connecter'}
               </button>
             </div>
+
+            <DataUsageChip />
 
             {!hasVehicle && (
               <div className="mb-md rounded-md bg-error/10 p-md text-sm text-error">

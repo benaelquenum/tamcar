@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { registerPlugin, Capacitor } from '@capacitor/core';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+import { freshChannel } from '@/lib/realtime';
+import { getDriverOnline, subscribeDriverOnline } from '@/lib/driverPresence';
 
 // Veilleur GLOBAL de nouvelles courses (monté dans le layout, toutes pages).
 // Problème résolu : le pool ne vivait que sur l'écran d'accueil, et le Web
@@ -147,19 +149,36 @@ export function NewRideWatcher() {
     LocalNotifications.requestPermissions().catch(() => undefined);
   }, [authed]);
 
-  // Poll global du pool. Le RPC renvoie [] si hors ligne / pas chauffeur.
+  // Présence : hors ligne, le veilleur ne demande plus rien (avant : 2 requêtes toutes
+  // les 8 s en permanence, même hors ligne). Inconnue (page ouverte directement) : on veille.
+  const [online, setOnline] = useState<boolean | null>(getDriverOnline());
   useEffect(() => {
-    if (!authed) return;
+    setOnline(getDriverOnline());
+    return subscribeDriverOnline(() => setOnline(getDriverOnline()));
+  }, []);
+
+  // Veille globale du pool. Les nouvelles courses arrivent en temps réel ; le
+  // sondage ne sert plus que de filet de sécurité (45 s quand le temps réel est
+  // connecté, 10 s sinon). Les réservations programmées, jamais urgentes, ne sont
+  // relues que toutes les 5 minutes.
+  useEffect(() => {
+    if (!authed || online === false) return;
     let cancelled = false;
+    let realtimeOk = false;
+    let lastBooked = 0;
+    let timer: ReturnType<typeof setTimeout> | null = null;
 
     const tick = async () => {
-      // Deux sources, un seul fil : le chauffeur ne doit pas avoir à
-      // ouvrir un onglet pour découvrir une réservation.
+      const now = Date.now();
+      const wantBooked = now - lastBooked > 5 * 60_000;
       const [immediate, booked] = await Promise.all([
         supabaseBrowser.rpc('pending_rides_for_driver', { radius_km: 10.0 }),
-        supabaseBrowser.rpc('pending_scheduled_rides_for_driver', { radius_km: 12.0 }),
+        wantBooked
+          ? supabaseBrowser.rpc('pending_scheduled_rides_for_driver', { radius_km: 12.0 })
+          : Promise.resolve({ data: null, error: null }),
       ]);
       if (cancelled) return;
+      if (wantBooked && !booked.error) lastBooked = now;
       if (immediate.error && booked.error) return;
       const rows = [
         ...(Array.isArray(immediate.data) ? (immediate.data as PendingRow[]) : []),
@@ -191,18 +210,35 @@ export function NewRideWatcher() {
       if (!onVisibleHome) void notify(fresh[0]);
     };
 
+    const schedule = () => {
+      timer = setTimeout(async () => {
+        await tick();
+        if (!cancelled) schedule();
+      }, realtimeOk ? 45_000 : online === null ? 30_000 : 10_000);
+    };
+
+    // Une course créée dans le pool réveille le veilleur tout de suite.
+    const channel = freshChannel('watcher-pool')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'rides' }, () => {
+        void tick();
+      })
+      .subscribe((status) => {
+        realtimeOk = status === 'SUBSCRIBED';
+      });
+
     tick();
-    const t = setInterval(tick, 8000);
+    schedule();
     const onVisible = () => {
       if (document.visibilityState === 'visible') void tick();
     };
     document.addEventListener('visibilitychange', onVisible);
     return () => {
       cancelled = true;
-      clearInterval(t);
+      if (timer) clearTimeout(timer);
       document.removeEventListener('visibilitychange', onVisible);
+      supabaseBrowser.removeChannel(channel);
     };
-  }, [authed]);
+  }, [authed, online]);
 
   return null;
 }

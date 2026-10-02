@@ -20,6 +20,18 @@ export function WaveIcon({ className = 'h-5 w-5', strokeWidth = 2 }: IconProps) 
   );
 }
 
+// Barres de signal : consommation de données.
+export function DataIcon({ className = 'h-5 w-5', strokeWidth = 2 }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={`${base} ${className}`}>
+      <path d="M4 20v-3" />
+      <path d="M9 20v-7" />
+      <path d="M14 20V9" />
+      <path d="M19 20V4" />
+    </svg>
+  );
+}
+
 export function CarIcon({ className = 'h-5 w-5', strokeWidth = 2 }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={`${base} ${className}`}>

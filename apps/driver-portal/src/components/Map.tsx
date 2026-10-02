@@ -8,6 +8,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 
 import { COTONOU_CENTER, MAPBOX_TOKEN } from '@/lib/mapbox';
 import { NAV_ZOOM_LEVELS, angleDiff, zoomLevelForSpeed } from '@/lib/navCamera';
+import { addTileEstimate } from '@/lib/dataMeter';
 import { MAP_ENGINE, maplibreConfigured, maplibreStyle } from '@/lib/map-config';
 import { vehicleMarkerSvg } from '@/lib/vehicle-marker';
 
@@ -312,6 +313,14 @@ export function Map({
         onBearingRef.current?.(map.getBearing());
         applyPuckRotation(map);
       });
+    });
+
+    // Compteur de data : une tuile vectorielle chargée compte pour ~25 Ko (estimation,
+    // le chargement des tuiles se fait hors de portée de fetch).
+    map.on('sourcedata', (e) => {
+      if (!e.tile || e.sourceDataType === 'metadata' || !e.sourceId) return;
+      const src = map.getSource(e.sourceId) as { type?: string } | undefined;
+      if (src?.type === 'vector') addTileEstimate(1);
     });
 
     mapRef.current = map;
