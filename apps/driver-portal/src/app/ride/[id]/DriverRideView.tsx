@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/Logo';
-import { ArrowRightIcon, CheckIcon, CompassIcon, CrosshairIcon, PinIcon, WhatsAppIcon, MessageIcon } from '@/components/Icon';
+import { ArrowRightIcon, CheckIcon, CompassIcon, CrosshairIcon, LuggageIcon, PinIcon, WhatsAppIcon, MessageIcon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { Map } from '@/components/Map';
 import { NavBanner } from '@/components/NavBanner';
@@ -20,6 +20,7 @@ import { speak } from '@/lib/tts';
 import { isAccurateEnough, SmoothingBuffer } from '@/lib/geo-precision';
 import { useWakeLock } from '@/lib/useWakeLock';
 import { useBackgroundTracking } from '@/lib/backgroundTracking';
+import { useRideLuggage } from '@/lib/useRideLuggage';
 import { titleCaseName } from '@/lib/name';
 import { SUPPORT_PHONE, SUPPORT_PHONE_DISPLAY } from '@/lib/support';
 import { markArrivedAction, startRideAction, type ActionResult } from './actions';
@@ -114,6 +115,8 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
   const [driverPos, setDriverPos] = useState<[number, number] | null>(null);
   const [clientLive, setClientLive] = useState<[number, number] | null>(null);
   const trackChannelRef = useRef<ReturnType<typeof supabaseBrowser.channel> | null>(null);
+  // Bagages signalés par le client.
+  const hasLuggage = useRideLuggage(useMemo(() => [ride.id], [ride.id])).has(ride.id);
   const [mapStops, setMapStops] = useState<{ lat: number; lng: number; status: string; address?: string }[]>([]);
   const [nextManeuver, setNextManeuver] = useState<NavStep | null>(null);
   const spokenRef = useRef('');
@@ -1058,6 +1061,12 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
                 {ride.booked_by_name && (
                   <p className="truncate text-[10px] text-neutral-500">
                     Commandé par {titleCaseName(ride.booked_by_name)}
+                  </p>
+                )}
+                {hasLuggage && (
+                  <p className="mt-xs inline-flex items-center gap-xs rounded-full bg-primary-500/10 px-sm py-0.5 text-[10px] font-bold text-primary-700">
+                    <LuggageIcon className="h-3 w-3" />
+                    Bagages à bord
                   </p>
                 )}
               </div>

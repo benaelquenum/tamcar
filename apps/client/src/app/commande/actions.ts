@@ -25,6 +25,8 @@ export type CreateRideInput = {
   target_driver_id?: string | null;
   /** Arrêts demandés dès la commande, dans l'ordre. */
   stops?: Array<{ address: string; lat: number; lng: number }>;
+  /** Le client voyage avec des bagages (visible du chauffeur, sans supplément). */
+  has_luggage?: boolean;
 };
 
 export type CreateRideResult = { error: string };
@@ -91,6 +93,11 @@ export async function createRideAction(
   }
 
   const ride = data as { id: string; status: string };
+  // Bagages : posés juste après la création. Sans effet (et sans erreur) tant que la
+  // migration n'est pas passée.
+  if (input.has_luggage) {
+    await supabase.rpc('set_ride_luggage', { p_ride_id: ride.id, p_has_luggage: true });
+  }
   // Une réservation enchaîne directement sur la recherche de chauffeur —
   // même parcours qu'une course immédiate, l'écran suit la recherche en
   // direct et propose les options si personne ne prend au bout d'une minute.

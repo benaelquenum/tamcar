@@ -13,6 +13,7 @@ import {
   RouteIcon,
   TargetIcon,
   UserIcon,
+  LuggageIcon,
 } from '@/components/Icon';
 import { Map } from '@/components/Map';
 import { MessagesFab } from '@/components/MessagesFab';
@@ -21,6 +22,7 @@ import { freshChannel } from '@/lib/realtime';
 import { setDriverOnline } from '@/lib/driverPresence';
 import { writeDriverLocation } from '@/lib/positionUplink';
 import { useVisibleInterval } from '@/lib/useVisibleInterval';
+import { useRideLuggage } from '@/lib/useRideLuggage';
 import { DataUsageChip } from '@/components/DataMeter';
 import { RentalBanner } from '@/components/RentalBanner';
 import { useWakeLock } from '@/lib/useWakeLock';
@@ -195,6 +197,9 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
       }));
     return [...pending, ...booked];
   }, [pending, scheduledPending]);
+
+  // Bagages signalés par le client : badge sur la carte, visible avant d'accepter.
+  const luggageIds = useRideLuggage(useMemo(() => feed.map((r) => r.id), [feed]));
 
   // Garde l'écran allumé tant que le chauffeur est en ligne (géoloc active).
   useWakeLock(isOnline);
@@ -937,6 +942,7 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
                       <RideCard
                         key={r.id}
                         ride={r}
+                        hasLuggage={luggageIds.has(r.id)}
                         onAccept={() => handleAccept(r.id)}
                         accepting={
                           (acceptingId === r.id && accepting) || acceptingSchedId === r.id
@@ -1045,11 +1051,13 @@ function catLabel(cat: string): string {
 
 function RideCard({
   ride,
+  hasLuggage = false,
   onAccept,
   accepting,
   disabled,
 }: {
   ride: FeedRide;
+  hasLuggage?: boolean;
   onAccept: () => void;
   accepting: boolean;
   disabled: boolean;
@@ -1078,6 +1086,14 @@ function RideCard({
           <span className="text-xs font-extrabold text-white">
             {fmtSched(ride.scheduled_at!)}
           </span>
+        </div>
+      )}
+      {hasLuggage && (
+        <div className={`mb-sm mr-xs inline-flex items-center gap-xs rounded-full px-md py-xs text-[10px] font-bold ${
+          isBooking ? 'bg-white/20 text-white' : 'bg-primary-500/10 text-primary-700'
+        }`}>
+          <LuggageIcon className="h-3 w-3" />
+          Bagages{ride.requested_category === 'moto' || ride.requested_category === 'tricycle' ? ' — vérifiez que ça passe' : ''}
         </div>
       )}
       {isBelow && (

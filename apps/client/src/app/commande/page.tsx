@@ -4,11 +4,11 @@ import { useEffect, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { AddressAutocomplete, type SelectedAddress } from '@/components/AddressAutocomplete';
-import { ArrowRightIcon, CarIcon, PlusIcon, StarIcon } from '@/components/Icon';
+import { ArrowRightIcon, CarIcon, PlusIcon, StarIcon, LuggageIcon } from '@/components/Icon';
 import { Map } from '@/components/Map';
 import { useLivePosition } from '@/lib/useLivePosition';
 import { SuggestPlaceModal } from '@/components/SuggestPlaceModal';
-import { getRouteThrough, reverseGeocode, type RouteResult } from '@/lib/mapbox';
+import { getRouteThrough, reverseGeocode, type RouteResult, BENIN_POPULAR_PLACES } from '@/lib/mapbox';
 import { MAX_STOPS } from '@/lib/route-change';
 import { googlePlacesConfigured, googleReverseGeocode } from '@/lib/google-places';
 import { computePrice, type PriceQuote, type VehicleCategory } from '@/lib/pricing';
@@ -101,6 +101,29 @@ function minScheduledLocal(): string {
  * 3 n'existent que si le trajet est calculé — recharger la page ramène à
  * l'écran 1, où l'état (lui, en mémoire) a de toute façon disparu.
  */
+// Points où l'on voyage presque toujours avec des valises : aéroport et gare routière.
+const LUGGAGE_HUB_IDS = ['cotonou-airport', 'cotonou-jonquet'];
+
+function metersBetweenPoints(a: [number, number], b: [number, number]): number {
+  const R = 6371000;
+  const toRad = Math.PI / 180;
+  const dLat = (b[1] - a[1]) * toRad;
+  const dLng = (b[0] - a[0]) * toRad;
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(a[1] * toRad) * Math.cos(b[1] * toRad) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+/** Départ depuis l'aéroport ou une gare : l'adresse le dit, ou le point est à moins de 1,5 km du lieu connu. */
+function isLuggageHub(pickup: { place_name: string; center: [number, number] } | null): boolean {
+  if (!pickup) return false;
+  if (/a[ée]roport|airport|\bgare\b/i.test(pickup.place_name)) return true;
+  return BENIN_POPULAR_PLACES.some(
+    (p) => LUGGAGE_HUB_IDS.includes(p.id) && metersBetweenPoints(pickup.center, p.center) <= 1500,
+  );
+}
+
 export default function CommandePage() {
   const t = useT();
   const searchParams = useSearchParams();
@@ -166,6 +189,8 @@ export default function CommandePage() {
   // Course pour un proche : le passager n'est pas le titulaire du compte
   // (?proche=1 depuis l'accueil pré-sélectionne le mode proche)
   const [forWhom, setForWhom] = useState<'me' | 'other'>(isProche ? 'other' : 'me');
+  // Bagages : facultatif, sans supplément ; mis en avant sur le corridor et aux départs aéroport / gare.
+  const [hasLuggage, setHasLuggage] = useState(false);
   const [passengerName, setPassengerName] = useState('');
   const [passengerPhone, setPassengerPhone] = useState('');
 
@@ -311,6 +336,7 @@ export default function CommandePage() {
           passenger_name: forWhom === 'other' ? passengerName.trim() : null,
           passenger_phone: forWhom === 'other' ? passengerPhone.replace(/[^0-9+]/g, '') : null,
           target_driver_id: directDriver?.driver_id ?? null,
+          has_luggage: hasLuggage,
           stops: filledStops.map((x) => ({
             address: x.place_name,
             lat: x.center[1],
@@ -980,6 +1006,71 @@ export default function CommandePage() {
             )
           )}
         </section>
+
+        {/* Bagages : facultatif, sans supplément. Mis en avant sur le corridor et aux départs aéroport / gare. */}
+        {(() => {
+          const prominent = Boolean(selectedPrice?.is_corridor) || isLuggageHub(pickup);
+          const small = selectedCat === 'moto' || selectedCat === 'tricycle';
+          const smallLabel = selectedCat === 'moto' ? 'Moto' : 'Tricycle';
+          return (
+            <section className={prominent ? 'rounded-2xl bg-primary-50/70 p-md ring-1 ring-primary-100' : ''}>
+              {prominent ? (
+                <>
+                  <p className="flex items-center gap-xs text-sm font-bold text-neutral-900">
+                    <LuggageIcon className="h-4 w-4 text-primary-600" />
+                    Voyagez-vous avec des bagages ?
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-neutral-600">
+                    Le chauffeur le voit avant d&apos;accepter, pour préparer le coffre. Sans supplément.
+                  </p>
+                  <div className="mt-sm grid grid-cols-2 gap-sm">
+                    <button
+                      type="button"
+                      onClick={() => setHasLuggage(false)}
+                      className={`rounded-xl border-2 px-md py-sm text-sm font-bold transition ${
+                        !hasLuggage ? 'border-primary-500 bg-white text-primary-700' : 'border-neutral-200 bg-white text-neutral-700 hover:border-primary-300'
+                      }`}
+                    >
+                      Non
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setHasLuggage(true)}
+                      className={`rounded-xl border-2 px-md py-sm text-sm font-bold transition ${
+                        hasLuggage ? 'border-primary-500 bg-white text-primary-700' : 'border-neutral-200 bg-white text-neutral-700 hover:border-primary-300'
+                      }`}
+                    >
+                      Oui, des valises
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <label className="flex cursor-pointer items-center gap-sm rounded-xl border border-neutral-200 bg-white p-md">
+                  <input
+                    type="checkbox"
+                    checked={hasLuggage}
+                    onChange={(e) => setHasLuggage(e.target.checked)}
+                    className="h-4 w-4 rounded border-neutral-300"
+                  />
+                  <span className="flex-1 text-sm font-semibold text-neutral-900">
+                    J&apos;ai des bagages <span className="font-normal text-neutral-500">(valises, gros sacs)</span>
+                  </span>
+                  <LuggageIcon className="h-4 w-4 text-neutral-400" />
+                </label>
+              )}
+              {small && (
+                <p
+                  className={`mt-sm rounded-lg px-md py-sm text-[11px] font-semibold ${
+                    hasLuggage ? 'bg-warning/15 text-warning' : 'bg-neutral-100 text-neutral-600'
+                  }`}
+                >
+                  {smallLabel} : bagages limités ({selectedCat === 'moto' ? 'un petit sac' : 'quelques sacs'}).{' '}
+                  Pour des valises, choisissez Essentiel ou Confort.
+                </p>
+              )}
+            </section>
+          );
+        })()}
 
         {/* Pour qui */}
         <section>
