@@ -4,12 +4,15 @@ import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/Logo';
-import { ArrowRightIcon, CheckIcon, PinIcon, WhatsAppIcon, MessageIcon } from '@/components/Icon';
+import { ArrowRightIcon, CheckIcon, CompassIcon, CrosshairIcon, PinIcon, WhatsAppIcon, MessageIcon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { Map } from '@/components/Map';
 import { NavBanner } from '@/components/NavBanner';
 import { RatingModal } from '@/components/RatingModal';
 import { getNavRoute, type NavStep } from '@/lib/mapbox';
+import { buildNavState, haversine, needsRefetch, progressAlong, type LngLat, type NavState } from '@/lib/navRoute';
+import { HeadingFilter, angleDiff } from '@/lib/navCamera';
+import { broadcastDriverPos, writeDriverLocation } from '@/lib/positionUplink';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { freshChannel } from '@/lib/realtime';
 import { RideTalkie } from '@/components/RideTalkie';
@@ -146,6 +149,120 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
     return [ride.pickup_lng, ride.pickup_lat];
   }, [ride.status, nextStop, ride.pickup_lat, ride.pickup_lng, ride.dropoff_lat, ride.dropoff_lng]);
 
+  // ---------------------------------------------------------------------------
+  // Navigation « cap en haut », comme Yango : la carte pivote pour garder le sens
+  // de marche vers le haut de l'écran, le tracé s'étend devant le véhicule, au
+  // départ comme à l'arrivée. L'itinéraire est demandé UNE fois puis suivi en
+  // local (lib/navRoute) : bien moins de data qu'un recalcul toutes les 15 s.
+  // ---------------------------------------------------------------------------
+  const navRef = useRef<NavState | null>(null);
+  const headingRef = useRef(new HeadingFilter());
+  const driverPosRef = useRef<[number, number] | null>(null);
+  const fetchingRef = useRef(false);
+  const lastGeoRef = useRef(0);
+  const targetRef = useRef(target);
+  targetRef.current = target;
+  const rideActiveRef = useRef(false);
+  rideActiveRef.current = ['matched', 'arrived', 'in_progress'].includes(ride.status);
+  const [navHeading, setNavHeading] = useState<number | null>(null);
+  const [navMode, setNavMode] = useState<'heading-up' | 'north-up'>('heading-up');
+  const [navPaused, setNavPaused] = useState(false);
+  const compassRef = useRef<HTMLSpanElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const [sheetH, setSheetH] = useState(0);
+
+  /** Applique une position au tracé suivi : distance, durée, manœuvre, tracé restant, cap. */
+  const onPosition = useCallback(
+    (pos: LngLat, speedMps: number | null, gpsHeading: number | null, withHeading = true) => {
+      const st = navRef.current;
+      let routeBrg: number | null = null;
+      if (st) {
+        const pr = progressAlong(st, pos);
+        if (pr.offM < 30) routeBrg = pr.bearingAhead;
+        const now = Date.now();
+        if (now - lastGeoRef.current > 2_500 || pr.remainingM < 60) {
+          lastGeoRef.current = now;
+          setRouteGeo(pr.geometry);
+        }
+        setDistanceToTarget(Math.round(pr.remainingM));
+        setDurationToTarget(pr.remainingMin);
+        setNextManeuver((prev) =>
+          prev &&
+          pr.nextStep &&
+          prev.instruction === pr.nextStep.instruction &&
+          prev.location[0] === pr.nextStep.location[0] &&
+          prev.location[1] === pr.nextStep.location[1]
+            ? prev
+            : pr.nextStep,
+        );
+      }
+      if (!withHeading) return;
+      const h = headingRef.current.update({ pos, speedMps, heading: gpsHeading, t: Date.now() }, routeBrg);
+      if (h != null) setNavHeading((prev) => (prev != null && Math.abs(angleDiff(prev, h)) < 0.5 ? prev : h));
+    },
+    [],
+  );
+
+  /** Redemande le tracé seulement si nécessaire (première fois, cible changée, hors route, trop vieux). */
+  const ensureRoute = useCallback(
+    async (pos: LngLat) => {
+      if (fetchingRef.current || !rideActiveRef.current) return;
+      const tgt = targetRef.current;
+      const st = navRef.current;
+      const degenerate = st != null && st.total < 30 && haversine(pos, tgt) > 100;
+      if (st && !degenerate && !needsRefetch(st, progressAlong(st, pos), tgt, Date.now())) return;
+      fetchingRef.current = true;
+      try {
+        const r = await getNavRoute(pos, tgt);
+        if (r) {
+          navRef.current = buildNavState(r, tgt, Date.now());
+          lastGeoRef.current = 0;
+          onPosition(pos, null, null, false);
+        } else if (!st) {
+          // eslint-disable-next-line no-console
+          console.error('[getNavRoute] aucun itinéraire — jeton Mapbox absent ou API en échec');
+        }
+      } finally {
+        fetchingRef.current = false;
+      }
+    },
+    [onPosition],
+  );
+
+  /** Point d'entrée de chaque nouvelle position (GPS web, fix périodique, GPS natif). */
+  const feedPosition = useCallback(
+    (pos: LngLat, speedMps: number | null, gpsHeading: number | null) => {
+      driverPosRef.current = pos;
+      if (!rideActiveRef.current) return;
+      onPosition(pos, speedMps, gpsHeading);
+      void ensureRoute(pos);
+    },
+    [onPosition, ensureRoute],
+  );
+
+  // Cible changée (départ → destination, prochain arrêt) ou course acceptée : tracé immédiat.
+  useEffect(() => {
+    void ensureRoute(driverPosRef.current ?? [ride.pickup_lng, ride.pickup_lat]);
+  }, [target, ride.status, ensureRoute, ride.pickup_lng, ride.pickup_lat]);
+
+  // Le chauffeur a déplacé la carte : le suivi reprend seul après 10 s.
+  useEffect(() => {
+    if (!navPaused) return;
+    const t = setTimeout(() => setNavPaused(false), 10_000);
+    return () => clearTimeout(t);
+  }, [navPaused]);
+
+  // Hauteur du panneau du bas : le véhicule se place dans la zone de carte restée visible.
+  useEffect(() => {
+    const el = sheetRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const measure = () => setSheetH(Math.round(el.getBoundingClientRect().height));
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   // Garde l'écran allumé pendant la course active → la géoloc ne se coupe pas.
   useWakeLock(['matched', 'arrived', 'in_progress'].includes(ride.status));
 
@@ -155,8 +272,9 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
     ['matched', 'arrived', 'in_progress'].includes(ride.status),
     (lng, lat) => {
       setDriverPos([lng, lat]);
-      supabaseBrowser.rpc('driver_update_location', { current_lng: lng, current_lat: lat });
-      trackChannelRef.current?.send({ type: 'broadcast', event: 'driver-pos', payload: { lng, lat } });
+      writeDriverLocation(lng, lat, 'ride');
+      broadcastDriverPos(trackChannelRef.current, lng, lat);
+      feedPosition([lng, lat], null, null);
     },
   );
 
@@ -272,7 +390,9 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
     return fix?.precise ? fix.coords : null;
   }, [getMyFix]);
 
-  // Heartbeat position + recalcul route toutes les 15s
+  // Heartbeat toutes les 15 s : fix précis, écriture en base et diffusion (cadence
+  // limitée dans lib/positionUplink). L'itinéraire n'est PAS redemandé ici : il
+  // est suivi en local, voir feedPosition / ensureRoute.
   useEffect(() => {
     let cancelled = false;
 
@@ -286,31 +406,14 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
         // On n'écrit et on ne diffuse QUE les fixes précis : la base sert au
         // matching et au contrôle d'arrivée.
         if (fix.precise) {
-          supabaseBrowser.rpc('driver_update_location', {
-            current_lng: fix.coords[0],
-            current_lat: fix.coords[1],
-          });
-          trackChannelRef.current?.send({
-            type: 'broadcast',
-            event: 'driver-pos',
-            payload: { lng: fix.coords[0], lat: fix.coords[1] },
-          });
+          writeDriverLocation(fix.coords[0], fix.coords[1], 'ride');
+          broadcastDriverPos(trackChannelRef.current, fix.coords[0], fix.coords[1]);
         }
-      }
-
-      // L'itinéraire part de la position quand on l'a, sinon du point de
-      // départ de la course : le chauffeur doit voir le trajet dès qu'il
-      // accepte, sans attendre un premier fix GPS.
-      const origin = fix?.coords ?? [ride.pickup_lng, ride.pickup_lat] as [number, number];
-      const r = await getNavRoute(origin, target);
-      if (r && !cancelled) {
-        setRouteGeo(r.geometry);
-        setDistanceToTarget(r.distance_km * 1000);
-        setDurationToTarget(r.duration_min);
-        setNextManeuver(r.steps.find((s) => s.type !== 'depart') ?? null);
-      } else if (!r && !cancelled) {
-        // eslint-disable-next-line no-console
-        console.error('[getNavRoute] aucun itinéraire — jeton Mapbox absent ou API en échec');
+        feedPosition(fix.coords, null, null);
+      } else {
+        // Sans position, le tracé part du point de départ de la course : le
+        // chauffeur le voit dès qu'il accepte, sans attendre un premier fix.
+        void ensureRoute(driverPosRef.current ?? [ride.pickup_lng, ride.pickup_lat]);
       }
     }
 
@@ -320,7 +423,7 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
       cancelled = true;
       clearInterval(interval);
     };
-  }, [target, getMyFix, ride.pickup_lng, ride.pickup_lat]);
+  }, [getMyFix, feedPosition, ensureRoute, ride.pickup_lng, ride.pickup_lat]);
 
   // Canal temps réel réciproque : diffuse la position du chauffeur et reçoit
   // celle du client → le chauffeur le voit bouger. Éphémère (broadcast).
@@ -348,14 +451,17 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
         const c: [number, number] = [pos.coords.longitude, pos.coords.latitude];
         setDriverPos(c);
         const sp = pos.coords.speed;
-        setSpeedKmh(sp != null && Number.isFinite(sp) && sp >= 0 ? sp * 3.6 : null);
-        trackChannelRef.current?.send({ type: 'broadcast', event: 'driver-pos', payload: { lng: c[0], lat: c[1] } });
+        const speedOk = sp != null && Number.isFinite(sp) && sp >= 0;
+        setSpeedKmh(speedOk ? sp * 3.6 : null);
+        broadcastDriverPos(trackChannelRef.current, c[0], c[1]);
+        const hd = pos.coords.heading;
+        feedPosition(c, speedOk ? sp : null, hd != null && Number.isFinite(hd) ? hd : null);
       },
       () => undefined,
       { enableHighAccuracy: true, maximumAge: 2000, timeout: 15000 },
     );
     return () => navigator.geolocation.clearWatch(id);
-  }, [ride.status]);
+  }, [ride.status, feedPosition]);
 
   // Alerte excès de vitesse : > 54 km/h (50 + tolérance GPS) → double bip
   // grave + vibration + « Ralentissez » (voix), au plus toutes les 10 s.
@@ -706,9 +812,45 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
           route={routeGeo}
           autoFit={false}
           follow={['matched', 'arrived', 'in_progress'].includes(ride.status) ? driverPos : null}
+          navHeading={navHeading}
+          navSpeedKmh={speedKmh}
+          navMode={navMode}
+          navInsets={{ top: nextManeuver ? 140 : 76, bottom: sheetH }}
+          followPaused={navPaused}
+          onUserMove={() => setNavPaused(true)}
+          onBearingChange={(b) => {
+            if (compassRef.current) compassRef.current.style.transform = `rotate(${-b}deg)`;
+          }}
           className="h-full w-full"
         />
       </div>
+
+      {/* Boussole (bascule cap en haut / nord en haut) et recentrage */}
+      {['matched', 'arrived', 'in_progress'].includes(ride.status) && driverPos && (
+        <div className="absolute right-3 top-[128px] z-20 flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={() => setNavMode((m) => (m === 'heading-up' ? 'north-up' : 'heading-up'))}
+            className="grid h-11 w-11 place-items-center rounded-full bg-white text-primary-700 shadow-lg ring-1 ring-neutral-200"
+            aria-label={navMode === 'heading-up' ? 'Carte avec le nord en haut' : 'Carte tournée dans le sens de marche'}
+            title={navMode === 'heading-up' ? 'Nord en haut' : 'Sens de marche en haut'}
+          >
+            <span ref={compassRef} className="grid place-items-center" style={{ transition: 'transform 0.2s linear' }}>
+              <CompassIcon className="h-6 w-6" />
+            </span>
+          </button>
+          {navPaused && (
+            <button
+              type="button"
+              onClick={() => setNavPaused(false)}
+              className="grid h-11 w-11 place-items-center rounded-full bg-primary-600 text-white shadow-lg"
+              aria-label="Recentrer la carte sur ma position"
+            >
+              <CrosshairIcon className="h-6 w-6" />
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Header */}
       <header className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center justify-between p-lg">
@@ -784,7 +926,7 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
       )}
 
       {/* Bottom sheet */}
-      <div className="absolute inset-x-0 bottom-0 z-10">
+      <div ref={sheetRef} className="absolute inset-x-0 bottom-0 z-10">
         <div className="mx-auto max-w-md rounded-t-2xl bg-white shadow-2xl ring-1 ring-neutral-200">
           <div className="p-lg">
             {/* Cas course annulée / expirée : bandeau + bouton retour, on masque les gains */}
