@@ -24,19 +24,21 @@ async function build(): Promise<Body> {
   const cfId = process.env.CLOUDFLARE_TURN_KEY_ID;
   const cfToken = process.env.CLOUDFLARE_TURN_API_TOKEN;
   if (cfId && cfToken) {
-    try {
-      const r = await fetch(`https://rtc.live.cloudflare.com/v1/turn/keys/${cfId}/credentials/generate`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${cfToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ttl: 86_400 }),
-      });
-      if (r.ok) {
+    // Deux points d'accès existent : le récent (generate-ice-servers) puis l'ancien (generate).
+    for (const path of ['generate-ice-servers', 'generate']) {
+      try {
+        const r = await fetch(`https://rtc.live.cloudflare.com/v1/turn/keys/${cfId}/credentials/${path}`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${cfToken}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ttl: 86_400 }),
+        });
+        if (!r.ok) continue;
         const j = (await r.json()) as { iceServers?: unknown };
         const list = Array.isArray(j.iceServers) ? j.iceServers : j.iceServers ? [j.iceServers] : [];
         if (list.length) return { iceServers: [STUN, ...list], configured: true, source: 'cloudflare' };
+      } catch {
+        /* on essaie le point d'accès suivant, puis la source suivante */
       }
-    } catch {
-      /* on essaie la source suivante */
     }
   }
 
