@@ -21,6 +21,7 @@ const PUBLIC_PREFIXES = [
   '/cgu', // documents légaux consultables sans compte
   '/confidentialite',
   '/suivi', // lien public de suivi de course (token, sans compte)
+  '/api/cron', // tâches planifiées (pg_cron) : sans session, protégées par la clé de service dans la route
 ];
 
 export async function middleware(request: NextRequest) {

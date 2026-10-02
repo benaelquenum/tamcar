@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { createServerSupabase } from '@/lib/supabase-server';
 import { AlertTriangleIcon, TargetIcon2 } from '@/components/Icon';
 import { suspendDriver, unsuspendDriver, archiveDriver } from './actions';
@@ -113,7 +114,9 @@ export default async function AdminDriversPage() {
                 {watchList.map((d) => (
                   <tr key={d.driver_id} className="border-b border-neutral-100 last:border-0">
                     <td className="px-md py-md">
-                      <p className="font-semibold text-neutral-900">{d.full_name}</p>
+                      <Link href={`/admin/drivers/${d.driver_id}`} className="font-semibold text-neutral-900 hover:text-primary-700 hover:underline">
+                        {d.full_name}
+                      </Link>
                       <p className="text-[10px] text-neutral-500">{d.phone}</p>
                     </td>
                     <td className="px-md py-md text-right" style={{ fontVariantNumeric: 'tabular-nums' }}>
@@ -174,8 +177,13 @@ export default async function AdminDriversPage() {
                 {active.map((d) => (
                   <tr key={d.driver_id} className="border-b border-neutral-100 last:border-0">
                     <td className="px-md py-md">
-                      <p className="font-semibold text-neutral-900">{d.full_name}</p>
+                      <Link href={`/admin/drivers/${d.driver_id}`} className="font-semibold text-neutral-900 hover:text-primary-700 hover:underline">
+                        {d.full_name}
+                      </Link>
                       <p className="text-[10px] text-neutral-500">{d.phone}</p>
+                      <Link href={`/admin/drivers/${d.driver_id}`} className="mt-0.5 inline-block text-[10px] font-bold text-primary-700 hover:underline">
+                        Historique complet →
+                      </Link>
                       {d.license_number && (
                         <p className="text-[10px] text-neutral-400">Permis {d.license_number}</p>
                       )}
@@ -275,7 +283,9 @@ export default async function AdminDriversPage() {
           <ul className="space-y-xs">
             {archived.map((d) => (
               <li key={d.driver_id} className="rounded-lg bg-white p-md text-sm ring-1 ring-neutral-200">
-                <p className="font-semibold text-neutral-700">{d.full_name}</p>
+                <Link href={`/admin/drivers/${d.driver_id}`} className="font-semibold text-neutral-700 hover:text-primary-700 hover:underline">
+                  {d.full_name}
+                </Link>
                 <p className="text-[11px] text-neutral-500">
                   Archivé le {d.archived_at && new Date(d.archived_at).toLocaleDateString('fr-FR')}
                   {d.archive_reason && ` · ${d.archive_reason}`}

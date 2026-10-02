@@ -21,6 +21,7 @@ const NAV: { href: string; label: string; exact?: boolean }[] = [
   { href: '/admin/promos', label: 'Promos' },
   { href: '/admin/banners', label: 'Bannières' },
   { href: '/admin/places', label: 'Lieux' },
+  { href: '/admin/sauvegardes', label: 'Sauvegardes' },
 ];
 
 export function AdminSidebar({ fullName }: { fullName: string }) {
