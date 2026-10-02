@@ -402,13 +402,18 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
     // Distance à vol d'oiseau (haversine) — même seuil que le RPC (500 m)
     const distanceM = haversineMeters([lng, lat], [ride.dropoff_lng, ride.dropoff_lat]);
     if (distanceM > 500) {
-      // Prix estimé au prorata (même formule que le RPC : ratio × total, plancher 30% ou 700 F)
+      // Prix estimé au prorata — même formule que le RPC : ratio × total, plancher = max(minimum
+      // de course de la catégorie, 30 % du prix), arrondi au 50 F, PLAFONNÉ au prix initial
+      // (une course écourtée ne coûte jamais plus cher que la course complète).
+      const MIN_COURSE: Record<string, number> = { moto: 200, tricycle: 350, essentiel: 500, confort: 700, premium: 950 };
+      const ceil50 = (n: number) => Math.ceil(n / 50) * 50;
+      const total = ride.price_total_fcfa;
       const originalKm = ride.distance_km ?? 0;
       const travelledKm = Math.max(0, originalKm - distanceM / 1000);
       const ratio = originalKm > 0 ? travelledKm / originalKm : 0;
-      const proratedPrice = Math.floor(ride.price_total_fcfa * ratio);
-      const floorPrice = Math.max(700, Math.floor(ride.price_total_fcfa * 0.3));
-      const estimatedPrice = Math.max(floorPrice, proratedPrice);
+      const minCourse = MIN_COURSE[ride.requested_category ?? 'essentiel'] ?? 500;
+      const floorPrice = ceil50(Math.max(minCourse, Math.floor(total * 0.3)));
+      const estimatedPrice = Math.min(total, ceil50(Math.max(floorPrice, Math.floor(total * ratio))));
       setCompleteConfirm({
         distanceM: Math.round(distanceM),
         estimatedPrice,
@@ -1285,6 +1290,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                   myUserId={ride.client_id}
                   active={['matched', 'arrived', 'in_progress'].includes(ride.status)}
                   otherName={titleCaseName(firstNameOf(ride.driver_full_name)) || 'Chauffeur'}
+                  otherAvatarUrl={ride.driver_avatar_url}
                 />
                 {ride.driver_phone && (
                   <a

@@ -6,6 +6,7 @@ import { freshChannel } from '@/lib/realtime';
 import { callsSupported, loadIceServers } from '@/lib/rtc';
 import { startRingback } from '@/lib/callSounds';
 import { PhoneIcon } from './Icon';
+import { Avatar } from './Avatar';
 
 // ============================================================
 // Salon d'appel audio (WebRTC pair-à-pair, signalisation par Realtime Broadcast).
@@ -34,6 +35,8 @@ type Props = {
   callId: string;
   role: 'caller' | 'callee';
   otherName: string;
+  /** Photo de profil de l'interlocuteur (initiales si absente). */
+  otherAvatarUrl?: string | null;
   onClose: (end: CallEnd) => void;
 };
 
@@ -44,11 +47,6 @@ const MAX_ICE_RESTARTS = 2;
 function fmtDuration(s: number): string {
   const m = Math.floor(s / 60);
   return `${m}:${(s % 60).toString().padStart(2, '0')}`;
-}
-
-function initials(name: string): string {
-  const p = name.trim().split(/\s+/);
-  return ((p[0]?.[0] ?? '') + (p[1]?.[0] ?? '')).toUpperCase() || 'TC';
 }
 
 const MicIcon = ({ className }: { className?: string }) => (
@@ -68,7 +66,7 @@ const MicOffIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-export function CallRoom({ callId, role, otherName, onClose }: Props) {
+export function CallRoom({ callId, role, otherName, otherAvatarUrl, onClose }: Props) {
   const [phase, setPhase] = useState<Phase>(role === 'caller' ? 'ringing' : 'connecting');
   const [muted, setMuted] = useState(false);
   const [seconds, setSeconds] = useState(0);
@@ -404,9 +402,7 @@ export function CallRoom({ callId, role, otherName, onClose }: Props) {
               <span className="absolute -inset-3 animate-pulse rounded-full bg-white/10" />
             </>
           )}
-          <div className="relative grid h-32 w-32 place-items-center rounded-full bg-white/15 text-4xl font-extrabold ring-4 ring-white/25 backdrop-blur">
-            {initials(otherName)}
-          </div>
+          <Avatar src={otherAvatarUrl} name={otherName} size={128} className="relative" />
         </div>
         <div className="text-center">
           <p className="text-2xl font-extrabold">{otherName}</p>

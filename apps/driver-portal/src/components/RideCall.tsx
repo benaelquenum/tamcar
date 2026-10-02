@@ -7,6 +7,7 @@ import { callsSupported } from '@/lib/rtc';
 import { startRingtone } from '@/lib/callSounds';
 import { CallRoom, type CallEnd } from './CallRoom';
 import { PhoneIcon } from './Icon';
+import { Avatar } from './Avatar';
 
 // Appel audio entre le client et le chauffeur d'une course active, sans échange
 // de numéro. Rend le bouton « Appel TamCar » (à placer dans la rangée des
@@ -20,6 +21,8 @@ type Props = {
   /** Course active (acceptée, arrivée ou en cours) : seul cas où l'on peut appeler. */
   active: boolean;
   otherName: string;
+  /** Photo de profil de l'interlocuteur : affichée pendant la sonnerie et l'appel. */
+  otherAvatarUrl?: string | null;
   buttonClassName?: string;
   /** Appelé à la fin de chaque appel, avec sa durée en secondes (comptage de la data). */
   onCallEnded?: (seconds: number) => void;
@@ -31,12 +34,7 @@ function fmt(s: number): string {
   return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 }
 
-function initials(name: string): string {
-  const p = name.trim().split(/\s+/);
-  return ((p[0]?.[0] ?? '') + (p[1]?.[0] ?? '')).toUpperCase() || 'TC';
-}
-
-export function RideCall({ rideId, myUserId, active, otherName, buttonClassName, onCallEnded }: Props) {
+export function RideCall({ rideId, myUserId, active, otherName, otherAvatarUrl, buttonClassName, onCallEnded }: Props) {
   const [call, setCall] = useState<{ callId: string; role: 'caller' | 'callee' } | null>(null);
   const [incoming, setIncoming] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
@@ -178,9 +176,7 @@ export function RideCall({ rideId, myUserId, active, otherName, buttonClassName,
           <div className="flex flex-col items-center gap-lg">
             <div className="relative">
               <span className="absolute inset-0 animate-ping rounded-full bg-white/20" />
-              <div className="relative grid h-32 w-32 place-items-center rounded-full bg-white/15 text-4xl font-extrabold ring-4 ring-white/25 backdrop-blur">
-                {initials(otherName)}
-              </div>
+              <Avatar src={otherAvatarUrl} name={otherName} size={128} className="relative" />
             </div>
             <div className="text-center">
               <p className="text-2xl font-extrabold">{otherName}</p>
@@ -204,7 +200,7 @@ export function RideCall({ rideId, myUserId, active, otherName, buttonClassName,
         </div>
       )}
 
-      {call && <CallRoom callId={call.callId} role={call.role} otherName={otherName} onClose={handleEnd} />}
+      {call && <CallRoom callId={call.callId} role={call.role} otherName={otherName} otherAvatarUrl={otherAvatarUrl} onClose={handleEnd} />}
 
       {toast && (
         <div className="pointer-events-none fixed inset-x-0 bottom-28 z-[80] flex justify-center px-lg">

@@ -1083,6 +1083,7 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
                 myUserId={myUserId}
                 active={['matched', 'arrived', 'in_progress'].includes(ride.status)}
                 otherName={titleCaseName(ride.client_full_name) || 'Client'}
+                otherAvatarUrl={ride.client_avatar_url}
                 // Un appel audio compressé pèse environ 3 Ko par seconde : on l'ajoute au compteur de data.
                 onCallEnded={(seconds) => addBytes('realtime', seconds * 3_000)}
               />
