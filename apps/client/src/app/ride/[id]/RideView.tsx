@@ -7,6 +7,7 @@ import { Logo } from '@/components/Logo';
 import { CarIcon, CheckIcon, PinIcon, StarIcon, AlertTriangleIcon, WhatsAppIcon, MessageIcon, ShareIcon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { RideTalkie } from '@/components/RideTalkie';
+import { RideCall } from '@/components/RideCall';
 import { Map } from '@/components/Map';
 import { RatingModal } from '@/components/RatingModal';
 import { getRoute, getRouteThrough } from '@/lib/mapbox';
@@ -1279,6 +1280,12 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                     </span>
                   )}
                 </button>
+                <RideCall
+                  rideId={ride.id}
+                  myUserId={ride.client_id}
+                  active={['matched', 'arrived', 'in_progress'].includes(ride.status)}
+                  otherName={titleCaseName(firstNameOf(ride.driver_full_name)) || 'Chauffeur'}
+                />
                 {ride.driver_phone && (
                   <a
                     href={`https://wa.me/${ride.driver_phone.replace(/^\+/, '')}?text=${encodeURIComponent('Bonjour, je suis votre client TamCar.')}`}

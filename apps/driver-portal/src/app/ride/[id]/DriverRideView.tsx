@@ -27,6 +27,8 @@ import { StopsPanel } from './StopsPanel';
 import { ReturnChangeModal } from './ReturnChangeModal';
 import { SupportCallButton } from '@/components/SupportCallButton';
 import { RideChat } from '@/components/RideChat';
+import { RideCall } from '@/components/RideCall';
+import { addBytes } from '@/lib/dataMeter';
 import { playMessageSound } from '@/lib/message-sound';
 
 function metersBetween(a: [number, number], b: [number, number]): number {
@@ -1076,6 +1078,14 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
                   </span>
                 )}
               </button>
+              <RideCall
+                rideId={ride.id}
+                myUserId={myUserId}
+                active={['matched', 'arrived', 'in_progress'].includes(ride.status)}
+                otherName={titleCaseName(ride.client_full_name) || 'Client'}
+                // Un appel audio compressé pèse environ 3 Ko par seconde : on l'ajoute au compteur de data.
+                onCallEnded={(seconds) => addBytes('realtime', seconds * 3_000)}
+              />
               {ride.client_phone && (
                 <a
                   href={`https://wa.me/${ride.client_phone.replace(/^\+/, '')}?text=${encodeURIComponent('Bonjour, je suis votre chauffeur TamCar.')}`}
