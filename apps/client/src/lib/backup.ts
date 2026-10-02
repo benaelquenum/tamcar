@@ -1,18 +1,22 @@
 import { gzipSync } from 'node:zlib';
 import { createAdminSupabase } from '@/lib/supabase-admin';
+import { driveConfigured, drivePurgeSecours, drivePut } from '@/lib/drive';
 
 // Sauvegarde logique des données : toutes les tables du schéma public (via les fonctions
 // backup_list_tables / backup_export_table, réservées à la clé de service), un fichier JSON
 // compressé par table dans le bucket privé « backups », un manifeste, une ligne dans backup_runs.
 // S'y ajoutent les comptes de connexion (schéma auth, SANS mots de passe ni jetons : fichiers
 // auth_users / auth_identities) et une copie miroir des fichiers stockés (backups/files/<bucket>/…,
-// copiés une seule fois, hors fonds de carte). Les sauvegardes datées sont conservées 30 jours ;
-// le miroir de fichiers n'est jamais purgé.
+// copiés une seule fois, hors fonds de carte). Les sauvegardes datées sont conservées 14 jours ;
+// le miroir de fichiers n'est jamais purgé. Chaque dimanche (et à chaque sauvegarde manuelle), un
+// fichier de secours unique est aussi envoyé sur Drive (gardé 12 semaines). Les archives mensuelles
+// lisibles et la copie des fichiers sur Drive sont dans lib/driveSync.ts.
 // Déclenchée chaque jour à 05h00 (heure du Bénin) par pg_cron, ou à la main depuis l'admin.
 
 const BUCKET = 'backups';
 const BATCH = 1000;
-const RETENTION_DAYS = 30;
+const RETENTION_DAYS = 14;
+const DRIVE_SECOURS_KEEP_DAYS = 84; // 12 semaines
 // La route dispose de 60 s : on cesse de lancer des copies de fichiers passé ce délai (le reste
 // est repris à la sauvegarde suivante).
 const FILES_BUDGET_MS = 40_000;
@@ -28,6 +32,7 @@ export type BackupFiles = {
   remaining: number;
   failed_names: string[];
 };
+export type BackupDrive = { path: string; bytes: number; purged: number } | { error: string };
 export type BackupResult = {
   id: string;
   folder: string;
@@ -35,6 +40,7 @@ export type BackupResult = {
   rows: number;
   bytes: number;
   files: BackupFiles | null;
+  drive: BackupDrive | null;
 };
 
 type AdminClient = ReturnType<typeof createAdminSupabase>;
@@ -105,6 +111,9 @@ export async function runBackup(trigger: 'cron' | 'manual', startedBy: string | 
     const tables: BackupTable[] = [];
     let totalRows = 0;
     let totalBytes = 0;
+    // Envoi sur Drive : le dimanche (UTC) et à chaque sauvegarde manuelle.
+    const shipDrive = driveConfigured() && (trigger === 'manual' || startedAt.getUTCDay() === 0);
+    const bundle: Record<string, unknown[]> = {};
 
     // Lit une source par lots de BATCH lignes, la compresse et l'envoie dans le dossier du jour.
     const saveSource = async (
@@ -127,6 +136,7 @@ export async function runBackup(trigger: 'cron' | 'manual', startedBy: string | 
       tables.push({ name, rows: rows.length, bytes: gz.length });
       totalRows += rows.length;
       totalBytes += gz.length;
+      if (shipDrive) bundle[name] = rows;
     };
 
     for (const name of names) {
@@ -135,6 +145,22 @@ export async function runBackup(trigger: 'cron' | 'manual', startedBy: string | 
     // Comptes de connexion (schéma auth) : sans mots de passe hachés ni jetons.
     for (const kind of ['users', 'identities'] as const) {
       await saveSource(`auth_${kind}`, (offset) => admin.rpc('backup_export_auth', { p_kind: kind, p_offset: offset, p_limit: BATCH }));
+    }
+
+    // Fichier de secours unique sur Drive (toutes les tables). Un échec est consigné, sans faire perdre la sauvegarde.
+    let drive: BackupDrive | null = null;
+    if (shipDrive) {
+      try {
+        const payload = gzipSync(
+          Buffer.from(JSON.stringify({ created_at: startedAt.toISOString(), trigger, format: 'tamcar-secours/1', tables: bundle })),
+        );
+        const path = `Secours/${folder}.json.gz`;
+        await drivePut(path, payload, 'application/gzip');
+        const purged = await drivePurgeSecours(DRIVE_SECOURS_KEEP_DAYS).catch(() => 0);
+        drive = { path, bytes: payload.length, purged };
+      } catch (e) {
+        drive = { error: (e instanceof Error ? e.message : String(e)).slice(0, 200) };
+      }
     }
 
     // Copie miroir des fichiers stockés. Un échec ici ne doit pas faire perdre les données déjà sauvegardées :
@@ -177,13 +203,14 @@ export async function runBackup(trigger: 'cron' | 'manual', startedBy: string | 
         total_bytes: totalBytes,
         tables,
         files,
-        error: filesError ? filesError.slice(0, 500) : null,
+        drive,
+        error: [filesError, drive && 'error' in drive ? 'Envoi Drive : ' + drive.error : null].filter(Boolean).join(' · ').slice(0, 500) || null,
       })
       .eq('id', runId);
 
     await purgeOldBackups().catch(() => undefined); // le nettoyage ne doit jamais faire échouer la sauvegarde
 
-    return { id: runId, folder, tables: tables.length, rows: totalRows, bytes: totalBytes, files };
+    return { id: runId, folder, tables: tables.length, rows: totalRows, bytes: totalBytes, files, drive };
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     await admin

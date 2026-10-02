@@ -110,7 +110,9 @@ export default async function AdminBackupDetailPage({ params }: { params: { id: 
               return (
                 <tr key={t.name} className="border-b border-neutral-100 last:border-0">
                   <td className="px-md py-xs font-mono text-xs text-neutral-900">
-                    {t.name}
+                    <Link href={`/admin/sauvegardes/${run.id}/${t.name}`} className="font-bold text-primary-700 hover:underline">
+                      {t.name}
+                    </Link>
                     {LABELS[t.name] && <span className="ml-sm font-sans text-neutral-500">· {LABELS[t.name]}</span>}
                   </td>
                   <td className="px-md py-xs text-right text-sm tabular-nums">{fmtNum(t.rows)}</td>

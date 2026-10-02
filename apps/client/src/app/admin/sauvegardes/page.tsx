@@ -1,6 +1,9 @@
 import Link from 'next/link';
 import { createServerSupabase } from '@/lib/supabase-server';
-import { runBackupNow } from './actions';
+import { createAdminSupabase } from '@/lib/supabase-admin';
+import { driveConfigured } from '@/lib/drive';
+import { addMonth, monthKey, monthLabel } from '@/lib/months';
+import { runBackupNow, runDriveSyncNow } from './actions';
 
 // La sauvegarde manuelle exporte toutes les tables : on laisse jusqu'à 60 s.
 export const maxDuration = 60;
@@ -16,8 +19,11 @@ type Run = {
   total_bytes: number | null;
   tables: Array<{ name: string; rows: number; bytes: number }>;
   files: { source_files: number; source_bytes: number; copied: number; failed: number; remaining: number } | null;
+  drive: { path: string; bytes: number; purged: number } | { error: string } | null;
   error: string | null;
 };
+
+type Archive = { month: string; status: 'ok' | 'failed'; rows: number; bytes: number; error: string | null; generated_at: string };
 
 /** Tables de données (hors fichiers auth_*, qui sont les comptes de connexion). */
 function dataTables(r: Run): number {
@@ -28,14 +34,19 @@ function hasAccounts(r: Run): boolean {
 }
 
 const TZ = 'Africa/Porto-Novo';
+const SUPABASE_FREE_BYTES = 1_073_741_824; // 1 Go de stockage sur l'offre gratuite, tous fichiers confondus
 
 function fmtDateTime(iso: string): string {
   return new Date(iso).toLocaleString('fr-FR', {
     timeZone: TZ, weekday: 'short', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
   });
 }
+function fmtDay(iso: string): string {
+  return new Date(iso).toLocaleDateString('fr-FR', { timeZone: TZ, day: '2-digit', month: 'short', year: 'numeric' });
+}
 function fmtSize(bytes: number | null): string {
   if (bytes == null) return '—';
+  if (bytes >= 1_073_741_824) return `${(bytes / 1_073_741_824).toFixed(2)} Go`;
   if (bytes >= 1_048_576) return `${(bytes / 1_048_576).toFixed(1)} Mo`;
   return `${Math.max(1, Math.round(bytes / 1024))} Ko`;
 }
@@ -60,10 +71,12 @@ const STATUS = {
   running: { label: 'En cours', cls: 'bg-warning/15 text-warning' },
 } as const;
 
+const DRIVE_FOLDER_URL = 'https://drive.google.com/drive/folders/1ImvQ_wljQOCJ2MhXR_Lbm4Akg9pHxyc5';
+
 export default async function AdminBackupsPage({
   searchParams,
 }: {
-  searchParams?: { ok?: string; err?: string };
+  searchParams?: { ok?: string; err?: string; drive?: string };
 }) {
   const supabase = createServerSupabase();
   const { data, error } = await supabase
@@ -77,12 +90,42 @@ export default async function AdminBackupsPage({
   const lateHours = lastOk ? (Date.now() - new Date(lastOk.started_at).getTime()) / 3_600_000 : null;
   const late = lateHours === null || lateHours > 26;
 
+  // Drive, archives mensuelles et taille : lus avec le client de service (la page est réservée aux admins par le layout).
+  const configured = driveConfigured();
+  let archives: Archive[] = [];
+  let driveFiles = null as { source_files: number; source_bytes: number; remaining: number } | null;
+  let firstMonth: string | null = null;
+  if (!notReady) {
+    try {
+      const admin = createAdminSupabase();
+      const [a, f, p] = await Promise.all([
+        admin.from('backup_archives').select('month, status, rows, bytes, error, generated_at').order('month', { ascending: false }),
+        admin.rpc('backup_drive_files_stats'),
+        admin.from('profiles').select('created_at').order('created_at', { ascending: true }).limit(1),
+      ]);
+      archives = (a.data ?? []) as Archive[];
+      driveFiles = (f.data as typeof driveFiles) ?? null;
+      const first = (p.data as Array<{ created_at: string }> | null)?.[0]?.created_at;
+      firstMonth = first ? monthKey(new Date(first)) : null;
+    } catch {
+      /* les sections Drive restent vides : la page de sauvegarde continue de fonctionner */
+    }
+  }
+  const archiveByMonth = new Map(archives.map((a) => [a.month, a]));
+  const currentMonth = monthKey(new Date());
+  const months: string[] = [];
+  if (firstMonth) for (let m = currentMonth; m >= firstMonth; m = addMonth(m, -1)) months.push(m);
+  const lastDriveRun = runs.find((r) => r.drive && 'path' in r.drive);
+
+  // Stockage Supabase occupé par les sauvegardes : sauvegardes datées (compressées) + copie des fichiers.
+  const usedBytes = runs.reduce((s, r) => s + (r.total_bytes ?? 0), 0) + (lastOk?.files?.source_bytes ?? 0);
+
   return (
     <div>
       <div className="mb-xl flex flex-wrap items-baseline justify-between gap-sm">
         <h1 className="text-2xl font-extrabold text-neutral-900">Sauvegardes</h1>
         <p className="text-sm text-neutral-600">
-          Automatique : <strong className="text-neutral-900">tous les jours à 05h00</strong> (heure du Bénin) · conservées 30 jours
+          Automatique : <strong className="text-neutral-900">tous les jours à 05h00</strong> (heure du Bénin) · conservées 14 jours
         </p>
       </div>
 
@@ -97,9 +140,14 @@ export default async function AdminBackupsPage({
           Sauvegarde terminée.
         </p>
       )}
+      {searchParams?.drive && (
+        <p role="status" className="mb-md rounded-lg bg-success/10 px-md py-sm text-sm font-semibold text-success">
+          Envoi sur Drive terminé : {searchParams.drive}.
+        </p>
+      )}
       {searchParams?.err && (
         <p role="alert" className="mb-md rounded-lg bg-error/10 px-md py-sm text-sm font-semibold text-error">
-          La sauvegarde a échoué : {searchParams.err}
+          {searchParams.err}
         </p>
       )}
 
@@ -140,8 +188,23 @@ export default async function AdminBackupsPage({
                 >
                   Sauvegarder maintenant
                 </button>
-                <p className="mt-xs text-[10px] text-neutral-500">Compter quelques secondes.</p>
+                <p className="mt-xs text-[10px] text-neutral-500">
+                  Compter quelques secondes{configured ? ' (le fichier de secours part aussi sur Drive).' : '.'}
+                </p>
               </form>
+            </div>
+
+            <div className="mt-md border-t border-neutral-100 pt-md">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">Espace occupé dans Supabase par les sauvegardes</p>
+              <div className="mt-xs h-2 overflow-hidden rounded-full bg-neutral-100">
+                <div
+                  className={`h-full ${usedBytes / SUPABASE_FREE_BYTES > 0.5 ? 'bg-warning' : 'bg-primary-500'}`}
+                  style={{ width: `${Math.max(1, Math.min(100, (usedBytes / SUPABASE_FREE_BYTES) * 100))}%` }}
+                />
+              </div>
+              <p className="mt-xs text-xs text-neutral-500">
+                {fmtSize(usedBytes)} sur les 1 Go de stockage de l&apos;offre gratuite (partagés avec tous les fichiers de la plateforme).
+              </p>
             </div>
 
             {runs.length === 0 && (
@@ -156,6 +219,99 @@ on conflict (key) do update set value = excluded.value, updated_at = now();`}</p
               </div>
             )}
           </section>
+
+          <section className="mt-xl rounded-2xl bg-white p-lg shadow-sm ring-1 ring-neutral-200">
+            <div className="flex flex-wrap items-start justify-between gap-md">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">Copie hors Supabase : Google Drive</p>
+                {configured ? (
+                  <>
+                    <p className="mt-xs text-sm font-semibold text-neutral-900">Drive est configuré.</p>
+                    <ul className="mt-xs space-y-0.5 text-xs text-neutral-600">
+                      <li>
+                        Fichier de secours : une copie par semaine (le dimanche), gardée 12 semaines
+                        {lastDriveRun ? ` · dernière envoyée le ${fmtDay(lastDriveRun.started_at)}` : ' · aucune envoyée pour l’instant'}.
+                      </li>
+                      <li>
+                        Mémoire : une archive Excel par mois, gardée pour toujours ·{' '}
+                        {archives.filter((a) => a.status === 'ok').length} envoyée(s).
+                      </li>
+                      <li>
+                        Fichiers (photos, pièces) :{' '}
+                        {driveFiles
+                          ? `${fmtNum(driveFiles.source_files - driveFiles.remaining)} / ${fmtNum(driveFiles.source_files)} copiés (${fmtSize(driveFiles.source_bytes)})`
+                          : '—'}
+                        .
+                      </li>
+                    </ul>
+                    <a href={DRIVE_FOLDER_URL} target="_blank" rel="noreferrer" className="mt-xs inline-block text-xs font-bold text-primary-700 underline">
+                      Ouvrir le dossier Drive (compte tamcarbackups)
+                    </a>
+                  </>
+                ) : (
+                  <p className="mt-xs max-w-xl text-xs text-neutral-600">
+                    Drive n&apos;est pas encore branché. Il faut ajouter dans Vercel (projet client) les variables{' '}
+                    <code>DRIVE_BACKUP_URL</code> et <code>DRIVE_BACKUP_SECRET</code>, puis redéployer.
+                  </p>
+                )}
+              </div>
+              {configured && (
+                <form action={runDriveSyncNow}>
+                  <button
+                    type="submit"
+                    className="rounded-lg border border-primary-500 px-lg py-sm text-sm font-bold text-primary-700 hover:bg-primary-500/5"
+                  >
+                    Envoyer sur Drive maintenant
+                  </button>
+                  <p className="mt-xs text-[10px] text-neutral-500">Archives manquantes et fichiers ; automatique chaque nuit à 05h20.</p>
+                </form>
+              )}
+            </div>
+          </section>
+
+          {months.length > 0 && (
+            <section className="mt-xl overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-neutral-200">
+              <div className="border-b border-neutral-200 bg-neutral-100 px-md py-sm">
+                <p className="text-xs font-bold uppercase tracking-wider text-neutral-600">Mémoire : archives mensuelles lisibles (Excel)</p>
+                <p className="text-[11px] text-neutral-500">
+                  Un classeur par mois, un onglet par table. Conservé pour toujours sur Drive ; téléchargeable ici à tout moment.
+                </p>
+              </div>
+              <table className="w-full">
+                <tbody>
+                  {months.map((m) => {
+                    const a = archiveByMonth.get(m);
+                    const isCurrent = m === currentMonth;
+                    return (
+                      <tr key={m} className="border-b border-neutral-100 last:border-0">
+                        <td className="px-md py-sm text-sm font-semibold capitalize text-neutral-900">{monthLabel(m)}</td>
+                        <td className="px-md py-sm text-xs text-neutral-600">
+                          {isCurrent ? (
+                            'En cours : archivée sur Drive le 1er du mois prochain'
+                          ) : a?.status === 'ok' ? (
+                            <span className="font-semibold text-success">
+                              Sur Drive depuis le {fmtDay(a.generated_at)} · {fmtNum(a.rows)} lignes · {fmtSize(a.bytes)}
+                            </span>
+                          ) : a?.status === 'failed' ? (
+                            <span className="font-semibold text-error" title={a.error ?? ''}>Échec d&apos;envoi, nouvel essai cette nuit</span>
+                          ) : configured ? (
+                            'En attente d’envoi (cette nuit)'
+                          ) : (
+                            'Drive non configuré'
+                          )}
+                        </td>
+                        <td className="px-md py-sm text-right">
+                          <a href={`/admin/sauvegardes/archive?month=${m}`} className="text-xs font-bold text-primary-700 hover:underline">
+                            Télécharger (Excel)
+                          </a>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </section>
+          )}
 
           {runs.length > 0 && (
             <section className="mt-xl overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-neutral-200">
@@ -181,6 +337,7 @@ on conflict (key) do update set value = excluded.value, updated_at = now();`}</p
                         <td className="px-md py-sm text-xs text-neutral-600">{r.trigger === 'cron' ? 'Automatique' : 'Manuelle'}</td>
                         <td className="px-md py-sm">
                           <span className={`rounded-full px-sm py-0.5 text-[10px] font-bold ${st.cls}`}>{st.label}</span>
+                          {r.drive && 'path' in r.drive && <span className="ml-xs text-[10px] font-semibold text-neutral-500">+ Drive</span>}
                           {r.error && <p className="mt-0.5 max-w-xs truncate text-[10px] text-error" title={r.error}>{r.error}</p>}
                         </td>
                         <td className="px-md py-sm text-right text-sm tabular-nums">{dataTables(r) || '—'}</td>
@@ -190,7 +347,7 @@ on conflict (key) do update set value = excluded.value, updated_at = now();`}</p
                         <td className="px-md py-sm text-right">
                           {r.status === 'ok' && (
                             <Link href={`/admin/sauvegardes/${r.id}`} className="text-xs font-bold text-primary-700 hover:underline">
-                              Fichiers →
+                              Explorer →
                             </Link>
                           )}
                         </td>
@@ -203,9 +360,10 @@ on conflict (key) do update set value = excluded.value, updated_at = now();`}</p
           )}
 
           <p className="mt-lg text-xs text-neutral-500">
-            Cette sauvegarde exporte les données de toutes les tables de la plateforme (courses, chauffeurs, portefeuilles, locations…),
-            les comptes de connexion (sans mots de passe) et une copie des fichiers stockés (pièces, photos, documents), hors secrets et
-            jetons d&apos;appareils. Elle complète les sauvegardes physiques quotidiennes de Supabase (Database → Backups).
+            Trois couches : le <strong>secours</strong> (sauvegarde quotidienne de toutes les tables, des comptes de connexion sans mots de passe et d&apos;une copie
+            des fichiers, gardée 14 jours ici ; une copie par semaine sur Drive pendant 12 semaines), la <strong>mémoire</strong> (archive Excel mensuelle, conservée
+            pour toujours) et l&apos;<strong>explorateur</strong> (« Explorer » : parcourir, chercher et exporter n&apos;importe quelle table d&apos;une sauvegarde).
+            Les lieux importés d&apos;OpenStreetMap, réimportables, ne sont pas sauvegardés. Hors secrets et jetons d&apos;appareils.
           </p>
         </>
       )}
