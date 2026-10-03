@@ -1,4 +1,5 @@
 import { createServerSupabase } from '@/lib/supabase-server';
+import { MarkAlertsSeen } from '../AdminAlerts';
 
 type DebtRow = {
   driver_id: string;
@@ -7,11 +8,16 @@ type DebtRow = {
   debt_fcfa: number;
   is_online: boolean;
   last_seen_at: string | null;
+  driver_status: string;
+  suspended_for_debt: boolean;
+  suspended_at: string | null;
 };
 
 function fmt(n: number): string {
   return n.toLocaleString('fr-FR').replace(/,/g, ' ');
 }
+
+export const dynamic = 'force-dynamic';
 
 export default async function AdminDebtsPage() {
   const supabase = createServerSupabase();
@@ -21,6 +27,7 @@ export default async function AdminDebtsPage() {
 
   return (
     <div>
+      <MarkAlertsSeen kind="driver_debt" />
       <div className="mb-xl flex items-baseline justify-between">
         <h1 className="text-2xl font-extrabold text-neutral-900">Dettes chauffeur</h1>
         <p className="text-sm text-neutral-600">
@@ -36,9 +43,10 @@ export default async function AdminDebtsPage() {
       </div>
 
       <p className="mb-lg rounded-md bg-neutral-100 p-md text-xs text-neutral-600">
-        Dette = commissions de courses encaissées en direct (espèces / Mobile Money) non encore
-        reversées. Le chauffeur est <strong>bloqué en ligne</strong> tant que son solde Revenus est
-        négatif ; il régularise depuis son app (« Régler ma dette »).
+        Dette = commissions de courses encaissées en direct (espèces / Mobile Money) et cotisation
+        TamAssur non encore couvertes. Dès que la dette atteint <strong>5 000 F</strong>, le chauffeur est{' '}
+        <strong>suspendu automatiquement</strong> (hors ligne) et vous recevez une alerte ; dès qu&apos;il
+        règle, il est <strong>réactivé automatiquement</strong>. Aucune action de votre part n&apos;est nécessaire.
       </p>
 
       {debts.length === 0 ? (
@@ -53,7 +61,14 @@ export default async function AdminDebtsPage() {
               className="flex items-center justify-between gap-md rounded-xl border border-neutral-200 bg-white p-lg shadow-sm"
             >
               <div>
-                <p className="text-sm font-bold text-neutral-900">{d.full_name}</p>
+                <p className="flex items-center gap-xs text-sm font-bold text-neutral-900">
+                  {d.full_name}
+                  {d.suspended_for_debt && (
+                    <span className="rounded-full bg-error/15 px-sm py-0.5 text-[10px] font-bold uppercase tracking-wider text-error">
+                      Suspendu automatiquement
+                    </span>
+                  )}
+                </p>
                 <p className="text-xs text-neutral-600">
                   {d.phone ? (
                     <span style={{ fontVariantNumeric: 'tabular-nums' }}>{d.phone}</span>

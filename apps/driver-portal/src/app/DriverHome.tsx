@@ -338,10 +338,10 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
 
   async function goOnline() {
     setError(null);
-    if (debt > DEBT_TOLERANCE_FCFA) {
+    if (debt >= DEBT_TOLERANCE_FCFA) {
       setError(
-        `Dette de ${formatFcfa(debt)} F (tolérance ${formatFcfa(DEBT_TOLERANCE_FCFA)} F dépassée). ` +
-        `Rechargez au moins ${formatFcfa(debt - DEBT_TOLERANCE_FCFA)} F pour repasser en ligne.`,
+        `Dette de ${formatFcfa(debt)} F (seuil de ${formatFcfa(DEBT_TOLERANCE_FCFA)} F atteint). ` +
+        `Rechargez au moins ${formatFcfa(debt - DEBT_TOLERANCE_FCFA + 1)} F : votre compte sera réactivé automatiquement.`,
       );
       return;
     }
@@ -689,7 +689,7 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
               <button
                 type="button"
                 onClick={isOnline ? goOffline : goOnline}
-                disabled={busy || !hasVehicle || (!isOnline && debt > DEBT_TOLERANCE_FCFA)}
+                disabled={busy || !hasVehicle || (!isOnline && debt >= DEBT_TOLERANCE_FCFA)}
                 className={`rounded-full px-lg py-md text-sm font-bold shadow-md transition disabled:cursor-not-allowed disabled:opacity-50 ${
                   isOnline
                     ? 'bg-neutral-900 text-white hover:brightness-110'
@@ -723,9 +723,9 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
                   Dette de {formatFcfa(debt)} F
                 </p>
                 <p className="mt-xs text-xs text-neutral-600">
-                  {debt > DEBT_TOLERANCE_FCFA
-                    ? `Tolérance de ${formatFcfa(DEBT_TOLERANCE_FCFA)} F dépassée : rechargez au moins ${formatFcfa(debt - DEBT_TOLERANCE_FCFA)} F pour repasser en ligne.`
-                    : `Vous pouvez continuer à recevoir des courses (tolérance ${formatFcfa(DEBT_TOLERANCE_FCFA)} F), pensez à recharger votre wallet.`}
+                  {debt >= DEBT_TOLERANCE_FCFA
+                    ? `Votre compte est suspendu : seuil de ${formatFcfa(DEBT_TOLERANCE_FCFA)} F atteint. Rechargez au moins ${formatFcfa(debt - DEBT_TOLERANCE_FCFA + 1)} F, la réactivation est automatique.`
+                    : `Vous pouvez continuer à recevoir des courses jusqu'à ${formatFcfa(DEBT_TOLERANCE_FCFA)} F de dette : au-delà, votre compte est suspendu automatiquement. Pensez à recharger.`}
                 </p>
                 <Link
                   href="/wallet"

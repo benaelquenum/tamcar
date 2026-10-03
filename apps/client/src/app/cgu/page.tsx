@@ -249,13 +249,15 @@ export default function CguPage() {
             et le montant négatif est une somme que le Chauffeur doit à TamCar.
             L’épargne est créditée normalement ; TamCar avance la somme à
             l’assureur et se rembourse sur les gains suivants et sur les
-            recharges du Chauffeur. Lorsque cette dette dépasse 5 000 FCFA, le
-            Chauffeur ne peut plus se mettre en ligne tant qu’il n’a pas rechargé
-            son portefeuille de la somme qui dépasse ce seuil. Un solde négatif
-            qui se prolonge expose le Chauffeur aux mesures de suivi de la
-            performance et de suspension prévues à l’article 22 et au contrat du
-            Chauffeur, et peut être imputé sur la somme à restituer en cas de
-            départ (voir ci-dessous).
+            recharges du Chauffeur. Dès que cette dette atteint 5 000 FCFA, le
+            compte du Chauffeur est suspendu automatiquement : il est mis hors
+            ligne et ne peut plus se mettre en ligne. La suspension est levée
+            automatiquement, sans démarche, dès que le règlement de la dette
+            (par Mobile Money) ou les gains suivants ramènent le solde au-dessus
+            de −5 000 FCFA. Un solde négatif qui se prolonge expose en outre le
+            Chauffeur aux mesures de suivi de la performance prévues à
+            l’article 22 et au contrat du Chauffeur, et peut être imputé sur la
+            somme à restituer en cas de départ (voir ci-dessous).
           </p>
           <p className="mt-sm">
             <strong>Départ avant 24 mois.</strong> Si la relation prend fin avant

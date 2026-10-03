@@ -10,6 +10,7 @@ export async function acknowledgeSosAction(formData: FormData) {
   const { error } = await supabase.rpc('admin_ack_sos', { p_id: id });
   if (error) throw new Error(error.message);
   revalidatePath('/admin');
+  revalidatePath('/admin/sos');
 }
 
 export async function resolveSosAction(formData: FormData) {
@@ -23,6 +24,7 @@ export async function resolveSosAction(formData: FormData) {
   });
   if (error) throw new Error(error.message);
   revalidatePath('/admin');
+  revalidatePath('/admin/sos');
 }
 
 export async function reassignRideAction(formData: FormData) {
