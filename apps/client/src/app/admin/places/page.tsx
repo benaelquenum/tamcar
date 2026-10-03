@@ -10,7 +10,7 @@ type PlaceRow = {
   category_group: string | null;
   city: string;
   district: string | null;
-  source: 'osm' | 'popular_seed' | 'user_submitted' | 'admin';
+  source: 'osm' | 'popular_seed' | 'user_submitted' | 'admin' | 'overture';
   verified: boolean;
   created_at: string;
   submitted_by: string | null;
@@ -24,6 +24,7 @@ const SOURCE_LABEL: Record<PlaceRow['source'], string> = {
   popular_seed: 'Seed initial',
   user_submitted: 'Proposé par user',
   admin: 'Ajouté admin',
+  overture: 'Overture Maps',
 };
 
 const SOURCE_COLOR: Record<PlaceRow['source'], string> = {
@@ -31,6 +32,7 @@ const SOURCE_COLOR: Record<PlaceRow['source'], string> = {
   popular_seed: 'bg-primary-100 text-primary-700',
   user_submitted: 'bg-gold text-neutral-900',
   admin: 'bg-violet-500 text-white',
+  overture: 'bg-cyan-500/20 text-cyan-700',
 };
 
 export default async function AdminPlacesPage({

@@ -1,0 +1,3 @@
+*.parquet
+overture_sql/
+existing_places.json

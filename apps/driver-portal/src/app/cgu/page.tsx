@@ -478,6 +478,10 @@ export default function CguPage() {
       <footer className="mt-2xl border-t border-neutral-200 pt-lg text-center text-xs text-neutral-400">
         Tam Logistics SARL · Cotonou, Bénin ·
         contact@tamcar.app
+        <span className="mt-xs block">
+          Données de lieux : © contributeurs OpenStreetMap (licence ODbL) ; © Overture Maps Foundation
+          (Meta, Microsoft, Foursquare, AllThePlaces).
+        </span>
       </footer>
     </main>
   );
