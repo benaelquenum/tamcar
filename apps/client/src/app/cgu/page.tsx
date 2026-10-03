@@ -209,6 +209,89 @@ export default function CguPage() {
           </ul>
         </Section>
 
+        <Section n="13 bis" title="Épargne TamAssur du Chauffeur">
+          <p>
+            <strong>Principe.</strong> L’épargne TamAssur est un dispositif
+            d’épargne obligatoire pour les Chauffeurs. Chaque jour,{' '}
+            <strong>1 000 FCFA sont prélevés sur les gains du Chauffeur</strong>{' '}
+            et placés dans sa poche « Épargne TamAssur ». Cette épargne est
+            constituée exclusivement des gains du Chauffeur : TamCar n’y ajoute
+            aucune somme.
+          </p>
+          <p className="mt-sm">
+            <strong>Montage et responsabilités.</strong> TamCar a souscrit, en
+            son nom propre, un contrat d’assurance-épargne auprès de la
+            compagnie NSIA, d’une durée de six (6) ans, au profit des Chauffeurs
+            qu’elle y inscrit. TamCar règle chaque jour la cotisation à
+            l’assureur et en est seule responsable : le Chauffeur n’est pas
+            partie à ce contrat. TamCar se rembourse en prélevant la cotisation
+            sur les gains du Chauffeur. Les intérêts et produits du contrat,
+            ainsi que toute somme excédant ce qui est restitué au Chauffeur,
+            reviennent à TamCar, en contrepartie de l’engagement de six ans et
+            du risque qu’elle supporte (impayé, départ du Chauffeur). Le
+            Chauffeur ne perçoit pas d’intérêts.
+          </p>
+          <p className="mt-sm">
+            <strong>Retrait après 24 mois.</strong> Après 24 mois de cotisation
+            régulière, le Chauffeur peut demander le retrait de son épargne,
+            jusqu’à <strong>600 000 FCFA</strong>, soit exactement les sommes
+            prélevées sur ses gains. TamCar règle le retrait sous trente (30)
+            jours.
+          </p>
+          <p className="mt-sm">
+            <strong>Jours non prélevés.</strong> Lorsque le solde du portefeuille
+            « Revenus » est insuffisant, aucun prélèvement n’est opéré : le jour
+            reste en retard et est rattrapé, du plus ancien au plus récent, dès
+            que le solde le permet. L’épargne ne devient jamais négative.
+            TamCar avance alors la cotisation à l’assureur ; cette avance est
+            limitée à trente (30) jours de retard, au-delà desquels s’appliquent
+            les mesures de suivi de la performance et de suspension prévues à
+            l’article 22 et au contrat du Chauffeur. Le retrait s’ouvre lorsque
+            l’épargne atteint 600 000 FCFA, ce qui peut survenir après 24 mois
+            en cas de retard.
+          </p>
+          <p className="mt-sm">
+            <strong>Départ avant 24 mois.</strong> Si la relation prend fin avant
+            24 mois de cotisation (démission, non-renouvellement, résiliation),
+            le Chauffeur ne perd pas son épargne : TamCar lui restitue les
+            sommes réellement prélevées sur ses gains au titre de l’épargne,
+            sans intérêts, à la date de déblocage de sa ligne auprès de
+            l’assureur (24 mois après l’ouverture de cette ligne). La
+            restitution est faite sous déduction des seules sommes que le
+            Chauffeur doit à TamCar et, le cas échéant, de la réparation prévue
+            ci-dessous.
+          </p>
+          <p className="mt-sm">
+            <strong>Décès ou invalidité liés à la conduite.</strong> En cas de
+            décès ou d’invalidité, partielle ou totale, résultant d’un événement
+            lié à la conduite (accident survenu à l’occasion de l’activité du
+            Chauffeur pour TamCar), TamCar restitue sans attendre le déblocage
+            de la ligne, au Chauffeur ou, en cas de décès, à ses ayants droit :
+          </p>
+          <ul className="ml-lg list-disc space-y-xs">
+            <li><strong>la moitié</strong> des cotisations prélevées si la période de cotisation est inférieure à un (1) an ;</li>
+            <li><strong>la totalité</strong> de ces cotisations à partir d’un (1) an.</li>
+          </ul>
+          <p className="mt-sm">
+            <strong>Faute grave.</strong> En cas de faute grave établie du
+            Chauffeur (fraude, abandon du véhicule, accident causé par une
+            imprudence grave…), TamCar peut déduire de la somme à restituer la
+            réparation des seuls dommages réels et justifiés (facture,
+            expertise, franchise d’assurance). Le Chauffeur est préalablement
+            informé par écrit du détail des dommages et dispose de dix (10) jours
+            pour présenter ses observations. La déduction est opérée au moment
+            de la restitution et ne peut excéder le montant de l’épargne ;
+            TamCar conserve, pour le surplus, les recours de droit commun.
+          </p>
+          <p className="mt-sm">
+            <strong>Information et consentement.</strong> Le Chauffeur reconnaît
+            avoir été informé, avant son inscription, du prélèvement quotidien de
+            1 000 FCFA, de l’absence d’intérêts à son profit et des règles
+            ci-dessus. Son acceptation est enregistrée avec la date et la version
+            du document, à valeur de preuve.
+          </p>
+        </Section>
+
         <Section n="14" title="Interdiction de contournement">
           <p>
             Il est interdit de conclure, solliciter ou accepter une course en

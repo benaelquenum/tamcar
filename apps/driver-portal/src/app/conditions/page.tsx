@@ -58,7 +58,9 @@ export default function ConditionsPage({
             En roulant avec TamCar, vous vous constituez une{' '}
             <strong>épargne retraite qui vous appartient</strong> : chaque jour,{' '}
             <strong>1 000 F de vos gains</strong> sont mis de côté pour vous
-            (soit ~600 000 F sur 2 ans). Votre santé est couverte en option.
+            (soit 600 000 F sur 2 ans), qui vous sont rendus intégralement ; les
+            intérêts du placement reviennent à TamCar, qui porte le risque.
+            Votre santé est couverte en option.
           </p>
           <Link
             href="/bien-etre"

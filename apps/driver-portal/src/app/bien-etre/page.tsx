@@ -94,7 +94,7 @@ export default function BienEtrePage() {
               600 000 F
             </p>
             <p className="mt-xs text-xs font-bold uppercase tracking-wider text-neutral-500">
-              à vous, + les intérêts
+              à vous, rendus intégralement
             </p>
           </div>
 
@@ -109,8 +109,16 @@ export default function BienEtrePage() {
             <li className="flex gap-sm">
               <span className="text-primary-500">•</span>
               <span>
-                Après 24 mois de cotisation, vous pouvez demander une{' '}
-                <strong>avance</strong>.
+                Après 24 mois de cotisation, vous pouvez{' '}
+                <strong>retirer</strong> votre épargne (600 000 F).
+              </span>
+            </li>
+            <li className="flex gap-sm">
+              <span className="text-primary-500">•</span>
+              <span>
+                <strong>Vous récupérez exactement ce qui a été mis de côté</strong>{' '}
+                : les intérêts du placement reviennent à TamCar, qui porte le
+                risque et l&apos;engagement de 6 ans.
               </span>
             </li>
             <li className="flex gap-sm">
