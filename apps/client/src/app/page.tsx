@@ -6,7 +6,6 @@ import {
   ArrowRightIcon,
   PinIcon,
   PlusIcon,
-  WalletIcon,
 } from '@/components/Icon';
 import { firstNameOf, getCurrentProfile } from '@/lib/session';
 import { createServerSupabase } from '@/lib/supabase-server';
@@ -121,9 +120,24 @@ export default async function HomePage() {
     <main className="relative min-h-dvh bg-gradient-to-b from-primary-50/70 via-white to-white">
       <div className="relative z-10 mx-auto max-w-md px-lg pt-lg">
         <header className="flex items-center justify-between">
-          <LogoHorizontal />
+          {/* Sous 380 px, seul le sigle reste : la pastille du portefeuille a besoin de la place. */}
+          <LogoHorizontal className="max-[380px]:[&>span]:hidden" />
           {profile && (
             <div className="flex items-center gap-sm">
+              {/* Portefeuille : montant et petit bouton + pour recharger, à gauche de la cloche. */}
+              <Link
+                href="/wallet"
+                aria-label={`${t('home.credit')} ${formatFcfaHome(creditBalance)} F : ${t('home.recharge')}`}
+                className="inline-flex items-center gap-xs whitespace-nowrap rounded-full bg-primary-50 py-0.5 pl-sm pr-0.5 text-sm font-extrabold text-neutral-900 ring-1 ring-primary-100 transition hover:bg-primary-100"
+              >
+                <span style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {formatFcfaHome(creditBalance)}
+                  <span className="ml-0.5 text-xs font-medium text-neutral-500">F</span>
+                </span>
+                <span className="grid h-7 w-7 place-items-center rounded-full bg-primary-500 text-white">
+                  <PlusIcon className="h-3.5 w-3.5" strokeWidth={3} />
+                </span>
+              </Link>
               <NotificationBell />
               <ProfileMenu
                 avatarUrl={profile.avatar_url}
@@ -170,34 +184,8 @@ export default async function HomePage() {
 
         {isLoggedIn && <RecentDestinations recents={recents} />}
 
-        {isLoggedIn && (
-          <section className="mt-lg">
-            <Link
-              href="/wallet"
-              className="flex items-center gap-md rounded-2xl bg-primary-50 p-md transition hover:bg-primary-100"
-            >
-              <span className="grid h-12 w-12 flex-none place-items-center rounded-2xl bg-primary-500 text-white">
-                <WalletIcon className="h-6 w-6" />
-              </span>
-              <span className="flex-1">
-                <span className="block text-sm font-medium text-neutral-600">
-                  {t('home.credit')}
-                </span>
-                <span
-                  className="block text-2xl font-extrabold leading-tight text-neutral-900"
-                  style={{ fontVariantNumeric: 'tabular-nums' }}
-                >
-                  {formatFcfaHome(creditBalance)}
-                  <span className="ml-xs text-base font-medium text-neutral-500">F</span>
-                </span>
-              </span>
-              <span className="inline-flex items-center gap-xs rounded-full bg-white px-lg py-sm text-sm font-bold text-primary-600 shadow-sm">
-                {t('home.recharge')}
-                <PlusIcon className="h-4 w-4" strokeWidth={3} />
-              </span>
-            </Link>
-          </section>
-        )}
+        {/* Zone du portefeuille retirée (déplacé en haut) : volontairement laissée vide, fond inchangé. */}
+        {isLoggedIn && <div aria-hidden className="mt-lg h-20" />}
 
         <BottomTabBar />
       </div>

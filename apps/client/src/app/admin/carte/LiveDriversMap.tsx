@@ -147,7 +147,8 @@ function ageLabel(sec: number): string {
   if (sec < 10) return 'à l’instant';
   if (sec < 60) return `il y a ${sec} s`;
   if (sec < 3600) return `il y a ${Math.floor(sec / 60)} min`;
-  return `il y a ${Math.floor(sec / 3600)} h`;
+  if (sec < 172800) return `il y a ${Math.floor(sec / 3600)} h`;
+  return `il y a ${Math.floor(sec / 86400)} j`;
 }
 
 function timeOf(iso: string | null): string {
@@ -460,8 +461,10 @@ export function LiveDriversMap() {
   return (
     <div className="grid gap-md lg:grid-cols-[minmax(0,1fr)_380px]">
       {/* Carte */}
-      <div className="relative min-h-[420px] overflow-hidden rounded-xl bg-neutral-100 shadow-sm ring-1 ring-neutral-200 lg:h-[calc(100dvh-190px)]">
-        <div ref={containerRef} className="absolute inset-0" />
+      <div className="relative h-[60vh] min-h-[420px] overflow-hidden rounded-xl bg-neutral-100 shadow-sm ring-1 ring-neutral-200 lg:h-[calc(100dvh-190px)]">
+        {/* Hauteur et largeur explicites : la feuille de style de la carte impose position:relative au conteneur,
+            ce qui annule un positionnement absolu et le réduirait à zéro de hauteur. */}
+        <div ref={containerRef} className="h-full w-full" />
         {mapError && (
           <div className="absolute inset-0 grid place-items-center p-lg text-center text-sm font-semibold text-neutral-600">{mapError}</div>
         )}
