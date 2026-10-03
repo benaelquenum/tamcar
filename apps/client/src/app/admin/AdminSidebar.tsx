@@ -9,6 +9,7 @@ const NAV: { href: string; label: string; exact?: boolean }[] = [
   { href: '/admin', label: 'Tableau de bord', exact: true },
   { href: '/admin/rides', label: 'Courses' },
   { href: '/admin/drivers', label: 'Chauffeurs' },
+  { href: '/admin/carte', label: 'Carte en direct' },
   { href: '/admin/dealers', label: 'Partenaires véhicule' },
   { href: '/admin/vehicles', label: 'Véhicules' },
   { href: '/admin/locations', label: 'Locations VIP' },
