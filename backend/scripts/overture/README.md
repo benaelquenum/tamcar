@@ -13,3 +13,13 @@ Réalisé le 2026-10-03 : release Overture `2026-09-23.1`, 2 305 lieux importés
 
 Licences : CDLA-Permissive-2.0 (Meta, Microsoft), Apache-2.0 (Foursquare), CC0 (AllThePlaces). Attribution dans le pied de page des CGU.
 Les lieux Overture et OpenStreetMap sont exclus de la sauvegarde (réimportables) : voir `20261003110000_places_overture.sql`.
+
+## Contrôle des villes (2026-10-03)
+
+Les villes de la table `places` avaient été attribuées par zones rectangulaires (OSM) puis héritées du lieu voisin (Overture) :
+1 878 lieux portaient le nom d'une autre commune (surtout Cotonou étiqueté Abomey-Calavi). Correction faite par comparaison avec les limites
+communales d'Overture (`communes_fetch.py` puis `city_audit.py`, qui exige `existing_places.json`/`all_places.json` et `communes_bj.parquet`).
+Règles : on ne corrige que les lieux situés DANS l'une des 5 communes ; marge de 150 m à la limite (500 m pour Porto-Novo, tracé grossier) ;
+adresse contredisant la correction : laissé pour vérification. L'ancienne ville est gardée dans `tags.city_before_fix`.
+Les lieux situés dans d'autres communes (Adjarra, Allada…) gardent le nom de la grande ville voisine (zone de service).
+Mêmes lieux Overture : positions de remplacement (coordonnées partagées par >= 3 lieux) supprimées (517 lieux), filtre ajouté à `overture_prepare.py`.

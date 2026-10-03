@@ -33,6 +33,19 @@ rows = [dict(zip(cols, r)) for r in con.execute(f"select {', '.join(cols)} from 
 stats = collections.OrderedDict()
 stats['lieux Overture dans la zone'] = len(rows)
 
+
+def _dec(x):
+    t = repr(float(x))
+    return len(t.split('.')[1]) if '.' in t else 0
+
+
+# Positions de remplacement (centre d'un quartier ou d'une ville) : coordonnées partagées par au moins 3 lieux,
+# ou arrondies à 4 décimales ou moins. Un chauffeur y serait envoyé au mauvais endroit : on les écarte.
+_g = collections.Counter((round(r['lat'], 5), round(r['lon'], 5)) for r in rows)
+_n = len(rows)
+rows = [r for r in rows if _g[(round(r['lat'], 5), round(r['lon'], 5))] < 3 and not (_dec(r['lat']) <= 4 and _dec(r['lon']) <= 4)]
+stats['positions de remplacement écartées'] = _n - len(rows)
+
 # ------------------------------------------------------------ filtres de qualité
 rows = [r for r in rows if r['country'] != 'NG']
 stats['après retrait du Nigeria'] = len(rows)
@@ -159,7 +172,27 @@ CENTERS = {'Abomey-Calavi': (6.4424, 2.3371), 'Porto-Novo': (6.5307, 2.6405), 'C
            'Ouidah': (6.4765, 2.0527), 'Sèmè-Kpodji': (6.3930, 2.6081)}
 
 
+COMMUNES_PARQ = os.path.join(HERE, 'communes_bj.parquet').replace('\\', '/')
+COMMUNE_LABEL = {'Cotonou': 'Cotonou', 'Abomey-Calavi': 'Abomey-Calavi', 'Porto Novo': 'Porto-Novo', 'Ouidah': 'Ouidah', 'Sèmè-Kpodji': 'Sèmè-Kpodji'}
+_geo = None
+
+
+def commune_label(r):
+    """Nom de ville de l'une des 5 communes qui contient le point, sinon None (communes voisines ou hors limites)."""
+    global _geo
+    if _geo is None and os.path.exists(COMMUNES_PARQ):
+        _geo = duckdb.connect()
+        _geo.execute("INSTALL spatial; LOAD spatial;")
+    if _geo is None:
+        return None
+    row = _geo.execute(f"select name from '{COMMUNES_PARQ}' where ST_Contains(geometry, ST_Point(?, ?)) limit 1", [r['lon'], r['lat']]).fetchone()
+    return COMMUNE_LABEL.get(row[0]) if row else None
+
+
 def city_of(r):
+    lab = commune_label(r)
+    if lab:
+        return lab
     best, bd = None, 1e9
     for e in neighbors(r['lat'], r['lon'], 6):
         d = hav(r['lat'], r['lon'], e['lat'], e['lng'])
