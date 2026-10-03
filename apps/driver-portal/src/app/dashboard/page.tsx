@@ -120,10 +120,10 @@ export default async function DriverDashboardPage() {
   type InsuranceRow = { period: string; amount_fcfa: number; collected_fcfa: number; status: string };
   const insurance = (insuranceData ?? []) as InsuranceRow[];
   const tamassur = (driver as { tamassur_fcfa?: number }).tamassur_fcfa ?? 1000;
-  const insuranceOutstanding = insurance.reduce((s, r) => s + Math.max(0, r.amount_fcfa - r.collected_fcfa), 0);
   // Date « aujourd'hui » côté Porto-Novo (UTC+1, pas de DST au Bénin)
   const pnToday = new Date(Date.now() + 3_600_000).toISOString().slice(0, 10);
   const insuranceToday = insurance.find((r) => r.period.slice(0, 10) === pnToday) ?? null;
+  const isSunday = new Date(`${pnToday}T12:00:00Z`).getUTCDay() === 0;
 
   type ProgressRow = {
     volume_today: number;
@@ -229,7 +229,8 @@ export default async function DriverDashboardPage() {
           amount={tamassur}
           capital={epargne}
           today={insuranceToday}
-          outstanding={insuranceOutstanding}
+          isSunday={isSunday}
+          balance={revenus}
         />
 
         {/* Véhicule */}

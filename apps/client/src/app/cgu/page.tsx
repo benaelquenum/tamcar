@@ -212,11 +212,13 @@ export default function CguPage() {
         <Section n="13 bis" title="Épargne TamAssur du Chauffeur">
           <p>
             <strong>Principe.</strong> L’épargne TamAssur est un dispositif
-            d’épargne obligatoire pour les Chauffeurs. Chaque jour,{' '}
-            <strong>1 000 FCFA sont prélevés sur les gains du Chauffeur</strong>{' '}
-            et placés dans sa poche « Épargne TamAssur ». Cette épargne est
-            constituée exclusivement des gains du Chauffeur : TamCar n’y ajoute
-            aucune somme.
+            d’épargne obligatoire pour les Chauffeurs. Chaque jour, du lundi au
+            samedi,{' '}
+            <strong>1 000 FCFA sont prélevés sur le portefeuille « Revenus » du Chauffeur</strong>{' '}
+            et placés dans sa poche « Épargne TamAssur ». Aucun prélèvement
+            n’est opéré le dimanche. Cette épargne est constituée exclusivement
+            des sommes prélevées sur le Chauffeur : TamCar n’y ajoute aucune
+            somme.
           </p>
           <p className="mt-sm">
             <strong>Montage et responsabilités.</strong> TamCar a souscrit, en
@@ -232,23 +234,28 @@ export default function CguPage() {
             Chauffeur ne perçoit pas d’intérêts.
           </p>
           <p className="mt-sm">
-            <strong>Retrait après 24 mois.</strong> Après 24 mois de cotisation
-            régulière, le Chauffeur peut demander le retrait de son épargne,
-            jusqu’à <strong>600 000 FCFA</strong>, soit exactement les sommes
-            prélevées sur ses gains. TamCar règle le retrait sous trente (30)
-            jours.
+            <strong>Retrait après 24 mois.</strong> Le retrait s’ouvre lorsque
+            l’épargne atteint <strong>600 000 FCFA</strong>, soit environ
+            vingt-trois (23) mois de cotisation à raison de six jours par
+            semaine. Le Chauffeur peut alors demander le retrait de la totalité
+            de son épargne, qui correspond exactement aux sommes prélevées sur
+            ses gains. TamCar règle le retrait sous trente (30) jours.
           </p>
           <p className="mt-sm">
-            <strong>Jours non prélevés.</strong> Lorsque le solde du portefeuille
-            « Revenus » est insuffisant, aucun prélèvement n’est opéré : le jour
-            reste en retard et est rattrapé, du plus ancien au plus récent, dès
-            que le solde le permet. L’épargne ne devient jamais négative.
-            TamCar avance alors la cotisation à l’assureur ; cette avance est
-            limitée à trente (30) jours de retard, au-delà desquels s’appliquent
-            les mesures de suivi de la performance et de suspension prévues à
-            l’article 22 et au contrat du Chauffeur. Le retrait s’ouvre lorsque
-            l’épargne atteint 600 000 FCFA, ce qui peut survenir après 24 mois
-            en cas de retard.
+            <strong>Prélèvement ferme et solde négatif.</strong> La cotisation
+            est prélevée chaque jour, du lundi au samedi, quel que soit le
+            montant des gains du jour, même si le solde du portefeuille
+            « Revenus » est insuffisant : ce solde peut alors devenir négatif,
+            et le montant négatif est une somme que le Chauffeur doit à TamCar.
+            L’épargne est créditée normalement ; TamCar avance la somme à
+            l’assureur et se rembourse sur les gains suivants et sur les
+            recharges du Chauffeur. Lorsque cette dette dépasse 5 000 FCFA, le
+            Chauffeur ne peut plus se mettre en ligne tant qu’il n’a pas rechargé
+            son portefeuille de la somme qui dépasse ce seuil. Un solde négatif
+            qui se prolonge expose le Chauffeur aux mesures de suivi de la
+            performance et de suspension prévues à l’article 22 et au contrat du
+            Chauffeur, et peut être imputé sur la somme à restituer en cas de
+            départ (voir ci-dessous).
           </p>
           <p className="mt-sm">
             <strong>Départ avant 24 mois.</strong> Si la relation prend fin avant
@@ -286,7 +293,8 @@ export default function CguPage() {
           <p className="mt-sm">
             <strong>Information et consentement.</strong> Le Chauffeur reconnaît
             avoir été informé, avant son inscription, du prélèvement quotidien de
-            1 000 FCFA, de l’absence d’intérêts à son profit et des règles
+            1 000 FCFA (du lundi au samedi), y compris lorsque son solde est
+            insuffisant, de l’absence d’intérêts à son profit et des règles
             ci-dessus. Son acceptation est enregistrée avec la date et la version
             du document, à valeur de preuve.
           </p>

@@ -56,7 +56,7 @@ export default function ConditionsPage({
           </p>
           <p className="mt-xs text-[13px] leading-relaxed text-neutral-700">
             En roulant avec TamCar, vous vous constituez une{' '}
-            <strong>épargne retraite qui vous appartient</strong> : chaque jour,{' '}
+            <strong>épargne retraite qui vous appartient</strong> : chaque jour sauf le dimanche,{' '}
             <strong>1 000 F de vos gains</strong> sont mis de côté pour vous
             (soit 600 000 F sur 2 ans), qui vous sont rendus intégralement ; les
             intérêts du placement reviennent à TamCar, qui porte le risque.

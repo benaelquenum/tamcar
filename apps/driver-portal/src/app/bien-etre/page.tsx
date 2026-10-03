@@ -144,6 +144,12 @@ export default function BienEtrePage() {
               <strong>9 chauffeurs sur 10 ne réussiront jamais à mettre de côté
               seuls</strong>. La discipline en plus, sans l&apos;effort.
             </p>
+            <p className="mt-xs text-[12px] leading-relaxed text-neutral-700">
+              Le prélèvement a lieu du lundi au samedi, y compris les jours où
+              vos gains sont faibles : votre solde peut alors passer en
+              négatif, il suffit de le recharger (Mobile Money) pour continuer
+              à rouler sans interruption.
+            </p>
           </div>
         </section>
 

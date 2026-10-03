@@ -15,12 +15,14 @@ export function TamAssurCard({
   amount,
   capital,
   today,
-  outstanding,
+  isSunday,
+  balance,
 }: {
   amount: number;
   capital: number;
   today: TodayCharge;
-  outstanding: number;
+  isSunday: boolean;
+  balance: number;
 }) {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState<number>(amount);
@@ -45,13 +47,11 @@ export function TamAssurCard({
     });
   }
 
-  const badge: { txt: string; cls: string } = today
-    ? today.status === 'paid'
-      ? { txt: "Aujourd'hui : épargné", cls: 'bg-success/15 text-success' }
-      : today.status === 'partial'
-        ? { txt: "Aujourd'hui : partiel", cls: 'bg-warning/15 text-warning' }
-        : { txt: "Aujourd'hui : en attente", cls: 'bg-neutral-100 text-neutral-500' }
-    : { txt: 'À venir', cls: 'bg-neutral-100 text-neutral-500' };
+  const badge: { txt: string; cls: string } = isSunday
+    ? { txt: 'Dimanche : aucun prélèvement', cls: 'bg-neutral-100 text-neutral-500' }
+    : today?.status === 'paid'
+      ? { txt: "Aujourd'hui : prélevé", cls: 'bg-success/15 text-success' }
+      : { txt: 'Prélevé ce soir à 22 h', cls: 'bg-neutral-100 text-neutral-500' };
 
   const pct = Math.min(100, Math.round((capital / GOAL) * 100));
 
@@ -66,7 +66,8 @@ export function TamAssurCard({
           <p className="mt-xs text-sm text-neutral-700">
             Assurance épargne —{' '}
             <strong style={{ fontVariantNumeric: 'tabular-nums' }}>{formatFcfa(amount)} F</strong>{' '}
-            / jour, mis de côté automatiquement. Capital récupérable.
+            / jour, du lundi au samedi, prélevés automatiquement sur votre solde
+            Revenus. Capital récupérable.
           </p>
         </div>
         <span className={`flex-none rounded-full px-md py-xs text-[10px] font-bold ${badge.cls}`}>
@@ -91,11 +92,12 @@ export function TamAssurCard({
         </div>
       </div>
 
-      {outstanding > 0 && (
+      {balance < 0 && (
         <p className="mt-md rounded-md bg-warning/10 p-sm text-[11px] text-warning">
-          Reste à épargner :{' '}
-          <strong style={{ fontVariantNumeric: 'tabular-nums' }}>{formatFcfa(outstanding)} F</strong>{' '}
-          — mis de côté dès que vos revenus le permettent.
+          Votre solde Revenus est de{' '}
+          <strong style={{ fontVariantNumeric: 'tabular-nums' }}>{formatFcfa(balance)} F</strong>.
+          Le prélèvement continue chaque jour : vos gains et vos recharges
+          remboursent ce solde.
         </p>
       )}
 
