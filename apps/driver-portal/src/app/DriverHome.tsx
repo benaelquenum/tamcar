@@ -1049,7 +1049,7 @@ function catLabel(cat: string): string {
   }
 }
 
-type ApproachPlan = { free_m: number; rate_per_km: number; cap_pct: number; share_pct: number; started: boolean };
+type ApproachPlan = { free_m: number; rate_per_km: number; cap_pct: number; share_pct: number; max_fcfa: number; started: boolean };
 let approachPlanPromise: Promise<ApproachPlan | null> | null = null;
 function loadApproachPlan(): Promise<ApproachPlan | null> {
   if (!approachPlanPromise) {
@@ -1075,7 +1075,7 @@ function ApproachTag({ distanceM, price, light }: { distanceM: number | null; pr
   if (!plan || distanceM == null || distanceM <= plan.free_m) return null;
   const raw = ((distanceM - plan.free_m) / 1000) * plan.rate_per_km;
   const cap = (price * plan.share_pct * plan.cap_pct) / 10_000;
-  const amount = Math.floor(Math.min(raw, cap) / 50) * 50;
+  const amount = Math.floor(Math.min(raw, cap, plan.max_fcfa) / 50) * 50;
   if (amount < 50) return null;
   return (
     <div

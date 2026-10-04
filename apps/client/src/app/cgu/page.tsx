@@ -351,7 +351,9 @@ export default function CguPage() {
             la fin de la course, une prime pour son déplacement :{' '}
             <strong>25 FCFA (moto), 50 FCFA (tricycle) ou 100 FCFA (voiture) par
             kilomètre au-delà du premier</strong>, arrondie aux 50 FCFA
-            inférieurs et plafonnée à la part perçue par TamCar sur la course.
+            inférieurs et plafonnée à <strong>200 FCFA par course</strong>, quelle
+            que soit la distance, ainsi qu’à la part perçue par TamCar sur la
+            course.
             Elle est créditée sur le portefeuille « Revenus », n’est pas due si
             la course est annulée, et s’applique à compter de la date indiquée
             dans l’Application.
