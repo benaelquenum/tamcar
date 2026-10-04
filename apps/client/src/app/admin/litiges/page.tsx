@@ -73,6 +73,7 @@ const RULE_LABELS: Record<string, string> = {
   driver_pattern: 'Chauffeur signalé par plusieurs clients',
   telemetry_refutes: 'GPS : motif non confirmé',
   goodwill: 'Geste commercial',
+  doubt_client_pays: 'En cas de doute : frais maintenus',
   exception: 'Exception : règles non concluantes',
   appeal: 'Contestation du client',
   contest_proven: 'Contestation refusée : preuve GPS',
