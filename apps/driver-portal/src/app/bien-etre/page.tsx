@@ -13,8 +13,9 @@ export const metadata = {
  * et montée en compétence.
  *
  * Formulation validée (option A) : on ne prétend JAMAIS que TamCar finance
- * l'épargne retraite. On dit la vérité — 1 000 F/jour prélevés sur les gains —
- * en vendant l'indolore et le « c'est à vous », pas un faux « c'est gratuit ».
+ * l'épargne retraite. On dit la vérité — cotisation selon le véhicule, moitié sur
+ * les gains, moitié sur le fonds de rachat du chauffeur — en vendant l'indolore et
+ * le « c'est à vous », pas un faux « c'est gratuit ».
  * Vouvoiement partout.
  */
 export default function BienEtrePage() {
@@ -99,8 +100,7 @@ export default function BienEtrePage() {
                 {[
                   ['Moto', 500, 250, 300000],
                   ['Tricycle', 750, 375, 450000],
-                  ['Voiture Essentiel', 1000, 500, 600000],
-                  ['Voiture Confort', 1250, 625, 750000],
+                  ['Voiture (toutes catégories)', 1000, 500, 600000],
                 ].map(([label, day, own, goal]) => (
                   <tr key={String(label)} className="border-t border-gold/20">
                     <td className="px-md py-sm font-semibold">{label}</td>
@@ -154,14 +154,14 @@ export default function BienEtrePage() {
               Votre argent, votre avenir — au grand jour
             </p>
             <p className="mt-xs text-[12px] leading-relaxed text-neutral-700">
-              Ces 1 000 F/jour ne sont pas une charge : c&apos;est{' '}
+              Cette cotisation n&apos;est pas une charge : c&apos;est{' '}
               <strong>votre</strong> capital qui se construit tout seul pendant
               que vous roulez, pour moitié avec vos gains et pour moitié avec
               votre fonds de rachat (qui diminue d&apos;autant, mais l&apos;argent
               se retrouve dans votre épargne). TamCar négocie le plan de groupe
               et gère tout, aucun papier à remplir. Résultat : au
               terme de votre contrat, vous repartez avec un pécule que{' '}
-              <strong>9 chauffeurs sur 10 ne réussiront jamais à mettre de côté
+              <strong>peu de chauffeurs parviennent à mettre de côté
               seuls</strong>. La discipline en plus, sans l&apos;effort.
             </p>
             <p className="mt-xs text-[12px] leading-relaxed text-neutral-700">

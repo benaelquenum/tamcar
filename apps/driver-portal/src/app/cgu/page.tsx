@@ -214,9 +214,9 @@ export default function CguPage() {
             samedi,{' '}
             <strong>une cotisation est placée dans la poche « Épargne TamAssur »</strong>{' '}
             du Chauffeur. Son montant dépend du véhicule :{' '}
-            <strong>500 FCFA (moto), 750 FCFA (tricycle), 1 000 FCFA (voiture
-            Essentiel), 1 250 FCFA (voiture Confort)</strong> ; le Chauffeur peut
-            choisir un montant supérieur. <strong>La moitié de la cotisation est
+            <strong>500 FCFA (moto), 750 FCFA (tricycle), 1 000 FCFA (voiture,
+            toutes catégories)</strong> ; le Chauffeur peut choisir un montant
+            supérieur. <strong>La moitié de la cotisation est
             prélevée sur le portefeuille « Revenus » du Chauffeur, l’autre moitié
             sur son fonds de rachat</strong>. Si le fonds de rachat est
             insuffisant ce jour-là, la part manquante est prélevée sur le
@@ -245,8 +245,9 @@ export default function CguPage() {
             <strong>Retrait après 24 mois.</strong> Le retrait s’ouvre lorsque
             l’épargne atteint <strong>six cents (600) fois la cotisation
             journalière</strong>, soit environ vingt-trois (23) mois de
-            cotisation à raison de six jours par semaine (par exemple 600 000
-            FCFA pour une voiture Essentiel). Le Chauffeur peut alors demander
+            cotisation à raison de six jours par semaine (soit 300 000 FCFA pour
+            une moto, 450 000 FCFA pour un tricycle, 600 000 FCFA pour une
+            voiture). Le Chauffeur peut alors demander
             le retrait de la totalité
             de son épargne, qui correspond exactement aux sommes prélevées sur
             ses gains et sur son fonds de rachat. TamCar règle le retrait sous

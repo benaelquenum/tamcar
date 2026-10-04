@@ -53,7 +53,7 @@ export default async function AdminBonusPage() {
     { title: 'Objectifs quotidiens (volume dans l’app)', keys: ['floor_moto', 'floor_tricycle', 'floor_essentiel', 'floor_confort'] },
     { title: 'Part de TamCar sur le volume', hint: 'Voitures d’Afrik Group : 23 %. Moto et tricycle : 60 % (le versement).', keys: ['share_moto', 'share_tricycle', 'share_essentiel', 'share_confort'] },
     { title: 'Bonus', keys: ['surplus_cede_pct'] },
-    { title: 'TamAssur : cotisation quotidienne par véhicule', hint: 'À faire valider par NSIA (montants variables selon la ligne, minimum accepté).', keys: ['tamassur_moto', 'tamassur_tricycle', 'tamassur_essentiel', 'tamassur_confort', 'tamassur_premium', 'tamassur_fund_pct'] },
+    { title: 'TamAssur : cotisation quotidienne par véhicule', hint: 'Voitures : 1 000 F toutes catégories ; moto 500 F ; tricycle 750 F. Pour tous, 50 % payés par le chauffeur et 50 % prélevés sur son fonds de rachat. NSIA accepte des cotisations différentes selon la ligne.', keys: ['tamassur_moto', 'tamassur_tricycle', 'tamassur_essentiel', 'tamassur_confort', 'tamassur_premium', 'tamassur_fund_pct'] },
   ];
 
   return (

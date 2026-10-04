@@ -117,6 +117,8 @@ const WALLET_LABEL: Record<string, string> = {
   referral_bonus: 'Parrainage',
   insurance_premium: 'Prime d’assurance',
   tamassur_saving: 'Épargne TamAssur',
+  tamassur_from_rachat: 'TamAssur (moitié sur le fonds de rachat)',
+  performance_bonus: 'Bonus de performance',
   tamassur_withdrawal: 'Retrait TamAssur',
   debt_settlement: 'Règlement de dette',
   goodwill_credit: 'Geste commercial',
@@ -126,9 +128,9 @@ const WALLET_LABEL: Record<string, string> = {
 
 const CREDIT_TYPES = new Set([
   'revenue_share_credit', 'rachat_credit', 'dealer_share_credit', 'topup', 'refund',
-  'referral_bonus', 'goodwill_credit', 'cancellation_reimbursement', 'debt_settlement', 'change_return_in',
+  'referral_bonus', 'goodwill_credit', 'cancellation_reimbursement', 'debt_settlement', 'change_return_in', 'performance_bonus',
 ]);
-const DEBIT_TYPES = new Set(['cash_commission', 'insurance_premium', 'withdrawal', 'payment', 'cancellation_fee', 'change_return_out']);
+const DEBIT_TYPES = new Set(['cash_commission', 'insurance_premium', 'tamassur_from_rachat', 'withdrawal', 'payment', 'cancellation_fee', 'change_return_out']);
 
 function fmt(n: number): string {
   return Math.round(n).toLocaleString('fr-FR').replace(/,/g, ' ');

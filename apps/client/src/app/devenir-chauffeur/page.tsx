@@ -71,7 +71,7 @@ export default async function DevenirChauffeurPage() {
             sub={APPLICATION_TYPE_META.cession.sub}
             perks={[
               '40 % du prix de chaque course en cash immédiat',
-              'Bonus +5 % dès votre 16e course du jour',
+              'Bonus de performance : TamCar vous reverse la moitié de sa part au-dessus de votre objectif du jour',
               '10 % en plus dans votre fonds rachat, voiture à vous en 24 mois',
               'Assurance et grosses réparations couvertes pendant les 24 mois',
             ]}

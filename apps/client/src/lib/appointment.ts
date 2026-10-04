@@ -70,7 +70,7 @@ export const APPLICATION_TYPE_META: Record<DriverApplicationType, { label: strin
   cession: {
     label: 'Formule Cession',
     sub: 'TamCar vous fournit la voiture, vous la possédez en 24 mois (36 si neuve)',
-    split: '40% cash · 10% rachat · 30% concession · 20% plateforme · bonus 5% dès la 16e course/jour',
+    split: '40% cash · 10% rachat · 30% concession · 20% plateforme · bonus de performance au-dessus de l’objectif du jour',
   },
   proprietaire: {
     label: 'Formule Propriétaire',
