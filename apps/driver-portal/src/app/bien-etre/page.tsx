@@ -81,9 +81,10 @@ export default function BienEtrePage() {
 
           <p className="mt-md text-sm text-neutral-700">
             <strong className="text-neutral-900">
-              1 000 F par jour — le prix d&apos;un café
+              500 F par jour sur vos gains
             </strong>{' '}
-            — que vous ne sentez même pas passer. Au bout de 2 ans :
+            — le prix d&apos;un café. L&apos;autre moitié est prélevée sur votre
+            fonds de rachat, et c&apos;est toujours votre argent. Au bout de 2 ans :
           </p>
 
           <div className="mt-md rounded-xl bg-gold/10 p-lg text-center">
@@ -138,8 +139,10 @@ export default function BienEtrePage() {
             <p className="mt-xs text-[12px] leading-relaxed text-neutral-700">
               Ces 1 000 F/jour ne sont pas une charge : c&apos;est{' '}
               <strong>votre</strong> capital qui se construit tout seul pendant
-              que vous roulez. TamCar négocie le plan de groupe et gère tout —
-              vous n&apos;avancez rien, aucun papier à remplir. Résultat : au
+              que vous roulez, pour moitié avec vos gains et pour moitié avec
+              votre fonds de rachat (qui diminue d&apos;autant, mais l&apos;argent
+              se retrouve dans votre épargne). TamCar négocie le plan de groupe
+              et gère tout, aucun papier à remplir. Résultat : au
               terme de votre contrat, vous repartez avec un pécule que{' '}
               <strong>9 chauffeurs sur 10 ne réussiront jamais à mettre de côté
               seuls</strong>. La discipline en plus, sans l&apos;effort.

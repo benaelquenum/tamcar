@@ -66,8 +66,9 @@ export function TamAssurCard({
           <p className="mt-xs text-sm text-neutral-700">
             Assurance épargne —{' '}
             <strong style={{ fontVariantNumeric: 'tabular-nums' }}>{formatFcfa(amount)} F</strong>{' '}
-            / jour, du lundi au samedi, prélevés automatiquement sur votre solde
-            Revenus. Capital récupérable.
+            / jour, du lundi au samedi : la moitié (500 F) est prélevée sur votre
+            portefeuille Revenus, l&apos;autre moitié sur votre fonds de rachat. Capital
+            récupérable.
           </p>
         </div>
         <span className={`flex-none rounded-full px-md py-xs text-[10px] font-bold ${badge.cls}`}>

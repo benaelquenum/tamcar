@@ -20,6 +20,7 @@ const NAV: { href: string; label: string; exact?: boolean; badge?: keyof AdminCo
   { href: '/admin/ops', label: 'Responsables ville' },
   { href: '/admin/litiges', label: 'Litiges', badge: 'disputes' },
   { href: '/admin/dettes', label: 'Dettes chauffeur', badge: 'debts' },
+  { href: '/admin/bonus', label: 'Bonus chauffeur' },
   { href: '/admin/tamassur', label: 'Retraits TamAssur' },
   { href: '/admin/promos', label: 'Promos' },
   { href: '/admin/banners', label: 'Bannières' },

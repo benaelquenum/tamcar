@@ -214,11 +214,17 @@ export default function CguPage() {
             <strong>Principe.</strong> L’épargne TamAssur est un dispositif
             d’épargne obligatoire pour les Chauffeurs. Chaque jour, du lundi au
             samedi,{' '}
-            <strong>1 000 FCFA sont prélevés sur le portefeuille « Revenus » du Chauffeur</strong>{' '}
-            et placés dans sa poche « Épargne TamAssur ». Aucun prélèvement
-            n’est opéré le dimanche. Cette épargne est constituée exclusivement
-            des sommes prélevées sur le Chauffeur : TamCar n’y ajoute aucune
-            somme.
+            <strong>1 000 FCFA sont placés dans la poche « Épargne TamAssur »</strong>{' '}
+            du Chauffeur :{' '}
+            <strong>500 FCFA sont prélevés sur son portefeuille « Revenus » et
+            500 FCFA sur son fonds de rachat</strong>. Si le fonds de rachat est
+            insuffisant ce jour-là, la part manquante est prélevée sur le
+            portefeuille « Revenus ». Aucun prélèvement n’est opéré le
+            dimanche. Cette épargne est constituée exclusivement de sommes
+            appartenant au Chauffeur (ses gains et son fonds de rachat) :
+            TamCar n’y ajoute aucune somme. Le fonds de rachat est diminué
+            d’autant ; les sommes ainsi transférées restent acquises au
+            Chauffeur et se retrouvent dans son épargne.
           </p>
           <p className="mt-sm">
             <strong>Montage et responsabilités.</strong> TamCar a souscrit, en
@@ -227,7 +233,8 @@ export default function CguPage() {
             qu’elle y inscrit. TamCar règle chaque jour la cotisation à
             l’assureur et en est seule responsable : le Chauffeur n’est pas
             partie à ce contrat. TamCar se rembourse en prélevant la cotisation
-            sur les gains du Chauffeur. Les intérêts et produits du contrat,
+            sur les gains et le fonds de rachat du Chauffeur. Les intérêts et
+            produits du contrat,
             ainsi que toute somme excédant ce qui est restitué au Chauffeur,
             reviennent à TamCar, en contrepartie de l’engagement de six ans et
             du risque qu’elle supporte (impayé, départ du Chauffeur). Le
@@ -239,7 +246,8 @@ export default function CguPage() {
             vingt-trois (23) mois de cotisation à raison de six jours par
             semaine. Le Chauffeur peut alors demander le retrait de la totalité
             de son épargne, qui correspond exactement aux sommes prélevées sur
-            ses gains. TamCar règle le retrait sous trente (30) jours.
+            ses gains et sur son fonds de rachat. TamCar règle le retrait sous
+            trente (30) jours.
           </p>
           <p className="mt-sm">
             <strong>Prélèvement ferme et solde négatif.</strong> La cotisation
@@ -263,8 +271,8 @@ export default function CguPage() {
             <strong>Départ avant 24 mois.</strong> Si la relation prend fin avant
             24 mois de cotisation (démission, non-renouvellement, résiliation),
             le Chauffeur ne perd pas son épargne : TamCar lui restitue les
-            sommes réellement prélevées sur ses gains au titre de l’épargne,
-            sans intérêts, à la date de déblocage de sa ligne auprès de
+            sommes réellement prélevées sur ses gains et sur son fonds de
+            rachat au titre de l’épargne, sans intérêts, à la date de déblocage de sa ligne auprès de
             l’assureur (24 mois après l’ouverture de cette ligne). La
             restitution est faite sous déduction des seules sommes que le
             Chauffeur doit à TamCar et, le cas échéant, de la réparation prévue
@@ -295,10 +303,35 @@ export default function CguPage() {
           <p className="mt-sm">
             <strong>Information et consentement.</strong> Le Chauffeur reconnaît
             avoir été informé, avant son inscription, du prélèvement quotidien de
-            1 000 FCFA (du lundi au samedi), y compris lorsque son solde est
+            1 000 FCFA (du lundi au samedi : 500 FCFA sur ses gains et 500 FCFA
+            sur son fonds de rachat), y compris lorsque son solde est
             insuffisant, de l’absence d’intérêts à son profit et des règles
             ci-dessus. Son acceptation est enregistrée avec la date et la version
             du document, à valeur de preuve.
+          </p>
+        </Section>
+
+        <Section n="13 ter" title="Bonus de performance du Chauffeur">
+          <p>
+            Le Chauffeur d’un véhicule de la flotte TamCar peut recevoir un
+            bonus quotidien lorsque le volume de ses courses terminées dans
+            l’Application dépasse l’objectif quotidien de son véhicule :{' '}
+            <strong>1 000 FCFA à partir de 150 %</strong> de l’objectif,{' '}
+            <strong>1 500 FCFA à partir de 175 %</strong> et{' '}
+            <strong>2 000 FCFA à partir de 200 %</strong> (montants non
+            cumulatifs). Les objectifs quotidiens sont de 4 500 FCFA pour une
+            moto, 8 500 FCFA pour un tricycle, 12 000 FCFA pour une voiture
+            Essentiel et 15 000 FCFA pour une voiture Confort.
+          </p>
+          <p className="mt-sm">
+            Seules les courses terminées dans l’Application sont comptées, du
+            lundi au samedi. Le bonus est crédité chaque soir sur le portefeuille
+            « Revenus » ; il s’applique à compter de la date indiquée dans
+            l’Application. TamCar peut modifier les objectifs, les paliers et
+            les montants, pour l’avenir, après information du Chauffeur dans
+            l’Application. Un bonus obtenu par fraude (courses fictives,
+            complicité avec un Client) n’est pas dû et peut être repris, sans
+            préjudice de l’article 17.
           </p>
         </Section>
 

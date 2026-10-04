@@ -127,21 +127,27 @@ export default async function DriverDashboardPage() {
 
   type ProgressRow = {
     volume_today: number;
-    min_target: number;
-    bonus_threshold: number;
-    is_senior: boolean;
-    in_bonus_zone: boolean;
-    fcfa_until_bonus: number;
-    fcfa_below_min: number;
+    floor_fcfa: number;
+    pct: number;
+    bonus_now_fcfa: number;
+    next_pct: number | null;
+    next_bonus_fcfa: number | null;
+    fcfa_to_next: number;
+    bonus_started: boolean;
+    bonus_start: string;
+    bonus_day: boolean;
   };
   const progress = ((progressData ?? []) as ProgressRow[])[0] ?? {
     volume_today: 0,
-    min_target: 15000,
-    bonus_threshold: 16050,
-    is_senior: false,
-    in_bonus_zone: false,
-    fcfa_until_bonus: 16050,
-    fcfa_below_min: 15000,
+    floor_fcfa: 0,
+    pct: 0,
+    bonus_now_fcfa: 0,
+    next_pct: null,
+    next_bonus_fcfa: null,
+    fcfa_to_next: 0,
+    bonus_started: false,
+    bonus_start: '2027-01-01',
+    bonus_day: true,
   };
 
   return (
@@ -319,16 +325,21 @@ function TodayProgress({
 }: {
   progress: {
     volume_today: number;
-    min_target: number;
-    bonus_threshold: number;
-    is_senior: boolean;
-    in_bonus_zone: boolean;
-    fcfa_until_bonus: number;
-    fcfa_below_min: number;
+    floor_fcfa: number;
+    pct: number;
+    bonus_now_fcfa: number;
+    next_pct: number | null;
+    next_bonus_fcfa: number | null;
+    fcfa_to_next: number;
+    bonus_started: boolean;
+    bonus_start: string;
+    bonus_day: boolean;
   };
 }) {
-  const pct = Math.min(100, Math.round((progress.volume_today / progress.bonus_threshold) * 100));
-  const minPct = Math.min(100, Math.round((progress.min_target / progress.bonus_threshold) * 100));
+  if (progress.floor_fcfa <= 0) return null;
+  // La barre va de 0 à 200 % de l'objectif ; le trait pointillé marque 100 %.
+  const barPct = Math.min(100, Math.round(progress.pct / 2));
+  const active = progress.bonus_started && progress.bonus_day;
 
   return (
     <section className="mt-lg rounded-xl border border-neutral-200 bg-white p-lg shadow-sm">
@@ -336,11 +347,9 @@ function TodayProgress({
         <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
           Volume du jour
         </h2>
-        {progress.is_senior && (
-          <span className="rounded-full bg-gold px-sm py-0.5 text-[10px] font-bold text-neutral-900 shadow-glow-gold">
-            Senior · seuil abaissé
-          </span>
-        )}
+        <span className="text-[10px] font-bold text-neutral-500" style={{ fontVariantNumeric: 'tabular-nums' }}>
+          {progress.pct} % de l&apos;objectif
+        </span>
       </div>
 
       <div className="flex items-baseline gap-sm">
@@ -350,51 +359,61 @@ function TodayProgress({
         >
           {formatFcfa(progress.volume_today)}
         </p>
-        <p className="text-sm text-neutral-500">
-          F / {formatFcfa(progress.bonus_threshold)} F pour le bonus
-        </p>
+        <p className="text-sm text-neutral-500">F / objectif {formatFcfa(progress.floor_fcfa)} F</p>
       </div>
 
-      {/* Barre de progression avec marqueurs seuil min + seuil bonus */}
       <div className="relative mt-md h-3 overflow-visible rounded-full bg-neutral-100">
         <div
           className={`absolute inset-y-0 left-0 rounded-full transition-all ${
-            progress.in_bonus_zone
+            progress.bonus_now_fcfa > 0
               ? 'bg-gradient-to-r from-gold to-warning'
               : 'bg-gradient-to-r from-primary-500 to-primary-700'
           }`}
-          style={{ width: `${pct}%` }}
+          style={{ width: `${barPct}%` }}
         />
         <div
           className="absolute inset-y-0 border-l-2 border-dashed border-neutral-400"
-          style={{ left: `${minPct}%` }}
-          aria-label="Seuil minimum"
+          style={{ left: '50%' }}
+          aria-label="Objectif"
         />
       </div>
       <div className="mt-xs flex justify-between text-[10px] text-neutral-500">
         <span>0</span>
-        <span style={{ marginLeft: `${minPct - 10}%` }}>Min {formatFcfa(progress.min_target)}</span>
-        <span>Bonus {formatFcfa(progress.bonus_threshold)}</span>
+        <span>Objectif {formatFcfa(progress.floor_fcfa)}</span>
+        <span>{formatFcfa(progress.floor_fcfa * 2)}</span>
       </div>
 
       <p className="mt-md text-sm text-neutral-800">
-        {progress.in_bonus_zone ? (
+        {!progress.bonus_started ? (
           <>
-            <strong className="text-warning">Bonus actif</strong> — +5% cash sur chaque course
-            supplémentaire de la journée.
+            Le <strong>bonus de performance</strong> démarre le{' '}
+            {new Date(progress.bonus_start).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}.
           </>
-        ) : progress.fcfa_below_min > 0 ? (
+        ) : !progress.bonus_day ? (
+          <>Pas de bonus le dimanche.</>
+        ) : progress.bonus_now_fcfa > 0 ? (
           <>
-            Encore <strong className="text-neutral-900">{formatFcfa(progress.fcfa_below_min)} F</strong> de
-            volume pour atteindre votre minimum quotidien de {formatFcfa(progress.min_target)} F.
+            <strong className="text-warning">Bonus du jour : +{formatFcfa(progress.bonus_now_fcfa)} F</strong>, crédités ce soir
+            sur votre portefeuille.
+            {progress.next_pct != null && progress.next_bonus_fcfa != null && (
+              <>
+                {' '}Encore <strong>{formatFcfa(progress.fcfa_to_next)} F</strong> pour {formatFcfa(progress.next_bonus_fcfa)} F.
+              </>
+            )}
           </>
-        ) : (
+        ) : progress.next_pct != null && progress.next_bonus_fcfa != null ? (
           <>
-            <strong className="text-primary-700">Minimum atteint.</strong> Encore{' '}
-            <strong>{formatFcfa(progress.fcfa_until_bonus)} F</strong> pour déclencher le bonus +5%.
+            Encore <strong>{formatFcfa(progress.fcfa_to_next)} F</strong> de courses dans l&apos;app pour gagner{' '}
+            <strong className="text-warning">{formatFcfa(progress.next_bonus_fcfa)} F</strong> de bonus
+            ({progress.next_pct} % de l&apos;objectif).
           </>
-        )}
+        ) : null}
       </p>
+      {active && (
+        <p className="mt-xs text-[11px] text-neutral-500">
+          Le bonus se calcule sur les courses terminées dans l&apos;application, du lundi au samedi.
+        </p>
+      )}
     </section>
   );
 }
