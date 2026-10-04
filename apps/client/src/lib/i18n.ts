@@ -165,7 +165,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'cancel.reason.wrong_direction': 'Le chauffeur va dans la mauvaise direction',
     'cancel.reason.wait_too_long': 'Le temps d\'attente est trop long',
     'cancel.reason.other': 'Autre',
-    'cancel.title': 'Pourquoi souhaitez-vous annuler la course ?',
+    'cancel.title': 'Annuler la course ?',
 
     // History
     'history.title': 'Historique',
@@ -341,7 +341,7 @@ const dict: Record<Lang, Record<string, string>> = {
     'cancel.reason.wrong_direction': 'The driver is going the wrong way',
     'cancel.reason.wait_too_long': 'The wait time is too long',
     'cancel.reason.other': 'Other',
-    'cancel.title': 'Why do you want to cancel?',
+    'cancel.title': 'Cancel the ride?',
 
     // History
     'history.title': 'History',

@@ -20,7 +20,6 @@ import { SUPPORT_PHONE, SUPPORT_PHONE_DISPLAY } from '@/lib/support';
 import { titleCaseName } from '@/lib/name';
 import { AddStopModal } from './AddStopModal';
 import { StopsListClient } from './StopsListClient';
-import { DisputeNotice } from './DisputeNotice';
 import { isAccurateEnough, SmoothingBuffer, getAccuratePosition } from '@/lib/geo-precision';
 import { useWakeLock } from '@/lib/useWakeLock';
 import { useBackgroundTracking } from '@/lib/backgroundTracking';
@@ -1592,7 +1591,6 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                         preview={cancelPreview}
                         onKeep={() => setCancelConfirm(false)}
                         onConfirm={handleCancelRide}
-                        onReasonChange={fetchCancelPreview}
                         cancelling={cancelling}
                         error={cancelError}
                         etaMin={durationToPickup}
@@ -1608,7 +1606,6 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                 Course terminée
               </div>
             )}
-            {ride.status === 'cancelled_by_client' && <DisputeNotice rideId={ride.id} />}
           </div>
           </>
           )}
@@ -2023,13 +2020,10 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
   );
 }
 
-const CANCEL_REASON_CODES = ['driver_asked', 'driver_not_moving', 'wrong_direction', 'wait_too_long', 'other'] as const;
-
 function CancelConfirmPanel({
   preview,
   onKeep,
   onConfirm,
-  onReasonChange,
   cancelling,
   error,
   etaMin,
@@ -2037,27 +2031,18 @@ function CancelConfirmPanel({
   preview: {
     fee_fcfa: number;
     reason_code: string;
-    driver_still_busy_elsewhere: boolean;
-    is_driver_fault: boolean;
-    driver_fault_evidence: string | null;
-    will_be_disputed: boolean;
   } | null;
   onKeep: () => void;
-  onConfirm: (userReason?: string) => void;
-  onReasonChange: (userReason: string | null) => void;
+  onConfirm: () => void;
   cancelling: boolean;
   error: string | null;
   etaMin?: number | null;
 }) {
   const t = useT();
-  const [pickedReason, setPickedReason] = useState<string | null>(null);
   const loading = preview === null;
   const fee = preview?.fee_fcfa ?? 0;
   const isFree = fee === 0;
   const reason = preview?.reason_code;
-  const isDriverFault = preview?.is_driver_fault ?? false;
-  const willBeDisputed = preview?.will_be_disputed ?? false;
-  const evidence = preview?.driver_fault_evidence ?? null;
 
   const explanationLine = (() => {
     switch (reason) {
@@ -2067,12 +2052,14 @@ function CancelConfirmPanel({
         return 'Vous êtes dans la fenêtre de 30 secondes de rétractation. Annulation gratuite.';
       case 'free_driver_busy':
         return 'Votre chauffeur termine une autre course, il n\'a pas encore démarré vers vous. Annulation gratuite.';
-      case 'free_driver_fault':
-        return 'Annulation gratuite — la faute du chauffeur est confirmée par nos données.';
-      case 'driver_on_way':
-        return 'Le chauffeur roule déjà vers vous pour vous prendre en charge.';
+      case 'free_driver_far':
+        return 'Votre chauffeur est encore à plus d\'une minute de vous. Annulation gratuite.';
+      case 'driver_near':
+        return 'Votre chauffeur est à moins d\'une minute de vous.';
       case 'driver_arrived':
         return 'Le chauffeur est arrivé au point de prise en charge et vous attend.';
+      case 'booking_late':
+        return 'Réservation à moins de 10 minutes du départ : des frais s\'appliquent.';
       case 'ride_started':
         return 'La course a démarré. L\'annulation représente 50 % du prix estimé.';
       default:
@@ -2091,62 +2078,7 @@ function CancelConfirmPanel({
       </p>
       <p className="mt-xs text-xs text-neutral-700">{explanationLine}</p>
 
-      <ul className="mt-md space-y-xs">
-        {CANCEL_REASON_CODES.map((code) => (
-          <li key={code}>
-            <button
-              type="button"
-              onClick={() => {
-                setPickedReason(code);
-                onReasonChange(code);
-              }}
-              className={`flex w-full items-center justify-between rounded-lg border p-md text-left text-sm transition ${
-                pickedReason === code
-                  ? 'border-primary-500 bg-white ring-2 ring-primary-500'
-                  : 'border-neutral-200 bg-white hover:border-neutral-300'
-              }`}
-            >
-              <span className="text-neutral-800">{t(`cancel.reason.${code}`)}</span>
-              <span
-                className={`h-4 w-4 flex-none rounded-full border-2 ${
-                  pickedReason === code
-                    ? 'border-primary-500 bg-primary-500'
-                    : 'border-neutral-300'
-                }`}
-              />
-            </button>
-          </li>
-        ))}
-      </ul>
-
-      {isDriverFault && evidence && (
-        <div className="mt-md rounded-lg bg-white p-md ring-2 ring-primary-500">
-          <p className="flex items-center gap-xs text-xs font-bold uppercase tracking-wider text-primary-700">
-            <CheckIcon className="h-3.5 w-3.5" strokeWidth={3} />
-            Preuve automatique
-          </p>
-          <p className="mt-xs text-sm font-semibold text-neutral-900">{evidence}</p>
-          <p className="mt-xs text-[11px] text-neutral-600">
-            Annulation gratuite. Le chauffeur reçoit un signalement sur son historique.
-          </p>
-        </div>
-      )}
-
-      {willBeDisputed && !isDriverFault && (
-        <div className="mt-md rounded-lg bg-amber-50 p-md ring-1 ring-amber-300">
-          <p className="flex items-center gap-xs text-xs font-bold uppercase tracking-wider text-amber-800">
-            <AlertTriangleIcon className="h-3.5 w-3.5" />
-            Litige — sera examiné
-          </p>
-          <p className="mt-xs text-[11px] text-neutral-700">
-            Nos données ne confirment pas cette raison automatiquement. Les frais
-            s&apos;appliquent, mais votre annulation sera examinée par notre équipe. Si le
-            chauffeur est en tort, vous serez remboursé.
-          </p>
-        </div>
-      )}
-
-      {etaMin != null && etaMin > 0 && !isDriverFault && (
+      {etaMin != null && etaMin > 0 && (
         <p className="mt-md text-center text-sm text-neutral-700">
           Votre chauffeur est à <strong>{etaMin} min</strong> de votre position — vous pouvez
           l&apos;attendre.
@@ -2191,8 +2123,8 @@ function CancelConfirmPanel({
         </button>
         <button
           type="button"
-          onClick={() => onConfirm(pickedReason ?? undefined)}
-          disabled={cancelling || loading || pickedReason === null}
+          onClick={() => onConfirm()}
+          disabled={cancelling || loading}
           className={`w-full rounded-xl py-md text-sm font-bold text-white shadow-md disabled:opacity-40 ${
             isFree ? 'bg-primary-500' : 'bg-error'
           }`}
