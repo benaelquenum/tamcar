@@ -1,7 +1,7 @@
 import { ConfirmSubmit } from '@/components/ConfirmSubmit';
 import { displayBeninPhone } from '@/lib/phone';
 import { createServerSupabase } from '@/lib/supabase-server';
-import { endCityManagerAction, setCityManagerAction } from './actions';
+import { endCityManagerAction, payOpsWalletAction, setCityManagerAction } from './actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,6 +27,17 @@ type ManagerRow = {
 
 type CityRow = { city: string; active: boolean };
 
+type WalletRow = {
+  profile_id: string;
+  full_name: string;
+  phone: string | null;
+  city: string;
+  active: boolean;
+  balance_fcfa: number;
+  earned_month: number;
+  earned_total: number;
+};
+
 function fmt(n: number): string {
   return Math.round(Number(n) || 0)
     .toLocaleString('fr-FR')
@@ -43,10 +54,12 @@ const ROLE_LABEL: Record<ManagerRow['profile_role'], string> = {
 export default async function AdminOpsPage() {
   const supabase = createServerSupabase();
 
-  const [{ data: managersData }, { data: citiesData }] = await Promise.all([
+  const [{ data: managersData }, { data: citiesData }, { data: walletsData }] = await Promise.all([
     supabase.rpc('admin_city_managers'),
     supabase.from('ops_cities').select('city, active').order('city'),
+    supabase.rpc('admin_ops_wallets'),
   ]);
+  const wallets = (walletsData ?? []) as WalletRow[];
 
   const managers = (managersData ?? []) as ManagerRow[];
   const cities = ((citiesData ?? []) as CityRow[]).filter((c) => c.active);
@@ -81,11 +94,67 @@ export default async function AdminOpsPage() {
       <p className="mb-lg rounded-md bg-neutral-100 p-md text-xs leading-relaxed text-neutral-600">
         Le responsable opérations perçoit <strong>3 % du volume des courses de sa ville</strong>{' '}
         (prix total des courses terminées partant de la ville), plafonné à{' '}
-        <strong>150 000 F par mois</strong>. Le droit d&apos;accès à son espace{' '}
-        <code className="rounded bg-white px-xs">/ops</code> vient de cette nomination, pas du rôle
-        du compte : un chauffeur peut être responsable. Les montants ci-dessous sont{' '}
-        <strong>calculés, pas encore versés</strong> — le règlement se fait hors application.
+        <strong>150 000 F par mois</strong>. Son espace est dans <strong>TamCar Pro</strong>{' '}
+        (rubrique « Espace responsable opérations ») : le droit d&apos;accès vient de cette
+        nomination, pas du rôle du compte, car un chauffeur peut être responsable. À partir du
+        1er janvier 2027, la commission est <strong>créditée au fil des courses</strong> dans son
+        portefeuille (ses propres courses ne comptent pas). Le règlement se fait hors application :
+        enregistrez-le ci-dessous.
       </p>
+
+      {/* ---------- Portefeuilles ---------- */}
+      {wallets.length > 0 && (
+        <section className="mb-2xl">
+          <h2 className="mb-sm text-sm font-bold uppercase tracking-wider text-neutral-500">
+            Portefeuilles des responsables
+          </h2>
+          <ul className="space-y-sm">
+            {wallets.map((w) => (
+              <li
+                key={w.profile_id + w.city}
+                className="flex flex-wrap items-end justify-between gap-md rounded-xl border border-neutral-200 bg-white p-lg shadow-sm"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-extrabold text-neutral-900">
+                    {w.full_name} <span className="font-normal text-neutral-500">· {w.city}{w.active ? '' : ' (mandat terminé)'}</span>
+                  </p>
+                  <p className="text-xs text-neutral-600" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                    Gagné ce mois : {fmt(w.earned_month)} F · depuis le début : {fmt(w.earned_total)} F
+                  </p>
+                  <p className="mt-xs text-lg font-extrabold text-primary-700" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                    {fmt(w.balance_fcfa)} F à régler
+                  </p>
+                </div>
+                {w.balance_fcfa > 0 && (
+                  <form action={payOpsWalletAction} className="flex flex-wrap items-center gap-xs">
+                    <input type="hidden" name="profile_id" value={w.profile_id} />
+                    <input
+                      type="number"
+                      name="amount"
+                      min={1}
+                      max={w.balance_fcfa}
+                      defaultValue={w.balance_fcfa}
+                      className="w-28 rounded-md border border-neutral-200 bg-white px-md py-xs text-right text-sm"
+                    />
+                    <input
+                      type="text"
+                      name="note"
+                      placeholder="Note (ex. MoMo du 05/01)"
+                      className="w-44 rounded-md border border-neutral-200 bg-white px-md py-xs text-xs"
+                    />
+                    <ConfirmSubmit
+                      message="Enregistrer ce règlement ? Le montant sera débité du portefeuille du responsable."
+                      className="rounded-md bg-neutral-800 px-md py-xs text-xs font-bold text-white hover:bg-neutral-900"
+                    >
+                      Enregistrer le règlement
+                    </ConfirmSubmit>
+                  </form>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* ---------- Villes ---------- */}
       <section className="mb-2xl space-y-md">

@@ -19,7 +19,7 @@ import { logout } from '@/app/login/actions';
 import { BannerCarousel, type BannerItem } from '@/components/BannerCarousel';
 import { TamAssurCard } from './TamAssurCard';
 
-type WalletRow = { kind: 'tamcar_credit' | 'tamcar_revenus' | 'tamcar_rachat' | 'tamcar_epargne'; balance_fcfa: number };
+type WalletRow = { kind: 'tamcar_credit' | 'tamcar_revenus' | 'tamcar_rachat' | 'tamcar_epargne' | 'tamcar_ops'; balance_fcfa: number };
 type RideRow = {
   id: string;
   driver_share_fcfa: number;
@@ -72,6 +72,7 @@ export default async function DriverDashboardPage() {
     { data: insuranceData },
     { data: planData },
     { data: bannerRows },
+    { data: isOpsManager },
   ] = await Promise.all([
     supabase.rpc('my_wallets'),
     supabase
@@ -98,6 +99,7 @@ export default async function DriverDashboardPage() {
       .eq('audience', 'driver')
       .order('display_order', { ascending: true })
       .limit(6),
+    supabase.rpc('ops_is_manager'),
   ]);
 
   const driverBanners = (bannerRows ?? []) as BannerItem[];
@@ -173,6 +175,21 @@ export default async function DriverDashboardPage() {
 
         {driverBanners.length > 0 && (
           <BannerCarousel banners={driverBanners} className="mt-md" />
+        )}
+
+        {isOpsManager === true && (
+          <Link
+            href="/ops"
+            className="mt-md flex items-center justify-between rounded-xl bg-gradient-to-r from-violet-500 to-primary-700 p-lg text-sm font-bold text-white shadow-glow"
+          >
+            <span>
+              Espace responsable opérations
+              <span className="block text-[11px] font-medium text-white/80">
+                Activité de vos chauffeurs et votre portefeuille
+              </span>
+            </span>
+            <ArrowRightIcon className="h-4 w-4" />
+          </Link>
         )}
 
         <section className="mt-lg flex items-center gap-md">

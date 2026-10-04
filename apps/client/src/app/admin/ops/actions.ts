@@ -55,3 +55,22 @@ export async function endCityManagerAction(formData: FormData) {
 
   revalidatePath('/admin/ops');
 }
+
+/** Enregistre un règlement fait au responsable (hors application) : débite son portefeuille. */
+export async function payOpsWalletAction(formData: FormData) {
+  const profileId = String(formData.get('profile_id') || '');
+  const amount = Math.round(Number(formData.get('amount')));
+  const note = String(formData.get('note') || '').trim() || null;
+  if (!profileId) throw new Error('Responsable requis');
+  if (!Number.isFinite(amount) || amount <= 0) throw new Error('Montant invalide');
+
+  const supabase = createServerSupabase();
+  const { error } = await supabase.rpc('admin_pay_ops_wallet', {
+    p_profile: profileId,
+    p_amount: amount,
+    p_note: note,
+  });
+  if (error) throw new Error(error.message);
+
+  revalidatePath('/admin/ops');
+}

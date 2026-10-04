@@ -1,4 +1,4 @@
-export type WalletKind = 'tamcar_credit' | 'tamcar_revenus' | 'tamcar_rachat' | 'tamcar_epargne';
+export type WalletKind = 'tamcar_credit' | 'tamcar_revenus' | 'tamcar_rachat' | 'tamcar_epargne' | 'tamcar_ops';
 
 export type WalletTxType =
   | 'topup'
@@ -21,6 +21,8 @@ export type WalletTxType =
   | 'tamassur_from_rachat'
   | 'performance_bonus'
   | 'approach_bonus'
+  | 'ops_commission'
+  | 'ops_payout'
   | 'adjustment';
 
 export type Wallet = {
@@ -59,6 +61,12 @@ export const WALLET_KIND_META: Record<WalletKind, { label: string; sub: string; 
     gradient: 'from-gold to-warning',
     icon: '🔑',
   },
+  tamcar_ops: {
+    label: 'Portefeuille responsable',
+    sub: 'Commissions de responsable opérations',
+    gradient: 'from-violet-500 to-primary-700',
+    icon: '📊',
+  },
   tamcar_epargne: {
     label: 'TamAssur — Épargne',
     sub: 'Votre capital récupérable',
@@ -86,6 +94,8 @@ const TX_LABEL: Record<WalletTxType, string> = {
   tamassur_from_rachat: 'TamAssur (vers épargne)',
   performance_bonus: 'Bonus de performance',
   approach_bonus: 'Prime d\'approche',
+  ops_commission: 'Commission responsable opérations',
+  ops_payout: 'Règlement responsable opérations',
   tamassur_withdrawal: 'Retrait épargne TamAssur',
   goodwill_credit: 'Crédit d\'excuse',
   adjustment: 'Ajustement admin',
@@ -100,6 +110,7 @@ const CREDIT_TYPES = new Set<WalletTxType>([
   'goodwill_credit',
   'performance_bonus',
   'approach_bonus',
+  'ops_commission',
   'tamassur_saving',
   'debt_settlement',
 ]);
