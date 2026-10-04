@@ -44,6 +44,12 @@ function fmt(n: number): string {
     .replace(/[  ,]/g, ' ');
 }
 
+/** Communes couvertes par chaque zone (rattachement géographique : rayon autour du centre). */
+const ZONE_COVERAGE: Record<string, string> = {
+  'Grand Nokoué': 'Cotonou, Abomey-Calavi, Sèmè-Podji, Ouidah, Porto-Novo (rayon de 45 km autour de Cotonou)',
+  Parakou: 'Parakou (rayon de 30 km)',
+};
+
 const ROLE_LABEL: Record<ManagerRow['profile_role'], string> = {
   client: 'Client',
   driver: 'Chauffeur',
@@ -170,6 +176,9 @@ export default async function AdminOpsPage() {
                   <p className="text-xs font-bold uppercase tracking-wider text-neutral-600">
                     {c.city}
                   </p>
+                  {ZONE_COVERAGE[c.city] && (
+                    <p className="text-[11px] text-neutral-500">{ZONE_COVERAGE[c.city]}</p>
+                  )}
                   {m ? (
                     <>
                       <p className="mt-xs text-base font-extrabold text-neutral-900">
