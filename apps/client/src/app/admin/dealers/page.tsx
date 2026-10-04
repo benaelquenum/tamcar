@@ -49,7 +49,7 @@ export default async function AdminDealersPage() {
   ]);
   const list = (data ?? []) as DealerRow[];
   const wallets = ((walletsData ?? []) as WalletRow[]).filter((w) => !w.archived);
-  const totalDue = wallets.reduce((sum, w) => sum + w.balance_fcfa, 0);
+  const totalDue = wallets.reduce((sum, w) => sum + Math.max(0, w.balance_fcfa), 0);
   const active = list.filter((d) => d.archived_at === null);
   const archived = list.filter((d) => d.archived_at !== null);
 
@@ -99,12 +99,28 @@ export default async function AdminDealersPage() {
                     {w.last_paid_at &&
                       ` (dernier versement le ${new Date(w.last_paid_at).toLocaleDateString('fr-FR', { timeZone: 'Africa/Porto-Novo' })})`}
                   </p>
-                  <p
-                    className="mt-xs text-lg font-extrabold text-primary-700"
-                    style={{ fontVariantNumeric: 'tabular-nums' }}
-                  >
-                    {fmt(w.balance_fcfa)} F à verser
-                  </p>
+                  {w.balance_fcfa >= 0 ? (
+                    <p
+                      className="mt-xs text-lg font-extrabold text-primary-700"
+                      style={{ fontVariantNumeric: 'tabular-nums' }}
+                    >
+                      {fmt(w.balance_fcfa)} F à verser
+                    </p>
+                  ) : (
+                    <>
+                      <p
+                        className="mt-xs text-lg font-extrabold text-error"
+                        style={{ fontVariantNumeric: 'tabular-nums' }}
+                      >
+                        −{fmt(Math.abs(w.balance_fcfa))} F : ce compte doit de l&apos;argent à TamCar
+                      </p>
+                      <p className="mt-xs max-w-md text-[11px] leading-relaxed text-neutral-500">
+                        Ce contact est aussi chauffeur : son portefeuille Revenus est unique, et les commissions des
+                        courses payées en espèces s&apos;y déduisent de sa part de partenaire. Rien à lui verser tant
+                        que le solde est négatif.
+                      </p>
+                    </>
+                  )}
                 </div>
                 {w.balance_fcfa > 0 && (
                   <form action={payDealerWalletAction} className="flex flex-wrap items-center gap-xs">

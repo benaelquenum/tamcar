@@ -147,10 +147,17 @@ export default async function DealerDashboard({
         </div>
 
         <div className="rounded-2xl bg-white p-lg shadow-sm ring-1 ring-neutral-200">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">Portefeuille à percevoir</p>
-          <p className="mt-xs text-3xl font-extrabold text-neutral-900">
-            <LiveAmount value={s.wallet_fcfa} />
+          <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+            {s.wallet_fcfa < 0 ? 'Solde à régler à TamCar' : 'Portefeuille à percevoir'}
           </p>
+          <p className={`mt-xs text-3xl font-extrabold ${s.wallet_fcfa < 0 ? 'text-error' : 'text-neutral-900'}`}>
+            {s.wallet_fcfa < 0 ? `${fmt(Math.abs(s.wallet_fcfa))} F` : <LiveAmount value={s.wallet_fcfa} />}
+          </p>
+          {s.wallet_fcfa < 0 && (
+            <p className="mt-xs text-[11px] leading-relaxed text-neutral-500">
+              Commissions de vos courses en espèces comme chauffeur, déduites de votre part de partenaire.
+            </p>
+          )}
           {s.paid_fcfa > 0 && (
             <p className="mt-xs text-xs text-neutral-600" style={{ fontVariantNumeric: 'tabular-nums' }}>
               Déjà versé : {fmt(s.paid_fcfa)} F
