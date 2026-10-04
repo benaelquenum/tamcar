@@ -40,7 +40,6 @@ export function WalletView({
   const creditWallet = wallets.find((w) => w.kind === 'tamcar_credit');
   const revenusWallet = wallets.find((w) => w.kind === 'tamcar_revenus');
   const epargneWallet = wallets.find((w) => w.kind === 'tamcar_epargne');
-  const rachatWallet = wallets.find((w) => w.kind === 'tamcar_rachat');
 
   return (
     <main className="relative min-h-dvh bg-white">
@@ -114,13 +113,6 @@ export function WalletView({
                 note={`Déblocable à ${formatFcfa(tamassurGoal)} F · paiement sous 30 jours après la demande.`}
               />
             )
-          )}
-          {/* Fonds de rachat : la moitié de la cotisation TamAssur en est prélevée */}
-          {isDriver && rachatWallet && (
-            <BigWalletCard
-              wallet={rachatWallet}
-              note="Votre argent, mis de côté pour votre véhicule. La moitié de votre cotisation TamAssur est prélevée ici et se retrouve dans votre épargne."
-            />
           )}
         </div>
 

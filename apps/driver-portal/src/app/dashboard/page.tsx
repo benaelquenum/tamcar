@@ -235,7 +235,6 @@ export default async function DriverDashboardPage() {
         <TamAssurCard
           amount={plan.amount}
           minAmount={plan.min_amount}
-          fundPct={plan.fund_pct}
           goal={plan.goal_fcfa}
           capital={epargne}
           today={insuranceToday}

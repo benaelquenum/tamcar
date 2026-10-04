@@ -32,10 +32,10 @@ export default async function WalletPage() {
     'rachat_credit',
     'change_return_in',   // c'est le crédit côté client, ne devrait pas être là mais safe
   ]);
-  // Le fonds de rachat est visible : la moitié de la cotisation TamAssur en est prélevée.
-  const visibleWallets = (wallets ?? []) as Wallet[];
+  // On retire aussi le wallet rachat des cards.
+  const visibleWallets = ((wallets ?? []) as Wallet[]).filter((w) => w.kind !== 'tamcar_rachat');
   const visibleTx = ((transactions ?? []) as WalletTransaction[])
-    .filter((tx) => !HIDDEN_FOR_DRIVER.has(tx.type) && (tx.wallet_kind !== 'tamcar_rachat' || tx.type === 'tamassur_from_rachat'));
+    .filter((tx) => !HIDDEN_FOR_DRIVER.has(tx.type) && tx.wallet_kind !== 'tamcar_rachat');
   const tamassurGoal = ((planData ?? []) as { goal_fcfa: number }[])[0]?.goal_fcfa ?? 600000;
 
   return (

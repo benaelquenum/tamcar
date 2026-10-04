@@ -236,12 +236,7 @@ export default function CguPage() {
             qu’elle y inscrit. TamCar règle chaque jour la cotisation à
             l’assureur et en est seule responsable : le Chauffeur n’est pas
             partie à ce contrat. TamCar se rembourse en prélevant la cotisation
-            sur les gains et le fonds de rachat du Chauffeur. Les intérêts et
-            produits du contrat,
-            ainsi que toute somme excédant ce qui est restitué au Chauffeur,
-            reviennent à TamCar, en contrepartie de l’engagement de six ans et
-            du risque qu’elle supporte (impayé, départ du Chauffeur). Le
-            Chauffeur ne perçoit pas d’intérêts.
+            sur les gains et le fonds de rachat du Chauffeur.
           </p>
           <p className="mt-sm">
             <strong>Retrait après 24 mois.</strong> Le retrait s’ouvre lorsque
@@ -278,7 +273,7 @@ export default function CguPage() {
             24 mois de cotisation (démission, non-renouvellement, résiliation),
             le Chauffeur ne perd pas son épargne : TamCar lui restitue les
             sommes réellement prélevées sur ses gains et sur son fonds de
-            rachat au titre de l’épargne, sans intérêts, à la date de déblocage de sa ligne auprès de
+            rachat au titre de l’épargne, à la date de déblocage de sa ligne auprès de
             l’assureur (24 mois après l’ouverture de cette ligne). La
             restitution est faite sous déduction des seules sommes que le
             Chauffeur doit à TamCar et, le cas échéant, de la réparation prévue
@@ -311,7 +306,7 @@ export default function CguPage() {
             avoir été informé, avant son inscription, du prélèvement quotidien de
             la cotisation correspondant à son véhicule (du lundi au samedi,
             moitié sur ses gains et moitié sur son fonds de rachat), y compris
-            lorsque son solde est insuffisant, de l’absence d’intérêts à son profit et des règles
+            lorsque son solde est insuffisant, et des règles
             ci-dessus. Son acceptation est enregistrée avec la date et la version
             du document, à valeur de preuve.
           </p>

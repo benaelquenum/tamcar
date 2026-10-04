@@ -13,9 +13,9 @@ export const metadata = {
  * et montée en compétence.
  *
  * Formulation validée (option A) : on ne prétend JAMAIS que TamCar finance
- * l'épargne retraite. On dit la vérité — cotisation selon le véhicule, moitié sur
- * les gains, moitié sur le fonds de rachat du chauffeur — en vendant l'indolore et
- * le « c'est à vous », pas un faux « c'est gratuit ».
+ * l'épargne retraite. On dit la vérité — cotisation selon le véhicule, prélevée
+ * automatiquement, le détail des clauses étant dans les CGU — en vendant l'indolore
+ * et le « c'est à vous », pas un faux « c'est gratuit ».
  * Vouvoiement partout.
  */
 export default function BienEtrePage() {
@@ -81,7 +81,7 @@ export default function BienEtrePage() {
 
           <p className="mt-md text-sm text-neutral-700">
             Une cotisation <strong className="text-neutral-900">selon votre véhicule</strong>, du lundi au samedi :{' '}
-            <strong>la moitié sur vos gains, l&apos;autre moitié sur votre fonds de rachat</strong>, et c&apos;est toujours
+            <strong>prélevée automatiquement</strong>, et c&apos;est toujours
             votre argent. Au bout de 2 ans :
           </p>
 
@@ -91,20 +91,18 @@ export default function BienEtrePage() {
                 <tr className="text-left text-[11px] font-bold uppercase tracking-wider text-neutral-500">
                   <th className="px-md py-sm">Véhicule</th>
                   <th className="px-md py-sm text-right">Par jour</th>
-                  <th className="px-md py-sm text-right">Sur vos gains</th>
                   <th className="px-md py-sm text-right">À vous</th>
                 </tr>
               </thead>
               <tbody className="text-neutral-800">
                 {[
-                  ['Moto', 500, 250, 300000],
-                  ['Tricycle', 750, 375, 450000],
-                  ['Voiture (toutes catégories)', 1000, 500, 600000],
-                ].map(([label, day, own, goal]) => (
+                  ['Moto', 500, 300000],
+                  ['Tricycle', 750, 450000],
+                  ['Voiture (toutes catégories)', 1000, 600000],
+                ].map(([label, day, goal]) => (
                   <tr key={String(label)} className="border-t border-gold/20">
                     <td className="px-md py-sm font-semibold">{label}</td>
                     <td className="px-md py-sm text-right">{Number(day).toLocaleString('fr-FR')} F</td>
-                    <td className="px-md py-sm text-right">{Number(own).toLocaleString('fr-FR')} F</td>
                     <td className="px-md py-sm text-right font-extrabold">{Number(goal).toLocaleString('fr-FR')} F</td>
                   </tr>
                 ))}

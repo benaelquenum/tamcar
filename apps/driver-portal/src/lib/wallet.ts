@@ -83,7 +83,7 @@ const TX_LABEL: Record<WalletTxType, string> = {
   debt_settlement: 'Régularisation dette',
   insurance_premium: 'TamAssur (vers épargne)',
   tamassur_saving: 'Épargne TamAssur',
-  tamassur_from_rachat: 'TamAssur (moitié prélevée sur le fonds de rachat)',
+  tamassur_from_rachat: 'TamAssur (vers épargne)',
   performance_bonus: 'Bonus de performance',
   approach_bonus: 'Prime d\'approche',
   tamassur_withdrawal: 'Retrait épargne TamAssur',

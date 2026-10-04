@@ -12,7 +12,6 @@ type TodayCharge = { amount_fcfa: number; collected_fcfa: number; status: string
 export function TamAssurCard({
   amount,
   minAmount,
-  fundPct,
   goal,
   capital,
   today,
@@ -21,7 +20,6 @@ export function TamAssurCard({
 }: {
   amount: number;
   minAmount: number;
-  fundPct: number;
   goal: number;
   capital: number;
   today: TodayCharge;
@@ -59,7 +57,6 @@ export function TamAssurCard({
 
   const CHIPS = Array.from(new Set([minAmount, minAmount * 1.5, minAmount * 2, minAmount * 3].map((v) => Math.round(v / 250) * 250)));
   const pct = Math.min(100, Math.round((capital / Math.max(1, goal)) * 100));
-  const fundPart = Math.round((amount * fundPct) / 100);
 
   return (
     <section className="mt-lg rounded-xl border border-neutral-200 bg-white p-lg shadow-sm">
@@ -72,8 +69,8 @@ export function TamAssurCard({
           <p className="mt-xs text-sm text-neutral-700">
             Assurance épargne —{' '}
             <strong style={{ fontVariantNumeric: 'tabular-nums' }}>{formatFcfa(amount)} F</strong>{' '}
-            / jour, du lundi au samedi : {formatFcfa(amount - fundPart)} F prélevés sur votre portefeuille
-            Revenus et {formatFcfa(fundPart)} F sur votre fonds de rachat. Capital récupérable.
+            / jour, du lundi au samedi, prélevés automatiquement. Capital
+            récupérable.
           </p>
         </div>
         <span className={`flex-none rounded-full px-md py-xs text-[10px] font-bold ${badge.cls}`}>
