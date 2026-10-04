@@ -22,6 +22,7 @@ import { freshChannel } from '@/lib/realtime';
 import { setDriverOnline } from '@/lib/driverPresence';
 import { writeDriverLocation } from '@/lib/positionUplink';
 import { useVisibleInterval } from '@/lib/useVisibleInterval';
+import { ringDelaysMs } from '@/lib/rideRings';
 import { useRideLuggage } from '@/lib/useRideLuggage';
 import { DataUsageChip } from '@/components/DataMeter';
 import { RentalBanner } from '@/components/RentalBanner';
@@ -440,11 +441,14 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
   // Realtime : nouveaux INSERTs rides dans le pool → refresh immédiat
   useEffect(() => {
     if (!isOnline) return;
-    const refetchPool = async () => {
+    let disposed = false;
+    const refetchPool = async (): Promise<PendingRide[]> => {
       const { data } = await supabaseBrowser.rpc('pending_rides_for_driver', {
         radius_km: 10.0,
       });
-      setPending((data ?? []) as PendingRide[]);
+      const rows = (data ?? []) as PendingRide[];
+      setPending(rows);
+      return rows;
     };
     // Cascade de catégories : une demande Confort devient visible au VIP, une demande
     // Essentiel au Confort, 30 s après sa création — sans aucun événement à ce moment-là.
@@ -455,7 +459,22 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'rides' },
         async (payload) => {
-          await refetchPool();
+          const rows = await refetchPool();
+          // Priorité de proximité : si cette course n'est pas encore ouverte à ma distance, je la
+          // relis à l'ouverture de chaque cercle (aucun événement en base à ce moment-là).
+          const newId = (payload.new as { id?: string } | null)?.id;
+          if (newId && !rows.some((x) => x.id === newId)) {
+            void ringDelaysMs().then((delays) => {
+              if (disposed) return;
+              delays.forEach((ms) => {
+                const t = setTimeout(() => {
+                  lateRefetchTimers.delete(t);
+                  void refetchPool();
+                }, ms);
+                lateRefetchTimers.add(t);
+              });
+            });
+          }
           const cat = (payload.new as { requested_category?: string } | null)?.requested_category;
           if (cat === 'confort' || cat === 'essentiel') {
             const t = setTimeout(() => {
@@ -480,6 +499,7 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
         poolRealtimeOkRef.current = status === 'SUBSCRIBED';
       });
     return () => {
+      disposed = true;
       poolRealtimeOkRef.current = false;
       lateRefetchTimers.forEach((t) => clearTimeout(t));
       lateRefetchTimers.clear();

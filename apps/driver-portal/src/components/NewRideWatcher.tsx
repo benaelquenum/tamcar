@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { registerPlugin, Capacitor } from '@capacitor/core';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { freshChannel } from '@/lib/realtime';
+import { ringDelaysMs } from '@/lib/rideRings';
 import { getDriverOnline, subscribeDriverOnline } from '@/lib/driverPresence';
 
 // Veilleur GLOBAL de nouvelles courses (monté dans le layout, toutes pages).
@@ -224,6 +225,17 @@ export function NewRideWatcher() {
     const channel = freshChannel('watcher-pool')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'rides' }, (payload) => {
         void tick();
+        // Priorité de proximité : un cercle qui s'ouvre ne déclenche aucun événement → relecture à chaque ouverture.
+        void ringDelaysMs().then((delays) => {
+          if (cancelled) return;
+          delays.forEach((ms) => {
+            const t = setTimeout(() => {
+              lateTimers.delete(t);
+              if (!cancelled) void tick();
+            }, ms);
+            lateTimers.add(t);
+          });
+        });
         const cat = (payload.new as { requested_category?: string } | null)?.requested_category;
         if (cat === 'confort' || cat === 'essentiel') {
           const t = setTimeout(() => {
