@@ -15,6 +15,7 @@ import {
   previewParam,
   previousMonth,
   type DealerDay,
+  type DealerPayout,
   type DealerRecent,
   type DealerSummary,
   type DealerVehicle,
@@ -34,12 +35,13 @@ export default async function DealerDashboard({
   const preview = previewParam(searchParams.as);
   const who = { p_dealer_id: preview };
 
-  const [{ data: sData }, { data: vData }, { data: dData }, { data: rData }, { data: bannerRows }] =
+  const [{ data: sData }, { data: vData }, { data: dData }, { data: rData }, { data: pData }, { data: bannerRows }] =
     await Promise.all([
       supabase.rpc('dealer_my_summary', who),
       supabase.rpc('dealer_my_vehicles', who),
       supabase.rpc('dealer_my_daily', who),
       supabase.rpc('dealer_my_recent', { ...who, p_limit: 8 }),
+      supabase.rpc('dealer_my_payouts', { ...who, p_limit: 5 }),
       supabase
         .from('home_banners')
         .select('id, title, subtitle, image_url, link_url, cta_text, gradient')
@@ -65,6 +67,7 @@ export default async function DealerDashboard({
   const vehicles = (vData ?? []) as DealerVehicle[];
   const days = (dData ?? []) as DealerDay[];
   const recent = (rData ?? []) as DealerRecent[];
+  const payouts = (pData ?? []) as DealerPayout[];
   const banners = (bannerRows ?? []) as BannerItem[];
 
   const isSunday = new Date(`${s.today}T12:00:00Z`).getUTCDay() === 0;
@@ -156,6 +159,29 @@ export default async function DealerDashboard({
           <p className="mt-md text-[11px] leading-relaxed text-neutral-500">
             Ce solde augmente à chaque course terminée sur vos véhicules. Les versements sont enregistrés par l’équipe TamCar.
           </p>
+          {payouts.length > 0 && (
+            <ul className="mt-md space-y-xs border-t border-neutral-100 pt-md">
+              <li className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">Derniers versements</li>
+              {payouts.map((p) => (
+                <li
+                  key={p.paid_at}
+                  className="flex items-baseline justify-between gap-sm text-xs text-neutral-700"
+                  style={{ fontVariantNumeric: 'tabular-nums' }}
+                >
+                  <span>
+                    {new Date(p.paid_at).toLocaleDateString('fr-FR', {
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric',
+                      timeZone: 'Africa/Porto-Novo',
+                    })}
+                    {p.note && <span className="text-neutral-400"> · {p.note}</span>}
+                  </span>
+                  <strong className="text-neutral-900">{fmt(p.amount_fcfa)} F</strong>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </section>
 

@@ -220,7 +220,7 @@ function TransactionRow({ tx }: { tx: WalletTransaction }) {
         className={`text-sm font-bold ${credit ? 'text-primary-700' : 'text-neutral-900'}`}
         style={{ fontVariantNumeric: 'tabular-nums' }}
       >
-        {credit ? '+' : '−'}{formatFcfa(tx.amount_fcfa)}
+        {credit ? '+' : '−'}{formatFcfa(Math.abs(tx.amount_fcfa))}
         <span className="ml-xs text-[10px] font-medium text-neutral-500">F</span>
       </p>
     </div>

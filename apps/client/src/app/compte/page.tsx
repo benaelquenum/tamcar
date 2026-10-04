@@ -8,6 +8,7 @@ import { createServerSupabase } from '@/lib/supabase-server';
 import { getLang } from '@/lib/i18n-server';
 import { logout } from '@/app/login/actions';
 import { AccountForm } from './AccountForm';
+import { ChangePassword } from './ChangePassword';
 import { LangSwitcher } from '@/components/LangSwitcher';
 
 export default async function ComptePage() {
@@ -70,11 +71,27 @@ export default async function ComptePage() {
           />
         </section>
 
-        {/* Raccourcis */}
-        <section className="mt-lg grid grid-cols-2 gap-sm">
-          <ShortcutLink href="/wallet" Icon={WalletIcon} label="Portefeuille" />
-          <ShortcutLink href="/history" Icon={HistoryIcon} label="Historique" />
+        {/* Mot de passe (les partenaires véhicule reçoivent un mot de passe temporaire de TamCar) */}
+        <section className="mt-lg">
+          <ChangePassword />
         </section>
+
+        {/* Raccourcis */}
+        {profile.role === 'dealer' ? (
+          <section className="mt-lg">
+            <Link
+              href="/dealer"
+              className="flex w-full items-center justify-center rounded-xl bg-primary-500 py-md text-sm font-bold text-white shadow-md"
+            >
+              Mon espace partenaire
+            </Link>
+          </section>
+        ) : (
+          <section className="mt-lg grid grid-cols-2 gap-sm">
+            <ShortcutLink href="/wallet" Icon={WalletIcon} label="Portefeuille" />
+            <ShortcutLink href="/history" Icon={HistoryIcon} label="Historique" />
+          </section>
+        )}
 
         {isOpsManager && (
           <section className="mt-lg">

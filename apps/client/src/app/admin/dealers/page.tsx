@@ -1,7 +1,8 @@
 import { createServerSupabase } from '@/lib/supabase-server';
-import { archiveDealer } from './actions';
+import { archiveDealer, payDealerWalletAction } from './actions';
 import { ConfirmSubmit } from '@/components/ConfirmSubmit';
 import { CreateDealerForm } from './CreateDealerForm';
+import { ResetPasswordControl } from '../drivers/ResetPasswordControl';
 
 type DealerRow = {
   dealer_id: string;
@@ -21,17 +22,34 @@ type DealerRow = {
   completed_rides_count: number;
 };
 
+type WalletRow = {
+  dealer_id: string;
+  company_name: string;
+  full_name: string;
+  phone: string | null;
+  archived: boolean;
+  balance_fcfa: number;
+  earned_month: number;
+  earned_total: number;
+  paid_total: number;
+  last_paid_at: string | null;
+};
+
 function fmt(n: number): string {
-  return n.toLocaleString('fr-FR').replace(/,/g, ' ');
+  return Math.round(Number(n) || 0)
+    .toLocaleString('fr-FR')
+    .replace(/[  ,]/g, ' ');
 }
 
 export default async function AdminDealersPage() {
   const supabase = createServerSupabase();
-  const { data } = await supabase
-    .from('dealer_admin_view')
-    .select('*')
-    .order('registered_at', { ascending: false });
+  const [{ data }, { data: walletsData }] = await Promise.all([
+    supabase.from('dealer_admin_view').select('*').order('registered_at', { ascending: false }),
+    supabase.rpc('admin_dealer_wallets'),
+  ]);
   const list = (data ?? []) as DealerRow[];
+  const wallets = ((walletsData ?? []) as WalletRow[]).filter((w) => !w.archived);
+  const totalDue = wallets.reduce((sum, w) => sum + w.balance_fcfa, 0);
   const active = list.filter((d) => d.archived_at === null);
   const archived = list.filter((d) => d.archived_at !== null);
 
@@ -46,6 +64,78 @@ export default async function AdminDealersPage() {
       </div>
 
       <CreateDealerForm />
+
+      {/* ---------- Versements ---------- */}
+      {wallets.length > 0 && (
+        <section className="mb-2xl">
+          <div className="mb-sm flex flex-wrap items-baseline justify-between gap-sm">
+            <h2 className="text-lg font-bold text-neutral-900">Versements aux partenaires</h2>
+            <p className="text-sm text-neutral-600">
+              À verser au total :{' '}
+              <strong className="text-primary-700" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                {fmt(totalDue)} F
+              </strong>
+            </p>
+          </div>
+          <p className="mb-md rounded-md bg-neutral-100 p-md text-xs leading-relaxed text-neutral-600">
+            Le solde de chaque partenaire augmente à chaque course terminée sur ses véhicules. Vous réglez
+            hors application (Mobile Money, virement), puis vous enregistrez le versement ici : le montant est
+            débité de son portefeuille et apparaît dans son espace.
+          </p>
+          <ul className="space-y-sm">
+            {wallets.map((w) => (
+              <li
+                key={w.dealer_id}
+                className="flex flex-wrap items-end justify-between gap-md rounded-xl border border-neutral-200 bg-white p-lg shadow-sm"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-extrabold text-neutral-900">
+                    {w.company_name}{' '}
+                    <span className="font-normal text-neutral-500">· {w.full_name}</span>
+                  </p>
+                  <p className="text-xs text-neutral-600" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                    Gagné ce mois : {fmt(w.earned_month)} F · depuis le début : {fmt(w.earned_total)} F · déjà versé :{' '}
+                    {fmt(w.paid_total)} F
+                    {w.last_paid_at &&
+                      ` (dernier versement le ${new Date(w.last_paid_at).toLocaleDateString('fr-FR', { timeZone: 'Africa/Porto-Novo' })})`}
+                  </p>
+                  <p
+                    className="mt-xs text-lg font-extrabold text-primary-700"
+                    style={{ fontVariantNumeric: 'tabular-nums' }}
+                  >
+                    {fmt(w.balance_fcfa)} F à verser
+                  </p>
+                </div>
+                {w.balance_fcfa > 0 && (
+                  <form action={payDealerWalletAction} className="flex flex-wrap items-center gap-xs">
+                    <input type="hidden" name="dealer_id" value={w.dealer_id} />
+                    <input
+                      type="number"
+                      name="amount"
+                      min={1}
+                      max={w.balance_fcfa}
+                      defaultValue={w.balance_fcfa}
+                      className="w-28 rounded-md border border-neutral-200 bg-white px-md py-xs text-right text-sm"
+                    />
+                    <input
+                      type="text"
+                      name="note"
+                      placeholder="Note (ex. MoMo du 05/01)"
+                      className="w-44 rounded-md border border-neutral-200 bg-white px-md py-xs text-xs"
+                    />
+                    <ConfirmSubmit
+                      message={`Enregistrer ce versement à ${w.company_name} ? Le montant sera débité de son portefeuille.`}
+                      className="rounded-md bg-neutral-800 px-md py-xs text-xs font-bold text-white hover:bg-neutral-900"
+                    >
+                      Enregistrer le versement
+                    </ConfirmSubmit>
+                  </form>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section>
         <h2 className="mb-md text-lg font-bold text-neutral-900">
@@ -92,12 +182,14 @@ export default async function AdminDealersPage() {
                       </p>
                     </td>
                     <td className="px-md py-md text-right">
+                      <div className="flex flex-wrap items-start justify-end gap-xs">
                       <a
                         href={`/dealer?as=${d.dealer_id}`}
-                        className="mr-xs inline-block rounded-md bg-primary-50 px-md py-xs text-xs font-bold text-primary-700 hover:bg-primary-100"
+                        className="inline-block rounded-md bg-primary-50 px-md py-xs text-xs font-bold text-primary-700 hover:bg-primary-100"
                       >
                         Voir son espace
                       </a>
+                      <ResetPasswordControl profileId={d.profile_id} name={d.full_name} />
                       <form action={archiveDealer} className="inline">
                         <input type="hidden" name="id" value={d.dealer_id} />
                         <input type="hidden" name="reason" value="Archivé depuis l'admin" />
@@ -108,6 +200,7 @@ export default async function AdminDealersPage() {
                           Archiver
                         </ConfirmSubmit>
                       </form>
+                      </div>
                     </td>
                   </tr>
                 ))}

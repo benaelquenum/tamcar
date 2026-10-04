@@ -61,6 +61,8 @@ export type DealerRecent = {
   share_fcfa: number;
 };
 
+export type DealerPayout = { paid_at: string; amount_fcfa: number; note: string | null };
+
 export const CAT_LABEL: Record<string, string> = {
   moto: 'Moto',
   tricycle: 'Tricycle',

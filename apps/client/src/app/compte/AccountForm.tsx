@@ -144,7 +144,7 @@ export function AccountForm({
           Photo de profil
         </span>
         <p className="mt-xs text-[11px] text-neutral-500">
-          Visible par votre chauffeur pendant la course.
+          Visible par votre chauffeur ou par TamCar.
         </p>
         <div className="mt-md flex items-center gap-md">
           <Avatar src={avatarUrl} name={fullName} size={72} />

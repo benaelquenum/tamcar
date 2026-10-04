@@ -38,8 +38,30 @@ export function CreateDealerForm() {
           <p className="mt-md text-[11px] text-neutral-600">
             Le partenaire véhicule se connecte sur{' '}
             <a href="https://tamcar-client.vercel.app/login" className="underline">tamcar-client.vercel.app</a>
-            {' '}avec ces identifiants pour accéder à son portail /dealer.
+            {' '}avec ces identifiants : il arrive directement sur son espace. Il pourra changer son mot de passe
+            dans « Mon compte ».
           </p>
+          <button
+            type="button"
+            onClick={() => {
+              const c = state.credentials;
+              if (!c) return;
+              void navigator.clipboard?.writeText(
+                `Bonjour ${c.full_name}, voici vos accès à l’espace partenaire TamCar (gains en direct, véhicules, versements) :
+` +
+                  `Lien : https://tamcar-client.vercel.app/login
+` +
+                  `Email : ${c.email}
+` +
+                  `Mot de passe temporaire : ${c.password}
+` +
+                  `Changez-le dès votre première connexion (Mon compte, Changer mon mot de passe).`,
+              );
+            }}
+            className="mt-sm rounded-md bg-primary-500 px-md py-xs text-[11px] font-bold text-white hover:brightness-110"
+          >
+            Copier le message à envoyer
+          </button>
         </div>
       )}
       {state.error && (

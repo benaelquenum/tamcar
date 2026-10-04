@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { createServerSupabase } from '@/lib/supabase-server';
 import { createAdminSupabase } from '@/lib/supabase-admin';
 import { deriveEmail, ensureUniqueEmail } from '@/lib/derive-email';
+import { getCurrentProfile } from '@/lib/session';
 
 function generatePassword(): string {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -20,6 +21,9 @@ export type CreateDealerState = {
 
 export async function createDealer(_prev: CreateDealerState | undefined, formData: FormData): Promise<CreateDealerState> {
   try {
+    // Action serveur = point d'entrée public : on revérifie le rôle avant d'utiliser la clé service.
+    const me = await getCurrentProfile();
+    if (!me || me.role !== 'admin') throw new Error('Non autorisé');
     const r = await createDealerImpl(formData);
     return { ok: true, credentials: r };
   } catch (e) {
@@ -90,5 +94,24 @@ export async function archiveDealer(formData: FormData) {
     p_reason: reason,
   });
   if (error) throw new Error(error.message);
+  revalidatePath('/admin/dealers');
+}
+
+/** Enregistre un versement fait au partenaire (hors application) : débite son portefeuille. */
+export async function payDealerWalletAction(formData: FormData) {
+  const dealerId = String(formData.get('dealer_id') || '');
+  const amount = Math.round(Number(formData.get('amount')));
+  const note = String(formData.get('note') || '').trim() || null;
+  if (!dealerId) throw new Error('Partenaire requis');
+  if (!Number.isFinite(amount) || amount <= 0) throw new Error('Montant invalide');
+
+  const supabase = createServerSupabase();
+  const { error } = await supabase.rpc('admin_pay_dealer_wallet', {
+    p_dealer: dealerId,
+    p_amount: amount,
+    p_note: note,
+  });
+  if (error) throw new Error(error.message);
+
   revalidatePath('/admin/dealers');
 }
