@@ -60,9 +60,7 @@ export default function ConditionsPage({
             une cotisation est mise de côté pour vous (500 F par jour pour une
             moto, 750 F pour un tricycle, 1 000 F pour une voiture ; moitié sur
             vos gains et moitié sur votre fonds de rachat ; 600 000 F sur 2 ans
-            pour une voiture), qui vous sont rendus intégralement ; les
-            intérêts du placement reviennent à TamCar, qui porte le risque.
-            Votre santé est couverte en option.
+            pour une voiture), qui vous sont rendus intégralement.
           </p>
           <Link
             href="/bien-etre"

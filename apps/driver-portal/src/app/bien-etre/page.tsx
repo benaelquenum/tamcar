@@ -50,8 +50,7 @@ export default function BienEtrePage() {
           <p className="mt-sm text-sm text-primary-100/90">
             Vous ne conduisez pas juste pour aujourd&apos;hui. Avec TamCar,
             chaque course vous rapproche de{' '}
-            <strong className="text-white">votre véhicule</strong>,{' '}
-            <strong className="text-white">votre santé</strong> et{' '}
+            <strong className="text-white">votre véhicule</strong> et{' '}
             <strong className="text-white">votre retraite</strong>.
           </p>
         </section>
@@ -134,14 +133,6 @@ export default function BienEtrePage() {
             <li className="flex gap-sm">
               <span className="text-primary-500">•</span>
               <span>
-                <strong>Vous récupérez exactement ce qui a été mis de côté</strong>{' '}
-                : les intérêts du placement reviennent à TamCar, qui porte le
-                risque et l&apos;engagement de 6 ans.
-              </span>
-            </li>
-            <li className="flex gap-sm">
-              <span className="text-primary-500">•</span>
-              <span>
                 <strong>TamCar ouvre et gère le plan pour vous</strong> — tarif
                 de groupe négocié, vous n&apos;avez rien à faire.
               </span>
@@ -156,10 +147,8 @@ export default function BienEtrePage() {
             <p className="mt-xs text-[12px] leading-relaxed text-neutral-700">
               Cette cotisation n&apos;est pas une charge : c&apos;est{' '}
               <strong>votre</strong> capital qui se construit tout seul pendant
-              que vous roulez, pour moitié avec vos gains et pour moitié avec
-              votre fonds de rachat (qui diminue d&apos;autant, mais l&apos;argent
-              se retrouve dans votre épargne). TamCar négocie le plan de groupe
-              et gère tout, aucun papier à remplir. Résultat : au
+              que vous roulez. TamCar négocie le plan de groupe et gère tout,
+              aucun papier à remplir. Résultat : au
               terme de votre contrat, vous repartez avec un pécule que{' '}
               <strong>peu de chauffeurs parviennent à mettre de côté
               seuls</strong>. La discipline en plus, sans l&apos;effort.
@@ -171,20 +160,19 @@ export default function BienEtrePage() {
               à rouler sans interruption.
             </p>
           </div>
-        </section>
 
-        {/* Santé */}
-        <Benefit
-          emoji="🏥"
-          title="Votre santé"
-          badge="Sur option"
-          badgeTone="neutral"
-        >
-          Jusqu&apos;à <strong>80 % de vos frais de santé remboursés</strong>,
-          vous et votre famille. TamCar négocie un{' '}
-          <strong>tarif de groupe</strong> que vous n&apos;obtiendriez jamais
-          seul.
-        </Benefit>
+          <Link
+            href="/cgu"
+            className="mt-md flex items-center justify-between rounded-xl bg-white px-md py-sm text-[13px] font-bold text-primary-700 ring-1 ring-primary-200 hover:bg-primary-50"
+          >
+            <span>
+              Les règles de l&apos;épargne (cotisation, retrait, départ, décès ou
+              invalidité) sont dans les Conditions générales d&apos;utilisation
+              chauffeur.
+            </span>
+            <span aria-hidden className="ml-sm flex-none">→</span>
+          </Link>
+        </section>
 
         {/* Montée en compétence */}
         <Benefit
