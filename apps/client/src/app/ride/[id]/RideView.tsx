@@ -20,6 +20,7 @@ import { SUPPORT_PHONE, SUPPORT_PHONE_DISPLAY } from '@/lib/support';
 import { titleCaseName } from '@/lib/name';
 import { AddStopModal } from './AddStopModal';
 import { StopsListClient } from './StopsListClient';
+import { DisputeNotice } from './DisputeNotice';
 import { isAccurateEnough, SmoothingBuffer, getAccuratePosition } from '@/lib/geo-precision';
 import { useWakeLock } from '@/lib/useWakeLock';
 import { useBackgroundTracking } from '@/lib/backgroundTracking';
@@ -1607,6 +1608,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                 Course terminée
               </div>
             )}
+            {ride.status === 'cancelled_by_client' && <DisputeNotice rideId={ride.id} />}
           </div>
           </>
           )}

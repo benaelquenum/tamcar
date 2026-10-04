@@ -178,8 +178,8 @@ export default function CguPage() {
             court qu’à partir du moment où il fait effectivement route vers le
             Client. Un Chauffeur qui accepte puis annule sans motif légitime est
             soumis à un barème équivalent. Toute annulation peut être contestée
-            auprès du support ; un arbitrage est rendu sur la base des éléments
-            enregistrés par la Plateforme.
+            selon la procédure de l’article 20 ; la décision est rendue sur la
+            base des éléments enregistrés par la Plateforme.
           </p>
         </Section>
 
@@ -327,11 +327,16 @@ export default function CguPage() {
         <Section n="16" title="Score de fiabilité et notation">
           <p>
             Chaque compte dispose d’un score de fiabilité affecté par les
-            annulations abusives et restauré par les courses menées à terme. Un
-            score dégradé peut entraîner une majoration de l’empreinte, une
-            exigence de pré-paiement ou la suspension du compte. Clients et
-            Chauffeurs se notent mutuellement après chaque course ; les notes
-            sont visibles avant la prise en charge.
+            annulations abusives et restauré par les courses menées à terme. Les
+            fautes établies d’un Chauffeur lui font cumuler des points de
+            fiabilité qui s’effacent d’eux-mêmes après soixante (60) jours ;
+            au-delà d’un premier seuil le Chauffeur reçoit un avertissement, et
+            au-delà d’un second seuil son dossier est examiné par un agent de
+            TamCar, sans suspension automatique pour ce seul motif. Un score
+            dégradé peut entraîner une majoration de l’empreinte, une exigence
+            de pré-paiement ou la suspension du compte dans les conditions de
+            l’article 22. Clients et Chauffeurs se notent mutuellement après
+            chaque course ; les notes sont visibles avant la prise en charge.
           </p>
         </Section>
 
@@ -393,6 +398,28 @@ export default function CguPage() {
             TamCar ne prive pas les parties de leurs droits de recours devant
             les juridictions compétentes.
           </p>
+          <p className="mt-sm">
+            <strong>Décisions automatisées.</strong> Les litiges relatifs aux
+            annulations sont tranchés en premier lieu de façon automatique,
+            selon des règles appliquées aux données enregistrées de la course
+            (position GPS du Chauffeur, horodatages, historique de
+            réclamations). Lorsque les données ne permettent pas de trancher et
+            que les frais sont modestes, TamCar peut rembourser le Client à
+            titre de geste commercial, dans la limite d’une enveloppe, sans
+            reconnaître de faute. Les dossiers que les règles ne peuvent pas
+            trancher sont examinés par un agent de TamCar.
+          </p>
+          <p className="mt-sm">
+            <strong>Contestation et réexamen.</strong> La décision est notifiée
+            avec ses motifs. Le Client peut la contester une fois dans les
+            quarante-huit (48) heures, le Chauffeur une fois dans les sept (7)
+            jours. La contestation est d’abord vérifiée automatiquement : si une
+            donnée enregistrée de la course confirme la décision, elle est
+            maintenue ; sinon elle est examinée par un agent de TamCar. Dans
+            tous les cas, la partie peut demander au support, dans le délai de
+            trente (30) jours prévu ci-dessus, un réexamen par un agent de
+            TamCar.
+          </p>
         </Section>
 
         <Section n="21" title="Responsabilité de TamCar">
@@ -414,7 +441,10 @@ export default function CguPage() {
           <p>
             TamCar peut suspendre ou résilier un compte en cas de violation des
             présentes CGU, de fraude, de comportement dangereux ou d’impayés,
-            après notification motivée sauf urgence. L’utilisateur peut
+            après notification motivée sauf urgence. La suspension d’un
+            Chauffeur dont la dette envers TamCar atteint 5 000 FCFA est
+            automatique et levée automatiquement dès le règlement de la dette,
+            dans les conditions de l’article 13 bis. L’utilisateur peut
             supprimer son compte à tout moment depuis l’application ou par
             demande à contact@tamcar.app ; la suppression entraîne le
             traitement du solde TamCar Crédit selon l’article 9 et la

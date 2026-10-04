@@ -233,6 +233,15 @@ export default async function DriverDashboardPage() {
           balance={revenus}
         />
 
+        {/* Signalements et points de fiabilité */}
+        <Link
+          href="/strikes"
+          className="mt-lg flex items-center justify-between rounded-xl border border-neutral-200 bg-white p-lg text-sm font-bold text-neutral-800 shadow-sm"
+        >
+          Mes signalements et points de fiabilité
+          <ArrowRightIcon className="h-4 w-4 text-neutral-400" />
+        </Link>
+
         {/* Véhicule */}
         {vehicleInfo && (
           <section className="mt-lg rounded-xl border border-neutral-200 bg-white p-lg shadow-sm">
