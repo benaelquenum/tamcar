@@ -15,7 +15,6 @@ import {
 } from '@/lib/wallet';
 import { WalletModal, EpargneWithdrawModal } from './WalletModals';
 
-const TAMASSUR_THRESHOLD = 600000;
 
 type TamassurPending = { id: string; amount_fcfa: number; status: string; due_at: string } | null;
 
@@ -25,6 +24,7 @@ type Props = {
   isDriver: boolean;
   driverApplicationType?: 'cession' | 'proprietaire' | null;
   tamassurPending?: TamassurPending;
+  tamassurGoal?: number;
 };
 
 export function WalletView({
@@ -33,12 +33,14 @@ export function WalletView({
   isDriver,
   driverApplicationType,
   tamassurPending = null,
+  tamassurGoal = 600000,
 }: Props) {
   const [modal, setModal] = useState<'topup' | 'withdraw' | 'settle' | 'epargne' | null>(null);
 
   const creditWallet = wallets.find((w) => w.kind === 'tamcar_credit');
   const revenusWallet = wallets.find((w) => w.kind === 'tamcar_revenus');
   const epargneWallet = wallets.find((w) => w.kind === 'tamcar_epargne');
+  const rachatWallet = wallets.find((w) => w.kind === 'tamcar_rachat');
 
   return (
     <main className="relative min-h-dvh bg-white">
@@ -92,14 +94,14 @@ export function WalletView({
               />
             )
           )}
-          {/* TamAssur — épargne récupérable (déblocable à 600 000 F) */}
+          {/* TamAssur — épargne récupérable (déblocable à 600 fois la cotisation journalière) */}
           {isDriver && epargneWallet && (
             tamassurPending ? (
               <BigWalletCard
                 wallet={epargneWallet}
                 note={`Retrait de ${formatFcfa(tamassurPending.amount_fcfa)} F en cours — paiement sous 30 jours (avant le ${new Date(tamassurPending.due_at).toLocaleDateString('fr-FR')}).`}
               />
-            ) : epargneWallet.balance_fcfa >= TAMASSUR_THRESHOLD ? (
+            ) : epargneWallet.balance_fcfa >= tamassurGoal ? (
               <BigWalletCard
                 wallet={epargneWallet}
                 actionLabel="Retirer mon épargne"
@@ -109,9 +111,16 @@ export function WalletView({
             ) : (
               <BigWalletCard
                 wallet={epargneWallet}
-                note={`Déblocable à ${formatFcfa(TAMASSUR_THRESHOLD)} F · paiement sous 30 jours après la demande.`}
+                note={`Déblocable à ${formatFcfa(tamassurGoal)} F · paiement sous 30 jours après la demande.`}
               />
             )
+          )}
+          {/* Fonds de rachat : la moitié de la cotisation TamAssur en est prélevée */}
+          {isDriver && rachatWallet && (
+            <BigWalletCard
+              wallet={rachatWallet}
+              note="Votre argent, mis de côté pour votre véhicule. La moitié de votre cotisation TamAssur est prélevée ici et se retrouve dans votre épargne."
+            />
           )}
         </div>
 

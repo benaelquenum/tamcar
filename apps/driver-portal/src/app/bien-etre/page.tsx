@@ -80,24 +80,41 @@ export default function BienEtrePage() {
           </div>
 
           <p className="mt-md text-sm text-neutral-700">
-            <strong className="text-neutral-900">
-              500 F par jour sur vos gains
-            </strong>{' '}
-            — le prix d&apos;un café. L&apos;autre moitié est prélevée sur votre
-            fonds de rachat, et c&apos;est toujours votre argent. Au bout de 2 ans :
+            Une cotisation <strong className="text-neutral-900">selon votre véhicule</strong>, du lundi au samedi :{' '}
+            <strong>la moitié sur vos gains, l&apos;autre moitié sur votre fonds de rachat</strong>, et c&apos;est toujours
+            votre argent. Au bout de 2 ans :
           </p>
 
-          <div className="mt-md rounded-xl bg-gold/10 p-lg text-center">
-            <p
-              className="text-4xl font-extrabold text-neutral-900"
-              style={{ fontVariantNumeric: 'tabular-nums' }}
-            >
-              600 000 F
-            </p>
-            <p className="mt-xs text-xs font-bold uppercase tracking-wider text-neutral-500">
-              à vous, rendus intégralement
-            </p>
+          <div className="mt-md overflow-hidden rounded-xl bg-gold/10">
+            <table className="w-full text-sm" style={{ fontVariantNumeric: 'tabular-nums' }}>
+              <thead>
+                <tr className="text-left text-[11px] font-bold uppercase tracking-wider text-neutral-500">
+                  <th className="px-md py-sm">Véhicule</th>
+                  <th className="px-md py-sm text-right">Par jour</th>
+                  <th className="px-md py-sm text-right">Sur vos gains</th>
+                  <th className="px-md py-sm text-right">À vous</th>
+                </tr>
+              </thead>
+              <tbody className="text-neutral-800">
+                {[
+                  ['Moto', 500, 250, 300000],
+                  ['Tricycle', 750, 375, 450000],
+                  ['Voiture Essentiel', 1000, 500, 600000],
+                  ['Voiture Confort', 1250, 625, 750000],
+                ].map(([label, day, own, goal]) => (
+                  <tr key={String(label)} className="border-t border-gold/20">
+                    <td className="px-md py-sm font-semibold">{label}</td>
+                    <td className="px-md py-sm text-right">{Number(day).toLocaleString('fr-FR')} F</td>
+                    <td className="px-md py-sm text-right">{Number(own).toLocaleString('fr-FR')} F</td>
+                    <td className="px-md py-sm text-right font-extrabold">{Number(goal).toLocaleString('fr-FR')} F</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
+          <p className="mt-xs text-xs font-bold uppercase tracking-wider text-neutral-500">
+            à vous, rendus intégralement
+          </p>
 
           <ul className="mt-md space-y-xs text-sm text-neutral-700">
             <li className="flex gap-sm">
@@ -111,7 +128,7 @@ export default function BienEtrePage() {
               <span className="text-primary-500">•</span>
               <span>
                 Après 24 mois de cotisation, vous pouvez{' '}
-                <strong>retirer</strong> votre épargne (600 000 F).
+                <strong>retirer</strong> votre épargne (voir le tableau).
               </span>
             </li>
             <li className="flex gap-sm">

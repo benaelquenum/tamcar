@@ -57,9 +57,10 @@ export default function ConditionsPage({
           <p className="mt-xs text-[13px] leading-relaxed text-neutral-700">
             En roulant avec TamCar, vous vous constituez une{' '}
             <strong>épargne retraite qui vous appartient</strong> : chaque jour sauf le dimanche,{' '}
-            <strong>1 000 F</strong> sont mis de côté pour vous (500 F de vos
-            gains et 500 F de votre fonds de rachat, soit 600 000 F sur 2 ans),
-            qui vous sont rendus intégralement ; les
+            une cotisation est mise de côté pour vous (de 500 F pour une moto à
+            1 250 F pour une voiture Confort, moitié sur vos gains et moitié sur
+            votre fonds de rachat ; 600 000 F sur 2 ans pour une voiture
+            Essentiel), qui vous sont rendus intégralement ; les
             intérêts du placement reviennent à TamCar, qui porte le risque.
             Votre santé est couverte en option.
           </p>

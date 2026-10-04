@@ -214,10 +214,13 @@ export default function CguPage() {
             <strong>Principe.</strong> L’épargne TamAssur est un dispositif
             d’épargne obligatoire pour les Chauffeurs. Chaque jour, du lundi au
             samedi,{' '}
-            <strong>1 000 FCFA sont placés dans la poche « Épargne TamAssur »</strong>{' '}
-            du Chauffeur :{' '}
-            <strong>500 FCFA sont prélevés sur son portefeuille « Revenus » et
-            500 FCFA sur son fonds de rachat</strong>. Si le fonds de rachat est
+            <strong>une cotisation est placée dans la poche « Épargne TamAssur »</strong>{' '}
+            du Chauffeur. Son montant dépend du véhicule :{' '}
+            <strong>500 FCFA (moto), 750 FCFA (tricycle), 1 000 FCFA (voiture
+            Essentiel), 1 250 FCFA (voiture Confort)</strong> ; le Chauffeur peut
+            choisir un montant supérieur. <strong>La moitié de la cotisation est
+            prélevée sur le portefeuille « Revenus » du Chauffeur, l’autre moitié
+            sur son fonds de rachat</strong>. Si le fonds de rachat est
             insuffisant ce jour-là, la part manquante est prélevée sur le
             portefeuille « Revenus ». Aucun prélèvement n’est opéré le
             dimanche. Cette épargne est constituée exclusivement de sommes
@@ -242,9 +245,11 @@ export default function CguPage() {
           </p>
           <p className="mt-sm">
             <strong>Retrait après 24 mois.</strong> Le retrait s’ouvre lorsque
-            l’épargne atteint <strong>600 000 FCFA</strong>, soit environ
-            vingt-trois (23) mois de cotisation à raison de six jours par
-            semaine. Le Chauffeur peut alors demander le retrait de la totalité
+            l’épargne atteint <strong>six cents (600) fois la cotisation
+            journalière</strong>, soit environ vingt-trois (23) mois de
+            cotisation à raison de six jours par semaine (par exemple 600 000
+            FCFA pour une voiture Essentiel). Le Chauffeur peut alors demander
+            le retrait de la totalité
             de son épargne, qui correspond exactement aux sommes prélevées sur
             ses gains et sur son fonds de rachat. TamCar règle le retrait sous
             trente (30) jours.
@@ -303,9 +308,9 @@ export default function CguPage() {
           <p className="mt-sm">
             <strong>Information et consentement.</strong> Le Chauffeur reconnaît
             avoir été informé, avant son inscription, du prélèvement quotidien de
-            1 000 FCFA (du lundi au samedi : 500 FCFA sur ses gains et 500 FCFA
-            sur son fonds de rachat), y compris lorsque son solde est
-            insuffisant, de l’absence d’intérêts à son profit et des règles
+            la cotisation correspondant à son véhicule (du lundi au samedi,
+            moitié sur ses gains et moitié sur son fonds de rachat), y compris
+            lorsque son solde est insuffisant, de l’absence d’intérêts à son profit et des règles
             ci-dessus. Son acceptation est enregistrée avec la date et la version
             du document, à valeur de preuve.
           </p>
@@ -313,23 +318,28 @@ export default function CguPage() {
 
         <Section n="13 ter" title="Bonus de performance du Chauffeur">
           <p>
-            Le Chauffeur d’un véhicule de la flotte TamCar peut recevoir un
-            bonus quotidien lorsque le volume de ses courses terminées dans
-            l’Application dépasse l’objectif quotidien de son véhicule :{' '}
-            <strong>1 000 FCFA à partir de 150 %</strong> de l’objectif,{' '}
-            <strong>1 500 FCFA à partir de 175 %</strong> et{' '}
-            <strong>2 000 FCFA à partir de 200 %</strong> (montants non
-            cumulatifs). Les objectifs quotidiens sont de 4 500 FCFA pour une
-            moto, 8 500 FCFA pour un tricycle, 12 000 FCFA pour une voiture
-            Essentiel et 15 000 FCFA pour une voiture Confort.
+            Chaque véhicule de la flotte TamCar a un objectif quotidien de
+            volume de courses : 4 500 FCFA pour une moto, 8 500 FCFA pour un
+            tricycle, 12 000 FCFA pour une voiture Essentiel et 15 000 FCFA pour
+            une voiture Confort. Lorsque le volume des courses terminées par le
+            Chauffeur dans l’Application dépasse cet objectif,{' '}
+            <strong>TamCar lui reverse la moitié de la part qu’elle perçoit sur
+            le volume excédentaire</strong>. Le bonus est nul tant que
+            l’objectif n’est pas dépassé.
+          </p>
+          <p className="mt-sm">
+            Exemple : une voiture Essentiel dont la part de TamCar est de 23 %
+            fait 18 000 FCFA de courses dans la journée. Le volume excédentaire
+            est de 6 000 FCFA, sur lesquels TamCar perçoit 1 380 FCFA ; elle
+            reverse la moitié, soit 690 FCFA, au Chauffeur.
           </p>
           <p className="mt-sm">
             Seules les courses terminées dans l’Application sont comptées, du
             lundi au samedi. Le bonus est crédité chaque soir sur le portefeuille
             « Revenus » ; il s’applique à compter de la date indiquée dans
-            l’Application. TamCar peut modifier les objectifs, les paliers et
-            les montants, pour l’avenir, après information du Chauffeur dans
-            l’Application. Un bonus obtenu par fraude (courses fictives,
+            l’Application. TamCar peut modifier les objectifs, les parts et le
+            pourcentage reversé, pour l’avenir, après information du Chauffeur
+            dans l’Application. Un bonus obtenu par fraude (courses fictives,
             complicité avec un Client) n’est pas dû et peut être repris, sans
             préjudice de l’article 17.
           </p>

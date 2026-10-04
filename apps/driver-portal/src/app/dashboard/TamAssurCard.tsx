@@ -6,19 +6,23 @@ import { CoinsIcon, CheckIcon } from '@/components/Icon';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { formatFcfa } from '@/lib/wallet';
 
-const CHIPS = [1000, 1500, 2000, 3000, 5000];
-const GOAL = 600_000; // objectif commercial « ~600 000 F sur 2 ans »
 
 type TodayCharge = { amount_fcfa: number; collected_fcfa: number; status: string } | null;
 
 export function TamAssurCard({
   amount,
+  minAmount,
+  fundPct,
+  goal,
   capital,
   today,
   isSunday,
   balance,
 }: {
   amount: number;
+  minAmount: number;
+  fundPct: number;
+  goal: number;
   capital: number;
   today: TodayCharge;
   isSunday: boolean;
@@ -31,8 +35,8 @@ export function TamAssurCard({
   const router = useRouter();
 
   function save() {
-    if (value < 1000) {
-      setError('Minimum 1 000 F par jour.');
+    if (value < minAmount) {
+      setError(`Minimum ${formatFcfa(minAmount)} F par jour pour votre véhicule.`);
       return;
     }
     setError(null);
@@ -53,7 +57,9 @@ export function TamAssurCard({
       ? { txt: "Aujourd'hui : prélevé", cls: 'bg-success/15 text-success' }
       : { txt: 'Prélevé ce soir à 22 h', cls: 'bg-neutral-100 text-neutral-500' };
 
-  const pct = Math.min(100, Math.round((capital / GOAL) * 100));
+  const CHIPS = Array.from(new Set([minAmount, minAmount * 1.5, minAmount * 2, minAmount * 3].map((v) => Math.round(v / 250) * 250)));
+  const pct = Math.min(100, Math.round((capital / Math.max(1, goal)) * 100));
+  const fundPart = Math.round((amount * fundPct) / 100);
 
   return (
     <section className="mt-lg rounded-xl border border-neutral-200 bg-white p-lg shadow-sm">
@@ -66,9 +72,8 @@ export function TamAssurCard({
           <p className="mt-xs text-sm text-neutral-700">
             Assurance épargne —{' '}
             <strong style={{ fontVariantNumeric: 'tabular-nums' }}>{formatFcfa(amount)} F</strong>{' '}
-            / jour, du lundi au samedi : la moitié (500 F) est prélevée sur votre
-            portefeuille Revenus, l&apos;autre moitié sur votre fonds de rachat. Capital
-            récupérable.
+            / jour, du lundi au samedi : {formatFcfa(amount - fundPart)} F prélevés sur votre portefeuille
+            Revenus et {formatFcfa(fundPart)} F sur votre fonds de rachat. Capital récupérable.
           </p>
         </div>
         <span className={`flex-none rounded-full px-md py-xs text-[10px] font-bold ${badge.cls}`}>
@@ -82,7 +87,7 @@ export function TamAssurCard({
           <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-500">
             Mon capital
           </span>
-          <span className="text-[11px] text-neutral-500">Objectif {formatFcfa(GOAL)} F</span>
+          <span className="text-[11px] text-neutral-500">Retrait possible dès {formatFcfa(goal)} F</span>
         </div>
         <p className="mt-xs text-2xl font-extrabold text-success" style={{ fontVariantNumeric: 'tabular-nums' }}>
           {formatFcfa(capital)}
@@ -117,7 +122,7 @@ export function TamAssurCard({
       ) : (
         <div className="mt-md rounded-lg bg-neutral-50 p-md">
           <p className="text-[11px] font-bold uppercase tracking-wider text-neutral-500">
-            Montant par jour (min 1 000 F)
+            Montant par jour (min {formatFcfa(minAmount)} F)
           </p>
           <div className="mt-sm flex flex-wrap gap-xs">
             {CHIPS.map((c) => (
@@ -137,7 +142,7 @@ export function TamAssurCard({
           </div>
           <input
             type="number"
-            min={1000}
+            min={minAmount}
             step={500}
             value={value}
             onChange={(e) => setValue(Math.max(0, Math.floor(Number(e.target.value) || 0)))}

@@ -9,12 +9,13 @@ export default async function WalletPage() {
   if (!profile) redirect('/login');
 
   const supabase = createServerSupabase();
-  const [{ data: wallets }, { data: transactions }, { data: driver }, { data: withdrawals }] =
+  const [{ data: wallets }, { data: transactions }, { data: driver }, { data: withdrawals }, { data: planData }] =
     await Promise.all([
       supabase.rpc('my_wallets'),
       supabase.rpc('wallet_transactions_for_user', { limit_count: 30 }),
       supabase.from('drivers').select('application_type').eq('profile_id', profile.id).single(),
       supabase.rpc('my_tamassur_withdrawals'),
+      supabase.rpc('my_tamassur_plan'),
     ]);
 
   type Withdrawal = { id: string; amount_fcfa: number; status: string; due_at: string };
@@ -31,10 +32,11 @@ export default async function WalletPage() {
     'rachat_credit',
     'change_return_in',   // c'est le crédit côté client, ne devrait pas être là mais safe
   ]);
-  // On retire aussi le wallet rachat des cards.
-  const visibleWallets = ((wallets ?? []) as Wallet[]).filter((w) => w.kind !== 'tamcar_rachat');
+  // Le fonds de rachat est visible : la moitié de la cotisation TamAssur en est prélevée.
+  const visibleWallets = (wallets ?? []) as Wallet[];
   const visibleTx = ((transactions ?? []) as WalletTransaction[])
-    .filter((tx) => !HIDDEN_FOR_DRIVER.has(tx.type) && tx.wallet_kind !== 'tamcar_rachat');
+    .filter((tx) => !HIDDEN_FOR_DRIVER.has(tx.type) && (tx.wallet_kind !== 'tamcar_rachat' || tx.type === 'tamassur_from_rachat'));
+  const tamassurGoal = ((planData ?? []) as { goal_fcfa: number }[])[0]?.goal_fcfa ?? 600000;
 
   return (
     <WalletView
@@ -43,6 +45,7 @@ export default async function WalletPage() {
       isDriver
       driverApplicationType={applicationType}
       tamassurPending={tamassurPending}
+      tamassurGoal={tamassurGoal}
     />
   );
 }

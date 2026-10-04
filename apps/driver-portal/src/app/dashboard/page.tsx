@@ -59,7 +59,7 @@ export default async function DriverDashboardPage() {
 
   const { data: driver } = await supabase
     .from('drivers')
-    .select('id, application_type, current_vehicle_id, status, is_online, tamassur_fcfa')
+    .select('id, application_type, current_vehicle_id, status, is_online')
     .eq('profile_id', profile.id)
     .single();
   if (!driver) redirect('/');
@@ -70,6 +70,7 @@ export default async function DriverDashboardPage() {
     { data: vehicle },
     { data: progressData },
     { data: insuranceData },
+    { data: planData },
     { data: bannerRows },
   ] = await Promise.all([
     supabase.rpc('my_wallets'),
@@ -89,6 +90,7 @@ export default async function DriverDashboardPage() {
       : Promise.resolve({ data: null }),
     supabase.rpc('driver_today_volume', { p_driver_id: driver.id }),
     supabase.rpc('my_insurance_status'),
+    supabase.rpc('my_tamassur_plan'),
     supabase
       .from('home_banners')
       .select('id, title, subtitle, image_url, link_url, cta_text, gradient')
@@ -119,7 +121,8 @@ export default async function DriverDashboardPage() {
 
   type InsuranceRow = { period: string; amount_fcfa: number; collected_fcfa: number; status: string };
   const insurance = (insuranceData ?? []) as InsuranceRow[];
-  const tamassur = (driver as { tamassur_fcfa?: number }).tamassur_fcfa ?? 1000;
+  type TamAssurPlan = { min_amount: number; amount: number; fund_pct: number; goal_fcfa: number };
+  const plan = ((planData ?? []) as TamAssurPlan[])[0] ?? { min_amount: 1000, amount: 1000, fund_pct: 50, goal_fcfa: 600000 };
   // Date « aujourd'hui » côté Porto-Novo (UTC+1, pas de DST au Bénin)
   const pnToday = new Date(Date.now() + 3_600_000).toISOString().slice(0, 10);
   const insuranceToday = insurance.find((r) => r.period.slice(0, 10) === pnToday) ?? null;
@@ -130,9 +133,8 @@ export default async function DriverDashboardPage() {
     floor_fcfa: number;
     pct: number;
     bonus_now_fcfa: number;
-    next_pct: number | null;
-    next_bonus_fcfa: number | null;
-    fcfa_to_next: number;
+    rate_per_1000: number;
+    fcfa_to_floor: number;
     bonus_started: boolean;
     bonus_start: string;
     bonus_day: boolean;
@@ -142,9 +144,8 @@ export default async function DriverDashboardPage() {
     floor_fcfa: 0,
     pct: 0,
     bonus_now_fcfa: 0,
-    next_pct: null,
-    next_bonus_fcfa: null,
-    fcfa_to_next: 0,
+    rate_per_1000: 0,
+    fcfa_to_floor: 0,
     bonus_started: false,
     bonus_start: '2027-01-01',
     bonus_day: true,
@@ -232,7 +233,10 @@ export default async function DriverDashboardPage() {
 
         {/* TamAssur — assurance épargne récupérable (cotisation quotidienne configurable) */}
         <TamAssurCard
-          amount={tamassur}
+          amount={plan.amount}
+          minAmount={plan.min_amount}
+          fundPct={plan.fund_pct}
+          goal={plan.goal_fcfa}
           capital={epargne}
           today={insuranceToday}
           isSunday={isSunday}
@@ -328,9 +332,8 @@ function TodayProgress({
     floor_fcfa: number;
     pct: number;
     bonus_now_fcfa: number;
-    next_pct: number | null;
-    next_bonus_fcfa: number | null;
-    fcfa_to_next: number;
+    rate_per_1000: number;
+    fcfa_to_floor: number;
     bonus_started: boolean;
     bonus_start: string;
     bonus_day: boolean;
@@ -339,7 +342,7 @@ function TodayProgress({
   if (progress.floor_fcfa <= 0) return null;
   // La barre va de 0 à 200 % de l'objectif ; le trait pointillé marque 100 %.
   const barPct = Math.min(100, Math.round(progress.pct / 2));
-  const active = progress.bonus_started && progress.bonus_day;
+  const above = progress.volume_today > progress.floor_fcfa;
 
   return (
     <section className="mt-lg rounded-xl border border-neutral-200 bg-white p-lg shadow-sm">
@@ -365,9 +368,7 @@ function TodayProgress({
       <div className="relative mt-md h-3 overflow-visible rounded-full bg-neutral-100">
         <div
           className={`absolute inset-y-0 left-0 rounded-full transition-all ${
-            progress.bonus_now_fcfa > 0
-              ? 'bg-gradient-to-r from-gold to-warning'
-              : 'bg-gradient-to-r from-primary-500 to-primary-700'
+            above ? 'bg-gradient-to-r from-gold to-warning' : 'bg-gradient-to-r from-primary-500 to-primary-700'
           }`}
           style={{ width: `${barPct}%` }}
         />
@@ -391,27 +392,24 @@ function TodayProgress({
           </>
         ) : !progress.bonus_day ? (
           <>Pas de bonus le dimanche.</>
-        ) : progress.bonus_now_fcfa > 0 ? (
+        ) : above ? (
           <>
-            <strong className="text-warning">Bonus du jour : +{formatFcfa(progress.bonus_now_fcfa)} F</strong>, crédités ce soir
-            sur votre portefeuille.
-            {progress.next_pct != null && progress.next_bonus_fcfa != null && (
-              <>
-                {' '}Encore <strong>{formatFcfa(progress.fcfa_to_next)} F</strong> pour {formatFcfa(progress.next_bonus_fcfa)} F.
-              </>
-            )}
+            <strong className="text-warning">Bonus du jour : +{formatFcfa(progress.bonus_now_fcfa)} F</strong>, crédités ce
+            soir sur votre portefeuille. Chaque 1 000 F de courses en plus vous rapporte{' '}
+            <strong>{formatFcfa(progress.rate_per_1000)} F</strong>.
           </>
-        ) : progress.next_pct != null && progress.next_bonus_fcfa != null ? (
+        ) : (
           <>
-            Encore <strong>{formatFcfa(progress.fcfa_to_next)} F</strong> de courses dans l&apos;app pour gagner{' '}
-            <strong className="text-warning">{formatFcfa(progress.next_bonus_fcfa)} F</strong> de bonus
-            ({progress.next_pct} % de l&apos;objectif).
+            Encore <strong>{formatFcfa(progress.fcfa_to_floor)} F</strong> de courses dans l&apos;app pour atteindre votre
+            objectif. Au-delà, chaque 1 000 F de courses en plus vous rapporte{' '}
+            <strong className="text-warning">{formatFcfa(progress.rate_per_1000)} F</strong> de bonus.
           </>
-        ) : null}
+        )}
       </p>
-      {active && (
+      {progress.bonus_started && (
         <p className="mt-xs text-[11px] text-neutral-500">
-          Le bonus se calcule sur les courses terminées dans l&apos;application, du lundi au samedi.
+          Le bonus se calcule sur les courses terminées dans l&apos;application, du lundi au samedi : TamCar vous reverse la
+          moitié de sa part sur le volume au-dessus de l&apos;objectif.
         </p>
       )}
     </section>

@@ -60,7 +60,7 @@ export const WALLET_KIND_META: Record<WalletKind, { label: string; sub: string; 
   },
   tamcar_epargne: {
     label: 'TamAssur — Épargne',
-    sub: 'Votre capital récupérable · ~600 000 F sur 2 ans',
+    sub: 'Votre capital récupérable',
     gradient: 'from-success to-cyan',
     icon: '🏦',
   },
