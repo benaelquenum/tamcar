@@ -58,7 +58,7 @@ export default async function AdminBonusPage() {
     { title: 'Bonus', keys: ['surplus_cede_pct'] },
     { title: 'Prime d’approche (chauffeur éloigné du client)', hint: 'Distance mesurée à l’acceptation, à vol d’oiseau. Plafond : part de TamCar sur la course. Versée à la fin de la course.', keys: ['approach_free_m', 'approach_rate_moto', 'approach_rate_tricycle', 'approach_rate_essentiel', 'approach_rate_confort', 'approach_rate_premium', 'approach_cap_pct', 'approach_max_fcfa'] },
     { title: 'Annulation par le client', hint: 'Frais quand le chauffeur est arrivé ou à moins d’une minute du client ; gratuit sinon. Débités sur TamCar Crédit, moitié pour le chauffeur.', keys: ['cancel_fee_fcfa', 'cancel_fee_radius_m'] },
-    { title: 'TamAssur : cotisation quotidienne par véhicule', hint: 'Voitures : 1 000 F toutes catégories ; moto 500 F ; tricycle 750 F. Pour tous, 50 % payés par le chauffeur et 50 % prélevés sur son fonds de rachat. NSIA accepte des cotisations différentes selon la ligne.', keys: ['tamassur_moto', 'tamassur_tricycle', 'tamassur_essentiel', 'tamassur_confort', 'tamassur_premium', 'tamassur_fund_pct'] },
+    { title: 'TamAssur : cotisation quotidienne par véhicule', hint: 'Voitures : 1 000 F toutes catégories ; moto 500 F ; tricycle 750 F. Entièrement payées par le chauffeur, sur son portefeuille Revenus (part du fonds de rachat = 0 %). NSIA accepte des cotisations différentes selon la ligne.', keys: ['tamassur_moto', 'tamassur_tricycle', 'tamassur_essentiel', 'tamassur_confort', 'tamassur_premium', 'tamassur_fund_pct'] },
   ];
 
   return (

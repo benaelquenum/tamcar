@@ -216,16 +216,11 @@ export default function CguPage() {
             du Chauffeur. Son montant dépend du véhicule :{' '}
             <strong>500 FCFA (moto), 750 FCFA (tricycle), 1 000 FCFA (voiture,
             toutes catégories)</strong> ; le Chauffeur peut choisir un montant
-            supérieur. <strong>La moitié de la cotisation est
-            prélevée sur le portefeuille « Revenus » du Chauffeur, l’autre moitié
-            sur son fonds de rachat</strong>. Si le fonds de rachat est
-            insuffisant ce jour-là, la part manquante est prélevée sur le
-            portefeuille « Revenus ». Aucun prélèvement n’est opéré le
-            dimanche. Cette épargne est constituée exclusivement de sommes
-            appartenant au Chauffeur (ses gains et son fonds de rachat) :
-            TamCar n’y ajoute aucune somme. Le fonds de rachat est diminué
-            d’autant ; les sommes ainsi transférées restent acquises au
-            Chauffeur et se retrouvent dans son épargne.
+            supérieur. <strong>La cotisation est intégralement prélevée sur le
+            portefeuille « Revenus » du Chauffeur</strong>. Aucun prélèvement
+            n’est opéré le dimanche. Cette épargne est constituée exclusivement
+            de sommes prélevées sur le Chauffeur : TamCar n’y ajoute aucune
+            somme.
           </p>
           <p className="mt-sm">
             <strong>Montage et responsabilités.</strong> TamCar a souscrit, en
@@ -234,7 +229,7 @@ export default function CguPage() {
             qu’elle y inscrit. TamCar règle chaque jour la cotisation à
             l’assureur et en est seule responsable : le Chauffeur n’est pas
             partie à ce contrat. TamCar se rembourse en prélevant la cotisation
-            sur les gains et le fonds de rachat du Chauffeur.
+            sur le portefeuille « Revenus » du Chauffeur.
           </p>
           <p className="mt-sm">
             <strong>Retrait après 24 mois.</strong> Le retrait s’ouvre lorsque
@@ -245,8 +240,7 @@ export default function CguPage() {
             voiture). Le Chauffeur peut alors demander
             le retrait de la totalité
             de son épargne, qui correspond exactement aux sommes prélevées sur
-            ses gains et sur son fonds de rachat. TamCar règle le retrait sous
-            trente (30) jours.
+            ses gains. TamCar règle le retrait sous trente (30) jours.
           </p>
           <p className="mt-sm">
             <strong>Prélèvement ferme et solde négatif.</strong> La cotisation
@@ -270,8 +264,7 @@ export default function CguPage() {
             <strong>Départ avant 24 mois.</strong> Si la relation prend fin avant
             24 mois de cotisation (démission, non-renouvellement, résiliation),
             le Chauffeur ne perd pas son épargne : TamCar lui restitue les
-            sommes réellement prélevées sur ses gains et sur son fonds de
-            rachat au titre de l’épargne, à la date de déblocage de sa ligne auprès de
+            sommes réellement prélevées sur ses gains au titre de l’épargne, à la date de déblocage de sa ligne auprès de
             l’assureur (24 mois après l’ouverture de cette ligne). La
             restitution est faite sous déduction des seules sommes que le
             Chauffeur doit à TamCar et, le cas échéant, de la réparation prévue
@@ -302,8 +295,7 @@ export default function CguPage() {
           <p className="mt-sm">
             <strong>Information et consentement.</strong> Le Chauffeur reconnaît
             avoir été informé, avant son inscription, du prélèvement quotidien de
-            la cotisation correspondant à son véhicule (du lundi au samedi,
-            moitié sur ses gains et moitié sur son fonds de rachat), y compris
+            la cotisation correspondant à son véhicule (du lundi au samedi), y compris
             lorsque son solde est insuffisant, et des règles
             ci-dessus. Son acceptation est enregistrée avec la date et la version
             du document, à valeur de preuve.
