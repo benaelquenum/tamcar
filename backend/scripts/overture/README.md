@@ -23,3 +23,15 @@ Règles : on ne corrige que les lieux situés DANS l'une des 5 communes ; marge 
 adresse contredisant la correction : laissé pour vérification. L'ancienne ville est gardée dans `tags.city_before_fix`.
 Les lieux situés dans d'autres communes (Adjarra, Allada…) gardent le nom de la grande ville voisine (zone de service).
 Mêmes lieux Overture : positions de remplacement (coordonnées partagées par >= 3 lieux) supprimées (517 lieux), filtre ajouté à `overture_prepare.py`.
+
+## Noms de communes et quartiers (2026-10-04)
+
+- `commune_names.py` + `commune_sql.py` : les lieux situés dans une commune autre que les 5 principales (Adjarra, Allada, Akpro-Missérété, Bopa…)
+  portent désormais le nom réel de leur commune (limites Overture, marge de 150 m, 500 m près de Porto-Novo dont le tracé est grossier).
+  3 413 lieux modifiés ; l'ancienne valeur est dans `tags.city_before_commune`. Entrée : export `places_now.json` (id, name, city, lat, lng…).
+- `district_from_address.py` : quartier (`places.district`) renseigné UNIQUEMENT quand l'adresse du lieu cite explicitement un quartier connu
+  (155 lieux). Affichage : « Nom, Quartier, Ville ».
+- **Pourquoi pas le quartier le plus proche pour tous ?** Il n'existe aucune limite de quartier en données ouvertes (Overture : communes seulement ;
+  OSM : points, pas de polygones). Mesuré sur des adresses qui nomment leur quartier : le point de quartier le plus proche n'est le bon que
+  35 à 60 % du temps ; le géocodage inverse Mapbox, 50 % sur 60 lieux. Trop d'erreurs : non appliqué. Piste fiable : liste officielle des quartiers
+  avec leurs limites (mairies, INSAE, cadastre).

@@ -14,7 +14,7 @@ export type PlaceRow = {
   lng: number;
   lat: number;
   distance_m: number | null;
-  source: 'osm' | 'popular_seed' | 'user_submitted' | 'admin';
+  source: 'osm' | 'popular_seed' | 'user_submitted' | 'admin' | 'overture';
   verified: boolean;
   score: number;
 };
@@ -51,13 +51,27 @@ export async function searchPlaces(
  * Le place_name est enrichi avec la ville pour désambiguïser.
  */
 export function placeToFeature(p: PlaceRow): GeocodeFeature {
-  const cityBit = p.city ? `, ${p.city}` : '';
-  const districtBit = p.district ? ` (${p.district})` : '';
   return {
     id: `place:${p.id}`,
-    place_name: `${p.name}${districtBit}${cityBit}`,
+    place_name: placeLabel(p),
     center: [p.lng, p.lat],
   };
+}
+
+function sameName(a: string, b: string): boolean {
+  const n = (x: string) => x.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  return n(a) === n(b);
+}
+
+/**
+ * Libellé complet d'un lieu : « Nom, Quartier, Ville » (ex. « 4Q, Mènontin, Cotonou »).
+ * Le quartier est omis s'il est inconnu ou identique au nom du lieu ou à la ville.
+ */
+export function placeLabel(p: Pick<PlaceRow, 'name' | 'district' | 'city'>): string {
+  const parts = [p.name];
+  if (p.district && !sameName(p.district, p.name) && !sameName(p.district, p.city ?? '')) parts.push(p.district);
+  if (p.city && !sameName(p.city, p.name)) parts.push(p.city);
+  return parts.join(', ');
 }
 
 export type RecentAddress = {
