@@ -331,11 +331,11 @@ export default function CguPage() {
           </p>
           <p className="mt-sm">
             <strong>Prime d’approche.</strong> Lorsque le Chauffeur accepte une
-            course dont le point de prise en charge est situé à plus d’un (1)
-            kilomètre de sa position au moment de l’acceptation, il reçoit, à
+            course dont le point de prise en charge est situé à plus de trois (3)
+            kilomètres de sa position au moment de l’acceptation, il reçoit, à
             la fin de la course, une prime pour son déplacement :{' '}
             <strong>25 FCFA (moto), 50 FCFA (tricycle) ou 100 FCFA (voiture) par
-            kilomètre au-delà du premier</strong>, arrondie aux 50 FCFA
+            kilomètre au-delà des trois premiers</strong>, arrondie aux 50 FCFA
             inférieurs et plafonnée à <strong>200 FCFA par course</strong>, quelle
             que soit la distance, ainsi qu’à la part perçue par TamCar sur la
             course.
