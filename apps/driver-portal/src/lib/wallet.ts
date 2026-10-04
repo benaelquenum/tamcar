@@ -20,6 +20,7 @@ export type WalletTxType =
   | 'goodwill_credit'
   | 'tamassur_from_rachat'
   | 'performance_bonus'
+  | 'approach_bonus'
   | 'adjustment';
 
 export type Wallet = {
@@ -84,6 +85,7 @@ const TX_LABEL: Record<WalletTxType, string> = {
   tamassur_saving: 'Épargne TamAssur',
   tamassur_from_rachat: 'TamAssur (moitié prélevée sur le fonds de rachat)',
   performance_bonus: 'Bonus de performance',
+  approach_bonus: 'Prime d\'approche',
   tamassur_withdrawal: 'Retrait épargne TamAssur',
   goodwill_credit: 'Crédit d\'excuse',
   adjustment: 'Ajustement admin',
@@ -97,6 +99,7 @@ const CREDIT_TYPES = new Set<WalletTxType>([
   'cancellation_reimbursement',
   'goodwill_credit',
   'performance_bonus',
+  'approach_bonus',
   'tamassur_saving',
   'debt_settlement',
 ]);

@@ -119,6 +119,7 @@ const WALLET_LABEL: Record<string, string> = {
   tamassur_saving: 'Épargne TamAssur',
   tamassur_from_rachat: 'TamAssur (moitié sur le fonds de rachat)',
   performance_bonus: 'Bonus de performance',
+  approach_bonus: 'Prime d’approche',
   tamassur_withdrawal: 'Retrait TamAssur',
   debt_settlement: 'Règlement de dette',
   goodwill_credit: 'Geste commercial',
@@ -128,7 +129,7 @@ const WALLET_LABEL: Record<string, string> = {
 
 const CREDIT_TYPES = new Set([
   'revenue_share_credit', 'rachat_credit', 'dealer_share_credit', 'topup', 'refund',
-  'referral_bonus', 'goodwill_credit', 'cancellation_reimbursement', 'debt_settlement', 'change_return_in', 'performance_bonus',
+  'referral_bonus', 'goodwill_credit', 'cancellation_reimbursement', 'debt_settlement', 'change_return_in', 'performance_bonus', 'approach_bonus',
 ]);
 const DEBIT_TYPES = new Set(['cash_commission', 'insurance_premium', 'tamassur_from_rachat', 'withdrawal', 'payment', 'cancellation_fee', 'change_return_out']);
 

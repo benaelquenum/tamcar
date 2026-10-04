@@ -344,6 +344,18 @@ export default function CguPage() {
             complicité avec un Client) n’est pas dû et peut être repris, sans
             préjudice de l’article 17.
           </p>
+          <p className="mt-sm">
+            <strong>Prime d’approche.</strong> Lorsque le Chauffeur accepte une
+            course dont le point de prise en charge est situé à plus d’un (1)
+            kilomètre de sa position au moment de l’acceptation, il reçoit, à
+            la fin de la course, une prime pour son déplacement :{' '}
+            <strong>25 FCFA (moto), 50 FCFA (tricycle) ou 100 FCFA (voiture) par
+            kilomètre au-delà du premier</strong>, arrondie aux 50 FCFA
+            inférieurs et plafonnée à la part perçue par TamCar sur la course.
+            Elle est créditée sur le portefeuille « Revenus », n’est pas due si
+            la course est annulée, et s’applique à compter de la date indiquée
+            dans l’Application.
+          </p>
         </Section>
 
         <Section n="14" title="Interdiction de contournement">

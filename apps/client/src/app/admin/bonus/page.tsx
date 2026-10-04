@@ -11,6 +11,9 @@ type Summary = {
   month_count?: number;
   month_drivers?: number;
   total_paid?: number;
+  approach_month_paid?: number;
+  approach_month_count?: number;
+  approach_total_paid?: number;
 };
 
 function fmt(n: number | null | undefined): string {
@@ -53,6 +56,7 @@ export default async function AdminBonusPage() {
     { title: 'Objectifs quotidiens (volume dans l’app)', keys: ['floor_moto', 'floor_tricycle', 'floor_essentiel', 'floor_confort'] },
     { title: 'Part de TamCar sur le volume', hint: 'Voitures d’Afrik Group : 23 %. Moto et tricycle : 60 % (le versement).', keys: ['share_moto', 'share_tricycle', 'share_essentiel', 'share_confort'] },
     { title: 'Bonus', keys: ['surplus_cede_pct'] },
+    { title: 'Prime d’approche (chauffeur éloigné du client)', hint: 'Distance mesurée à l’acceptation, à vol d’oiseau. Plafond : part de TamCar sur la course. Versée à la fin de la course.', keys: ['approach_free_m', 'approach_rate_moto', 'approach_rate_tricycle', 'approach_rate_essentiel', 'approach_rate_confort', 'approach_rate_premium', 'approach_cap_pct'] },
     { title: 'Annulation par le client', hint: 'Frais quand le chauffeur est arrivé ou à moins d’une minute du client ; gratuit sinon. Débités sur TamCar Crédit, moitié pour le chauffeur.', keys: ['cancel_fee_fcfa', 'cancel_fee_radius_m'] },
     { title: 'TamAssur : cotisation quotidienne par véhicule', hint: 'Voitures : 1 000 F toutes catégories ; moto 500 F ; tricycle 750 F. Pour tous, 50 % payés par le chauffeur et 50 % prélevés sur son fonds de rachat. NSIA accepte des cotisations différentes selon la ligne.', keys: ['tamassur_moto', 'tamassur_tricycle', 'tamassur_essentiel', 'tamassur_confort', 'tamassur_premium', 'tamassur_fund_pct'] },
   ];
@@ -73,12 +77,13 @@ export default async function AdminBonusPage() {
         nul ; TamCar garde toujours l&apos;autre moitié, donc ne perd jamais d&apos;argent sur le bonus.
       </p>
 
-      <div className="mb-xl grid grid-cols-2 gap-md md:grid-cols-4">
+      <div className="mb-xl grid grid-cols-2 gap-md md:grid-cols-5">
         {[
           ['Versé ce mois', `${fmt(s.month_paid)} F`],
           ['Bonus ce mois', fmt(s.month_count)],
           ['Chauffeurs concernés', fmt(s.month_drivers)],
           ['Total versé', `${fmt(s.total_paid)} F`],
+          ['Primes d’approche ce mois', `${fmt(s.approach_month_paid)} F (${fmt(s.approach_month_count)})`],
         ].map(([label, value]) => (
           <div key={label} className="rounded-xl bg-white p-md shadow-sm ring-1 ring-neutral-200">
             <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">{label}</p>

@@ -1049,6 +1049,46 @@ function catLabel(cat: string): string {
   }
 }
 
+type ApproachPlan = { free_m: number; rate_per_km: number; cap_pct: number; share_pct: number; started: boolean };
+let approachPlanPromise: Promise<ApproachPlan | null> | null = null;
+function loadApproachPlan(): Promise<ApproachPlan | null> {
+  if (!approachPlanPromise) {
+    approachPlanPromise = Promise.resolve(supabaseBrowser.rpc('my_approach_plan'))
+      .then(({ data }) => ((data ?? []) as ApproachPlan[])[0] ?? null)
+      .catch(() => null);
+  }
+  return approachPlanPromise;
+}
+
+/** Prime d'approche annoncée sur l'offre : même calcul que le serveur (arrondie à 50 F inférieurs, plafonnée à la part de TamCar). */
+function ApproachTag({ distanceM, price, light }: { distanceM: number | null; price: number; light: boolean }) {
+  const [plan, setPlan] = useState<ApproachPlan | null>(null);
+  useEffect(() => {
+    let alive = true;
+    void loadApproachPlan().then((p) => {
+      if (alive) setPlan(p);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+  if (!plan || distanceM == null || distanceM <= plan.free_m) return null;
+  const raw = ((distanceM - plan.free_m) / 1000) * plan.rate_per_km;
+  const cap = (price * plan.share_pct * plan.cap_pct) / 10_000;
+  const amount = Math.floor(Math.min(raw, cap) / 50) * 50;
+  if (amount < 50) return null;
+  return (
+    <div
+      className={`mb-sm mr-xs inline-flex items-center gap-xs rounded-full px-md py-xs text-[10px] font-bold ${
+        light ? 'bg-white/20 text-white' : 'bg-gold/20 text-neutral-900'
+      }`}
+    >
+      Prime d&apos;approche +{formatFcfa(amount)} F
+      {plan.started ? '' : ' (dès le lancement)'}
+    </div>
+  );
+}
+
 function RideCard({
   ride,
   hasLuggage = false,
@@ -1096,6 +1136,7 @@ function RideCard({
           Bagages{ride.requested_category === 'moto' || ride.requested_category === 'tricycle' ? ' — vérifiez que ça passe' : ''}
         </div>
       )}
+      {!isBooking && <ApproachTag distanceM={ride.distance_from_driver_m} price={ride.price_total_fcfa} light={false} />}
       {isBelow && (
         <div className={`mb-sm inline-flex items-center gap-xs rounded-full px-md py-xs text-[10px] font-bold ${
           isBooking ? 'bg-white/20 text-white' : 'bg-warning/20 text-warning'
