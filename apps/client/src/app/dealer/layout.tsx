@@ -1,9 +1,11 @@
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Logo } from '@/components/Logo';
 import { LogOutIcon } from '@/components/Icon';
 import { getCurrentProfile } from '@/lib/session';
 import { logout } from '@/app/login/actions';
+import { DealerNav } from './DealerNav';
 
 export default async function DealerLayout({
   children,
@@ -19,25 +21,19 @@ export default async function DealerLayout({
   return (
     <div className="min-h-dvh bg-neutral-100">
       <header className="border-b border-neutral-200 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-lg py-md">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-lg gap-y-sm px-lg py-md">
           <div className="flex items-center gap-md">
             <Link href="/dealer" aria-label="Accueil partenaire véhicule">
               <Logo className="h-8 w-auto" />
             </Link>
             <span className="rounded-full bg-primary-500 px-md py-xs text-xs font-bold uppercase tracking-wider text-white">
-              Concess.
+              Partenaire
             </span>
           </div>
-          <nav className="flex items-center gap-lg">
-            <Link href="/dealer" className="text-sm font-semibold text-neutral-900 hover:text-primary-500">
-              Tableau de bord
-            </Link>
-            <Link href="/dealer/vehicles" className="text-sm font-semibold text-neutral-900 hover:text-primary-500">
-              Mes véhicules
-            </Link>
-            <Link href="/dealer/transactions" className="text-sm font-semibold text-neutral-900 hover:text-primary-500">
-              Transactions
-            </Link>
+          <nav className="flex flex-wrap items-center gap-x-lg gap-y-xs">
+            <Suspense fallback={null}>
+              <DealerNav />
+            </Suspense>
             <Link href="/compte" className="text-sm text-neutral-600 hover:text-primary-500">
               {profile.full_name}
             </Link>

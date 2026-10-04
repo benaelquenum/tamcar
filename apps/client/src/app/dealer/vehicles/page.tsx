@@ -1,57 +1,41 @@
 import { createServerSupabase } from '@/lib/supabase-server';
+import { LiveAmount } from '../LiveAmount';
+import {
+  CAT_LABEL,
+  VEHICLE_STATUS_LABEL,
+  fmt,
+  previewParam,
+  type DealerVehicle,
+} from '../lib';
 
-type VehicleRow = {
-  vehicle_id: string;
-  plate_number: string;
-  brand: string;
-  model: string;
-  year: number | null;
-  color: string | null;
-  category: string;
-  status: 'pending' | 'active' | 'maintenance' | 'retired' | 'archived';
-  assigned_driver_name: string | null;
-  activated_at: string | null;
-  created_at: string;
-};
+export const dynamic = 'force-dynamic';
 
-const STATUS_BADGE: Record<VehicleRow['status'], string> = {
-  pending: 'bg-warning/20 text-warning',
-  active: 'bg-primary-100 text-primary-700',
-  maintenance: 'bg-neutral-200 text-neutral-700',
-  retired: 'bg-neutral-500 text-white',
-  archived: 'bg-neutral-800 text-white',
-};
-
-const STATUS_LABEL: Record<VehicleRow['status'], string> = {
-  pending: 'En attente activation',
-  active: 'Actif',
-  maintenance: 'Maintenance',
-  retired: 'Retiré',
-  archived: 'Archivé',
-};
-
-export default async function DealerVehiclesPage() {
+export default async function DealerVehiclesPage({
+  searchParams,
+}: {
+  searchParams: { as?: string | string[] };
+}) {
   const supabase = createServerSupabase();
-  const { data } = await supabase
-    .from('vehicle_admin_view')
-    .select('vehicle_id, plate_number, brand, model, year, color, category, status, assigned_driver_name, activated_at, created_at, dealer_partner_id')
-    .not('dealer_partner_id', 'is', null)
-    .order('created_at', { ascending: false });
+  const { data } = await supabase.rpc('dealer_my_vehicles', { p_dealer_id: previewParam(searchParams.as) });
+  const list = (data ?? []) as DealerVehicle[];
 
-  const list = (data ?? []) as (VehicleRow & { dealer_partner_id: string | null })[];
+  const monthTotal = list.reduce((s, v) => s + v.month_fcfa, 0);
 
   return (
     <div>
-      <div className="mb-xl flex items-baseline justify-between">
+      <div className="mb-xl flex flex-wrap items-baseline justify-between gap-md">
         <h1 className="text-2xl font-extrabold text-neutral-900">Mes véhicules</h1>
         <p className="text-sm text-neutral-600">
-          {list.length} véhicule{list.length > 1 ? 's' : ''} enregistré{list.length > 1 ? 's' : ''}
+          {list.length} véhicule{list.length > 1 ? 's' : ''} · part du mois :{' '}
+          <strong className="text-primary-700">
+            <LiveAmount value={monthTotal} />
+          </strong>
         </p>
       </div>
 
       <p className="mb-lg rounded-xl bg-primary-50 p-md text-xs text-primary-800">
-        Pour ajouter ou modifier un véhicule, contacte TamCar. L&apos;enregistrement, l&apos;activation
-        et l&apos;affectation à un chauffeur sont gérés par l&apos;administrateur.
+        Pour ajouter ou modifier un véhicule, contactez TamCar. L’enregistrement, l’activation et l’affectation à un
+        chauffeur sont gérés par l’administrateur.
       </p>
 
       {list.length === 0 ? (
@@ -59,48 +43,63 @@ export default async function DealerVehiclesPage() {
           Aucun véhicule enregistré.
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl bg-white shadow-sm">
-          <table className="w-full">
-            <thead className="border-b border-neutral-200 bg-neutral-100 text-left text-xs font-bold uppercase tracking-wider text-neutral-600">
-              <tr>
-                <th className="px-md py-sm">Véhicule</th>
-                <th className="px-md py-sm">Statut</th>
-                <th className="px-md py-sm">Chauffeur affecté</th>
-                <th className="px-md py-sm text-right">Enregistré le</th>
-              </tr>
-            </thead>
-            <tbody>
-              {list.map((v) => (
-                <tr key={v.vehicle_id} className="border-b border-neutral-100 last:border-0">
-                  <td className="px-md py-md">
-                    <p className="font-semibold text-neutral-900">{v.brand} {v.model}</p>
-                    <p className="text-[10px] text-neutral-500" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                      {v.plate_number} · TamCar {v.category}
-                      {v.color && ` · ${v.color}`}
-                      {v.year && ` · ${v.year}`}
-                    </p>
-                  </td>
-                  <td className="px-md py-md">
-                    <span className={`inline-flex rounded-full px-sm py-0.5 text-[10px] font-bold ${STATUS_BADGE[v.status]}`}>
-                      {STATUS_LABEL[v.status]}
-                    </span>
-                    {v.activated_at && (
-                      <p className="mt-xs text-[10px] text-neutral-500">
-                        Activé le {new Date(v.activated_at).toLocaleDateString('fr-FR')}
-                      </p>
+        <ul className="grid gap-md sm:grid-cols-2">
+          {list.map((v) => (
+            <li key={v.vehicle_id} className="rounded-xl bg-white p-lg shadow-sm ring-1 ring-neutral-200">
+              <div className="flex items-start justify-between gap-md">
+                <div className="min-w-0">
+                  <p className="font-semibold text-neutral-900">
+                    {v.brand} {v.model}
+                  </p>
+                  <p className="text-[11px] text-neutral-500" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                    {v.plate_number} · TamCar {CAT_LABEL[v.category] ?? v.category}
+                    {v.color && ` · ${v.color}`}
+                    {v.vehicle_year && ` · ${v.vehicle_year}`}
+                  </p>
+                </div>
+                <span
+                  className={`flex-none rounded-full px-sm py-0.5 text-[10px] font-bold ${
+                    v.status === 'active' ? 'bg-primary-100 text-primary-700' : 'bg-neutral-200 text-neutral-700'
+                  }`}
+                >
+                  {VEHICLE_STATUS_LABEL[v.status]}
+                </span>
+              </div>
+
+              <dl className="mt-md grid grid-cols-2 gap-sm text-xs" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                <div>
+                  <dt className="text-neutral-500">Chauffeur affecté</dt>
+                  <dd className="font-semibold text-neutral-900">
+                    {v.driver_name ?? <span className="text-warning">Non affecté</span>}
+                    {v.driver_name && (
+                      <span className="ml-xs font-normal text-neutral-500">
+                        {v.driver_status === 'suspended' ? '· suspendu' : v.driver_online ? '· en ligne' : '· hors ligne'}
+                      </span>
                     )}
-                  </td>
-                  <td className="px-md py-md text-sm text-neutral-700">
-                    {v.assigned_driver_name || <span className="text-neutral-400">— Non affecté</span>}
-                  </td>
-                  <td className="px-md py-md text-right text-xs text-neutral-500">
-                    {new Date(v.created_at).toLocaleDateString('fr-FR')}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-neutral-500">Mise en service</dt>
+                  <dd className="font-semibold text-neutral-900">
+                    {v.activated_at ? new Date(v.activated_at).toLocaleDateString('fr-FR') : '—'}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-neutral-500">Votre part aujourd’hui</dt>
+                  <dd className="font-semibold text-neutral-900">
+                    {fmt(v.today_fcfa)} F <span className="font-normal text-neutral-500">· {v.today_rides} course{v.today_rides > 1 ? 's' : ''}</span>
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-neutral-500">Votre part ce mois</dt>
+                  <dd className="font-semibold text-primary-700">
+                    {fmt(v.month_fcfa)} F <span className="font-normal text-neutral-500">· {v.month_rides} course{v.month_rides > 1 ? 's' : ''}</span>
+                  </dd>
+                </div>
+              </dl>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );

@@ -92,6 +92,12 @@ export default async function AdminDealersPage() {
                       </p>
                     </td>
                     <td className="px-md py-md text-right">
+                      <a
+                        href={`/dealer?as=${d.dealer_id}`}
+                        className="mr-xs inline-block rounded-md bg-primary-50 px-md py-xs text-xs font-bold text-primary-700 hover:bg-primary-100"
+                      >
+                        Voir son espace
+                      </a>
                       <form action={archiveDealer} className="inline">
                         <input type="hidden" name="id" value={d.dealer_id} />
                         <input type="hidden" name="reason" value="Archivé depuis l'admin" />

@@ -1,138 +1,121 @@
 import { createServerSupabase } from '@/lib/supabase-server';
+import { fmt, monthLabel, previewParam, type DealerMonth, type DealerRecent } from '../lib';
 
-type RideRow = {
-  id: string;
-  status: string;
-  price_total_fcfa: number;
-  dealer_share_fcfa: number;
-  driver_share_fcfa: number;
-  distance_km: number | null;
-  pickup_address: string;
-  dropoff_address: string;
-  vehicle_id: string | null;
-  requested_at: string;
-  ended_at: string | null;
-};
+export const dynamic = 'force-dynamic';
 
-type VehicleRow = { id: string; plate_number: string; brand: string; model: string };
-
-function fmt(n: number): string {
-  return n.toLocaleString('fr-FR').replace(/,/g, ' ');
-}
-
-export default async function DealerTransactionsPage() {
+export default async function DealerHistoryPage({
+  searchParams,
+}: {
+  searchParams: { as?: string | string[] };
+}) {
   const supabase = createServerSupabase();
-  const [{ data: rides }, { data: vehicles }] = await Promise.all([
-    supabase
-      .from('rides_view')
-      .select('id, status, price_total_fcfa, dealer_share_fcfa, driver_share_fcfa, distance_km, pickup_address, dropoff_address, vehicle_id, requested_at, ended_at, dealer_partner_id')
-      .not('dealer_partner_id', 'is', null)
-      .eq('status', 'completed')
-      .order('ended_at', { ascending: false })
-      .limit(500),
-    supabase
-      .from('vehicles')
-      .select('id, plate_number, brand, model'),
+  const who = { p_dealer_id: previewParam(searchParams.as) };
+  const [{ data: mData }, { data: rData }] = await Promise.all([
+    supabase.rpc('dealer_my_months', { ...who, p_n: 24 }),
+    supabase.rpc('dealer_my_recent', { ...who, p_limit: 150 }),
   ]);
 
-  const R = ((rides ?? []) as (RideRow & { dealer_partner_id: string | null })[])
-    .filter((r) => r.dealer_partner_id !== null) as RideRow[];
-  const V = (vehicles ?? []) as VehicleRow[];
-  const vehicleById = new Map(V.map((v) => [v.id, v]));
-
-  const totalGross = R.reduce((s, r) => s + r.price_total_fcfa, 0);
-  const totalShare = R.reduce((s, r) => s + r.dealer_share_fcfa, 0);
+  const months = (mData ?? []) as DealerMonth[];
+  const recent = (rData ?? []) as DealerRecent[];
+  const total = months.reduce((s, m) => s + m.share_fcfa, 0);
 
   return (
-    <div>
-      <div className="mb-xl flex items-baseline justify-between">
-        <h1 className="text-2xl font-extrabold text-neutral-900">Transactions</h1>
+    <div className="space-y-xl">
+      <div className="flex flex-wrap items-baseline justify-between gap-md">
+        <h1 className="text-2xl font-extrabold text-neutral-900">Historique de vos gains</h1>
         <p className="text-sm text-neutral-600">
-          {R.length} course{R.length > 1 ? 's' : ''} terminée{R.length > 1 ? 's' : ''}
+          Votre part sur la période :{' '}
+          <strong className="text-primary-700" style={{ fontVariantNumeric: 'tabular-nums' }}>
+            {fmt(total)} F
+          </strong>
         </p>
       </div>
 
-      <div className="mb-lg grid grid-cols-2 gap-md">
-        <div className="rounded-xl bg-white p-md ring-1 ring-neutral-200">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
-            CA total (prix courses)
-          </p>
-          <p className="mt-xs text-2xl font-extrabold text-neutral-900" style={{ fontVariantNumeric: 'tabular-nums' }}>
-            {fmt(totalGross)} F
-          </p>
-        </div>
-        <div className="rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 p-md text-white shadow-glow">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-primary-100">
-            Ma part cumulée
-          </p>
-          <p className="mt-xs text-2xl font-extrabold" style={{ fontVariantNumeric: 'tabular-nums' }}>
-            {fmt(totalShare)} F
-          </p>
-        </div>
-      </div>
+      <section>
+        <h2 className="mb-md text-lg font-bold text-neutral-900">Mois par mois</h2>
+        {months.length === 0 ? (
+          <div className="rounded-xl bg-white p-2xl text-center text-sm text-neutral-600 shadow-sm">
+            Aucun mois pour le moment.
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-neutral-200">
+            <table className="w-full">
+              <thead className="border-b border-neutral-200 bg-neutral-100 text-left text-xs font-bold uppercase tracking-wider text-neutral-600">
+                <tr>
+                  <th className="px-md py-sm">Mois</th>
+                  <th className="px-md py-sm text-right">Courses</th>
+                  <th className="px-md py-sm text-right">Votre part</th>
+                  <th className="px-md py-sm text-right">Évolution</th>
+                </tr>
+              </thead>
+              <tbody>
+                {months.map((m, i) => {
+                  const prev = months[i + 1];
+                  // Le mois en cours n'est pas terminé : on ne le compare pas au mois complet précédent.
+                  const evo =
+                    i > 0 && prev && prev.share_fcfa > 0
+                      ? Math.round(((m.share_fcfa - prev.share_fcfa) * 100) / prev.share_fcfa)
+                      : null;
+                  return (
+                    <tr key={m.month_start} className="border-b border-neutral-100 last:border-0">
+                      <td className="px-md py-md text-sm font-semibold capitalize text-neutral-900">
+                        {monthLabel(m.month_start)}
+                        {i === 0 && <span className="ml-xs text-[10px] font-normal normal-case text-neutral-500">en cours</span>}
+                      </td>
+                      <td className="px-md py-md text-right text-sm text-neutral-700" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                        {m.rides}
+                      </td>
+                      <td className="px-md py-md text-right text-sm font-bold text-primary-700" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                        {fmt(m.share_fcfa)} F
+                      </td>
+                      <td className="px-md py-md text-right text-xs text-neutral-500" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                        {evo === null ? '—' : `${evo >= 0 ? '+' : ''}${evo} %`}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
 
-      {R.length === 0 ? (
-        <div className="rounded-xl bg-white p-2xl text-center text-sm text-neutral-600 shadow-sm">
-          Aucune course encore.
+      <section>
+        <div className="mb-md flex flex-wrap items-baseline justify-between gap-sm">
+          <h2 className="text-lg font-bold text-neutral-900">Dernières courses</h2>
+          <p className="text-xs text-neutral-500">
+            {recent.length} dernière{recent.length > 1 ? 's' : ''} course{recent.length > 1 ? 's' : ''} terminée
+            {recent.length > 1 ? 's' : ''}
+          </p>
         </div>
-      ) : (
-        <div className="overflow-hidden rounded-xl bg-white shadow-sm">
-          <table className="w-full">
-            <thead className="border-b border-neutral-200 bg-neutral-100 text-left text-xs font-bold uppercase tracking-wider text-neutral-600">
-              <tr>
-                <th className="px-md py-sm">Terminée le</th>
-                <th className="px-md py-sm">Trajet</th>
-                <th className="px-md py-sm">Véhicule</th>
-                <th className="px-md py-sm text-right">Prix</th>
-                <th className="px-md py-sm text-right">Ma part</th>
-              </tr>
-            </thead>
-            <tbody>
-              {R.map((r) => {
-                const v = r.vehicle_id ? vehicleById.get(r.vehicle_id) : null;
-                return (
-                  <tr key={r.id} className="border-b border-neutral-100 last:border-0">
-                    <td className="px-md py-md text-xs text-neutral-600">
-                      {r.ended_at
-                        ? new Date(r.ended_at).toLocaleString('fr-FR', {
-                            day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
-                          })
-                        : '—'}
-                    </td>
-                    <td className="px-md py-md text-sm">
-                      <p className="truncate font-medium text-neutral-900" title={r.pickup_address}>
-                        {r.pickup_address}
-                      </p>
-                      <p className="truncate text-[10px] text-neutral-500" title={r.dropoff_address}>
-                        → {r.dropoff_address}
-                      </p>
-                      {r.distance_km && (
-                        <p className="mt-xs text-[10px] text-neutral-400" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                          {r.distance_km.toFixed(1)} km
-                        </p>
-                      )}
-                    </td>
-                    <td className="px-md py-md text-xs text-neutral-700">
-                      {v ? (
-                        <>
-                          <p className="font-medium">{v.brand} {v.model}</p>
-                          <p className="text-[10px] text-neutral-500">{v.plate_number}</p>
-                        </>
-                      ) : '—'}
-                    </td>
-                    <td className="px-md py-md text-right text-sm text-neutral-500" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                      {fmt(r.price_total_fcfa)} F
-                    </td>
-                    <td className="px-md py-md text-right text-sm font-bold text-primary-700" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                      +{fmt(r.dealer_share_fcfa)} F
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+        {recent.length === 0 ? (
+          <div className="rounded-xl bg-white p-2xl text-center text-sm text-neutral-600 shadow-sm">
+            Aucune course pour le moment.
+          </div>
+        ) : (
+          <ul className="divide-y divide-neutral-100 overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-neutral-200">
+            {recent.map((r) => (
+              <li key={r.ride_id} className="flex items-center justify-between gap-md px-md py-sm text-sm">
+                <span className="text-xs text-neutral-600">
+                  {new Date(r.ended_at).toLocaleString('fr-FR', {
+                    day: '2-digit',
+                    month: 'short',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    timeZone: 'Africa/Porto-Novo',
+                  })}
+                </span>
+                <span className="min-w-0 flex-1 truncate text-xs text-neutral-700">
+                  {r.brand} {r.model} · {r.plate_number}
+                </span>
+                <strong className="text-primary-700" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  +{fmt(r.share_fcfa)} F
+                </strong>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }
