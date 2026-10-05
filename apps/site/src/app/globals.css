@@ -209,26 +209,26 @@ body {
 }
 @keyframes tc-steer-far {
   0%, 100% { transform: translateX(0); }
-  20%, 36% { transform: translateX(-3%); }
+  20%, 36% { transform: translateX(-1%); }
   50% { transform: translateX(0); }
-  70%, 86% { transform: translateX(3%); }
+  70%, 86% { transform: translateX(1%); }
 }
 @keyframes tc-steer-mid {
   0%, 100% { transform: translateX(0); }
-  20%, 36% { transform: translateX(-7%); }
+  20%, 36% { transform: translateX(-2.4%); }
   50% { transform: translateX(0); }
-  70%, 86% { transform: translateX(7%); }
+  70%, 86% { transform: translateX(2.4%); }
 }
 @keyframes tc-steer-near {
   0%, 100% { transform: translateX(0); }
-  20%, 36% { transform: translateX(-9%); }
+  20%, 36% { transform: translateX(-3.7%); }
   50% { transform: translateX(0); }
-  70%, 86% { transform: translateX(9%); }
+  70%, 86% { transform: translateX(3.7%); }
 }
 /* Bandes centrales : elles grossissent et descendent en accélérant, comme dans la perspective d'une route */
 @keyframes tc-dash-run {
-  from { transform: translate(320px, 180px) scale(0.04); }
-  to { transform: translate(320px, 440px) scale(1); }
+  from { transform: translate(550px, 302px) scale(0.04); }
+  to { transform: translate(550px, 640px) scale(1); }
 }
 .tc-dash {
   animation: tc-dash-run 1.5s cubic-bezier(0.85, 0, 1, 0.5) infinite;

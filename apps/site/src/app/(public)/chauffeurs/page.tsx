@@ -15,16 +15,18 @@ const ORDER: Formula[] = ['cession', 'proprietaire'];
 export default function DriversPage() {
   return (
     <>
-      {/* Le bleu domine toute la page ; le blanc sert de contraste (texte, cartes, boutons). */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary-900 via-primary-700 to-primary-500 pb-4xl pt-3xl text-white lg:pt-4xl">
-        <div className="pointer-events-none absolute -left-24 top-1/2 h-[420px] w-[420px] rounded-full bg-white/10 blur-3xl" />
-        <div className="relative mx-auto grid max-w-6xl items-center gap-2xl px-lg lg:grid-cols-[1fr_1.05fr]">
-          <div>
+      {/* Le bleu domine toute la page ; le blanc sert de contraste (texte, cartes, boutons).
+          La scène du volant n'a pas de cadre : elle est le décor du bandeau bleu, le texte passe par-dessus. */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-primary-900 via-primary-700 to-primary-500 text-white">
+        <div className="pointer-events-none absolute -left-24 top-1/3 h-[420px] w-[420px] rounded-full bg-white/10 blur-3xl" />
+        <SteeringScene className="left-1/2 lg:left-[72%]" />
+        <div className="relative z-10 mx-auto max-w-6xl px-lg pb-[300px] pt-3xl lg:flex lg:min-h-[640px] lg:items-center lg:pb-4xl lg:pt-4xl">
+          <div className="max-w-xl">
             <p className="inline-flex rounded-full bg-white/15 px-md py-xs text-xs font-bold uppercase tracking-wider ring-1 ring-white/25">Chauffeurs</p>
             <h1 className="mt-lg text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
               Prenez le volant. <span className="text-[#8BE3FF]">Deux formules, vous décidez.</span>
             </h1>
-            <p className="mt-lg max-w-xl text-lg leading-relaxed text-primary-50">
+            <p className="mt-lg text-lg leading-relaxed text-primary-50">
               Roulez avec un véhicule fourni par un partenaire et devenez-en propriétaire au terme du contrat, ou venez avec le vôtre.
               Le rendez-vous se prend dans l’application TamCar.
             </p>
@@ -43,7 +45,6 @@ export default function DriversPage() {
               </a>
             </div>
           </div>
-          <SteeringScene className="mx-auto max-w-xl lg:max-w-none" />
         </div>
       </section>
 
