@@ -4,7 +4,6 @@ import { Logo } from '@/components/Logo';
 import { getCurrentProfile } from '@/lib/session';
 import { createServerSupabase } from '@/lib/supabase-server';
 import {
-  REQUIRED_DOCS,
   TAMCAR_RDV_ADDRESS,
   type AvailableSlot,
   type DriverAppointment,
@@ -83,15 +82,7 @@ export default async function RdvPage() {
         <BookingForm slots={slots} prefill={prefill} />
 
         <section className="mt-2xl rounded-xl bg-neutral-100 p-lg">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-            À apporter au rendez-vous
-          </h2>
-          <ul className="mt-md space-y-xs text-sm text-neutral-900">
-            {REQUIRED_DOCS.map((doc) => (
-              <li key={doc}>• {doc}</li>
-            ))}
-          </ul>
-          <div className="mt-md rounded-lg border border-primary-100 bg-primary-50 p-md">
+          <div className="rounded-lg border border-primary-100 bg-primary-50 p-md">
             <p className="text-[10px] font-bold uppercase text-primary-700">Adresse TamCar</p>
             <p className="mt-xs text-sm font-semibold text-neutral-900">
               {TAMCAR_RDV_ADDRESS}

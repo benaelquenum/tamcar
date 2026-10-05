@@ -10,6 +10,7 @@ import {
   type AvailableSlot,
   type DriverApplicationType,
 } from '@/lib/appointment';
+import { DocsChecklist } from '../DocsChecklist';
 
 type Prefill = {
   first_name: string;
@@ -209,6 +210,14 @@ export function BookingForm({
             ))}
           </div>
         )}
+      </section>
+
+      {/* Pièces à apporter : visibles au moment de réserver, selon la formule choisie */}
+      <section>
+        <p className="mb-md text-xs font-bold uppercase tracking-wider text-neutral-500">
+          4. Notez les pièces à apporter
+        </p>
+        <DocsChecklist type={applicationType} title="À apporter le jour du rendez-vous" />
       </section>
 
       {error && (

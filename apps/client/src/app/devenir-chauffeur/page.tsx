@@ -4,10 +4,9 @@ import { Logo } from '@/components/Logo';
 import { CarIcon, CheckIcon, WalletIcon } from '@/components/Icon';
 import { getCurrentProfile } from '@/lib/session';
 import { createServerSupabase } from '@/lib/supabase-server';
+import { DocsChecklist } from './DocsChecklist';
 import {
   APPLICATION_TYPE_META,
-  REQUIRED_DOCS,
-  TAMCAR_RDV_ADDRESS,
   type DriverAppointment,
 } from '@/lib/appointment';
 
@@ -91,23 +90,8 @@ export default async function DevenirChauffeurPage() {
           />
         </section>
 
-        <div className="mt-2xl rounded-xl bg-neutral-100 p-lg">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-            À apporter le jour du rendez-vous
-          </h2>
-          <ul className="mt-md space-y-xs text-sm text-neutral-900">
-            {REQUIRED_DOCS.map((doc) => (
-              <li key={doc}>• {doc}</li>
-            ))}
-          </ul>
-          <div className="mt-md rounded-lg border border-primary-100 bg-primary-50 p-md">
-            <p className="text-[10px] font-bold uppercase text-primary-700">
-              Adresse TamCar
-            </p>
-            <p className="mt-xs text-sm font-semibold text-neutral-900">
-              {TAMCAR_RDV_ADDRESS}
-            </p>
-          </div>
+        <div className="mt-2xl">
+          <DocsChecklist type={null} title="À apporter le jour du rendez-vous" withAddress />
         </div>
 
         {existingApp && existingApp.status === 'completed_rejected' && existingApp.rejection_reason && (

@@ -79,14 +79,25 @@ export const APPLICATION_TYPE_META: Record<DriverApplicationType, { label: strin
   },
 };
 
-export const REQUIRED_DOCS = [
+// Pièces demandées à tous les candidats.
+const DOCS_COMMUNES = [
   'CIP ou Carte biométrique CEDEAO (recto + verso)',
   'Permis de conduire en cours de validité',
   'Attestation de résidence',
+];
+// Formule Propriétaire uniquement : le candidat vient avec son véhicule (en formule Cession, TamCar le fournit).
+const DOCS_PROPRIETAIRE = [
   'Carte grise du véhicule',
   'Assurance auto valide',
   'Visite technique à jour',
 ];
+
+/** Pièces à apporter au rendez-vous. Formule inconnue : toutes les pièces possibles. */
+export function requiredDocs(type?: DriverApplicationType | null): string[] {
+  return type === 'cession' ? [...DOCS_COMMUNES] : [...DOCS_COMMUNES, ...DOCS_PROPRIETAIRE];
+}
+
+export const REQUIRED_DOCS = requiredDocs(null);
 
 export const TAMCAR_RDV_ADDRESS = 'Ilot 2054, M/HOUNGBEDJI, Mènontin Cotonou';
 

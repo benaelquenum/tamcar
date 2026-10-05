@@ -4,7 +4,7 @@ import { createServerSupabase } from '@/lib/supabase-server';
 import { Avatar } from '@/components/Avatar';
 import {
   APPLICATION_TYPE_META,
-  REQUIRED_DOCS,
+  requiredDocs,
   STATUS_META,
   formatSlotFull,
   type DriverAppointment,
@@ -91,7 +91,7 @@ export default async function AppointmentDetailPage({ params }: { params: { id: 
             Documents attendus au RDV
           </h2>
           <ul className="grid grid-cols-1 gap-xs text-sm text-neutral-900 md:grid-cols-2">
-            {REQUIRED_DOCS.map((doc) => (
+            {requiredDocs(app.application_type).map((doc) => (
               <li key={doc}>• {doc}</li>
             ))}
           </ul>

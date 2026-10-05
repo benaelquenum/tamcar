@@ -6,12 +6,12 @@ import { getCurrentProfile } from '@/lib/session';
 import { createServerSupabase } from '@/lib/supabase-server';
 import {
   APPLICATION_TYPE_META,
-  REQUIRED_DOCS,
   STATUS_META,
   formatSlotFull,
   type DriverAppointment,
 } from '@/lib/appointment';
 import { CancelAppointmentButton } from './CancelAppointmentButton';
+import { DocsChecklist } from '../DocsChecklist';
 
 export default async function StatutPage() {
   const profile = await getCurrentProfile();
@@ -144,16 +144,9 @@ export default async function StatutPage() {
 
         {/* Rappel documents si RDV à venir */}
         {isActive && (
-          <section className="mt-lg rounded-xl bg-neutral-100 p-lg">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-              À apporter le jour du rendez-vous
-            </h2>
-            <ul className="mt-md space-y-xs text-sm text-neutral-900">
-              {REQUIRED_DOCS.map((doc) => (
-                <li key={doc}>• {doc}</li>
-              ))}
-            </ul>
-          </section>
+          <div className="mt-lg">
+            <DocsChecklist type={app.application_type} title="À apporter le jour du rendez-vous" />
+          </div>
         )}
 
         {isActive && (
