@@ -287,13 +287,14 @@ export function SteeringScene3D({ className = '', onReady, onFail }: { className
 
     /* ------------------------------------------------------------------ volant */
     const wheelTilt = new THREE.Group();
-    wheelTilt.position.set(0, -0.52, -1.15);
+    wheelTilt.position.set(0, -0.47, -1.15);
     wheelTilt.rotation.x = -0.42;
+    wheelTilt.scale.setScalar(0.8); // taille du volant : on réduit la taille, pas la hauteur du centre
     camera.add(wheelTilt);
     const wheelRot = new THREE.Group();
     wheelTilt.add(wheelRot);
 
-    const R = 0.31;
+    const R = 0.35;
     const tube = 0.05;
     const navy = track(new THREE.MeshStandardMaterial({ color: '#2e4396', roughness: 0.34, metalness: 0.25 }));
     const ringGeo = track(new THREE.TorusGeometry(R, tube, 24, 80));
