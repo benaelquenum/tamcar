@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createServerSupabase } from '@/lib/supabase-server';
+import { PortraitUploader } from './PortraitUploader';
 
 const PAGE_SIZE = 100;
 const TZ = 'Africa/Porto-Novo';
@@ -320,6 +321,8 @@ export default async function AdminDriverDetailPage({
           </div>
         </div>
       </section>
+
+      <PortraitUploader profileId={s.profile_id} driverId={s.driver_id} name={s.full_name} currentUrl={s.avatar_url} />
 
       {/* Chiffres depuis l'enrôlement */}
       <h2 className="mb-sm mt-xl text-sm font-bold uppercase tracking-wider text-neutral-500">Depuis l&apos;enrôlement</h2>
