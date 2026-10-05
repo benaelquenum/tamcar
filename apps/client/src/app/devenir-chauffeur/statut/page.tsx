@@ -145,7 +145,7 @@ export default async function StatutPage() {
         {/* Rappel documents si RDV à venir */}
         {isActive && (
           <div className="mt-lg">
-            <DocsChecklist type={app.application_type} title="À apporter le jour du rendez-vous" />
+            <DocsChecklist type={app.application_type} title="À apporter le jour du rendez-vous" tabs={false} />
           </div>
         )}
 

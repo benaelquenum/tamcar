@@ -79,22 +79,31 @@ export const APPLICATION_TYPE_META: Record<DriverApplicationType, { label: strin
   },
 };
 
-// Pièces demandées à tous les candidats.
-const DOCS_COMMUNES = [
-  'CIP ou Carte biométrique CEDEAO (recto + verso)',
-  'Permis de conduire en cours de validité',
-  'Attestation de résidence',
+export type DocItem = { label: string; note?: string };
+
+// Pièces demandées à tous les candidats, quelle que soit la formule.
+const DOCS_COMMUNES: DocItem[] = [
+  { label: 'CIP ou carte biométrique CEDEAO en cours de validité' },
+  { label: 'Permis de conduire en cours de validité' },
+  { label: 'Attestation de résidence' },
+  { label: 'Attestation IFU', note: 'si vous n’en avez pas, TamCar fait la démarche d’obtention pour vous' },
+  { label: 'Casier judiciaire', note: 'à défaut, une déclaration sur l’honneur à retirer dans nos locaux' },
 ];
 // Formule Propriétaire uniquement : le candidat vient avec son véhicule (en formule Cession, TamCar le fournit).
-const DOCS_PROPRIETAIRE = [
-  'Carte grise du véhicule',
-  'Assurance auto valide',
-  'Visite technique à jour',
+const DOCS_PROPRIETAIRE: DocItem[] = [
+  { label: 'Carte grise du véhicule' },
+  { label: 'Assurance auto valide' },
+  { label: 'Visite technique à jour' },
 ];
 
-/** Pièces à apporter au rendez-vous. Formule inconnue : toutes les pièces possibles. */
-export function requiredDocs(type?: DriverApplicationType | null): string[] {
+/** Pièces à apporter au rendez-vous, avec leur précision éventuelle. Formule inconnue : toutes. */
+export function requiredDocItems(type?: DriverApplicationType | null): DocItem[] {
   return type === 'cession' ? [...DOCS_COMMUNES] : [...DOCS_COMMUNES, ...DOCS_PROPRIETAIRE];
+}
+
+/** Même liste, en texte simple (« Casier judiciaire (à défaut, … ) »). */
+export function requiredDocs(type?: DriverApplicationType | null): string[] {
+  return requiredDocItems(type).map((d) => (d.note ? `${d.label} (${d.note})` : d.label));
 }
 
 export const REQUIRED_DOCS = requiredDocs(null);
