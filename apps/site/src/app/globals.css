@@ -234,6 +234,18 @@ body {
   animation: tc-dash-run 1.5s cubic-bezier(0.85, 0, 1, 0.5) infinite;
 }
 
+/* Scène 3D du bandeau sur téléphone : le haut du canvas se fond dans le bleu (pas de bord net) */
+.tc-hero3d-mask {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 26%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 26%);
+}
+@media (min-width: 1024px) {
+  .tc-hero3d-mask {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}
+
 /* Apparition au défilement */
 .tc-reveal {
   opacity: 0;

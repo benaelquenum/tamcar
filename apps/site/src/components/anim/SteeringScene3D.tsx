@@ -4,11 +4,13 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
 /**
- * APERÇU 3D de la scène du volant : vrai volant modélisé (jante, branches, moyeu), route en perspective réelle
+ * Scène du volant en 3D (three.js) : vrai volant modélisé (jante, branches, moyeu), route en perspective réelle
  * qui s'incurve, palmiers et collines en volume, brume atmosphérique, lumière du soleil. Même cycle que la
  * version 2D (12 s : droite, tout droit, gauche) : le volant tourne, la route s'incurve du même côté et le
  * lointain (collines, ville, soleil) glisse en sens inverse. Le canvas est transparent : le fond bleu de la
- * section reste le ciel. À placer dans un parent `relative overflow-hidden`.
+ * section reste le ciel, et le sol se fond dans ce ciel en dégradé progressif (pas de ligne d'horizon).
+ * À placer dans un parent `relative overflow-hidden`. `onReady` : première image affichée ; `onFail` :
+ * WebGL absent, erreur ou appareil trop lent (le parent bascule alors sur la version 2D).
  */
 
 const CYCLE = 12; // s, durée d'un cycle de direction
@@ -21,6 +23,8 @@ const K_MAX = 0.0006; // courbure maximale de la route
 const YAW_MAX = 0.18; // rad : glissement du lointain
 const WHEEL_ANGLE = (62 * Math.PI) / 180;
 const FOG_COLOR = '#2a57d4';
+const GROUND_LEN = 1500; // longueur du sol (m)
+const FPS_MIN = 22; // en dessous, on bascule sur la version 2D
 
 const KEYS: Array<[number, number]> = [
   [0, 0],
@@ -71,6 +75,34 @@ function roadTexture(maxAniso: number): THREE.CanvasTexture {
   return t;
 }
 
+/** Opacité du sol selon la distance : plein près de nous, puis fondu progressif jusqu'à l'horizon (aucune ligne). */
+function hazeTexture(): THREE.CanvasTexture {
+  const c = document.createElement('canvas');
+  c.width = 4;
+  c.height = 1024;
+  const g = c.getContext('2d')!;
+  for (let r = 0; r < 1024; r++) {
+    const d = (r / 1023) * GROUND_LEN - 20; // rangée du haut = loin
+    const a = d <= 0 ? 1 : Math.max(0, 1 - Math.log(1 + d / 12) / Math.log(1 + 450 / 12));
+    const v = Math.round(a * 255);
+    g.fillStyle = `rgb(${v},${v},${v})`;
+    g.fillRect(0, r, 4, 1);
+  }
+  return new THREE.CanvasTexture(c);
+}
+
+/** Estompe le bas d'une forme (alpha 0 à la base, plein à partir de 55 % de la hauteur) : plus de coupure nette à l'horizon. */
+function fadeBase(geo: THREE.BufferGeometry, h: number): THREE.BufferGeometry {
+  const pos = geo.attributes.position;
+  const col = new Float32Array(pos.count * 4);
+  for (let i = 0; i < pos.count; i++) {
+    const t = Math.min(1, Math.max(0, (pos.getY(i) + h / 2) / (0.55 * h)));
+    col.set([1, 1, 1, t * t * (3 - 2 * t)], i * 4);
+  }
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 4));
+  return geo;
+}
+
 function glowTexture(inner: string, outer: string): THREE.CanvasTexture {
   const c = document.createElement('canvas');
   c.width = c.height = 128;
@@ -86,8 +118,10 @@ function glowTexture(inner: string, outer: string): THREE.CanvasTexture {
   return t;
 }
 
-export function SteeringScene3D({ className = '' }: { className?: string }) {
+export function SteeringScene3D({ className = '', onReady, onFail }: { className?: string; onReady?: () => void; onFail?: () => void }) {
   const hostRef = useRef<HTMLDivElement>(null);
+  const cbRef = useRef({ onReady, onFail });
+  cbRef.current = { onReady, onFail };
 
   useEffect(() => {
     const host = hostRef.current;
@@ -97,7 +131,8 @@ export function SteeringScene3D({ className = '' }: { className?: string }) {
     try {
       renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
     } catch {
-      return; // pas de WebGL : le fond bleu seul reste affiché
+      cbRef.current.onFail?.(); // pas de WebGL : la version 2D reste affichée
+      return;
     }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setClearColor(0x000000, 0);
@@ -131,19 +166,24 @@ export function SteeringScene3D({ className = '' }: { className?: string }) {
     camera.add(glint);
 
     /* ------------------------------------------------------------------ sol et route */
-    const groundMat = track(new THREE.MeshBasicMaterial({ color: '#0b2a80' }));
-    const groundGeo = track(new THREE.PlaneGeometry(2400, 2400));
+    const groundAlpha = track(hazeTexture());
+    const groundMat = track(new THREE.MeshBasicMaterial({ color: '#0b2a80', transparent: true, alphaMap: groundAlpha, depthWrite: false, fog: false }));
+    const groundGeo = track(new THREE.PlaneGeometry(3200, GROUND_LEN));
     const ground = new THREE.Mesh(groundGeo, groundMat);
     ground.rotation.x = -Math.PI / 2;
-    ground.position.y = -0.02;
+    ground.position.set(0, -0.02, 20 - GROUND_LEN / 2);
     scene.add(ground);
 
     const roadPos = new Float32Array((SEGMENTS + 1) * 2 * 3);
     const roadUv = new Float32Array((SEGMENTS + 1) * 2 * 2);
     const roadNormal = new Float32Array((SEGMENTS + 1) * 2 * 3);
+    const roadColor = new Float32Array((SEGMENTS + 1) * 2 * 4);
     const roadIdx: number[] = [];
     for (let i = 0; i <= SEGMENTS; i++) {
       const s = -6 + i * SEG;
+      const fade = Math.min(1, Math.max(0, (s - 120) / 170));
+      const alpha = 1 - fade * fade * (3 - 2 * fade);
+      roadColor.set([1, 1, 1, alpha, 1, 1, 1, alpha], i * 8);
       roadUv.set([0, s / TEX_LEN, 1, s / TEX_LEN], i * 4);
       roadNormal.set([0, 1, 0, 0, 1, 0], i * 6);
       if (i < SEGMENTS) {
@@ -155,9 +195,10 @@ export function SteeringScene3D({ className = '' }: { className?: string }) {
     roadGeo.setAttribute('position', new THREE.BufferAttribute(roadPos, 3));
     roadGeo.setAttribute('uv', new THREE.BufferAttribute(roadUv, 2));
     roadGeo.setAttribute('normal', new THREE.BufferAttribute(roadNormal, 3));
+    roadGeo.setAttribute('color', new THREE.BufferAttribute(roadColor, 4));
     roadGeo.setIndex(roadIdx);
     const roadTex = track(roadTexture(renderer.capabilities.getMaxAnisotropy()));
-    const roadMat = track(new THREE.MeshBasicMaterial({ map: roadTex }));
+    const roadMat = track(new THREE.MeshBasicMaterial({ map: roadTex, vertexColors: true, transparent: true, fog: false }));
     const road = new THREE.Mesh(roadGeo, roadMat);
     road.frustumCulled = false;
     scene.add(road);
@@ -207,14 +248,14 @@ export function SteeringScene3D({ className = '' }: { className?: string }) {
     /* ------------------------------------------------------------------ lointain : collines, ville, soleil, nuages */
     const sky = new THREE.Group();
     scene.add(sky);
-    const hillMat = track(new THREE.MeshStandardMaterial({ color: '#0b2468', roughness: 1, flatShading: true }));
-    const cityMat = track(new THREE.MeshStandardMaterial({ color: '#0a1d58', roughness: 1, flatShading: true }));
+    const hillMat = track(new THREE.MeshStandardMaterial({ color: '#0b2468', roughness: 1, flatShading: true, vertexColors: true, transparent: true, depthWrite: false }));
+    const cityMat = track(new THREE.MeshStandardMaterial({ color: '#0a1d58', roughness: 1, flatShading: true, vertexColors: true, transparent: true, depthWrite: false }));
     for (let i = 0; i < 30; i++) {
       const a = ((-82 + i * 5.6 + (rnd() - 0.5) * 3) * Math.PI) / 180;
       const r = 320 + rnd() * 30;
       const h = 18 + rnd() * 30;
       const rad = 42 + rnd() * 30;
-      const geo = track(new THREE.ConeGeometry(rad, h, 5));
+      const geo = track(fadeBase(new THREE.ConeGeometry(rad, h, 5), h));
       const m = new THREE.Mesh(geo, hillMat);
       m.position.set(Math.sin(a) * r, h / 2 - 3, -Math.cos(a) * r);
       m.rotation.y = rnd() * 3;
@@ -225,7 +266,7 @@ export function SteeringScene3D({ className = '' }: { className?: string }) {
       const r = 300;
       const w = 9 + rnd() * 6;
       const h = 24 + rnd() * 40;
-      const geo = track(new THREE.BoxGeometry(w, h, w));
+      const geo = track(fadeBase(new THREE.BoxGeometry(w, h, w), h));
       const m = new THREE.Mesh(geo, cityMat);
       m.position.set(Math.sin(a) * r, h / 2 - 2, -Math.cos(a) * r);
       sky.add(m);
@@ -246,13 +287,13 @@ export function SteeringScene3D({ className = '' }: { className?: string }) {
 
     /* ------------------------------------------------------------------ volant */
     const wheelTilt = new THREE.Group();
-    wheelTilt.position.set(0, -0.47, -1.15);
+    wheelTilt.position.set(0, -0.52, -1.15);
     wheelTilt.rotation.x = -0.42;
     camera.add(wheelTilt);
     const wheelRot = new THREE.Group();
     wheelTilt.add(wheelRot);
 
-    const R = 0.35;
+    const R = 0.31;
     const tube = 0.05;
     const navy = track(new THREE.MeshStandardMaterial({ color: '#2e4396', roughness: 0.34, metalness: 0.25 }));
     const ringGeo = track(new THREE.TorusGeometry(R, tube, 24, 80));
@@ -288,7 +329,7 @@ export function SteeringScene3D({ className = '' }: { className?: string }) {
       const h = Math.max(1, host.clientHeight);
       renderer.setSize(w, h, false);
       // Point de fuite à 72 % de la largeur sur grand écran (texte à gauche), au centre sur téléphone
-      const vp = w >= 1024 || new URLSearchParams(window.location.search).has('lg') ? 0.74 : 0.5;
+      const vp = w >= 1024 ? 0.74 : 0.5;
       const full = 2 * vp * w;
       camera.aspect = full / h;
       camera.setViewOffset(full, h, 0, 0, w, h);
@@ -343,16 +384,58 @@ export function SteeringScene3D({ className = '' }: { className?: string }) {
     let visible = true;
     let t0 = performance.now();
     let acc = 0;
+    let readySent = false;
+    let winStart = 0;
+    let winFrames = 0;
+    let slowWindows = 0;
+    let failed = false;
+    const fail = () => {
+      if (failed) return;
+      failed = true;
+      cancelAnimationFrame(raf);
+      cbRef.current.onFail?.();
+    };
     const frame = (now: number) => {
       raf = requestAnimationFrame(frame);
       const dt = Math.min(0.05, (now - t0) / 1000);
       t0 = now;
-      if (!visible || document.hidden) return;
+      if (!visible || document.hidden) {
+        winStart = 0; // hors écran : on ne mesure pas la fluidité
+        return;
+      }
       acc += dt;
-      draw(fixedT ?? acc);
+      try {
+        draw(fixedT ?? acc);
+      } catch {
+        fail();
+        return;
+      }
+      if (!readySent) {
+        readySent = true;
+        requestAnimationFrame(() => cbRef.current.onReady?.());
+        return;
+      }
+      // Fluidité : deux fenêtres de 2 s de suite sous FPS_MIN images/s → on abandonne la 3D (repli 2D)
+      if (!winStart) {
+        winStart = now;
+        winFrames = 0;
+        return;
+      }
+      winFrames++;
+      if (now - winStart >= 2000) {
+        const fps = (winFrames * 1000) / (now - winStart);
+        slowWindows = fps < FPS_MIN ? slowWindows + 1 : 0;
+        if (slowWindows >= 2 && fixedT === null) {
+          fail();
+          return;
+        }
+        winStart = now;
+        winFrames = 0;
+      }
     };
     if (reduced) {
       draw(0);
+      requestAnimationFrame(() => cbRef.current.onReady?.());
     } else {
       raf = requestAnimationFrame(frame);
     }

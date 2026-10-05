@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { DocsTabs } from '@/components/DocsTabs';
 import { Reveal } from '@/components/anim/Reveal';
-import { SteeringScene } from '@/components/anim/SteeringScene';
+import { DriverHeroScene } from '@/components/anim/DriverHeroScene';
 import { CLIENT_APP_URL, DRIVER_APP_URL } from '@/lib/config';
 import { FORMULAS, type Formula } from '@/lib/content';
 
@@ -19,7 +19,7 @@ export default function DriversPage() {
           La scène du volant n'a pas de cadre : elle est le décor du bandeau bleu, le texte passe par-dessus. */}
       <section className="relative overflow-hidden bg-gradient-to-br from-primary-900 via-primary-700 to-primary-500 text-white">
         <div className="pointer-events-none absolute -left-24 top-1/3 h-[420px] w-[420px] rounded-full bg-white/10 blur-3xl" />
-        <SteeringScene className="left-1/2 lg:left-[72%]" />
+        <DriverHeroScene />
         <div className="relative z-10 mx-auto max-w-6xl px-lg pb-[300px] pt-3xl lg:flex lg:min-h-[640px] lg:items-center lg:pb-4xl lg:pt-4xl">
           <div className="max-w-xl">
             <p className="inline-flex rounded-full bg-white/15 px-md py-xs text-xs font-bold uppercase tracking-wider ring-1 ring-white/25">Chauffeurs</p>
