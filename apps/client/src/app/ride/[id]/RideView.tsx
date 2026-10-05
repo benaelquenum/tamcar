@@ -19,6 +19,7 @@ import { freshChannel } from '@/lib/realtime';
 import { SUPPORT_PHONE, SUPPORT_PHONE_DISPLAY } from '@/lib/support';
 import { titleCaseName } from '@/lib/name';
 import { AddStopModal } from './AddStopModal';
+import { NightSharePrompt } from './NightSharePrompt';
 import { StopsListClient } from './StopsListClient';
 import { isAccurateEnough, SmoothingBuffer, getAccuratePosition } from '@/lib/geo-precision';
 import { useWakeLock } from '@/lib/useWakeLock';
@@ -328,8 +329,10 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
   // Lien public de suivi : créé (idempotent) puis partagé via la feuille de
   // partage native, sinon WhatsApp en repli.
   const [sharing, setSharing] = useState(false);
-  async function handleShareTracking() {
-    if (sharing) return;
+  // `phone` (E.164) : proche enregistré, on ouvre directement sa conversation WhatsApp. Renvoie true si le
+  // lien a été créé et proposé au partage.
+  async function handleShareTracking(phone?: string): Promise<boolean> {
+    if (sharing) return false;
     setSharing(true);
     try {
       const { data, error } = await supabaseBrowser.rpc('create_ride_share_link', {
@@ -338,12 +341,16 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
       if (!error && typeof data === 'string' && data) {
         const url = `${window.location.origin}/suivi/${data}`;
         const text = `Suivez ma course TamCar en direct : ${url}`;
-        if (typeof navigator !== 'undefined' && navigator.share) {
+        if (phone) {
+          window.open(`https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`, '_blank');
+        } else if (typeof navigator !== 'undefined' && navigator.share) {
           await navigator.share({ title: 'Suivi TamCar', text, url }).catch(() => undefined);
         } else {
           window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
         }
+        return true;
       }
+      return false;
     } finally {
       setSharing(false);
     }
@@ -1577,10 +1584,15 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
             {completeError && (
               <p className="mt-xs text-center text-xs text-error">{completeError}</p>
             )}
+            <NightSharePrompt
+              rideId={ride.id}
+              active={['requested', 'matched', 'arrived', 'in_progress'].includes(ride.status)}
+              onShare={handleShareTracking}
+            />
             {['requested', 'matched', 'arrived', 'in_progress'].includes(ride.status) && (
               <button
                 type="button"
-                onClick={handleShareTracking}
+                onClick={() => void handleShareTracking()}
                 disabled={sharing}
                 className="mb-md mt-lg flex w-full items-center justify-center gap-xs rounded-xl border-2 border-primary-500 bg-white py-md text-sm font-bold text-primary-700 transition hover:bg-primary-50 disabled:opacity-50"
               >

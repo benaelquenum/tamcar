@@ -9,6 +9,7 @@ import { getLang } from '@/lib/i18n-server';
 import { logout } from '@/app/login/actions';
 import { AccountForm } from './AccountForm';
 import { ChangePassword } from './ChangePassword';
+import { TrustedContacts } from './TrustedContacts';
 import { LangSwitcher } from '@/components/LangSwitcher';
 
 export default async function ComptePage() {
@@ -69,6 +70,12 @@ export default async function ComptePage() {
             userEmail={user.email ?? ''}
             userPhone={profile.phone ?? ''}
           />
+        </section>
+
+        {/* Proches de confiance : prévenus en un geste pendant les courses de nuit */}
+        <section className="mt-xl">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-500">Mes proches de confiance</h2>
+          <TrustedContacts profileId={profile.id} />
         </section>
 
         {/* Mot de passe (les partenaires véhicule reçoivent un mot de passe temporaire de TamCar) */}
