@@ -289,13 +289,13 @@ export function SteeringScene3D({ className = '', onReady, onFail }: { className
     const wheelTilt = new THREE.Group();
     wheelTilt.position.set(0, -0.47, -1.15);
     wheelTilt.rotation.x = -0.42;
-    wheelTilt.scale.setScalar(0.8); // taille du volant : on réduit la taille, pas la hauteur du centre
+    wheelTilt.scale.setScalar(0.62); // taille du volant (réglée aussi selon l'écran dans resize)
     camera.add(wheelTilt);
     const wheelRot = new THREE.Group();
     wheelTilt.add(wheelRot);
 
     const R = 0.35;
-    const tube = 0.05;
+    const tube = 0.034; // épaisseur de la jante : fine
     const navy = track(new THREE.MeshStandardMaterial({ color: '#2e4396', roughness: 0.34, metalness: 0.25 }));
     const ringGeo = track(new THREE.TorusGeometry(R, tube, 24, 80));
     wheelRot.add(new THREE.Mesh(ringGeo, navy));
@@ -305,20 +305,20 @@ export function SteeringScene3D({ className = '', onReady, onFail }: { className
     const accent = new THREE.Mesh(accentGeo, accentMat);
     accent.rotation.z = Math.PI / 2 - arc / 2;
     wheelRot.add(accent);
-    const barGeo = track(new THREE.CapsuleGeometry(0.036, 2 * R - 0.12, 6, 14));
+    const barGeo = track(new THREE.CapsuleGeometry(0.026, 2 * R - 0.1, 6, 14));
     const bar = new THREE.Mesh(barGeo, navy);
     bar.rotation.z = Math.PI / 2;
     wheelRot.add(bar);
-    const downGeo = track(new THREE.CapsuleGeometry(0.036, R - 0.16, 6, 14));
+    const downGeo = track(new THREE.CapsuleGeometry(0.026, R - 0.14, 6, 14));
     const down = new THREE.Mesh(downGeo, navy);
     down.position.y = -R / 2;
     wheelRot.add(down);
-    const hubGeo = track(new THREE.CylinderGeometry(0.1, 0.125, 0.075, 40));
+    const hubGeo = track(new THREE.CylinderGeometry(0.08, 0.1, 0.07, 40));
     const hubMat = track(new THREE.MeshStandardMaterial({ color: '#2563eb', roughness: 0.3, metalness: 0.3 }));
     const hub = new THREE.Mesh(hubGeo, hubMat);
     hub.rotation.x = Math.PI / 2;
     wheelRot.add(hub);
-    const capGeo = track(new THREE.CylinderGeometry(0.036, 0.036, 0.085, 28));
+    const capGeo = track(new THREE.CylinderGeometry(0.028, 0.028, 0.08, 28));
     const capMat = track(new THREE.MeshStandardMaterial({ color: '#eab308', emissive: '#ca8a04', emissiveIntensity: 0.5, roughness: 0.3 }));
     const cap = new THREE.Mesh(capGeo, capMat);
     cap.rotation.x = Math.PI / 2;
@@ -330,7 +330,11 @@ export function SteeringScene3D({ className = '', onReady, onFail }: { className
       const h = Math.max(1, host.clientHeight);
       renderer.setSize(w, h, false);
       // Point de fuite à 72 % de la largeur sur grand écran (texte à gauche), au centre sur téléphone
-      const vp = w >= 1024 ? 0.74 : 0.5;
+      const narrow = w < 1024;
+      const vp = narrow ? 0.5 : 0.74;
+      // Téléphone : volant un peu plus haut dans le cadre (le bandeau est court) ; ordinateur : niveau d'origine
+      wheelTilt.position.y = narrow ? -0.36 : -0.47;
+      wheelTilt.scale.setScalar(narrow ? 0.7 : 0.62);
       const full = 2 * vp * w;
       camera.aspect = full / h;
       camera.setViewOffset(full, h, 0, 0, w, h);

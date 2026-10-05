@@ -147,7 +147,7 @@ export function SteeringScene({ className = '' }: { className?: string }) {
       </Layer>
 
       {/* Volant : tourne autour de son centre, sort du bas de la section */}
-      <div className="absolute left-[29%] top-[58%] w-[42%]">
+      <div className="absolute left-[33%] top-[60%] w-[34%]">
         <div className="tc-steer-wheel aspect-square w-full" style={{ transformOrigin: '50% 50%' }}>
           <svg viewBox="0 0 300 300" className="h-full w-full drop-shadow-[0_18px_24px_rgba(2,6,23,0.5)]">
             <defs>
@@ -157,19 +157,19 @@ export function SteeringScene({ className = '' }: { className?: string }) {
               </radialGradient>
             </defs>
             {/* Branches (9 h, 3 h, 6 h) */}
-            <g stroke="#1b2a5c" strokeWidth="24" strokeLinecap="round" fill="none">
+            <g stroke="#1b2a5c" strokeWidth="16" strokeLinecap="round" fill="none">
               <path d="M40 150 H260" />
               <path d="M150 150 V262" />
             </g>
             {/* Jante */}
-            <circle cx="150" cy="150" r="120" fill="none" stroke="#1b2a5c" strokeWidth="30" />
+            <circle cx="150" cy="150" r="120" fill="none" stroke="#1b2a5c" strokeWidth="20" />
             <circle cx="150" cy="150" r="135" fill="none" stroke="#93c5fd" strokeOpacity="0.45" strokeWidth="2" />
             <circle cx="150" cy="150" r="105" fill="none" stroke="#93c5fd" strokeOpacity="0.3" strokeWidth="2" />
             <circle cx="150" cy="150" r="120" fill="none" stroke="#fff" strokeOpacity="0.1" strokeWidth="2" strokeDasharray="3 5" />
             {/* Repère à 12 h : permet de voir le volant tourner */}
-            <path d="M116.9 34.7 A120 120 0 0 1 183.1 34.7" fill="none" stroke="#38bdf8" strokeWidth="30" />
+            <path d="M116.9 34.7 A120 120 0 0 1 183.1 34.7" fill="none" stroke="#38bdf8" strokeWidth="20" />
             {/* Moyeu */}
-            <circle cx="150" cy="150" r="40" fill="url(#tc-hub)" stroke="#93c5fd" strokeWidth="3" />
+            <circle cx="150" cy="150" r="32" fill="url(#tc-hub)" stroke="#93c5fd" strokeWidth="3" />
             <circle cx="150" cy="150" r="13" fill="#eab308" />
             <circle cx="150" cy="150" r="13" fill="none" stroke="#fff" strokeOpacity="0.5" strokeWidth="2" />
           </svg>

@@ -66,7 +66,7 @@ export function DriverHeroScene() {
     <>
       {(!drop2d || failed) && <SteeringScene className="left-1/2 lg:left-[74%]" />}
       {show3d && Scene3D && (
-        <div className={`tc-hero3d-mask absolute inset-x-0 bottom-0 h-[420px] transition-opacity duration-700 lg:inset-0 lg:h-auto ${ready ? 'opacity-100' : 'opacity-0'}`}>
+        <div className={`tc-hero3d-mask absolute inset-x-0 bottom-0 h-[300px] transition-opacity duration-700 lg:inset-0 lg:h-auto ${ready ? 'opacity-100' : 'opacity-0'}`}>
           <Scene3D className="inset-0" onReady={() => setReady(true)} onFail={() => setFailed(true)} />
           {/* Voile bleu à gauche : le texte reste lisible quand la route passe derrière */}
           <div className="pointer-events-none absolute inset-y-0 left-0 hidden w-[62%] bg-gradient-to-r from-primary-900/75 via-primary-900/35 to-transparent lg:block" />

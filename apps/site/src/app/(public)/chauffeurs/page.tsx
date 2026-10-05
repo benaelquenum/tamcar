@@ -20,26 +20,26 @@ export default function DriversPage() {
       <section className="relative overflow-hidden bg-gradient-to-br from-primary-900 via-primary-700 to-primary-500 text-white">
         <div className="pointer-events-none absolute -left-24 top-1/3 h-[420px] w-[420px] rounded-full bg-white/10 blur-3xl" />
         <DriverHeroScene />
-        <div className="relative z-10 mx-auto max-w-6xl px-lg pb-[300px] pt-3xl lg:flex lg:min-h-[640px] lg:items-center lg:pb-4xl lg:pt-4xl">
+        <div className="relative z-10 mx-auto max-w-6xl px-lg pb-[190px] pt-lg sm:pb-[240px] sm:pt-xl lg:flex lg:min-h-[560px] lg:items-center lg:pb-3xl lg:pt-3xl">
           <div className="max-w-xl">
             <p className="inline-flex rounded-full bg-white/15 px-md py-xs text-xs font-bold uppercase tracking-wider ring-1 ring-white/25">Chauffeurs</p>
-            <h1 className="mt-lg text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
+            <h1 className="mt-md text-[1.7rem] font-extrabold leading-[1.08] tracking-tight sm:mt-lg sm:text-5xl lg:text-6xl">
               Prenez le volant. <span className="text-[#8BE3FF]">Deux formules, vous décidez.</span>
             </h1>
-            <p className="mt-lg text-lg leading-relaxed text-primary-50">
+            <p className="mt-sm text-[0.95rem] leading-snug text-primary-50 sm:mt-lg sm:text-lg sm:leading-relaxed">
               Roulez avec un véhicule fourni par un partenaire et devenez-en propriétaire au terme du contrat, ou venez avec le vôtre.
               Le rendez-vous se prend dans l’application TamCar.
             </p>
-            <div className="mt-xl flex flex-wrap gap-md">
+            <div className="mt-md flex flex-wrap gap-sm sm:mt-xl sm:gap-md">
               <a
                 href={`${CLIENT_APP_URL}/devenir-chauffeur`}
-                className="rounded-full bg-white px-xl py-md text-base font-extrabold text-primary-700 shadow-xl transition hover:scale-[1.03]"
+                className="rounded-full bg-white px-lg py-sm text-sm font-extrabold text-primary-700 shadow-xl transition hover:scale-[1.03] sm:px-xl sm:py-md sm:text-base"
               >
                 Prendre rendez-vous
               </a>
               <a
                 href={DRIVER_APP_URL}
-                className="rounded-full px-xl py-md text-base font-bold text-white ring-2 ring-white/45 transition hover:bg-white/10"
+                className="rounded-full px-lg py-sm text-sm font-bold text-white ring-2 ring-white/45 transition hover:bg-white/10 sm:px-xl sm:py-md sm:text-base"
               >
                 Déjà chauffeur : TamCar Pro
               </a>
