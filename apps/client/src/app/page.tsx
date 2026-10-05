@@ -8,6 +8,7 @@ import {
   PlusIcon,
 } from '@/components/Icon';
 import { firstNameOf, getCurrentProfile } from '@/lib/session';
+import { PARTNER_LOGIN_URL } from '@/lib/siteUrl';
 import { createServerSupabase } from '@/lib/supabase-server';
 import { UnreadMessagesChip } from '@/components/UnreadMessagesChip';
 import { BannerCarousel } from '@/components/BannerCarousel';
@@ -68,9 +69,9 @@ export default async function HomePage() {
     redirect('/onboarding');
   }
 
-  // Redirect partenaire véhicule vers son portail dédié
+  // Partenaire véhicule : son espace est sur le site web TamCar (plus dans cette application)
   if (profile && profile.role === 'dealer') {
-    redirect('/dealer');
+    redirect(PARTNER_LOGIN_URL);
   }
 
   const firstName = firstNameOf(profile);

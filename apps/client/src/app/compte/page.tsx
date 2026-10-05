@@ -5,6 +5,7 @@ import { LogOutIcon, WalletIcon, HistoryIcon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { getCurrentProfile, getCurrentUser } from '@/lib/session';
 import { createServerSupabase } from '@/lib/supabase-server';
+import { PARTNER_LOGIN_URL } from '@/lib/siteUrl';
 import { getLang } from '@/lib/i18n-server';
 import { logout } from '@/app/login/actions';
 import { AccountForm } from './AccountForm';
@@ -86,12 +87,12 @@ export default async function ComptePage() {
         {/* Raccourcis */}
         {profile.role === 'dealer' ? (
           <section className="mt-lg">
-            <Link
-              href="/dealer"
+            <a
+              href={PARTNER_LOGIN_URL}
               className="flex w-full items-center justify-center rounded-xl bg-primary-500 py-md text-sm font-bold text-white shadow-md"
             >
               Mon espace partenaire
-            </Link>
+            </a>
           </section>
         ) : (
           <section className="mt-lg grid grid-cols-2 gap-sm">

@@ -27,9 +27,9 @@ export async function middleware(request: NextRequest) {
 
   const { pathname, search } = request.nextUrl;
 
-  if (!user && pathname.startsWith('/espace')) {
+  if (!user && (pathname.startsWith('/espace') || pathname.startsWith('/conditions'))) {
     const url = new URL('/connexion', request.url);
-    url.searchParams.set('next', pathname + search);
+    url.searchParams.set('next', pathname.startsWith('/conditions') ? '/espace' : pathname + search);
     return NextResponse.redirect(url);
   }
   if (user && pathname === '/connexion' && !request.nextUrl.searchParams.has('erreur')) {
@@ -39,5 +39,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/espace/:path*', '/connexion'],
+  matcher: ['/espace/:path*', '/connexion', '/conditions'],
 };

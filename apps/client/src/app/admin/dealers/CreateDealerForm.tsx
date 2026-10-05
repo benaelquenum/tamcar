@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useFormState, useFormStatus } from 'react-dom';
 import { CheckIcon } from '@/components/Icon';
+import { PARTNER_LOGIN_URL, SITE_URL } from '@/lib/siteUrl';
 import { createDealer, type CreateDealerState } from './actions';
 
 const initial: CreateDealerState = { ok: false };
@@ -37,7 +38,7 @@ export function CreateDealerForm() {
           </dl>
           <p className="mt-md text-[11px] text-neutral-600">
             Le partenaire véhicule se connecte sur{' '}
-            <a href="https://tamcar-client.vercel.app/login" className="underline">tamcar-client.vercel.app</a>
+            <a href={PARTNER_LOGIN_URL} className="underline">{SITE_URL.replace(/^https?:\/\//, '')}</a>
             {' '}avec ces identifiants : il arrive directement sur son espace. Il pourra changer son mot de passe
             dans « Mon compte ».
           </p>
@@ -49,7 +50,7 @@ export function CreateDealerForm() {
               void navigator.clipboard?.writeText(
                 `Bonjour ${c.full_name}, voici vos accès à l’espace partenaire TamCar (gains en direct, véhicules, versements) :
 ` +
-                  `Lien : https://tamcar-client.vercel.app/login
+                  `Lien : ${PARTNER_LOGIN_URL}
 ` +
                   `Email : ${c.email}
 ` +

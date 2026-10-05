@@ -5,6 +5,7 @@ import { Logo } from '@/components/Logo';
 import { LogOutIcon } from '@/components/Icon';
 import { getCurrentProfile } from '@/lib/session';
 import { logout } from '@/app/login/actions';
+import { PARTNER_LOGIN_URL } from '@/lib/siteUrl';
 import { DealerNav } from './DealerNav';
 
 export default async function DealerLayout({
@@ -17,6 +18,8 @@ export default async function DealerLayout({
   if (profile.role !== 'dealer' && profile.role !== 'admin') {
     redirect('/');
   }
+  // Les partenaires se connectent désormais sur le site web ; cet espace ne sert plus qu’à l’aperçu des administrateurs.
+  if (profile.role === 'dealer') redirect(PARTNER_LOGIN_URL);
 
   return (
     <div className="min-h-dvh bg-neutral-100">

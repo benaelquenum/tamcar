@@ -4,6 +4,8 @@ import { redirect } from 'next/navigation';
 import { LogOutIcon } from '@/components/Icon';
 import { EspaceNav } from '@/components/espace/EspaceNav';
 import { getCurrentProfile } from '@/lib/session';
+import { createServerSupabase } from '@/lib/supabase-server';
+import { TERMS_VERSION } from '@/lib/terms';
 import { signOutAction } from '@/app/connexion/actions';
 
 export const metadata = { title: 'Espace partenaire', robots: { index: false } };
@@ -29,6 +31,19 @@ export default async function EspaceLayout({ children }: { children: React.React
         </div>
       </main>
     );
+  }
+
+  // Acceptation des CGU (version courante, toutes applications confondues) : exigée des partenaires.
+  // Les administrateurs (aperçu) n’ont pas à les accepter.
+  if (profile.role === 'dealer') {
+    const supabase = createServerSupabase();
+    const { count, error } = await supabase
+      .from('terms_acceptances')
+      .select('id', { count: 'exact', head: true })
+      .eq('profile_id', profile.id)
+      .eq('doc', 'cgu')
+      .eq('version', TERMS_VERSION);
+    if (!error && !count) redirect('/conditions');
   }
 
   return (

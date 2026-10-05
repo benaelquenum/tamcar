@@ -4,7 +4,7 @@ const BASE = process.env.NEXT_PUBLIC_SITE_URL || 'https://tamcar.app';
 
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: { userAgent: '*', allow: '/', disallow: ['/espace', '/connexion'] },
+    rules: { userAgent: '*', allow: '/', disallow: ['/espace', '/connexion', '/conditions'] },
     sitemap: `${BASE}/sitemap.xml`,
   };
 }
