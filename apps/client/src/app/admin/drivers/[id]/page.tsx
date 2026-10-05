@@ -121,6 +121,7 @@ const WALLET_LABEL: Record<string, string> = {
   performance_bonus: 'Bonus de performance',
   approach_bonus: 'Prime d’approche',
   tamassur_withdrawal: 'Retrait TamAssur',
+  senteur_fee: 'Produits de senteur (fonds de rachat)',
   debt_settlement: 'Règlement de dette',
   goodwill_credit: 'Geste commercial',
   change_return_in: 'Monnaie reçue',

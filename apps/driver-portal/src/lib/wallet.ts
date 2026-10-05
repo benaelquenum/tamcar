@@ -22,6 +22,7 @@ export type WalletTxType =
   | 'performance_bonus'
   | 'approach_bonus'
   | 'ops_commission'
+  | 'senteur_fee'
   | 'ops_payout'
   | 'adjustment';
 
@@ -95,6 +96,7 @@ const TX_LABEL: Record<WalletTxType, string> = {
   performance_bonus: 'Bonus de performance',
   approach_bonus: 'Prime d\'approche',
   ops_commission: 'Commission responsable opérations',
+  senteur_fee: 'Produits de senteur',
   ops_payout: 'Règlement responsable opérations',
   tamassur_withdrawal: 'Retrait épargne TamAssur',
   goodwill_credit: 'Crédit d\'excuse',
