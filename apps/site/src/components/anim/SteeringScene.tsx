@@ -147,7 +147,7 @@ export function SteeringScene({ className = '' }: { className?: string }) {
       </Layer>
 
       {/* Volant : tourne autour de son centre, sort du bas de la section */}
-      <div className="absolute left-[33%] top-[60%] w-[34%]">
+      <div className="absolute left-[33%] top-[70.8%] w-[34%]">
         <div className="tc-steer-wheel aspect-square w-full" style={{ transformOrigin: '50% 50%' }}>
           <svg viewBox="0 0 300 300" className="h-full w-full drop-shadow-[0_18px_24px_rgba(2,6,23,0.5)]">
             <defs>

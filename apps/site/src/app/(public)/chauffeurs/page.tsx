@@ -20,7 +20,7 @@ export default function DriversPage() {
       <section className="relative overflow-hidden bg-gradient-to-br from-primary-900 via-primary-700 to-primary-500 text-white">
         <div className="pointer-events-none absolute -left-24 top-1/3 h-[420px] w-[420px] rounded-full bg-white/10 blur-3xl" />
         <DriverHeroScene />
-        <div className="relative z-10 mx-auto max-w-6xl px-lg pb-[190px] pt-lg sm:pb-[240px] sm:pt-xl lg:flex lg:min-h-[560px] lg:items-center lg:pb-3xl lg:pt-3xl">
+        <div className="relative z-10 mx-auto max-w-6xl px-lg pb-[205px] pt-lg sm:pb-[255px] sm:pt-xl lg:flex lg:min-h-[585px] lg:items-center lg:pb-3xl lg:pt-3xl">
           <div className="max-w-xl">
             <p className="inline-flex rounded-full bg-white/15 px-md py-xs text-xs font-bold uppercase tracking-wider ring-1 ring-white/25">Chauffeurs</p>
             <h1 className="mt-md text-[1.7rem] font-extrabold leading-[1.08] tracking-tight sm:mt-lg sm:text-5xl lg:text-6xl">

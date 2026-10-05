@@ -23,6 +23,11 @@ const K_MAX = 0.0006; // courbure maximale de la route
 const YAW_MAX = 0.18; // rad : glissement du lointain
 const WHEEL_ANGLE = (62 * Math.PI) / 180;
 const FOG_COLOR = '#2a57d4';
+const FOV = 50; // champ vertical de la caméra (degrés)
+const WHEEL_Z = 1.15; // distance du volant à la caméra (m)
+// Hauteur du centre du volant dans le repère de la caméra pour qu'il se projette EXACTEMENT sur le bord bas du cadre :
+// la barre horizontale du volant est alors superposée à la ligne qui clôture le bandeau, quelle que soit la taille d'écran.
+const WHEEL_Y = -WHEEL_Z * Math.tan((FOV / 2) * (Math.PI / 180));
 const GROUND_LEN = 1500; // longueur du sol (m)
 const FPS_MIN = 22; // en dessous, on bascule sur la version 2D
 
@@ -148,7 +153,7 @@ export function SteeringScene3D({ className = '', onReady, onFail }: { className
     const scene = new THREE.Scene();
     scene.fog = new THREE.Fog(FOG_COLOR, 40, 330);
 
-    const camera = new THREE.PerspectiveCamera(50, 2, 0.1, 800);
+    const camera = new THREE.PerspectiveCamera(FOV, 2, 0.1, 800);
     camera.position.set(0, 1.3, 0);
     camera.rotation.x = -0.05;
     scene.add(camera);
@@ -287,7 +292,7 @@ export function SteeringScene3D({ className = '', onReady, onFail }: { className
 
     /* ------------------------------------------------------------------ volant */
     const wheelTilt = new THREE.Group();
-    wheelTilt.position.set(0, -0.47, -1.15);
+    wheelTilt.position.set(0, WHEEL_Y, -WHEEL_Z);
     wheelTilt.rotation.x = -0.42;
     wheelTilt.scale.setScalar(0.62); // taille du volant (réglée aussi selon l'écran dans resize)
     camera.add(wheelTilt);
@@ -332,9 +337,8 @@ export function SteeringScene3D({ className = '', onReady, onFail }: { className
       // Point de fuite à 72 % de la largeur sur grand écran (texte à gauche), au centre sur téléphone
       const narrow = w < 1024;
       const vp = narrow ? 0.5 : 0.74;
-      // Téléphone : volant un peu plus haut dans le cadre (le bandeau est court) ; ordinateur : niveau d'origine
-      wheelTilt.position.y = narrow ? -0.36 : -0.47;
-      wheelTilt.scale.setScalar(narrow ? 0.7 : 0.62);
+      // Le centre du volant reste sur le bord bas ; sur téléphone on l'agrandit un peu (seule la moitié haute est visible)
+      wheelTilt.scale.setScalar(narrow ? 0.8 : 0.62);
       const full = 2 * vp * w;
       camera.aspect = full / h;
       camera.setViewOffset(full, h, 0, 0, w, h);
