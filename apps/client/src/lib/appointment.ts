@@ -69,7 +69,7 @@ export const STATUS_META: Record<AppointmentStatus, { label: string; color: stri
 export const APPLICATION_TYPE_META: Record<DriverApplicationType, { label: string; sub: string; split: string }> = {
   cession: {
     label: 'Formule Cession',
-    sub: 'TamCar vous fournit la voiture, vous la possédez en 24 mois (36 si neuve)',
+    sub: 'TamCar vous fournit le véhicule : il est à vous au terme du contrat (moto 12 mois, tricycle 24 mois, voiture 3 à 5 ans)',
     split: '40% cash · 10% rachat · 30% concession · 20% plateforme · bonus de performance au-dessus de l’objectif du jour',
   },
   proprietaire: {

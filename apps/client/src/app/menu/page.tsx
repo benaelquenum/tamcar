@@ -158,7 +158,7 @@ export default async function MenuPage() {
             <span className="flex-1">
               <span className="block text-sm font-bold">Devenir chauffeur TamCar</span>
               <span className="block text-[11px] opacity-90">
-                2 formules · cession 24 mois ou propriétaire libre
+                2 formules · cession du véhicule ou propriétaire libre
               </span>
             </span>
             <ArrowRightIcon className="h-4 w-4 flex-none" />

@@ -73,7 +73,7 @@ export function WalletView({ wallets, transactions, isDriver, driverApplicationT
           )}
           {/* Chauffeur formule A uniquement : fonds rachat */}
           {isDriver && driverApplicationType === 'cession' && rachatWallet && (
-            <BigWalletCard wallet={rachatWallet} note="Débloqué au bout de 24 mois de service" />
+            <BigWalletCard wallet={rachatWallet} note="Débloqué au terme du contrat de cession" />
           )}
         </div>
 

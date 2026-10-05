@@ -58,7 +58,7 @@ export const WALLET_KIND_META: Record<WalletKind, { label: string; sub: string; 
   },
   tamcar_rachat: {
     label: 'Fonds rachat véhicule',
-    sub: 'Cession échelonnée · 24 mois pour posséder votre voiture',
+    sub: 'Cession échelonnée · le véhicule est à vous au terme du contrat',
     gradient: 'from-gold to-warning',
     icon: '🔑',
   },

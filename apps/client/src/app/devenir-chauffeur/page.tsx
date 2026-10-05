@@ -72,8 +72,8 @@ export default async function DevenirChauffeurPage() {
             perks={[
               '40 % du prix de chaque course en cash immédiat',
               'Bonus de performance : TamCar vous reverse la moitié de sa part au-dessus de votre objectif du jour',
-              '10 % en plus dans votre fonds rachat, voiture à vous en 24 mois',
-              'Assurance et grosses réparations couvertes pendant les 24 mois',
+              '10 % en plus dans votre fonds rachat, véhicule à vous au terme du contrat (moto 12 mois, tricycle 24 mois, voiture 3 à 5 ans)',
+              'Assurance et grosses réparations couvertes pendant toute la durée du contrat',
             ]}
             icon={<CarIcon />}
           />
