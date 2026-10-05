@@ -145,6 +145,95 @@ body {
   animation: tc-marquee 40s linear infinite;
 }
 
+/* Bannière d'accueil : barre de progression d'une diapositive, et photo fondue dans le bleu (grand écran) */
+@keyframes tc-hero-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+.tc-hero-fill {
+  transform-origin: left center;
+  animation: tc-hero-fill var(--tc-hero-dur, 7s) linear forwards;
+}
+@media (min-width: 1024px) {
+  .tc-hero-mask {
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 36%);
+    mask-image: linear-gradient(to right, transparent 0%, #000 36%);
+  }
+}
+
+/* Scène du volant : un seul cycle partagé (volant, route, décor) pour que tout reste synchronisé.
+   0-20 % : le volant tourne à droite, la route s'incurve à droite et le décor glisse vers la gauche ;
+   50 % : tout droit ; 70-85 % : même chose vers la gauche. */
+.tc-steer-wheel,
+.tc-steer-road,
+.tc-steer-far,
+.tc-steer-mid,
+.tc-steer-near {
+  animation-duration: var(--tc-steer, 12s);
+  animation-delay: var(--tc-steer-delay, 0s);
+  animation-play-state: var(--tc-steer-state, running);
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+.tc-steer-wheel {
+  animation-name: tc-steer-wheel;
+}
+.tc-steer-road {
+  animation-name: tc-steer-road;
+  transform-origin: 50% 100%;
+}
+.tc-steer-far {
+  animation-name: tc-steer-far;
+}
+.tc-steer-mid {
+  animation-name: tc-steer-mid;
+}
+.tc-steer-near {
+  animation-name: tc-steer-near;
+}
+@keyframes tc-steer-wheel {
+  0%, 100% { transform: rotate(0deg); }
+  20%, 36% { transform: rotate(62deg); }
+  50% { transform: rotate(0deg); }
+  70%, 86% { transform: rotate(-62deg); }
+}
+@keyframes tc-steer-road {
+  0%, 100% { transform: skewX(0deg); }
+  20%, 36% { transform: skewX(-17deg); }
+  50% { transform: skewX(0deg); }
+  70%, 86% { transform: skewX(17deg); }
+}
+@keyframes tc-steer-far {
+  0%, 100% { transform: translateX(0); }
+  20%, 36% { transform: translateX(-3%); }
+  50% { transform: translateX(0); }
+  70%, 86% { transform: translateX(3%); }
+}
+@keyframes tc-steer-mid {
+  0%, 100% { transform: translateX(0); }
+  20%, 36% { transform: translateX(-7%); }
+  50% { transform: translateX(0); }
+  70%, 86% { transform: translateX(7%); }
+}
+@keyframes tc-steer-near {
+  0%, 100% { transform: translateX(0); }
+  20%, 36% { transform: translateX(-9%); }
+  50% { transform: translateX(0); }
+  70%, 86% { transform: translateX(9%); }
+}
+/* Bandes centrales : elles grossissent et descendent en accélérant, comme dans la perspective d'une route */
+@keyframes tc-dash-run {
+  from { transform: translate(320px, 180px) scale(0.04); }
+  to { transform: translate(320px, 440px) scale(1); }
+}
+.tc-dash {
+  animation: tc-dash-run 1.5s cubic-bezier(0.85, 0, 1, 0.5) infinite;
+}
+
 /* Apparition au défilement */
 .tc-reveal {
   opacity: 0;
@@ -161,11 +250,25 @@ body {
     scroll-behavior: auto;
   }
   .tc-wheel-spin,
+  .tc-steer-wheel,
+  .tc-steer-road,
+  .tc-steer-far,
+  .tc-steer-mid,
+  .tc-steer-near,
+  .tc-dash,
   .tc-road-dashes,
   .tc-puff,
   .tc-marquee {
     animation: none !important;
   }
+  .tc-dash {
+    display: none;
+  }
+  .tc-hero-fill {
+    animation: none !important;
+    transform: scaleX(1);
+  }
+  .tc-hero-slide,
   .tc-gauge-needle,
   .tc-gauge-arc,
   .tc-lamp,

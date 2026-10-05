@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Gauge } from '@/components/anim/Gauge';
+import Image from 'next/image';
 import { Reveal } from '@/components/anim/Reveal';
 import { Road } from '@/components/anim/Road';
 import { CLIENT_APP_URL } from '@/lib/config';
@@ -24,7 +24,7 @@ export default function ClientsPage() {
   return (
     <>
       <section className="relative overflow-hidden bg-white pb-4xl pt-4xl">
-        <div className="mx-auto grid max-w-6xl items-center gap-2xl px-lg lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="mx-auto grid max-w-6xl items-center gap-2xl px-lg lg:grid-cols-[1fr_1fr]">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary-600">Clients</p>
             <h1 className="mt-sm text-4xl font-extrabold leading-tight text-neutral-900 sm:text-5xl">Une course claire, de bout en bout.</h1>
@@ -36,8 +36,17 @@ export default function ClientsPage() {
               Ouvrir l’application TamCar
             </a>
           </div>
-          <div className="mx-auto w-56">
-            <Gauge live value={1} valueText="Fixe" label="PRIX DE LA COURSE" sub="annoncé avant de partir" className="w-full drop-shadow-2xl" />
+          <div className="relative mx-auto w-full max-w-md lg:max-w-none">
+            <div className="absolute -inset-3 -z-10 rotate-2 rounded-[2rem] bg-gradient-to-br from-primary-500 to-cyan-500 opacity-25 blur-xl" />
+            <Image
+              src="/img/tampass-cliente.webp"
+              alt="Une cliente souriante à la vitre d’un véhicule TamCar, sa carte TamPass à la main"
+              width={946}
+              height={794}
+              priority
+              sizes="(min-width: 1024px) 40vw, 90vw"
+              className="h-auto w-full rounded-[1.75rem] shadow-2xl ring-1 ring-primary-100"
+            />
           </div>
         </div>
       </section>

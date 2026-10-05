@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { DocsTabs } from '@/components/DocsTabs';
 import { Reveal } from '@/components/anim/Reveal';
-import { TrafficLight } from '@/components/anim/TrafficLight';
+import { SteeringScene } from '@/components/anim/SteeringScene';
 import { CLIENT_APP_URL, DRIVER_APP_URL } from '@/lib/config';
 import { FORMULAS, type Formula } from '@/lib/content';
 
@@ -15,59 +15,71 @@ const ORDER: Formula[] = ['cession', 'proprietaire'];
 export default function DriversPage() {
   return (
     <>
-      <section className="relative overflow-hidden bg-white pb-3xl pt-4xl">
-        <div className="mx-auto grid max-w-6xl items-center gap-2xl px-lg lg:grid-cols-[1.2fr_0.8fr]">
+      {/* Le bleu domine toute la page ; le blanc sert de contraste (texte, cartes, boutons). */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-primary-900 via-primary-700 to-primary-500 pb-4xl pt-3xl text-white lg:pt-4xl">
+        <div className="pointer-events-none absolute -left-24 top-1/2 h-[420px] w-[420px] rounded-full bg-white/10 blur-3xl" />
+        <div className="relative mx-auto grid max-w-6xl items-center gap-2xl px-lg lg:grid-cols-[1fr_1.05fr]">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary-600">Chauffeurs</p>
-            <h1 className="mt-sm text-4xl font-extrabold leading-tight text-neutral-900 sm:text-5xl">Prenez le volant. Deux formules, vous décidez.</h1>
-            <p className="mt-lg max-w-xl text-lg text-neutral-600">
+            <p className="inline-flex rounded-full bg-white/15 px-md py-xs text-xs font-bold uppercase tracking-wider ring-1 ring-white/25">Chauffeurs</p>
+            <h1 className="mt-lg text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
+              Prenez le volant. <span className="text-[#8BE3FF]">Deux formules, vous décidez.</span>
+            </h1>
+            <p className="mt-lg max-w-xl text-lg leading-relaxed text-primary-50">
               Roulez avec un véhicule fourni par un partenaire et devenez-en propriétaire au terme du contrat, ou venez avec le vôtre.
               Le rendez-vous se prend dans l’application TamCar.
             </p>
             <div className="mt-xl flex flex-wrap gap-md">
-              <a href={`${CLIENT_APP_URL}/devenir-chauffeur`} className="rounded-full bg-gradient-to-r from-primary-500 to-primary-700 px-xl py-md text-base font-bold text-white shadow-glow transition hover:brightness-110">
+              <a
+                href={`${CLIENT_APP_URL}/devenir-chauffeur`}
+                className="rounded-full bg-white px-xl py-md text-base font-extrabold text-primary-700 shadow-xl transition hover:scale-[1.03]"
+              >
                 Prendre rendez-vous
               </a>
-              <a href={DRIVER_APP_URL} className="rounded-full px-xl py-md text-base font-bold text-primary-700 ring-2 ring-primary-200 transition hover:bg-primary-50">
+              <a
+                href={DRIVER_APP_URL}
+                className="rounded-full px-xl py-md text-base font-bold text-white ring-2 ring-white/45 transition hover:bg-white/10"
+              >
                 Déjà chauffeur : TamCar Pro
               </a>
             </div>
           </div>
-          <div className="mx-auto hidden w-32 lg:block">
-            <TrafficLight loop className="h-auto w-full drop-shadow-xl" />
+          <SteeringScene className="mx-auto max-w-xl lg:max-w-none" />
+        </div>
+      </section>
+
+      <section className="bg-primary-900 py-4xl text-white">
+        <div className="mx-auto max-w-6xl px-lg">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#8BE3FF]">Les formules</p>
+          <h2 className="mt-sm max-w-2xl text-3xl font-extrabold leading-tight sm:text-4xl">Un véhicule fourni, ou le vôtre.</h2>
+          <div className="mt-2xl grid gap-xl md:grid-cols-2">
+            {ORDER.map((id, i) => {
+              const f = FORMULAS[id];
+              return (
+                <Reveal key={id} delay={i * 120}>
+                  <article className="h-full rounded-2xl bg-primary-700/60 p-xl ring-1 ring-white/20 backdrop-blur">
+                    <p className="text-xs font-bold uppercase tracking-wider text-[#8BE3FF]">{id === 'cession' ? 'Formule A' : 'Formule B'}</p>
+                    <h3 className="mt-xs text-2xl font-extrabold">{f.label}</h3>
+                    <p className="mt-sm text-base text-primary-100">{f.tagline}</p>
+                    <ul className="mt-lg space-y-sm">
+                      {f.perks.map((p) => (
+                        <li key={p} className="flex items-start gap-sm text-base text-white">
+                          <span className="mt-1.5 inline-block h-2 w-2 flex-none rounded-full bg-[#8BE3FF]" />
+                          {p}
+                        </li>
+                      ))}
+                    </ul>
+                  </article>
+                </Reveal>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      <section className="bg-neutral-100 py-4xl">
-        <div className="mx-auto grid max-w-6xl gap-xl px-lg md:grid-cols-2">
-          {ORDER.map((id, i) => {
-            const f = FORMULAS[id];
-            return (
-              <Reveal key={id} delay={i * 120}>
-                <article className="h-full rounded-2xl bg-white p-xl shadow-md ring-1 ring-neutral-200">
-                  <p className="text-xs font-bold uppercase tracking-wider text-primary-600">{id === 'cession' ? 'Formule A' : 'Formule B'}</p>
-                  <h2 className="mt-xs text-2xl font-extrabold text-neutral-900">{f.label}</h2>
-                  <p className="mt-sm text-base text-neutral-600">{f.tagline}</p>
-                  <ul className="mt-lg space-y-sm">
-                    {f.perks.map((p) => (
-                      <li key={p} className="flex items-start gap-sm text-base text-neutral-900">
-                        <span className="mt-1.5 inline-block h-2 w-2 flex-none rounded-full bg-primary-500" />
-                        {p}
-                      </li>
-                    ))}
-                  </ul>
-                </article>
-              </Reveal>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="py-4xl">
+      <section className="bg-gradient-to-b from-primary-700 to-primary-900 py-4xl text-white">
         <div className="mx-auto max-w-3xl px-lg">
-          <h2 className="text-3xl font-extrabold leading-tight text-neutral-900 sm:text-4xl">Les pièces à apporter au rendez-vous.</h2>
-          <p className="mt-md text-base text-neutral-600">Choisissez votre formule : la liste s’adapte.</p>
+          <h2 className="text-3xl font-extrabold leading-tight sm:text-4xl">Les pièces à apporter au rendez-vous.</h2>
+          <p className="mt-md text-base text-primary-100">Choisissez votre formule : la liste s’adapte.</p>
           <div className="mt-xl">
             <DocsTabs />
           </div>

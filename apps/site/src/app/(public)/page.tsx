@@ -1,14 +1,11 @@
 import Link from 'next/link';
-import { Wheel } from '@/components/anim/Wheel';
 import { Road } from '@/components/anim/Road';
-import { TrafficLight } from '@/components/anim/TrafficLight';
 import { Exhaust } from '@/components/anim/Exhaust';
 import { Reveal } from '@/components/anim/Reveal';
+import { HeroBanner } from '@/components/HeroBanner';
 import { HowItWorks } from '@/components/HowItWorks';
 import { Dashboard } from '@/components/Dashboard';
 import { CLIENT_APP_URL } from '@/lib/config';
-
-const CHIPS = ['Prix annoncé avant la course', 'Jamais de surge', 'Photo du chauffeur vérifiée', 'Cotonou · Porto-Novo · corridor'];
 
 const MARQUEE = [
   'Prix fixe garanti',
@@ -23,55 +20,7 @@ const MARQUEE = [
 export default function HomePage() {
   return (
     <>
-      {/* ---------------------------------------------------------------- Hero */}
-      <section className="relative overflow-hidden bg-white">
-        <div className="pointer-events-none absolute -right-40 -top-40 h-[640px] w-[640px] rounded-full bg-primary-100 opacity-70 blur-3xl" />
-        <div className="pointer-events-none absolute -left-32 top-1/3 h-[420px] w-[420px] rounded-full bg-cyan-500/10 blur-3xl" />
-
-        <div className="relative mx-auto grid max-w-6xl items-center gap-2xl px-lg pb-4xl pt-3xl lg:grid-cols-[1.05fr_0.95fr] lg:pt-4xl">
-          <div>
-            <p className="inline-flex items-center gap-xs rounded-full bg-primary-50 px-md py-xs text-xs font-bold uppercase tracking-wider text-primary-700 ring-1 ring-primary-100">
-              Pour les propriétaires de véhicules
-            </p>
-            <h1 className="mt-lg text-4xl font-extrabold leading-[1.05] tracking-tight text-neutral-900 sm:text-5xl lg:text-6xl">
-              Votre véhicule roule.{' '}
-              <span className="bg-gradient-to-r from-primary-500 to-cyan-500 bg-clip-text text-transparent">Vous encaissez.</span>
-            </h1>
-            <p className="mt-lg max-w-xl text-lg leading-relaxed text-neutral-600">
-              Confiez votre voiture, votre moto ou votre tricycle à TamCar. Un chauffeur vérifié le fait rouler,
-              et vous suivez vos gains en direct. Vous restez propriétaire jusqu’au terme du contrat.
-            </p>
-            <div className="mt-xl flex flex-wrap items-center gap-md">
-              <Link
-                href="/partenaires"
-                className="relative rounded-full bg-gradient-to-r from-primary-500 to-primary-700 px-xl py-md text-base font-bold text-white shadow-glow transition hover:brightness-110"
-              >
-                Devenir partenaire
-              </Link>
-              <Link href="/connexion" className="rounded-full px-xl py-md text-base font-bold text-primary-700 ring-2 ring-primary-200 transition hover:bg-primary-50">
-                Espace partenaire
-              </Link>
-            </div>
-            <ul className="mt-xl flex flex-wrap gap-sm">
-              {CHIPS.map((c) => (
-                <li key={c} className="rounded-full bg-neutral-100 px-md py-xs text-xs font-semibold text-neutral-700">
-                  {c}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* La roue, sur la route : elle tourne en continu et avec le défilement */}
-          <div className="relative z-20 mx-auto w-full max-w-[520px]">
-            <div className="absolute -left-2 top-2 z-10 w-16 sm:w-20">
-              <TrafficLight loop className="h-auto w-full drop-shadow-xl" />
-            </div>
-            <Wheel className="relative z-0 mx-auto w-[88%] drop-shadow-2xl" spinSeconds={7} />
-          </div>
-        </div>
-
-        <Road bare className="relative z-10 -mt-24 sm:-mt-28" height={210} speed={1.05} />
-      </section>
+      <HeroBanner />
 
       {/* ----------------------------------------------- Bandeau « pneu » */}
       <section className="overflow-hidden bg-neutral-900 py-md" aria-label="Nos engagements">
