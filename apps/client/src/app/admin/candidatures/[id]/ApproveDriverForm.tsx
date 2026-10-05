@@ -1,8 +1,9 @@
 'use client';
 
-import { useRef, useState } from 'react';
-import { supabaseBrowser } from '@/lib/supabase-browser';
-import { UserIcon } from '@/components/Icon';
+import { useEffect, useRef, useState } from 'react';
+import { AlertTriangleIcon, CheckIcon, UserIcon } from '@/components/Icon';
+import { processPortrait, warmUpPortraitDetector, type PortraitResult } from '@/lib/portrait';
+import { savePortraitAction } from '../../drivers/[id]/photoActions';
 import { APPLICATION_TYPE_META, type DriverAppointment } from '@/lib/appointment';
 import { approveAppointment } from './actions';
 
@@ -18,22 +19,29 @@ export function ApproveDriverForm({ app }: Props) {
     : '';
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [portrait, setPortrait] = useState<PortraitResult | null>(null);
+  const [processing, setProcessing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+  useEffect(() => {
+    warmUpPortraitDetector();
+  }, []);
+
+  // Même traitement que la photo officielle des chauffeurs : contrôle + recadrage + correction.
+  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      setError('Photo trop lourde (max 5 Mo).');
-      return;
-    }
     setError(null);
-    setPhotoFile(file);
-    const url = URL.createObjectURL(file);
-    setPhotoPreview(url);
+    if (portrait?.previewUrl) URL.revokeObjectURL(portrait.previewUrl);
+    setPortrait(null);
+    setProcessing(true);
+    try {
+      setPortrait(await processPortrait(file));
+    } finally {
+      setProcessing(false);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -42,27 +50,24 @@ export function ApproveDriverForm({ app }: Props) {
       setError('Candidat sans profil authentifié — impossible d\'approuver.');
       return;
     }
+    if (portrait && !portrait.ok) {
+      setError('La photo ne passe pas les contrôles : reprenez-la, ou retirez-la pour approuver sans photo.');
+      return;
+    }
     setSubmitting(true);
     setError(null);
 
     try {
-      let photoUrl: string | null = null;
-      if (photoFile) {
-        const ext = photoFile.name.split('.').pop()?.toLowerCase() || 'jpg';
-        const path = `${app.profile_id}.${ext}`;
-        const { error: uploadErr } = await supabaseBrowser.storage
-          .from('driver-photos')
-          .upload(path, photoFile, { upsert: true, contentType: photoFile.type });
-        if (uploadErr) throw new Error(`Upload photo : ${uploadErr.message}`);
-
-        const { data: pub } = supabaseBrowser.storage
-          .from('driver-photos')
-          .getPublicUrl(path);
-        photoUrl = pub.publicUrl;
+      // Photo officielle : enregistrée (et marquée « vérifiée ») avant la création du chauffeur.
+      if (portrait?.blob) {
+        const pf = new FormData();
+        pf.set('profile_id', app.profile_id);
+        pf.set('photo', new File([portrait.blob], 'portrait.jpg', { type: 'image/jpeg' }));
+        const r = await savePortraitAction(pf);
+        if (!r.ok) throw new Error(r.error ?? 'Enregistrement de la photo impossible');
       }
 
       const fd = new FormData(e.currentTarget);
-      if (photoUrl) fd.set('photo_url', photoUrl);
       await approveAppointment(fd);
       // approveAppointment redirige — pas besoin de setSubmitting(false).
     } catch (err) {
@@ -88,10 +93,12 @@ export function ApproveDriverForm({ app }: Props) {
         <FieldSet legend="Photo du chauffeur" wide>
           <div className="flex items-center gap-md">
             <div className="grid h-24 w-24 flex-none place-items-center overflow-hidden rounded-full bg-neutral-100 ring-2 ring-neutral-200">
-              {photoPreview ? (
+              {processing ? (
+                <span className="text-[10px] text-neutral-500">Analyse…</span>
+              ) : portrait?.previewUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={photoPreview}
+                  src={portrait.previewUrl}
                   alt="Aperçu"
                   className="h-full w-full object-cover"
                 />
@@ -103,7 +110,7 @@ export function ApproveDriverForm({ app }: Props) {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/jpeg,image/png,image/webp"
+                accept="image/*"
                 onChange={handlePhotoChange}
                 className="hidden"
               />
@@ -112,15 +119,27 @@ export function ApproveDriverForm({ app }: Props) {
                 onClick={() => fileInputRef.current?.click()}
                 className="rounded-md bg-primary-500 px-md py-sm text-sm font-bold text-white shadow-md hover:brightness-110"
               >
-                {photoFile ? 'Changer la photo' : 'Choisir une photo'}
+                {portrait ? 'Changer la photo' : 'Prendre ou choisir une photo'}
               </button>
               <p className="mt-xs text-[10px] text-neutral-500">
-                JPG, PNG ou WebP · max 5 Mo · visible par les clients pendant la course.
+                Visage de face, lumière de face, fond uni. L’outil contrôle et corrige la photo tout seul ; elle sera visible par les clients pendant la course, avec le badge « photo vérifiée ».
               </p>
-              {photoFile && (
-                <p className="mt-xs text-[10px] font-semibold text-success">
-                  {photoFile.name}
-                </p>
+              {portrait && (
+                <ul className="mt-xs space-y-0.5">
+                  {portrait.issues.map((i, k) => (
+                    <li
+                      key={`${i.code}-${k}`}
+                      className={`flex items-start gap-xs text-[10px] ${i.level === 'error' ? 'font-semibold text-error' : 'text-neutral-700'}`}
+                    >
+                      {i.level === 'ok' ? (
+                        <CheckIcon className="mt-0.5 h-3 w-3 flex-none text-success" strokeWidth={3} />
+                      ) : (
+                        <AlertTriangleIcon className={`mt-0.5 h-3 w-3 flex-none ${i.level === 'error' ? 'text-error' : 'text-warning'}`} />
+                      )}
+                      <span>{i.message}</span>
+                    </li>
+                  ))}
+                </ul>
               )}
             </div>
           </div>

@@ -45,7 +45,10 @@ export async function savePortraitAction(formData: FormData): Promise<SavePortra
 
     const { data } = admin.storage.from('client-avatars').getPublicUrl(path);
     const url = `${data.publicUrl}?v=${Date.now()}`;
-    const { error: updErr } = await admin.from('profiles').update({ avatar_url: url }).eq('id', profileId);
+    const { error: updErr } = await admin
+      .from('profiles')
+      .update({ avatar_url: url, avatar_verified_at: new Date().toISOString() })
+      .eq('id', profileId);
     if (updErr) throw new Error(`Mise à jour du profil : ${updErr.message}`);
 
     if (UUID.test(driverId)) revalidatePath(`/admin/drivers/${driverId}`);

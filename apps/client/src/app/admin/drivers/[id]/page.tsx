@@ -238,6 +238,9 @@ export default async function AdminDriverDetailPage({
   }
 
   const s = summaryData as Summary;
+  // Photo officielle : date de vérification par TamCar (badge côté client).
+  const { data: avatarRow } = await supabase.from('profiles').select('avatar_verified_at').eq('id', s.profile_id).maybeSingle();
+  const avatarVerifiedAt = (avatarRow as { avatar_verified_at: string | null } | null)?.avatar_verified_at ?? null;
   const counts = new Map<string, number>(
     ((countData ?? []) as Array<{ kind: string; n: number }>).map((c) => [c.kind, Number(c.n)]),
   );
@@ -322,7 +325,13 @@ export default async function AdminDriverDetailPage({
         </div>
       </section>
 
-      <PortraitUploader profileId={s.profile_id} driverId={s.driver_id} name={s.full_name} currentUrl={s.avatar_url} />
+      <PortraitUploader
+        profileId={s.profile_id}
+        driverId={s.driver_id}
+        name={s.full_name}
+        currentUrl={s.avatar_url}
+        verifiedAt={avatarVerifiedAt}
+      />
 
       {/* Chiffres depuis l'enrôlement */}
       <h2 className="mb-sm mt-xl text-sm font-bold uppercase tracking-wider text-neutral-500">Depuis l&apos;enrôlement</h2>

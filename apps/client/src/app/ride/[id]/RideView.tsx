@@ -546,6 +546,22 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
   const isActive = ['requested', 'matched', 'arrived', 'in_progress'].includes(ride.status);
   const hasDriver = ride.driver_id !== null;
 
+  // Badge « photo vérifiée par TamCar » : la photo du chauffeur a été prise et contrôlée par TamCar.
+  const [photoVerified, setPhotoVerified] = useState(false);
+  useEffect(() => {
+    if (!hasDriver) {
+      setPhotoVerified(false);
+      return;
+    }
+    let alive = true;
+    void supabaseBrowser.rpc('driver_photo_verified', { p_ride_id: ride.id }).then(({ data }) => {
+      if (alive) setPhotoVerified(data === true);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [hasDriver, ride.id, ride.driver_id]);
+
   const pickupCoord = useMemo<[number, number]>(
     () => [ride.pickup_lng, ride.pickup_lat],
     [ride.pickup_lat, ride.pickup_lng],
@@ -1404,6 +1420,12 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                       </span>
                     )}
                   </p>
+                  {photoVerified && (
+                    <p className="mt-0.5 inline-flex items-center gap-xs text-[10px] font-semibold text-primary-700">
+                      <CheckIcon className="h-3 w-3" strokeWidth={3} />
+                      Photo vérifiée par TamCar
+                    </p>
+                  )}
                   {(ride.vehicle_brand || ride.vehicle_model) && (
                     <p className="text-xs text-neutral-600">
                       {[ride.vehicle_color, ride.vehicle_brand, ride.vehicle_model].filter(Boolean).join(' ')}

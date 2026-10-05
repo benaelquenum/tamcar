@@ -16,11 +16,13 @@ export function PortraitUploader({
   driverId,
   name,
   currentUrl,
+  verifiedAt,
 }: {
   profileId: string;
   driverId: string;
   name: string;
   currentUrl: string | null;
+  verifiedAt: string | null;
 }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -95,6 +97,13 @@ export function PortraitUploader({
           ) : (
             <span className="grid h-28 w-28 place-items-center rounded-full bg-neutral-100 text-[11px] text-neutral-500">Aucune</span>
           )}
+          <p className={`mt-xs max-w-[7.5rem] text-[10px] font-semibold ${verifiedAt ? 'text-primary-700' : 'text-neutral-500'}`}>
+            {verifiedAt
+              ? `Vérifiée par TamCar le ${new Date(verifiedAt).toLocaleDateString('fr-FR', { timeZone: 'Africa/Porto-Novo' })}`
+              : currentUrl
+                ? 'Non vérifiée : pas de badge côté client'
+                : ''}
+          </p>
         </div>
 
         {(busy || result) && (
