@@ -1,0 +1,179 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --scroll: 0;
+  --tc-blue: #2563EB;
+  --tc-blue-dark: #1D4ED8;
+  --tc-navy: #1E3A8A;
+  --tc-ink: #0F172A;
+  --tc-gold: #EAB308;
+  --tc-cyan: #06B6D4;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+html,
+body {
+  min-height: 100%;
+  background-color: #fff;
+  color: var(--tc-ink);
+}
+
+body {
+  font-feature-settings: 'cv02', 'cv03', 'cv04';
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: #BFDBFE;
+}
+
+/* ---------------------------------------------------------------------------------------------
+   Animations de l'univers automobile : roue, route, feux, jauges, traces de pneus, échappement.
+   Tout est désactivé pour les personnes qui demandent moins de mouvement.
+   --------------------------------------------------------------------------------------------- */
+
+/* Roue : rotation continue (la rotation liée au défilement est posée en ligne, via --scroll) */
+@keyframes tc-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.tc-wheel-spin {
+  transform-origin: 200px 200px;
+  animation: tc-spin var(--tc-spin, 9s) linear infinite;
+}
+
+/* Route : bandes centrales qui défilent vers le conducteur */
+@keyframes tc-road-dash {
+  from {
+    background-position-y: 0;
+  }
+  to {
+    background-position-y: 150px;
+  }
+}
+.tc-road {
+  position: relative;
+  overflow: hidden;
+  perspective: 520px;
+  background: linear-gradient(to bottom, #fff 0%, #e8eefc 100%);
+}
+.tc-road-plane {
+  position: absolute;
+  left: -30%;
+  right: -30%;
+  bottom: -55%;
+  height: 230%;
+  transform: rotateX(64deg);
+  transform-origin: 50% 100%;
+  background: linear-gradient(to bottom, #1e293b, #0b1220 60%);
+  box-shadow: 0 -40px 80px rgba(15, 23, 42, 0.35) inset;
+}
+.tc-road-plane::before,
+.tc-road-plane::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  background: rgba(255, 255, 255, 0.85);
+}
+.tc-road-plane::before {
+  left: 14%;
+}
+.tc-road-plane::after {
+  right: 14%;
+}
+.tc-road-dashes {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 12px;
+  margin-left: -6px;
+  background: repeating-linear-gradient(to bottom, #fde047 0 70px, transparent 70px 150px);
+  animation: tc-road-dash var(--tc-road-speed, 1.1s) linear infinite;
+}
+
+/* Jauge : l'aiguille et l'arc se déplacent doucement quand la jauge entre à l'écran */
+.tc-gauge-needle {
+  transition: transform 1.4s cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+.tc-gauge-arc {
+  transition: stroke-dashoffset 1.4s cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+/* Feux : un feu s'allume avec un halo */
+.tc-lamp {
+  transition: opacity 0.45s ease, filter 0.45s ease;
+}
+
+/* Échappement : petites volutes de fumée qui s'élèvent */
+@keyframes tc-puff {
+  0% {
+    transform: translate(0, 0) scale(0.4);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.55;
+  }
+  100% {
+    transform: translate(var(--tc-dx, 40px), -70px) scale(1.7);
+    opacity: 0;
+  }
+}
+.tc-puff {
+  animation: tc-puff 2.8s ease-out infinite;
+}
+
+/* Défilement lent du bandeau de pneus (marquee) */
+@keyframes tc-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.tc-marquee {
+  animation: tc-marquee 40s linear infinite;
+}
+
+/* Apparition au défilement */
+.tc-reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.tc-reveal.tc-in {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .tc-wheel-spin,
+  .tc-road-dashes,
+  .tc-puff,
+  .tc-marquee {
+    animation: none !important;
+  }
+  .tc-gauge-needle,
+  .tc-gauge-arc,
+  .tc-lamp,
+  .tc-reveal {
+    transition: none !important;
+  }
+  .tc-reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
