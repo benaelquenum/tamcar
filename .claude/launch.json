@@ -24,6 +24,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--prefix", "apps/back-office"],
       "port": 3003
+    },
+    {
+      "name": "tamcar-site",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "apps/site"],
+      "port": 3005
     }
   ]
 }
