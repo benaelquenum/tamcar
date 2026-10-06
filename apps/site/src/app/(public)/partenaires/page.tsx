@@ -1,10 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Simulator } from '@/components/Simulator';
 import { Reveal } from '@/components/anim/Reveal';
 import { Road } from '@/components/anim/Road';
 import { Wheel } from '@/components/anim/Wheel';
-import { CONTACT_EMAIL } from '@/lib/config';
+import { PROPOSAL_MAILTO } from '@/lib/config';
 import { PARTNER_FAQ, VEHICLE_PROFILES } from '@/lib/content';
 
 export const metadata: Metadata = {
@@ -14,7 +13,7 @@ export const metadata: Metadata = {
 
 const GUARANTEES = [
   { t: 'Vous restez propriétaire', d: 'Réserve de propriété : le véhicule n’est cédé au chauffeur qu’au terme du contrat.' },
-  { t: 'Un chauffeur qui performe', d: 'Recettes minimales prévues au contrat ; sinon TamCar remplace le chauffeur ou vous rend le véhicule.' },
+  { t: 'Un chauffeur engagé', d: 'Le chauffeur s’engage sur un niveau de recettes ; s’il ne le tient pas durablement, TamCar le remplace ou vous rend le véhicule.' },
   { t: 'Un chauffeur vérifié', d: 'Pièces contrôlées en personne, photo officielle prise et contrôlée par TamCar, badge « photo vérifiée » côté clients.' },
   { t: 'Des gains en direct', d: 'Votre part s’affiche à chaque course terminée, véhicule par véhicule, dans votre espace partenaire.' },
 ];
@@ -30,15 +29,46 @@ export default function PartnersPage() {
             Combien votre véhicule peut-il vous rapporter ?
           </h1>
           <p className="mt-lg max-w-xl text-lg text-neutral-600">
-            Simulez-le : choisissez votre véhicule, enfoncez l’accélérateur pour voir l’effet du rythme du chauffeur, et ajoutez
-            votre coût de revient pour connaître votre rendement.
+            Chaque véhicule, chaque budget est différent. Dites-nous ce que vous avez ou souhaitez acquérir : nous vous envoyons une
+            proposition chiffrée, adaptée à votre cas.
           </p>
+          <div className="mt-xl flex flex-wrap items-center gap-md">
+            <a
+              href={PROPOSAL_MAILTO}
+              className="rounded-full bg-gradient-to-r from-primary-500 to-primary-700 px-xl py-md text-base font-bold text-white shadow-glow transition hover:brightness-110"
+            >
+              Recevoir la proposition
+            </a>
+            <Link href="/connexion" className="rounded-full px-xl py-md text-base font-bold text-primary-700 ring-2 ring-primary-200 transition hover:bg-primary-50">
+              Espace partenaire
+            </Link>
+          </div>
         </div>
       </section>
 
-      <section className="bg-neutral-100 pb-4xl pt-xl" id="simulateur">
+      <section className="bg-neutral-100 py-4xl" id="proposition">
         <div className="mx-auto max-w-6xl px-lg">
-          <Simulator />
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary-600">Comment ça se passe</p>
+          <h2 className="mt-sm max-w-2xl text-3xl font-extrabold leading-tight text-neutral-900 sm:text-4xl">Trois étapes, de votre message au départ.</h2>
+          <div className="mt-3xl grid gap-lg md:grid-cols-3">
+            {[
+              { n: '1', t: 'Vous nous écrivez', d: 'Votre véhicule, ou celui que vous voulez acquérir, le nombre de véhicules et votre budget.' },
+              { n: '2', t: 'Nous chiffrons votre cas', d: 'Une proposition personnalisée : ce que vos véhicules vous rapportent, mois après mois et à la cession.' },
+              { n: '3', t: 'Vous décidez', d: 'Si la proposition vous convient, nous préparons le contrat, l’inspection d’entrée et la mise en service.' },
+            ].map((st, i) => (
+              <Reveal key={st.n} delay={i * 100}>
+                <div className="h-full rounded-2xl bg-white p-xl shadow-sm ring-1 ring-neutral-200">
+                  <span className="grid h-10 w-10 place-items-center rounded-full bg-primary-500 text-lg font-extrabold text-white shadow-glow">{st.n}</span>
+                  <h3 className="mt-lg text-xl font-extrabold text-neutral-900">{st.t}</h3>
+                  <p className="mt-sm text-base leading-relaxed text-neutral-600">{st.d}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+          <p className="mt-lg text-sm text-neutral-500">
+            Les chiffres détaillés sont réservés aux partenaires : ils vous sont communiqués dans la proposition, puis disponibles en permanence dans votre
+            espace partenaire.
+          </p>
         </div>
       </section>
 
@@ -83,7 +113,7 @@ export default function PartnersPage() {
             </table>
           </div>
           <p className="mt-md text-sm text-neutral-400">
-            Pour toutes les voitures : essence (ni diesel à filtre à particules, ni hybride rechargeable, ni électrique), boîte classique, papiers en règle, inspection d’entrée par TamCar.
+            Pour toutes les voitures : essence (ni diesel à filtre à particules, ni hybride rechargeable, ni électrique), boîte classique, deux roues motrices, papiers en règle, inspection d’entrée par TamCar.
           </p>
         </div>
       </section>
@@ -111,11 +141,11 @@ export default function PartnersPage() {
         <div className="relative z-10 mx-auto max-w-3xl px-lg">
           <h2 className="text-3xl font-extrabold sm:text-4xl">On en parle ?</h2>
           <p className="mx-auto mt-md max-w-xl text-lg text-primary-100">
-            Dites-nous quel véhicule vous avez ou souhaitez acquérir ; nous vous répondons avec les chiffres de votre cas.
+            Dites-nous quel véhicule vous avez ou souhaitez acquérir ; nous vous répondons avec la proposition chiffrée de votre cas.
           </p>
           <div className="mt-xl flex flex-wrap items-center justify-center gap-md">
-            <a href={`mailto:${CONTACT_EMAIL}?subject=Partenaire%20v%C3%A9hicule%20TamCar`} className="rounded-full bg-white px-2xl py-md text-base font-extrabold text-primary-700 shadow-xl transition hover:scale-105">
-              Nous écrire
+            <a href={PROPOSAL_MAILTO} className="rounded-full bg-white px-2xl py-md text-base font-extrabold text-primary-700 shadow-xl transition hover:scale-105">
+              Recevoir la proposition
             </a>
             <Link href="/connexion" className="rounded-full px-2xl py-md text-base font-bold text-white ring-2 ring-white/50 transition hover:bg-white/10">
               Espace partenaire

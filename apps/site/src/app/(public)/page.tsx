@@ -67,7 +67,7 @@ export default function HomePage() {
                 title: 'Un revenu régulier',
                 text: 'Une part de chaque course chaque mois, le rachat à la cession, et un espace pour suivre chaque véhicule en direct.',
                 href: '/partenaires',
-                cta: 'Simuler mes gains',
+                cta: 'Recevoir une proposition',
                 accent: 'from-gold to-warning',
               },
             ].map((c, i) => (

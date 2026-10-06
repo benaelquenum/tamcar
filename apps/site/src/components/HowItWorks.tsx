@@ -10,7 +10,7 @@ const STEPS = [
     ring: 'ring-error/30',
     tag: 'Rouge · on s’arrête et on prépare',
     title: 'Vous apportez votre véhicule',
-    body: 'Voiture, moto ou tricycle. Vous versez une avance de démarrage remboursable (voiture 100 000 F, tricycle 75 000 F, moto 50 000 F) qui couvre l’inspection, l’habillage et les formalités. Elle vous est rendue à partir du 12e mois.',
+    body: 'Voiture, moto ou tricycle. Vous versez une avance de démarrage remboursable, qui couvre l’inspection, l’habillage et les formalités. Elle vous est rendue.',
   },
   {
     color: 'text-warning',
@@ -24,7 +24,7 @@ const STEPS = [
     ring: 'ring-success/30',
     tag: 'Vert · c’est parti',
     title: 'Vous encaissez, chaque mois',
-    body: '30 % de chaque course en cash, plus une part du fonds de rachat versée à la cession. Vous restez propriétaire légal du véhicule jusqu’au terme, et vous suivez vos gains en direct.',
+    body: 'Une part de chaque course en cash, plus une part du fonds de rachat versée à la cession. Vous restez propriétaire légal du véhicule jusqu’au terme, et vous suivez vos gains en direct.',
   },
 ];
 

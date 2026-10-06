@@ -33,7 +33,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
   if (user && pathname === '/connexion' && !request.nextUrl.searchParams.has('erreur')) {
-    return NextResponse.redirect(new URL('/espace', request.url));
+    const next = request.nextUrl.searchParams.get('next');
+    const dest = next && next.startsWith('/espace') && !next.startsWith('//') ? next : '/espace';
+    return NextResponse.redirect(new URL(dest, request.url));
   }
   return response;
 }

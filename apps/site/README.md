@@ -18,10 +18,20 @@ restent des applications.
 `TrafficLight` (feu tricolore), `Gauge` (compteur de bord), `TireTracks` (traces de pneus dessinées au
 défilement), `Exhaust` (échappement), `Reveal` (apparition). Tout est désactivé par `prefers-reduced-motion`.
 
-## Simulateur de gains
-`src/lib/simulator.ts` : mêmes règles que la proposition faite aux partenaires (part course 30 %, rachat 7 % puis
-8 %, planchers de recettes, durées de contrat, 36 000 F par an de senteurs sur les voitures). À tenir aligné
-avec `plan-affaires/build_proposition_flotte.py`.
+## Confidentialité : aucun chiffre de politique sur le site public
+Parts (propriétaire, fonds de rachat, TamCar), planchers de recettes, avance de démarrage et simulations n'apparaissent
+**nulle part** dans les pages publiques ni dans le code envoyé au navigateur. Ils sont communiqués à un prospect par une
+proposition personnalisée (bouton « Recevoir la proposition » : e-mail prérempli, `PROPOSAL_MAILTO` dans `src/lib/config.ts`),
+puis disponibles aux partenaires connectés. Seuls restent publics les chiffres **chauffeurs** (40 % / 80 %, durées de
+contrat), qui doivent être connus de tout recruté.
+
+- `src/lib/simulator.server.ts` : toutes les règles (30 %, 7 % puis 8 %, planchers, durées, senteurs). Marqué
+  `server-only` : le build échoue si un composant client l'importe. À tenir aligné avec `plan-affaires/build_proposition_flotte.py`.
+- `src/app/espace/simulateur/actions.ts` : action serveur qui refait le contrôle d'accès (partenaire ou admin) et ne
+  renvoie que des résultats. `src/lib/simulator-ui.ts` : types et mise en forme, sans aucune règle.
+- Page `/espace/simulateur` : accessible aux partenaires et aux administrateurs (lien « Simulateur partenaires » dans l'admin
+  du client) pour préparer des propositions.
+- Après toute modification, vérifier qu'aucune constante ne fuit : chercher les montants dans `.next/static` après `next build`.
 
 ## À savoir
 - Les pièces à apporter (`src/lib/content.ts`) reprennent celles de l'application (`apps/client/src/lib/appointment.ts`).

@@ -44,9 +44,9 @@ export const FORMULAS: Record<Formula, { label: string; tagline: string; perks: 
 export const VEHICLE_PROFILES = [
   { cat: 'Moto', duration: '12 mois', profile: 'Moto neuve ou d’occasion en bon état, contrôlée à l’entrée.' },
   { cat: 'Tricycle', duration: '24 mois', profile: 'Tricycle passagers, contrôlé à l’entrée.' },
-  { cat: 'Voiture Essentiel', duration: '3 ans', profile: 'Citadine ou compacte essence, climatisée, 2016 ou plus récente, moins de 120 000 km.' },
-  { cat: 'Voiture Confort', duration: '4 ans', profile: 'Berline compacte de moins de 5 ans, spacieuse, climatisée, entretien impeccable.' },
-  { cat: 'Voiture VIP', duration: '5 ans', profile: 'Berline ou SUV haut de gamme essence, deux roues motrices.' },
+  { cat: 'Voiture Essentiel', duration: '3 ans', profile: 'Citadine ou compacte essence, 4 à 5 places, climatisée, en bon état, moins de 120 000 km. Par exemple : Toyota Yaris, Kia Picanto, Suzuki Swift, Hyundai Elantra.' },
+  { cat: 'Voiture Confort', duration: '4 ans', profile: 'Berline compacte ou crossover spacieux, climatisé, entretien impeccable. Par exemple : Toyota Corolla, Kia K3 / Cerato, Toyota Venza.' },
+  { cat: 'Voiture VIP', duration: '5 ans', profile: 'Véhicule récent et soigné. Par exemple : Toyota Starlet, Hyundai Accent.' },
 ];
 
 export const PARTNER_FAQ = [
@@ -60,11 +60,11 @@ export const PARTNER_FAQ = [
   },
   {
     q: 'Que se passe-t-il si le chauffeur ne fait pas assez de recettes ?',
-    a: 'Le chauffeur s’engage sur des recettes minimales. S’il ne les tient pas durablement, TamCar le remplace ou vous rend le véhicule : vous n’êtes jamais bloqué avec un chauffeur inactif.',
+    a: 'Le chauffeur s’engage sur un niveau de recettes. S’il ne le tient pas durablement, TamCar le remplace ou vous rend le véhicule : vous n’êtes jamais bloqué avec un chauffeur inactif.',
   },
   {
     q: 'Qu’est-ce que le fonds de rachat ?',
-    a: 'Une part de chaque course est mise de côté pour le rachat du véhicule par le chauffeur. À la cession, ce fonds vous revient en complément de votre part mensuelle : 7 % du volume la première année, 8 % ensuite.',
+    a: 'Une part de chaque course est mise de côté pour le rachat du véhicule par le chauffeur. À la cession, ce fonds vous revient en complément de votre part mensuelle. Les conditions chiffrées figurent dans la proposition et dans votre contrat.',
   },
   {
     q: 'Quelles charges restent à ma charge ?',

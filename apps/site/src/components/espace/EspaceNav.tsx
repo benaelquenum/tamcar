@@ -7,6 +7,7 @@ const ITEMS = [
   { href: '/espace', label: 'Tableau de bord' },
   { href: '/espace/vehicules', label: 'Mes véhicules' },
   { href: '/espace/historique', label: 'Historique' },
+  { href: '/espace/simulateur', label: 'Simulateur' },
   { href: '/espace/compte', label: 'Mon compte' },
 ];
 

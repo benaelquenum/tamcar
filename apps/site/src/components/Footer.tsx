@@ -47,7 +47,7 @@ export function Footer() {
         </div>
       </div>
       <div className="border-t border-neutral-800 px-lg py-lg text-center text-xs text-neutral-500">
-        © {new Date().getFullYear()} TamCar — Tam Logistics SARL, en cours de constitution. Les simulations de gains sont indicatives : ni garantie de rendement, ni engagement avant la signature d’un contrat.
+        © {new Date().getFullYear()} TamCar — Tam Logistics SARL, en cours de constitution. Aucune information de ce site ne constitue un engagement avant la signature d’un contrat.
       </div>
     </footer>
   );

@@ -3,18 +3,19 @@
 import { Gauge } from '@/components/anim/Gauge';
 import { Reveal } from '@/components/anim/Reveal';
 
+// Les aiguilles sont décoratives : aucune valeur ne correspond à une part réelle.
 const ITEMS = [
   {
-    value: 0.3,
-    valueText: '30 %',
-    label: 'PART DE CHAQUE COURSE',
-    sub: 'versée en cash, chaque mois',
+    value: 0.58,
+    valueText: 'Chaque mois',
+    label: 'VOTRE PART EN CASH',
+    sub: 'versée sur chaque course',
   },
   {
-    value: 0.375,
-    valueText: '37–38 %',
-    label: 'AVEC LE RACHAT',
-    sub: '30 % + 7 à 8 % à la cession',
+    value: 0.8,
+    valueText: 'À la cession',
+    label: 'LE FONDS DE RACHAT',
+    sub: 'quand le chauffeur devient propriétaire',
   },
   {
     value: 1,
@@ -34,7 +35,7 @@ export function Dashboard() {
           Ce que votre véhicule vous rapporte, lisible comme un compteur.
         </h2>
         <p className="mt-md max-w-2xl text-base text-neutral-400">
-          Une part claire de chaque course, des gains qui se mettent à jour d’eux-mêmes, et un espace où chaque
+          Une part de chaque course, des gains qui se mettent à jour d’eux-mêmes, et un espace où chaque
           véhicule a sa jauge.
         </p>
 

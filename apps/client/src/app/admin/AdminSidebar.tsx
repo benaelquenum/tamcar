@@ -5,14 +5,17 @@ import { usePathname } from 'next/navigation';
 import { LogOutIcon } from '@/components/Icon';
 import { logout } from '@/app/login/actions';
 import { useAdminAlerts, type AdminCounts } from './AdminAlerts';
+import { SITE_URL } from '@/lib/siteUrl';
 
-const NAV: { href: string; label: string; exact?: boolean; badge?: keyof AdminCounts }[] = [
+const NAV: { href: string; label: string; exact?: boolean; badge?: keyof AdminCounts; external?: boolean }[] = [
   { href: '/admin', label: 'Tableau de bord', exact: true },
   { href: '/admin/sos', label: 'SOS', badge: 'sos_active' },
   { href: '/admin/rides', label: 'Courses' },
   { href: '/admin/drivers', label: 'Chauffeurs' },
   { href: '/admin/carte', label: 'Carte en direct' },
   { href: '/admin/dealers', label: 'Partenaires véhicule' },
+  // Simulateur de gains : hébergé par le site (derrière connexion), pour préparer les propositions aux prospects
+  { href: `${SITE_URL}/connexion?next=/espace/simulateur`, label: 'Simulateur partenaires', external: true },
   { href: '/admin/vehicles', label: 'Véhicules' },
   { href: '/admin/locations', label: 'Locations VIP' },
   { href: '/admin/candidatures', label: 'Rendez-vous' },
@@ -46,9 +49,7 @@ export function AdminSidebar({ fullName }: { fullName: string }) {
       <nav className="flex-1 overflow-y-auto px-sm py-md">
         <ul className="space-y-0.5">
           {NAV.map((item) => {
-            const active = item.exact
-              ? pathname === item.href
-              : pathname.startsWith(item.href);
+            const active = item.external ? false : item.exact ? pathname === item.href : pathname.startsWith(item.href);
             const n = item.badge ? counts[item.badge] : 0;
             // SOS non pris en charge : le badge clignote
             const urgent = item.badge === 'sos_active' && counts.sos > 0;
@@ -56,6 +57,7 @@ export function AdminSidebar({ fullName }: { fullName: string }) {
               <li key={item.href}>
                 <Link
                   href={item.href}
+                  {...(item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                   aria-current={active ? 'page' : undefined}
                   className={`flex items-center justify-between gap-sm rounded-lg px-md py-sm text-sm font-semibold transition ${
                     active
