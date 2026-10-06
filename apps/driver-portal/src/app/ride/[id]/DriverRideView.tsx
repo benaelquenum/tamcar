@@ -275,9 +275,11 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
   // écran éteint / app en fond → BDD + broadcast temps réel.
   useBackgroundTracking(
     ['matched', 'arrived', 'in_progress'].includes(ride.status),
-    (lng, lat) => {
+    (lng, lat, acc) => {
+      // Fix grossier (réseau) : ignoré, il placerait le chauffeur loin de sa vraie position.
+      if (acc != null && acc > 100) return;
       setDriverPos([lng, lat]);
-      writeDriverLocation(lng, lat, 'ride');
+      writeDriverLocation(lng, lat, 'ride', acc);
       broadcastDriverPos(trackChannelRef.current, lng, lat);
       feedPosition([lng, lat], null, null);
     },

@@ -28,7 +28,7 @@ import { DataUsageChip } from '@/components/DataMeter';
 import { RentalBanner } from '@/components/RentalBanner';
 import { useWakeLock } from '@/lib/useWakeLock';
 import { useBackgroundTracking } from '@/lib/backgroundTracking';
-import { isAccurateEnough } from '@/lib/geo-precision';
+import { getAccuratePosition } from '@/lib/geo-precision';
 import { acceptRideAction } from './actions';
 
 type PendingRide = {
@@ -212,9 +212,11 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
 
   // Suivi natif en arrière-plan (app native) tant qu'en ligne → la position
   // remonte même app en fond, pour rester visible/matchable.
-  useBackgroundTracking(isOnline, (lng, lat) => {
+  useBackgroundTracking(isOnline, (lng, lat, acc) => {
+    // Fix grossier (réseau) : on garde la dernière bonne position affichée et enregistrée.
+    if (acc != null && acc > 100) return;
     setPosition([lng, lat]);
-    writeDriverLocation(lng, lat, 'idle');
+    writeDriverLocation(lng, lat, 'idle', acc);
   });
 
   // Offres TamPass ouvertes : visibles même hors ligne (revenu récurrent).
@@ -316,25 +318,21 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
     await refreshOffers();
   }
 
-  // Récupère la position GPS actuelle en rejetant les fixes imprécis
-  // (accuracy > 50 m). Retry une fois avant fallback.
+  // Récupère la position GPS actuelle : on attend que le GPS converge (fix à 35 m ou mieux, 15 s au plus) et on
+  // garde le MEILLEUR fix observé. Avant : deux lectures ponctuelles, la seconde acceptée même imprécise : un
+  // chauffeur à côté du client pouvait être enregistré à 150 m et y rester (le GPS natif ne rappelle qu'en
+  // se déplaçant de 15 m).
+  const lastFixAccRef = useRef<number | null>(null);
   const getMyPosition = useCallback(async (): Promise<[number, number] | null> => {
     if (!('geolocation' in navigator)) return null;
-    const readOnce = () =>
-      new Promise<GeolocationPosition | null>((resolve) => {
-        navigator.geolocation.getCurrentPosition(
-          resolve,
-          () => resolve(null),
-          { enableHighAccuracy: true, timeout: 15000 },
-        );
-      });
-    let pos = await readOnce();
-    if (pos && !isAccurateEnough(pos)) {
-      // Retente une fois pour laisser le GPS converger
-      pos = await readOnce();
+    try {
+      const pos = await getAccuratePosition({ threshold: 35, timeoutMs: 15000 });
+      lastFixAccRef.current = pos.coords.accuracy;
+      return [pos.coords.longitude, pos.coords.latitude];
+    } catch {
+      lastFixAccRef.current = null;
+      return null;
     }
-    if (!pos) return null;
-    return [pos.coords.longitude, pos.coords.latitude];
   }, []);
 
   async function goOnline() {
@@ -387,9 +385,13 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
     async function updatePosition() {
       const p = await getMyPosition();
       if (!p || cancelled) return;
+      const acc = lastFixAccRef.current;
+      // Fix grossier : on ne déplace ni le pion ni la position enregistrée.
+      if (acc != null && acc > 100) return;
       setPosition(p);
-      // Cadence limitée (lib/positionUplink) : 20 s mini, et seulement si le chauffeur a bougé.
-      writeDriverLocation(p[0], p[1], 'idle');
+      // Cadence limitée (lib/positionUplink) : 20 s mini, et seulement si le chauffeur a bougé ou si la position
+      // devient nettement plus précise.
+      writeDriverLocation(p[0], p[1], 'idle', acc);
     }
 
     async function pollPending() {

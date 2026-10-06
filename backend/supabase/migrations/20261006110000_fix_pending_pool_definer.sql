@@ -1,0 +1,14 @@
+-- ============================================================
+-- Correctif URGENT (2026-10-06) : le pool de courses des chauffeurs était TOUJOURS vide.
+--
+-- Cause : depuis la priorité de proximité (2026-10-05), pending_rides_for_driver (« security invoker »)
+-- appelle _program_rule et _ride_visible_radius_m, dont l'exécution est réservée au serveur (règle de sécurité :
+-- aucune fonction interne _* appelable par un compte connecté). Un chauffeur connecté recevait donc
+-- « permission denied for function _program_rule » à chaque lecture du pool : aucune demande n'était proposée,
+-- toutes les courses finissaient en « free_no_match » (3 courses de test le 2026-10-06, chauffeur à 1 m).
+--
+-- Correctif : la fonction passe en « security definer » (elle appelle ses aides interdites avec les droits du
+-- propriétaire). Rien ne s'ouvre pour autant : elle filtre déjà sur auth.uid() (chauffeur en ligne, actif, avec
+-- position et catégorie) et ne renvoie que les demandes ouvertes de son rayon et de sa catégorie.
+-- ============================================================
+alter function public.pending_rides_for_driver(double precision) security definer set search_path = public;

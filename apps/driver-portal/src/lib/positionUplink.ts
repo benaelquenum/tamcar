@@ -22,27 +22,51 @@ const IDLE_DB_STILL_MS = 120_000;
 const IDLE_DB_MIN_MOVE_M = 30;
 /** Diffusion temps réel vers le client : une position toutes les 3 s. */
 const BROADCAST_MIN_MS = 3_000;
+/** Fix grossier (réseau, GPS pas encore accroché) : ignoré tant qu'une position récente existe. */
+const MAX_ACCURACY_M = 100;
+const COARSE_KEEP_MS = 5 * 60_000;
+/** Position précise qui remplace une position imprécise : écrite sans attendre la cadence ni un déplacement. */
+const GOOD_ACCURACY_M = 40;
+const BAD_ACCURACY_M = 60;
 
 let lastDbAt = 0;
 let lastDbPos: LngLat | null = null;
+let lastDbAcc: number | null = null;
 let lastBroadcastAt = 0;
 
 export type UplinkMode = 'ride' | 'idle';
 
 /** Enregistre la position en base, si la cadence le permet. Renvoie true si l'appel est parti. */
-export function writeDriverLocation(lng: number, lat: number, mode: UplinkMode = 'ride'): boolean {
+export function writeDriverLocation(
+  lng: number,
+  lat: number,
+  mode: UplinkMode = 'ride',
+  accuracy?: number | null,
+): boolean {
   const now = Date.now();
   const since = now - lastDbAt;
-  if (mode === 'ride') {
-    if (since < RIDE_DB_MIN_MS) return false;
-  } else {
-    if (since < IDLE_DB_MIN_MS) return false;
-    if (lastDbPos && since < IDLE_DB_STILL_MS && haversine(lastDbPos, [lng, lat]) < IDLE_DB_MIN_MOVE_M) {
-      return false;
+  const acc = accuracy != null && Number.isFinite(accuracy) ? accuracy : null;
+
+  // Un fix grossier (150 m ou plus) n'écrase pas une position déjà enregistrée récemment : le matching et le
+  // client verraient le chauffeur à côté de sa vraie place. Il n'est accepté qu'à défaut de toute position.
+  if (acc !== null && acc > MAX_ACCURACY_M && lastDbAt && since < COARSE_KEEP_MS) return false;
+
+  // Position devenue précise alors que la dernière écrite était imprécise : on corrige tout de suite.
+  const improved = acc !== null && acc <= GOOD_ACCURACY_M && lastDbAcc !== null && lastDbAcc > BAD_ACCURACY_M && since >= 3_000;
+
+  if (!improved) {
+    if (mode === 'ride') {
+      if (since < RIDE_DB_MIN_MS) return false;
+    } else {
+      if (since < IDLE_DB_MIN_MS) return false;
+      if (lastDbPos && since < IDLE_DB_STILL_MS && haversine(lastDbPos, [lng, lat]) < IDLE_DB_MIN_MOVE_M) {
+        return false;
+      }
     }
   }
   lastDbAt = now;
   lastDbPos = [lng, lat];
+  lastDbAcc = acc;
   void supabaseBrowser.rpc('driver_update_location', { current_lng: lng, current_lat: lat });
   return true;
 }

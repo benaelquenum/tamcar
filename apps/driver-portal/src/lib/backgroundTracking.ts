@@ -45,7 +45,7 @@ export function isNativeApp(): boolean {
 // remonte chaque position au callback. Renvoie une fonction d'arrêt.
 // No-op hors app native (le suivi web/foreground reste géré ailleurs).
 export async function startBackgroundTracking(
-  onLocation: (lng: number, lat: number) => void,
+  onLocation: (lng: number, lat: number, accuracy?: number | null) => void,
 ): Promise<() => void> {
   if (!isNativeApp()) return () => {};
   let id: string | null = null;
@@ -60,7 +60,7 @@ export async function startBackgroundTracking(
       },
       (loc, err) => {
         if (err || !loc) return;
-        onLocation(loc.longitude, loc.latitude);
+        onLocation(loc.longitude, loc.latitude, loc.accuracy ?? null);
       },
     );
   } catch {
@@ -78,7 +78,7 @@ export async function startBackgroundTracking(
 // (uniquement dans l'app native). Sur web, ne fait rien.
 export function useBackgroundTracking(
   active: boolean,
-  onLocation: (lng: number, lat: number) => void,
+  onLocation: (lng: number, lat: number, accuracy?: number | null) => void,
 ): void {
   const cbRef = useRef(onLocation);
   cbRef.current = onLocation;
@@ -87,7 +87,7 @@ export function useBackgroundTracking(
     if (!active || !isNativeApp()) return;
     let cancelled = false;
     let stop: (() => void) | null = null;
-    startBackgroundTracking((lng, lat) => cbRef.current(lng, lat)).then((s) => {
+    startBackgroundTracking((lng, lat, acc) => cbRef.current(lng, lat, acc)).then((s) => {
       if (cancelled) s();
       else stop = s;
     });
