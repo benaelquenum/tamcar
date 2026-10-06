@@ -32,8 +32,23 @@ export function NativeDeepLink() {
         url,
       );
 
+    // Appui sur la carte de suivi du chauffeur (notification de l'écran verrouillé) : l'APK rouvre l'application
+    // sur l'adresse de la course, de ce même site.
+    const isOwnRideLink = (url: string) => {
+      try {
+        const u = new URL(url);
+        return u.origin === window.location.origin && /^\/ride\/[0-9a-f-]{36}\/?$/i.test(u.pathname);
+      } catch {
+        return false;
+      }
+    };
+
     const handle = (url?: string | null) => {
       if (!url || disposed) return;
+      if (isOwnRideLink(url)) {
+        router.push(new URL(url).pathname);
+        return;
+      }
       if (!isLocationLink(url)) return;
       router.push(`/ouvrir?u=${encodeURIComponent(url)}`);
     };

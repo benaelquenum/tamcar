@@ -30,14 +30,24 @@ self.addEventListener('push', (event) => {
     url = '/',
     vibrate = [80, 40, 80],
     requireInteraction = false,
+    // Suivi en direct d'une course (voir send-push) : mise à jour du texte, remplacée sur place (même tag),
+    // silencieuse sauf annonce (chauffeur trouvé / bientôt là / arrivé). L'icône est celle du véhicule commandé
+    // (voiture, tricycle ou moto).
+    silent = false,
+    renotify = false,
+    icon = '/logo.svg',
+    badge,
   } = payload;
 
   const options = {
     body,
     tag,
-    vibrate,
+    vibrate: silent ? undefined : vibrate,
     requireInteraction,
-    icon: '/logo.svg',
+    silent,
+    renotify: tag ? renotify : false,
+    icon,
+    badge,
     data: { url },
   };
 

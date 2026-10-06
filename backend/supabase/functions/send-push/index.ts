@@ -1,8 +1,15 @@
 // Supabase Edge Function : send-push (v2 — Web Push + FCM natif)
-// Reçoit { profile_id, title, body, url?, tag?, requireInteraction? } et pousse :
+// Reçoit { profile_id, title, body, url?, tag?, requireInteraction?, live?, alert? } et pousse :
 //   1. Web Push (VAPID) vers les PushSubscriptions navigateur/PWA du profile.
 //   2. FCM v1 vers les tokens natifs (APK Capacitor) — fonctionne même app
-//      tuée. Ignoré silencieusement tant que FCM_SERVICE_ACCOUNT n'est pas
+//      tuée.
+//
+// Suivi en direct (2026-10-06) : si `live` est présent (course : état, heure d'arrivée, progression, icône du
+// véhicule), le message est une MISE À JOUR de la carte de suivi :
+//   - Web Push : texte remplacé sur place (même tag), silencieux sauf `alert` ;
+//   - FCM : message de DONNÉES seul (pas de bloc notification), traité par le code natif de l'APK, uniquement
+//     pour les tokens `android-live` (APK qui sait dessiner la carte). Pour ces mêmes tokens, les trois
+//     notifications simples de la course (trouvé / arrivé / démarrée) sont supprimées : la carte les remplace. Ignoré silencieusement tant que FCM_SERVICE_ACCOUNT n'est pas
 //      configuré.
 //
 // Secrets requis :
@@ -23,6 +30,18 @@ const VAPID_CONTACT = Deno.env.get('VAPID_CONTACT') || 'mailto:contact@tamcar.ap
 const FCM_SA_RAW = Deno.env.get('FCM_SERVICE_ACCOUNT') || '';
 
 webpush.setVapidDetails(VAPID_CONTACT, VAPID_PUB, VAPID_PRIV);
+
+// Icône du véhicule de la course (voiture, tricycle ou moto) pour le Web Push.
+const RIDE_ICONS: Record<string, { icon: string; badge: string }> = {
+  car: { icon: '/icons/ride-car.png', badge: '/icons/badge-car.png' },
+  moto: { icon: '/icons/ride-moto.png', badge: '/icons/badge-moto.png' },
+  tricycle: { icon: '/icons/ride-tricycle.png', badge: '/icons/badge-tricycle.png' },
+};
+
+// Notifications simples de course que la carte de suivi remplace sur un APK « live ».
+const LIVE_COVERED_TITLES = new Set(['Chauffeur trouvé !', 'Ton chauffeur est arrivé', 'Course démarrée']);
+
+const str = (v: unknown): string => (v === null || v === undefined ? '' : String(v));
 
 // --- FCM v1 : access token OAuth2 depuis le service account, mis en cache ---
 let fcmTokenCache: { token: string; expiresAt: number } | null = null;
@@ -77,7 +96,10 @@ Deno.serve(async (req: Request) => {
     return new Response('Invalid JSON', { status: 400 });
   }
 
-  const { profile_id, title, body: text, url, tag, requireInteraction } = body ?? {};
+  const { profile_id, title, body: text, url, tag, requireInteraction, live, alert } = body ?? {};
+  const isLive = Boolean(live && typeof live === 'object');
+  const isEnd = isLive && Boolean(live.end);
+  const rideKind = isLive && RIDE_ICONS[live.icon] ? live.icon : 'car';
   if (!profile_id || !title) {
     return new Response('profile_id and title required', { status: 400 });
   }
@@ -85,10 +107,9 @@ Deno.serve(async (req: Request) => {
   const admin = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
 
   // ---------- Canal 1 : Web Push (navigateur / PWA) ----------
-  const { data: subs, error } = await admin
-    .from('push_subscriptions')
-    .select('id, endpoint, p256dh, auth')
-    .eq('profile_id', profile_id);
+  const { data: subs, error } = isEnd
+    ? { data: [] as any[], error: null }
+    : await admin.from('push_subscriptions').select('id, endpoint, p256dh, auth').eq('profile_id', profile_id);
 
   if (error) {
     return new Response(JSON.stringify({ error: error.message }), {
@@ -102,6 +123,9 @@ Deno.serve(async (req: Request) => {
     url: url ?? '/',
     tag,
     requireInteraction: Boolean(requireInteraction),
+    ...(isLive
+      ? { silent: !alert, renotify: false, icon: RIDE_ICONS[rideKind].icon, badge: RIDE_ICONS[rideKind].badge }
+      : {}),
   });
 
   const webResults = await Promise.all((subs ?? []).map(async (s: any) => {
@@ -127,13 +151,55 @@ Deno.serve(async (req: Request) => {
   if (sa) {
     const { data: tokens } = await admin
       .from('native_push_tokens')
-      .select('token')
+      .select('token, platform')
       .eq('profile_id', profile_id);
 
     if (tokens && tokens.length > 0) {
       const access = await fcmAccessToken(sa);
       if (access) {
         fcmResults = await Promise.all(tokens.map(async (t: any) => {
+          const nativeLive = t.platform === 'android-live';
+          // Le suivi en direct ne concerne que les APK qui savent le dessiner ; pour eux, la carte remplace
+          // les notifications simples « trouvé / arrivé / démarrée ».
+          if (isLive && !nativeLive) return { token: t.token.slice(0, 12), ok: true, skipped: 'not-live' };
+          if (!isLive && nativeLive && typeof tag === 'string' && tag.startsWith('ride:') && LIVE_COVERED_TITLES.has(title)) {
+            return { token: t.token.slice(0, 12), ok: true, skipped: 'covered-by-live-card' };
+          }
+          const message: any = isLive
+            ? {
+                token: t.token,
+                data: {
+                  type: str(live.type),
+                  ride_id: str(live.ride_id),
+                  title: str(title),
+                  body: str(text),
+                  state: str(live.state),
+                  eta: str(live.eta),
+                  progress: str(live.progress),
+                  icon: str(live.icon),
+                  plate: str(live.plate),
+                  driver: str(live.driver),
+                  vehicle: str(live.vehicle),
+                  chip: str(live.chip),
+                  alert: alert ? '1' : '0',
+                  url: str(url ?? '/'),
+                  tag: str(tag),
+                },
+                android: { priority: 'HIGH', ttl: '120s' },
+              }
+            : {
+                token: t.token,
+                notification: { title, body: text ?? '' },
+                data: { url: url ?? '/', tag: tag ?? '' },
+                android: {
+                  priority: 'HIGH',
+                  notification: {
+                    sound: 'default',
+                    // Même tag que la carte de suivi : une notification de fin de course la remplace sur place.
+                    ...(nativeLive && typeof tag === 'string' && tag.startsWith('ride:') ? { tag } : {}),
+                  },
+                },
+              };
           try {
             const res = await fetch(
               `https://fcm.googleapis.com/v1/projects/${sa.project_id}/messages:send`,
@@ -143,17 +209,7 @@ Deno.serve(async (req: Request) => {
                   Authorization: `Bearer ${access}`,
                   'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                  message: {
-                    token: t.token,
-                    notification: { title, body: text ?? '' },
-                    data: { url: url ?? '/', tag: tag ?? '' },
-                    android: {
-                      priority: 'HIGH',
-                      notification: { sound: 'default' },
-                    },
-                  },
-                }),
+                body: JSON.stringify({ message }),
               },
             );
             if (res.ok) return { token: t.token.slice(0, 12), ok: true };

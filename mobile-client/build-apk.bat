@@ -5,6 +5,9 @@ rem Sortie : mobile-client\tamcar-client.apk
 cd /d "%~dp0"
 call npx cap sync android
 if errorlevel 1 exit /b 1
+rem Code natif TamCar (suivi du chauffeur en direct, icones de vehicules) : copie dans le projet Android
+call node apply-native.mjs
+if errorlevel 1 exit /b 1
 set "JAVA_HOME=C:\Program Files\Android\Android Studio\jbr"
 cd android
 call gradlew.bat assembleDebug

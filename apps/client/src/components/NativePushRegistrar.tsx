@@ -34,6 +34,20 @@ type PushNotificationsPlugin = {
 
 const PushNotifications = registerPlugin<PushNotificationsPlugin>('PushNotifications');
 
+// Plugin natif de l'APK qui dessine la carte de suivi du chauffeur sur l'écran verrouillé (barre de progression et
+// icône du véhicule). Absent des anciens APK : l'appel échoue, le jeton reste « android » et ne reçoit que les
+// notifications simples.
+const RideLive = registerPlugin<{ isSupported(): Promise<{ supported: boolean }> }>('RideLive');
+
+async function nativePlatform(): Promise<'android' | 'android-live'> {
+  try {
+    const r = await RideLive.isSupported();
+    return r?.supported ? 'android-live' : 'android';
+  } catch {
+    return 'android';
+  }
+}
+
 function isNative(): boolean {
   try {
     return Capacitor.isNativePlatform();
@@ -68,10 +82,11 @@ export function NativePushRegistrar() {
         const perm = await PushNotifications.requestPermissions();
         if (perm.receive !== 'granted') return;
 
+        const platform = await nativePlatform();
         const reg = await PushNotifications.addListener('registration', (token) => {
           if (token?.value) {
             supabaseBrowser
-              .rpc('save_native_push_token', { p_token: token.value, p_platform: 'android' })
+              .rpc('save_native_push_token', { p_token: token.value, p_platform: platform })
               .then(() => undefined);
           }
         });
