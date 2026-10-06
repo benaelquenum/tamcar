@@ -158,7 +158,12 @@ body {
   transform-origin: left center;
   animation: tc-hero-fill var(--tc-hero-dur, 7s) linear forwards;
 }
-@media (min-width: 1024px) {
+/* Téléphone : la photo est en haut et se fond vers le bas ; dès 768 px elle est à droite et se fond vers la gauche */
+.tc-hero-mask {
+  -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
+}
+@media (min-width: 768px) {
   .tc-hero-mask {
     -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 36%);
     mask-image: linear-gradient(to right, transparent 0%, #000 36%);
