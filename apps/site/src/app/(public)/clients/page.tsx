@@ -10,6 +10,7 @@ export const metadata: Metadata = {
 };
 
 const FEATURES = [
+  { t: 'TamPass : vos trajets réguliers', d: 'Choisissez votre trajet, vos jours et vos horaires une seule fois : vos courses de la semaine sont réservées, et plus vous roulez, plus vous profitez d’avantages.', id: 'tampass' },
   { t: 'Le prix avant de partir', d: 'Vous voyez le prix de la course avant de commander, et il ne bouge pas : jamais de surge pricing.' },
   { t: 'Un chauffeur que vous reconnaissez', d: 'Sa photo officielle est prise et contrôlée par TamCar : le badge « photo vérifiée » s’affiche sur sa carte.' },
   { t: 'Le suivi en direct', d: 'Voyez le chauffeur arriver, suivez votre trajet, et partagez le lien avec un proche.' },
@@ -53,10 +54,10 @@ export default function ClientsPage() {
 
       <section className="bg-neutral-100 py-4xl">
         <div className="mx-auto max-w-6xl px-lg">
-          <div className="grid gap-lg sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-lg sm:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map((f, i) => (
-              <Reveal key={f.t} delay={(i % 4) * 90}>
-                <div className="h-full rounded-2xl bg-white p-xl shadow-sm ring-1 ring-neutral-200">
+              <Reveal key={f.t} delay={(i % 3) * 90}>
+                <div id={f.id} className={`h-full scroll-mt-28 rounded-2xl bg-white p-xl shadow-sm ring-1 ${f.id ? 'ring-2 ring-primary-300' : 'ring-neutral-200'}`}>
                   <h2 className="text-lg font-extrabold text-neutral-900">{f.t}</h2>
                   <p className="mt-sm text-base leading-relaxed text-neutral-600">{f.d}</p>
                 </div>

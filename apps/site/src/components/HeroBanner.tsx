@@ -18,15 +18,16 @@ type Slide = {
   photo: { src: string; alt: string; kind: 'photo' | 'cutout'; position: string };
 };
 
+// Ordre de la bannière : Clients, Chauffeurs, Partenaires, Corridor.
 const SLIDES: Slide[] = [
   {
-    tag: 'Partenaires véhicule',
-    title: 'Votre véhicule roule.',
-    accent: 'Vous encaissez.',
-    text: 'Confiez votre voiture, votre moto ou votre tricycle à TamCar. Un chauffeur vérifié le fait rouler, et vous suivez vos gains en direct.',
-    primary: { label: 'Devenir partenaire', href: '/partenaires' },
-    secondary: { label: 'Espace partenaire', href: '/connexion' },
-    photo: { src: '/img/voiture.webp', alt: 'Une berline aux couleurs de TamCar', kind: 'cutout', position: 'center' },
+    tag: 'Clients · TamPass',
+    title: 'TamPass : plus de trajets,',
+    accent: 'plus d’avantages.',
+    text: 'Réservez vos trajets réguliers une fois pour toute la semaine : plus vous roulez, plus vous profitez. Et toujours le prix annoncé avant de partir, un chauffeur à la photo vérifiée et le suivi en direct.',
+    primary: { label: 'Découvrir TamPass', href: '/clients#tampass' },
+    secondary: { label: 'Ouvrir l’application', href: CLIENT_APP_URL },
+    photo: { src: '/img/tampass-cliente.webp', alt: 'Une cliente souriante à la vitre d’un véhicule TamCar, sa carte TamPass à la main', kind: 'photo', position: '60% 40%' },
   },
   {
     tag: 'Chauffeurs',
@@ -38,13 +39,13 @@ const SLIDES: Slide[] = [
     photo: { src: '/img/chauffeur.webp', alt: 'Un chauffeur TamCar souriant, casque et gilet aux couleurs de la marque', kind: 'photo', position: '50% 14%' },
   },
   {
-    tag: 'Clients',
-    title: 'Le prix avant de partir,',
-    accent: 'jamais de surprise.',
-    text: 'Prix annoncé avant la course, chauffeur à la photo vérifiée, suivi en direct et partage du trajet avec un proche.',
-    primary: { label: 'Découvrir', href: '/clients' },
-    secondary: { label: 'Ouvrir l’application', href: CLIENT_APP_URL },
-    photo: { src: '/img/tampass-cliente.webp', alt: 'Une cliente souriante à la vitre d’un véhicule TamCar, sa carte TamPass à la main', kind: 'photo', position: '60% 40%' },
+    tag: 'Partenaires véhicule',
+    title: 'Votre véhicule roule.',
+    accent: 'Vous encaissez.',
+    text: 'Confiez votre voiture, votre moto ou votre tricycle à TamCar. Un chauffeur vérifié le fait rouler, et vous suivez vos gains en direct.',
+    primary: { label: 'Devenir partenaire', href: '/partenaires' },
+    secondary: { label: 'Espace partenaire', href: '/connexion' },
+    photo: { src: '/img/voiture.webp', alt: 'Une berline aux couleurs de TamCar', kind: 'cutout', position: 'center' },
   },
   {
     tag: 'Cotonou · Porto-Novo · corridor',
