@@ -118,11 +118,15 @@ export default async function AdminLocationsPage() {
   const [{ data: openData }, { data: pastData }, { data: rateData }] = await Promise.all([
     supabase.rpc('admin_vehicle_rentals', { p_scope: 'open' }),
     supabase.rpc('admin_vehicle_rentals', { p_scope: 'past' }),
-    supabase.from('rental_rates').select('hour_fcfa, min_hours').eq('category', 'premium').maybeSingle(),
+    supabase.from('rental_rates').select('hour_fcfa, day_fcfa, min_hours').eq('category', 'premium').maybeSingle(),
   ]);
   const open = (Array.isArray(openData) ? openData : []) as AdminRental[];
   const past = ((Array.isArray(pastData) ? pastData : []) as AdminRental[]).slice(0, 40);
-  const rate = (rateData ?? { hour_fcfa: 3500, min_hours: 4 }) as { hour_fcfa: number; min_hours: number };
+  const rate = (rateData ?? { hour_fcfa: 3500, day_fcfa: 45000, min_hours: 4 }) as {
+    hour_fcfa: number;
+    day_fcfa: number | null;
+    min_hours: number;
+  };
 
   const requested = open.filter((r) => r.status === 'requested');
   const active = open.filter((r) => r.status !== 'requested');
@@ -191,7 +195,7 @@ export default async function AdminLocationsPage() {
 
       <section className="mb-2xl rounded-xl bg-white p-lg shadow-sm ring-1 ring-neutral-200">
         <h2 className="mb-md text-lg font-bold text-neutral-900">Créer une location</h2>
-        <CreateRentalForm hourFcfa={rate.hour_fcfa} minHours={rate.min_hours} />
+        <CreateRentalForm hourFcfa={rate.hour_fcfa} dayFcfa={rate.day_fcfa} minHours={rate.min_hours} />
       </section>
 
       <section>

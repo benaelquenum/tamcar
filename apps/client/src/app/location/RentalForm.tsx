@@ -1,12 +1,18 @@
 'use client';
 
-import { useMemo, useState, useTransition } from 'react';
+import { useEffect, useMemo, useState, useTransition } from 'react';
 import { AddressAutocomplete, type SelectedAddress } from '@/components/AddressAutocomplete';
 import { CalendarIcon, CheckIcon, ClockIcon } from '@/components/Icon';
+import { supabaseBrowser } from '@/lib/supabase-browser';
 import { requestRentalAction } from './actions';
 
 export type RentalRate = {
+  /** Tarif de l'heure : appliqué HORS de la plage du forfait journée. */
   hour_fcfa: number;
+  /** Forfait d'une journée (plage day_start_hour - day_end_hour). Null = tarif horaire seul. */
+  day_fcfa: number | null;
+  day_start_hour: number;
+  day_end_hour: number;
   min_hours: number;
   max_hours: number;
   km_included_per_day: number;
@@ -14,7 +20,9 @@ export type RentalRate = {
   lead_minutes: number;
 };
 
-const HOUR_CHOICES = [4, 5, 6, 8, 10, 12];
+const HOUR_CHOICES = [4, 8, 12, 15, 24];
+
+type Quote = { days: number; off_hours: number; price_fcfa: number };
 
 function fmtFcfa(n: number): string {
   return n.toLocaleString('fr-FR').replace(/,/g, ' ');
@@ -34,6 +42,7 @@ function todayInBenin(): string {
 }
 
 export function RentalForm({ rate }: { rate: RentalRate }) {
+  const dayHours = rate.day_end_hour - rate.day_start_hour;
   const hourChoices = useMemo(
     () => HOUR_CHOICES.filter((h) => h >= rate.min_hours && h <= rate.max_hours),
     [rate.min_hours, rate.max_hours],
@@ -49,8 +58,41 @@ export function RentalForm({ rate }: { rate: RentalRate }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const price = rate.hour_fcfa * hours;
   const startsAt = toIso(date, time);
+  const [quote, setQuote] = useState<Quote | null>(null);
+
+  // Le prix vient du serveur (mêmes règles que la demande : forfait par journée, heures hors plage).
+  useEffect(() => {
+    if (!startsAt) {
+      setQuote(null);
+      return;
+    }
+    let cancelled = false;
+    const t = setTimeout(() => {
+      supabaseBrowser.rpc('rental_quote', { p_starts_at: startsAt, p_hours: hours }).then(({ data, error: err }) => {
+        if (cancelled) return;
+        const row = (Array.isArray(data) ? data[0] : data) as Quote | undefined;
+        setQuote(err || !row ? null : row);
+      });
+    }, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [startsAt, hours]);
+
+  const price = quote?.price_fcfa ?? rate.day_fcfa ?? rate.hour_fcfa * hours;
+  const breakdown = quote && rate.day_fcfa != null
+    ? [
+        quote.days > 0 ? `${quote.days} journée${quote.days > 1 ? 's' : ''} × ${fmtFcfa(rate.day_fcfa)} F` : null,
+        quote.off_hours > 0 ? `${quote.off_hours} h hors plage × ${fmtFcfa(rate.hour_fcfa)} F` : null,
+      ].filter(Boolean).join(' + ')
+    : null;
+
+  function pickFullDay() {
+    setTime(`${String(rate.day_start_hour).padStart(2, '0')}:00`);
+    setHours(dayHours);
+  }
 
   function submit() {
     setError(null);
@@ -110,6 +152,24 @@ export function RentalForm({ rate }: { rate: RentalRate }) {
           <ClockIcon className="h-4 w-4 text-violet-700" />
           Combien de temps ?
         </h2>
+        {rate.day_fcfa != null && (
+          <button
+            type="button"
+            onClick={pickFullDay}
+            className={`mt-sm w-full rounded-xl border-2 px-md py-sm text-left transition ${
+              hours === dayHours && time === `${String(rate.day_start_hour).padStart(2, '0')}:00`
+                ? 'border-primary-500 bg-primary-50'
+                : 'border-neutral-200 bg-white hover:border-primary-300'
+            }`}
+          >
+            <span className="block text-sm font-extrabold text-neutral-900">
+              Journée {rate.day_start_hour} h – {rate.day_end_hour} h
+            </span>
+            <span className="block text-xs text-neutral-600">
+              {fmtFcfa(rate.day_fcfa)} F, forfait fixe quelle que soit la durée dans la journée
+            </span>
+          </button>
+        )}
         <div className="mt-sm flex flex-wrap gap-xs">
           {hourChoices.map((h) => (
             <button
@@ -187,14 +247,29 @@ export function RentalForm({ rate }: { rate: RentalRate }) {
             {fmtFcfa(price)} F
           </p>
         </div>
+        {breakdown && <p className="mt-xs text-right text-[11px] text-white/70">{breakdown}</p>}
         <ul className="mt-sm space-y-xs text-xs text-white/80">
+          {rate.day_fcfa != null ? (
+            <>
+              <li className="flex items-start gap-xs">
+                <CheckIcon className="mt-0.5 h-3.5 w-3.5 flex-none text-gold-500" strokeWidth={3} />
+                Forfait journée {rate.day_start_hour} h – {rate.day_end_hour} h : {fmtFcfa(rate.day_fcfa)} F, même prix
+                pour 4 h ou {dayHours} h dans la plage
+              </li>
+              <li className="flex items-start gap-xs">
+                <CheckIcon className="mt-0.5 h-3.5 w-3.5 flex-none text-gold-500" strokeWidth={3} />
+                Hors de cette plage : {fmtFcfa(rate.hour_fcfa)} F de l’heure
+              </li>
+            </>
+          ) : (
+            <li className="flex items-start gap-xs">
+              <CheckIcon className="mt-0.5 h-3.5 w-3.5 flex-none text-gold-500" strokeWidth={3} />
+              {fmtFcfa(rate.hour_fcfa)} F de l’heure, minimum {rate.min_hours} h
+            </li>
+          )}
           <li className="flex items-start gap-xs">
             <CheckIcon className="mt-0.5 h-3.5 w-3.5 flex-none text-gold-500" strokeWidth={3} />
-            {fmtFcfa(rate.hour_fcfa)} F de l’heure, minimum {rate.min_hours} h
-          </li>
-          <li className="flex items-start gap-xs">
-            <CheckIcon className="mt-0.5 h-3.5 w-3.5 flex-none text-gold-500" strokeWidth={3} />
-            {rate.km_included_per_day} km inclus ; au-delà {fmtFcfa(rate.km_extra_fcfa)} F le km
+            {rate.km_included_per_day} km inclus par journée ; au-delà {fmtFcfa(rate.km_extra_fcfa)} F le km
           </li>
           <li className="flex items-start gap-xs">
             <CheckIcon className="mt-0.5 h-3.5 w-3.5 flex-none text-gold-500" strokeWidth={3} />

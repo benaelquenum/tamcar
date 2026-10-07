@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { AddressAutocomplete, type SelectedAddress } from '@/components/AddressAutocomplete';
+import { supabaseBrowser } from '@/lib/supabase-browser';
 import {
   availableDriversAction,
   createRentalAction,
@@ -20,7 +21,15 @@ function toIso(date: string, time: string): string | null {
 
 const inputCls = 'mt-xs w-full rounded-lg border border-neutral-300 bg-white px-sm py-sm text-sm';
 
-export function CreateRentalForm({ hourFcfa, minHours }: { hourFcfa: number; minHours: number }) {
+export function CreateRentalForm({
+  hourFcfa,
+  dayFcfa,
+  minHours,
+}: {
+  hourFcfa: number;
+  dayFcfa: number | null;
+  minHours: number;
+}) {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [hits, setHits] = useState<ClientHit[]>([]);
@@ -46,7 +55,33 @@ export function CreateRentalForm({ hourFcfa, minHours }: { hourFcfa: number; min
     startsAt && Number.isFinite(hoursNum) && hoursNum > 0
       ? new Date(new Date(startsAt).getTime() + hoursNum * 3_600_000).toISOString()
       : null;
-  const autoPrice = Number.isFinite(hoursNum) ? hourFcfa * Math.max(hoursNum, minHours) : 0;
+  // Prix suggéré : devis du serveur (forfait journée + heures hors plage), mêmes règles que la création.
+  const [quote, setQuote] = useState<{ days: number; off_hours: number; price_fcfa: number } | null>(null);
+  useEffect(() => {
+    if (!startsAt || !Number.isFinite(hoursNum) || hoursNum <= 0) {
+      setQuote(null);
+      return;
+    }
+    let cancelled = false;
+    const t = setTimeout(() => {
+      supabaseBrowser.rpc('rental_quote', { p_starts_at: startsAt, p_hours: hoursNum }).then(({ data, error: err }) => {
+        if (cancelled) return;
+        const row = (Array.isArray(data) ? data[0] : data) as { days: number; off_hours: number; price_fcfa: number } | undefined;
+        setQuote(err || !row ? null : row);
+      });
+    }, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [startsAt, hoursNum]);
+  const autoPrice = quote?.price_fcfa ?? 0;
+  const autoDetail = quote && dayFcfa != null
+    ? [
+        quote.days > 0 ? `${quote.days} j × ${dayFcfa.toLocaleString('fr-FR').replace(/,/g, ' ')} F` : null,
+        quote.off_hours > 0 ? `${quote.off_hours} h hors plage × ${hourFcfa.toLocaleString('fr-FR').replace(/,/g, ' ')} F` : null,
+      ].filter(Boolean).join(' + ')
+    : `${hourFcfa} F × ${Math.max(hoursNum || 0, minHours)} h`;
 
   // Recherche du client (≥ 3 caractères), avec un léger délai de frappe.
   useEffect(() => {
@@ -214,7 +249,7 @@ export function CreateRentalForm({ hourFcfa, minHours }: { hourFcfa: number; min
       </div>
 
       <label className="block text-xs font-semibold text-neutral-600">
-        Prix (F) — vide = {autoPrice.toLocaleString('fr-FR').replace(/,/g, ' ')} F ({hourFcfa} F × {Math.max(hoursNum || 0, minHours)} h)
+        Prix (F) — vide = {autoPrice.toLocaleString('fr-FR').replace(/,/g, ' ')} F ({autoDetail})
         <input value={price} onChange={(e) => setPrice(e.target.value)} inputMode="numeric" className={inputCls} />
       </label>
       <label className="block text-xs font-semibold text-neutral-600">

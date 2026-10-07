@@ -14,7 +14,7 @@ export default async function LocationPage() {
   const supabase = createServerSupabase();
   const { data } = await supabase
     .from('rental_rates')
-    .select('hour_fcfa, min_hours, max_hours, km_included_per_day, km_extra_fcfa, lead_minutes')
+    .select('hour_fcfa, day_fcfa, day_start_hour, day_end_hour, min_hours, max_hours, km_included_per_day, km_extra_fcfa, lead_minutes')
     .eq('category', 'premium')
     .eq('active', true)
     .maybeSingle();
