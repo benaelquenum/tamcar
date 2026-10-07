@@ -10,7 +10,7 @@ call node apply-native.mjs
 if errorlevel 1 exit /b 1
 set "JAVA_HOME=C:\Program Files\Android\Android Studio\jbr"
 cd android
-call gradlew.bat assembleDebug
+call .\gradlew.bat assembleDebug
 if errorlevel 1 exit /b 1
 cd /d "%~dp0"
 rem Gradle nomme toujours sa sortie app-debug.apk : on la recopie sous le
