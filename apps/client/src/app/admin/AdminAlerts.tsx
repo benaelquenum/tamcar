@@ -123,6 +123,14 @@ export function AdminAlertsProvider({ children }: { children: React.ReactNode })
 
   return (
     <AlertsCtx.Provider value={value}>
+      {/* Réserves de place : les bandeaux ci-dessous sont fixés en haut et recouvraient le titre des pages */}
+      {counts.sos > 0 && <div aria-hidden className="h-[60px]" />}
+      {!audioOn && (
+        <div aria-hidden className="invisible flex items-center justify-center gap-sm px-lg py-sm text-xs font-bold">
+          <BellIcon className="h-4 w-4" />
+          Le son des alertes est coupé par le navigateur : cliquez ici pour l&apos;activer (sirène SOS, carillons).
+        </div>
+      )}
       {children}
 
       {/* Bandeau SOS : impossible à manquer */}

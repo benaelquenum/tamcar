@@ -79,7 +79,7 @@ export default async function AdminTamassurPage() {
                     </div>
                     <div className="text-right">
                       <p
-                        className="text-lg font-extrabold text-neutral-900"
+                        className="whitespace-nowrap text-lg font-extrabold text-neutral-900"
                         style={{ fontVariantNumeric: 'tabular-nums' }}
                       >
                         {fmt(r.amount_fcfa)} F

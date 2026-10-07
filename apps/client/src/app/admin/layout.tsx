@@ -38,7 +38,7 @@ export default async function AdminLayout({
               avant le lancement, dans Bonus chauffeur → « Paiements en mode TEST » = 0.
             </div>
           )}
-          <div className="mx-auto max-w-6xl px-lg py-xl">{children}</div>
+          <div className="mx-auto max-w-6xl px-md pb-24 pt-lg md:px-lg md:py-xl">{children}</div>
         </main>
       </div>
     </AdminAlertsProvider>
