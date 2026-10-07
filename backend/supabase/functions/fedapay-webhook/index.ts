@@ -41,6 +41,10 @@ Deno.serve(async (req: Request) => {
   if (req.method !== 'POST') {
     return new Response('Method not allowed', { status: 405 });
   }
+  if (!WEBHOOK_SECRET) {
+    console.error('FEDAPAY_WEBHOOK_SECRET absent : webhook refusé (sans secret, la signature serait forgeable).');
+    return new Response('Webhook not configured', { status: 503 });
+  }
 
   const body = await req.text();
   const signature =

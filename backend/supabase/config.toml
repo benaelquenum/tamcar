@@ -60,3 +60,15 @@ verify_jwt = false
 # Appelée uniquement par le trigger SQL via pg_net, avec la clé service role.
 [functions.tamy-notify]
 verify_jwt = true
+
+# FedaPay n'envoie aucun JWT sur son webhook : l'authenticité est garantie par la signature HMAC (secret
+# FEDAPAY_WEBHOOK_SECRET), vérifiée dans le code ; la fonction refuse tout si le secret est absent.
+[functions.fedapay-webhook]
+verify_jwt = false
+
+# Appelées par l'application ou la base avec un jeton valide : la vérification du jeton reste active.
+[functions.fedapay-payout]
+verify_jwt = true
+
+[functions.send-push]
+verify_jwt = true

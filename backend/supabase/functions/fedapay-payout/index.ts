@@ -52,9 +52,11 @@ Deno.serve(async (req: Request) => {
   if (!payout || payout.profile_id !== uid) return json({ error: 'Introuvable' }, 404);
   if (payout.status !== 'pending') return json({ status: payout.status });
 
-  // Pas de clé FedaPay : décaissement MANUEL. Le retrait reste « pending » (montant déjà réservé) et l'équipe TamCar
-  // le paie depuis /admin/retraits. (Avant : la fonction échouait et recréditait aussitôt, aucun retrait possible.)
-  if (!FEDA_KEY) return json({ status: 'manual' });
+  // Décaissement MANUEL tant que le réglage « payouts_auto » n'est pas à 1 (ou sans clé FedaPay) : le retrait reste
+  // « pending » (montant déjà réservé) et l'équipe TamCar le paie depuis /admin/retraits. Le virement automatique ne
+  // s'active qu'après un test validé de bout en bout (argent réel).
+  const { data: rule } = await admin.from('program_rules').select('value').eq('key', 'payouts_auto').maybeSingle();
+  if (!FEDA_KEY || (rule as { value?: number } | null)?.value !== 1) return json({ status: 'manual' });
 
   const { data: profile } = await admin.from('profiles').select('full_name').eq('id', uid).single();
   const fullName = (profile?.full_name ?? 'Chauffeur').trim();
