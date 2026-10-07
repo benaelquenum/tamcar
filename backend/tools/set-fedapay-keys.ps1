@@ -1,4 +1,4 @@
-# Pose les clés FedaPay là où l'application les lit, SANS qu'aucune valeur ne passe par Claude ni ne soit affichée :
+﻿# Pose les clés FedaPay là où l'application les lit, SANS qu'aucune valeur ne passe par Claude ni ne soit affichée :
 #   - Supabase (secrets des fonctions) : FEDAPAY_SECRET_KEY, FEDAPAY_WEBHOOK_SECRET, FEDAPAY_API_URL
 #   - Vercel (clé PUBLIQUE, lue par le navigateur) : NEXT_PUBLIC_FEDAPAY_PUBLIC_KEY sur tamcar-client ET tamcar-driver-portal
 # Usage (terminal PowerShell) :
@@ -25,10 +25,17 @@ function Read-Secret([string]$label) {
 }
 
 function Get-VercelEnv([string]$proj) {
-  $raw = vercel api "/v10/projects/$proj/env" --raw 2>$null | Out-String
-  $i = $raw.IndexOf('{')
-  if ($i -lt 0) { throw "Vercel : impossible de lire les variables de $proj (êtes-vous connecté ? commande : vercel login)." }
-  return @(($raw.Substring($i) | ConvertFrom-Json).envs)
+  # 3 essais ; en cas d'échec, la réponse exacte de la CLI est affichée pour pouvoir diagnostiquer
+  $lastOut = ''
+  for ($try = 1; $try -le 3; $try++) {
+    $out = (vercel api "/v10/projects/$proj/env" --raw 2>&1 | Out-String)
+    $i = $out.IndexOf('{"envs"')
+    if ($i -ge 0) { return @(($out.Substring($i) | ConvertFrom-Json).envs) }
+    $lastOut = $out
+    Start-Sleep -Seconds 2
+  }
+  $msg = ($lastOut -replace '\s+', ' ').Trim()
+  throw "Vercel : lecture impossible pour $proj. Réponse de la CLI : $($msg.Substring(0, [Math]::Min(300, $msg.Length)))"
 }
 
 Write-Host "Mode : $Mode  (API $apiUrl)$(if ($VercelOnly) { '  - Vercel seulement' })" -ForegroundColor Cyan
