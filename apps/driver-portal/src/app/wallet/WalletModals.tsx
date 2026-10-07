@@ -161,6 +161,11 @@ export function WalletModal({ open, onClose, kind, availableBalance, debt }: Pro
           </div>
         ) : (
           <>
+            {kind === 'settle' && !FEDAPAY_PUBLIC_KEY && (
+              <div className="mb-md rounded-md bg-warning/15 p-md text-xs font-bold text-warning">
+                MODE TEST : ce règlement est simulé, aucun argent n&apos;est prélevé.
+              </div>
+            )}
             <label className="mb-xs block text-sm font-semibold text-neutral-900">Montant</label>
             <div className="flex items-center overflow-hidden rounded-xl bg-neutral-100 shadow-sm ring-1 ring-neutral-200 transition focus-within:ring-2 focus-within:ring-primary-500">
               <input
