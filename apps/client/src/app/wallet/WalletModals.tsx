@@ -115,13 +115,25 @@ export function WalletModal({ open, onClose, kind, availableBalance }: Props) {
           router.refresh();
         }, 900);
       } else {
-        // Withdraw : reste sur le flow simulé pour l'instant
-        const { error: rpcErr } = await supabaseBrowser.rpc('withdraw_tamcar_revenus', {
-          amount_fcfa: amount,
-          provider,
+        // Retrait : demande enregistrée (montant réservé), payée par l'équipe TamCar ou par virement automatique.
+        const { data: payoutData, error: reqErr } = await supabaseBrowser.rpc('request_driver_payout', {
+          p_amount_fcfa: amount,
+          p_provider: provider,
         });
-        if (rpcErr) {
-          setError(rpcErr.message);
+        if (reqErr) {
+          setError(reqErr.message);
+          return;
+        }
+        const payout = (Array.isArray(payoutData) ? payoutData[0] : payoutData) as { id?: string } | null;
+        if (!payout?.id) {
+          setError('Retrait impossible pour le moment.');
+          return;
+        }
+        const { data: fnData } = await supabaseBrowser.functions.invoke('fedapay-payout', {
+          body: { payout_id: payout.id },
+        });
+        if ((fnData as { status?: string } | null)?.status === 'failed') {
+          setError('Retrait refusé par l’opérateur — le montant a été recrédité.');
           return;
         }
         setSuccess(true);

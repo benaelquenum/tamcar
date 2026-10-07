@@ -1,5 +1,7 @@
 import { createServerSupabase } from '@/lib/supabase-server';
 import { MarkAlertsSeen } from '../AdminAlerts';
+import { ConfirmSubmit } from '@/components/ConfirmSubmit';
+import { recordDebtPayment } from './actions';
 
 type DebtRow = {
   driver_id: string;
@@ -46,7 +48,8 @@ export default async function AdminDebtsPage() {
         Dette = commissions de courses encaissées en direct (espèces / Mobile Money) et cotisation
         TamAssur non encore couvertes. Dès que la dette atteint <strong>5 000 F</strong>, le chauffeur est{' '}
         <strong>suspendu automatiquement</strong> (hors ligne) et vous recevez une alerte ; dès qu&apos;il
-        règle, il est <strong>réactivé automatiquement</strong>. Aucune action de votre part n&apos;est nécessaire.
+        règle, il est <strong>réactivé automatiquement</strong>. Quand un chauffeur vous remet de l&apos;argent (espèces ou
+        Mobile Money vers TamCar), <strong>enregistrez le paiement</strong> sur sa ligne : sa dette baisse d&apos;autant.
       </p>
 
       {debts.length === 0 ? (
@@ -58,8 +61,9 @@ export default async function AdminDebtsPage() {
           {debts.map((d) => (
             <div
               key={d.driver_id}
-              className="flex items-center justify-between gap-md rounded-xl border border-neutral-200 bg-white p-lg shadow-sm"
+              className="rounded-xl border border-neutral-200 bg-white p-lg shadow-sm"
             >
+              <div className="flex items-center justify-between gap-md">
               <div>
                 <p className="flex items-center gap-xs text-sm font-bold text-neutral-900">
                   {d.full_name}
@@ -98,6 +102,30 @@ export default async function AdminDebtsPage() {
                   </a>
                 )}
               </div>
+              </div>
+              <form action={recordDebtPayment} className="mt-md flex flex-wrap items-center gap-sm border-t border-neutral-100 pt-md">
+                <input type="hidden" name="driver_id" value={d.driver_id} />
+                <input
+                  name="amount"
+                  type="number"
+                  min={1}
+                  max={d.debt_fcfa}
+                  defaultValue={d.debt_fcfa}
+                  aria-label="Montant reçu en francs"
+                  className="w-32 rounded-md border border-neutral-300 px-sm py-sm text-sm"
+                />
+                <input
+                  name="reference"
+                  placeholder="Référence (facultatif)"
+                  className="min-w-0 flex-1 rounded-md border border-neutral-300 px-sm py-sm text-sm"
+                />
+                <ConfirmSubmit
+                  message={`Enregistrer un paiement reçu de ${d.full_name} ? Sa dette sera réduite du montant saisi.`}
+                  className="flex-none rounded-md bg-success px-lg py-sm text-sm font-bold text-white hover:brightness-110"
+                >
+                  Enregistrer le paiement
+                </ConfirmSubmit>
+              </form>
             </div>
           ))}
         </div>

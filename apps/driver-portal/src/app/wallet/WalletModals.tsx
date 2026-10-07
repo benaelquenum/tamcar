@@ -25,6 +25,7 @@ export function WalletModal({ open, onClose, kind, availableBalance, debt }: Pro
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [manual, setManual] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -95,15 +96,17 @@ export function WalletModal({ open, onClose, kind, availableBalance, debt }: Pro
           setError('Retrait refusé par l\'opérateur — le montant a été recrédité.');
           return;
         }
-        // 'processing' ou 'sent' → confirmé par webhook
+        // 'manual' : pas de virement automatique, TamCar paie à la main (/admin/retraits) ; 'processing' : webhook
+        if (status === 'manual') setManual(true);
       }
       setSuccess(true);
       setTimeout(() => {
         onClose();
         setSuccess(false);
+        setManual(false);
         setAmount(0);
         router.refresh();
-      }, 900);
+      }, kind === 'withdraw' ? 2600 : 900);
     });
   }
 
@@ -140,7 +143,7 @@ export function WalletModal({ open, onClose, kind, availableBalance, debt }: Pro
               {formatFcfa(amount)} FCFA
             </p>
             <p className="mt-xs text-sm text-neutral-600">
-              {kind === 'topup' ? 'Crédit ajouté à votre compte' : kind === 'settle' ? 'Dette régularisée' : 'Retrait effectué'}
+              {kind === 'topup' ? 'Crédit ajouté à votre compte' : kind === 'settle' ? 'Dette régularisée' : manual ? 'Demande envoyée : TamCar vous paie sous 24 h' : 'Retrait demandé'}
             </p>
           </div>
         ) : (
