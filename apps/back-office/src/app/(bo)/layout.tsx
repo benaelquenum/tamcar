@@ -7,6 +7,7 @@ import {
   BookIcon,
   CalendarIcon,
   CheckIcon,
+  ClockIcon,
   DashboardIcon,
   FileIcon,
   FolderIcon,
@@ -31,6 +32,7 @@ const NAV_COMPTA = [
   { href: '/tresorerie', label: 'Trésorerie', icon: BankIcon },
   { href: '/tresorerie/operation', label: 'Nouvelle opération', icon: PlusIcon },
   { href: '/tresorerie/validations', label: 'Validations', icon: CheckIcon },
+  { href: '/nsia', label: 'Lignes NSIA', icon: ClockIcon },
   { href: '/compta/ecritures', label: 'Écritures', icon: BookIcon },
   { href: '/compta/balance', label: 'Balance', icon: DashboardIcon },
   { href: '/compta/etats-financiers', label: 'États financiers', icon: FileIcon },
@@ -161,7 +163,7 @@ export default async function BoLayout({
         </div>
       </aside>
 
-      <main className="ml-60 flex-1 px-2xl py-xl">{children}</main>
+      <main className="ml-60 min-w-0 flex-1 px-2xl py-xl">{children}</main>
     </div>
   );
 }
