@@ -56,7 +56,29 @@ if (!m.includes('TamCarMessagingService')) {
         <provider`;
   m = m.replace('        <provider', service);
 }
+// Icône et couleur par défaut des notifications FCM (sinon : icône générique ou carré blanc)
+if (!m.includes('default_notification_icon')) {
+  m = m.replace(
+    '</application>',
+    `    <meta-data android:name="com.google.firebase.messaging.default_notification_icon" android:resource="@drawable/ic_stat_tamcar" />
+        <meta-data android:name="com.google.firebase.messaging.default_notification_color" android:resource="@color/tamcar_notification" />
+    </application>`,
+  );
+}
 writeFileSync(manifestPath, m);
+
+// 2 bis) démarrage système (Android 12+) : fond et icône aux couleurs de l'application
+const stylesPath = join(MAIN, 'res', 'values', 'styles.xml');
+let st = readFileSync(stylesPath, 'utf8');
+if (!st.includes('windowSplashScreenBackground')) {
+  st = st.replace(
+    /(<style name="AppTheme\.NoActionBarLaunch" parent="Theme\.SplashScreen">)/,
+    `$1
+        <item name="windowSplashScreenBackground">@color/tamcar_splash_bg</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_mark</item>`,
+  );
+  writeFileSync(stylesPath, st);
+}
 
 // 3) dépendances de l'application
 const gradlePath = join(ANDROID, 'app', 'build.gradle');

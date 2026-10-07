@@ -22,6 +22,13 @@ export const metadata: Metadata = {
     "Réservez une course à Porto-Novo, Cotonou ou sur le corridor. Prix fixe garanti, chauffeurs vérifiés.",
   manifest: '/manifest.webmanifest',
   applicationName: 'TamCar',
+  icons: {
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+    ],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',

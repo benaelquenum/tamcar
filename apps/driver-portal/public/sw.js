@@ -44,6 +44,7 @@ self.addEventListener('push', (event) => {
           silent: true,
           requireInteraction: false,
           icon: '/icons/icon-192.png',
+          badge: '/icons/badge-tamcar.png',
           data: { url: '/' },
         });
         await new Promise((resolve) => setTimeout(resolve, 6000));
@@ -60,6 +61,7 @@ self.addEventListener('push', (event) => {
     vibrate,
     requireInteraction,
     icon: '/icons/icon-192.png',
+    badge: '/icons/badge-tamcar.png',
     data: { url },
     // Nouvelle demande : même tag = remplacement, mais on RE-sonne à chaque envoi (cercles suivants).
     ...(renotify && tag ? { renotify: true } : {}),

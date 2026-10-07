@@ -35,8 +35,8 @@ self.addEventListener('push', (event) => {
     // (voiture, tricycle ou moto).
     silent = false,
     renotify = false,
-    icon = '/logo.svg',
-    badge,
+    icon = '/icons/icon-192.png',
+    badge = '/icons/badge-tamcar.png',
   } = payload;
 
   const options = {

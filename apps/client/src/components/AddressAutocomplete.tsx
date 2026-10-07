@@ -118,7 +118,7 @@ export function AddressAutocomplete({
       { enableHighAccuracy: true, maximumAge: 2000, timeout: 20000 },
     );
     return () => navigator.geolocation.clearWatch(watchId);
-  }, [showLocationButton]);
+  }, [showLocationButton, livePosition]);
 
   useEffect(() => {
     setQuery(value?.place_name || '');

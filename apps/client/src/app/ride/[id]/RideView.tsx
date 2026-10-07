@@ -687,7 +687,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
         setTimeoutOffers(data as AlternativeOffer[]);
       });
     return () => { cancelled = true; };
-  }, [searchTimedOut, ride.status, ride.id]);
+  }, [searchTimedOut, ride.status, ride.id, ride.requested_driver_id]);
 
   // Alternatives cross-catégorie : après 30 s sans match dans la catégorie initiale,
   // on propose au client toutes les alternatives disponibles (avec nb chauffeurs proches).
@@ -714,7 +714,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
       setAlternativeOffers(data as AlternativeOffer[]);
     }, remaining);
     return () => clearTimeout(timer);
-  }, [ride.status, ride.requested_at, ride.requested_category, ride.downgrade_accepted_at, ride.id, alternativeOffers]);
+  }, [ride.status, ride.requested_at, ride.requested_category, ride.requested_driver_id, ride.downgrade_accepted_at, ride.id, alternativeOffers]);
 
   async function handleSwitchCategory(newCategory: string) {
     if (switching) return;

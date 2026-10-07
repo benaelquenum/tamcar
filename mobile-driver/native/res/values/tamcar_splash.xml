@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fond du démarrage système (Android 12+) : couleur de l'application. -->
+<resources>
+    <color name="tamcar_splash_bg">#0255FC</color>
+</resources>

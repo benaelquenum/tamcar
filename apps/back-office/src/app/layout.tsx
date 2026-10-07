@@ -15,6 +15,7 @@ export const metadata: Metadata = {
   description:
     'Secrétariat, trésorerie, comptabilité et RH de TamCar : courrier, documents, échéances, écritures.',
   applicationName: 'TamCar Office',
+  icons: { icon: [{ url: '/favicon.ico' }] },
   formatDetection: {
     telephone: false,
   },

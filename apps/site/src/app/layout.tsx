@@ -18,13 +18,20 @@ export const metadata: Metadata = {
   description:
     'TamCar, le VTC du Bénin : Cotonou, Porto-Novo et le corridor. Confiez votre véhicule à un chauffeur vérifié et suivez vos gains en direct.',
   applicationName: 'TamCar',
-  icons: { icon: '/favicon.ico' },
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://tamcar-site.vercel.app'),
+  icons: {
+    icon: [{ url: '/favicon.ico' }, { url: '/icon.png', sizes: '512x512', type: 'image/png' }],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+  },
   openGraph: {
     title: 'TamCar — Votre véhicule roule, vous encaissez',
     description: 'Partenaires véhicule, chauffeurs et clients : le VTC du Bénin à prix fixe.',
     locale: 'fr_BJ',
     type: 'website',
+    siteName: 'TamCar',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'TamCar — ta course est claire, ta course éclair.' }],
   },
+  twitter: { card: 'summary_large_image', images: ['/og-image.png'] },
 };
 
 export const viewport: Viewport = {
