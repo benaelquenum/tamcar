@@ -279,8 +279,8 @@ export default function CguPage() {
             la durée de cotisation applicable à son véhicule (démission,
             non-renouvellement, résiliation),
             le Chauffeur ne perd pas son épargne : TamCar lui restitue les
-            sommes réellement prélevées sur ses gains au titre de l’épargne, à la date de déblocage de sa ligne auprès de
-            l’assureur (24 mois après l’ouverture de cette ligne). La
+            sommes réellement prélevées sur ses gains au titre de l’épargne, dans un délai maximal de 90 jours à compter de la
+            fin de la relation. La
             restitution est faite sous déduction des seules sommes que le
             Chauffeur doit à TamCar et, le cas échéant, de la réparation prévue
             ci-dessous.
