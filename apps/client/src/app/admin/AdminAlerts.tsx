@@ -12,10 +12,11 @@ export type AdminCounts = {
   sos_active: number; // SOS ouverts ou pris en charge, pas encore résolus
   debts: number; // alertes de dette pas encore consultées
   debts_suspended: number; // chauffeurs actuellement suspendus pour dette
+  tamassur: number; // demandes de retrait d'épargne TamAssur à traiter
   disputes: number; // litiges à examiner par un humain
 };
 
-const EMPTY: AdminCounts = { sos: 0, sos_active: 0, debts: 0, debts_suspended: 0, disputes: 0 };
+const EMPTY: AdminCounts = { sos: 0, sos_active: 0, debts: 0, debts_suspended: 0, tamassur: 0, disputes: 0 };
 
 type Toast = {
   id: string;

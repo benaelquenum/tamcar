@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { createServerSupabase } from '@/lib/supabase-server';
 import { ConfirmSubmit } from '@/components/ConfirmSubmit';
+import { AlertTriangleIcon, ShieldIcon } from '@/components/Icon';
 import {
   acknowledgeSosAction,
   resolveSosAction,
@@ -422,7 +423,7 @@ export default async function AdminHome() {
             {activeSos.slice(0, 10).map((s) => (
               <div key={s.id} className="rounded-lg border border-error/30 bg-error/5 p-md">
                 <div className="flex items-start gap-md">
-                  <span className="text-xl">🚨</span>
+                  <AlertTriangleIcon className="h-6 w-6 text-error" />
                   <div className="flex-1">
                     <p className="text-sm font-bold text-neutral-900">
                       {s.role === 'client' ? 'Client' : 'Chauffeur'} · {s.reason || 'Sans raison'}
@@ -571,7 +572,7 @@ export default async function AdminHome() {
                     : 'border-neutral-200 bg-white'
                 }`}
               >
-                <span className="text-lg">🛡️</span>
+                <ShieldIcon className="h-5 w-5 text-primary-700" />
                 <div className="flex-1 min-w-0">
                   <p className="truncate text-sm font-bold text-neutral-900">{u.full_name}</p>
                   <p className="text-[11px] text-neutral-600">

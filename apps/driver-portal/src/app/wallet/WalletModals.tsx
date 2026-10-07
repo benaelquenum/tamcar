@@ -300,7 +300,7 @@ export function EpargneWithdrawModal({
               {formatFcfa(amount)} FCFA
             </p>
             <p className="mt-xs text-sm text-neutral-600">
-              Demande enregistrée · paiement sous 30 jours
+              Demande enregistrée · paiement sous 60 jours au plus
             </p>
           </div>
         ) : (
@@ -315,8 +315,9 @@ export function EpargneWithdrawModal({
               </p>
             </div>
             <p className="mt-md rounded-md bg-neutral-100 p-md text-xs text-neutral-700">
-              TamCar vous règle <strong>sous 30 jours</strong> à compter de cette demande, en espèces
-              ou par Mobile Money. Le montant est réservé dès maintenant.
+              Votre demande est transmise à l&apos;équipe TamCar, qui effectue le virement (espèces ou
+              Mobile Money) <strong>sous 60 jours au plus</strong> à compter d&apos;aujourd&apos;hui. Le montant est
+              réservé dès maintenant.
             </p>
             {error && (
               <div className="mt-md rounded-md bg-error/10 p-md text-sm text-error">{error}</div>
@@ -327,7 +328,7 @@ export function EpargneWithdrawModal({
               disabled={pending}
               className="mt-lg w-full rounded-xl bg-gradient-to-r from-success to-cyan py-md text-base font-bold text-white shadow-glow disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {pending ? '…' : 'Confirmer le retrait'}
+              {pending ? '…' : 'Confirmer ma demande de retrait'}
             </button>
           </>
         )}

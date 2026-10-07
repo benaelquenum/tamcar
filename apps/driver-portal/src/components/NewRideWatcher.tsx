@@ -151,7 +151,7 @@ async function notify(row: PendingRow) {
     : '';
   // Le libellé porte la distinction : le système ne laisse pas une
   // application peindre le fond de son volet de notification.
-  const title = isBooking ? `Réservation — ${when}` : '🚗 Nouvelle course TamCar';
+  const title = isBooking ? `Réservation — ${when}` : 'Nouvelle course TamCar';
   const body = `${row.pickup_address} → ${row.dropoff_address} · ${row.price_total_fcfa.toLocaleString('fr-FR')} F`;
 
   if (isNative()) {

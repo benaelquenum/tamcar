@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/Logo';
-import { ArrowRightIcon, CheckIcon, CompassIcon, CrosshairIcon, LuggageIcon, PinIcon, WhatsAppIcon, MessageIcon } from '@/components/Icon';
+import { ArrowRightIcon, CheckIcon, ClockIcon, CompassIcon, CrosshairIcon, LuggageIcon, PinIcon, WhatsAppIcon, MessageIcon } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
 import { Map } from '@/components/Map';
 import { NavBanner } from '@/components/NavBanner';
@@ -934,7 +934,7 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
 
       {/* Bottom sheet */}
       <div ref={sheetRef} className="absolute inset-x-0 bottom-0 z-10">
-        <div className="mx-auto max-w-md rounded-t-2xl bg-white shadow-2xl ring-1 ring-neutral-200">
+        <div className="mx-auto max-h-[88dvh] max-w-md overflow-y-auto overscroll-contain rounded-t-2xl bg-white shadow-2xl ring-1 ring-neutral-200">
           <div className="p-lg">
             {/* Cas course annulée / expirée : bandeau + bouton retour, on masque les gains */}
             {(ride.status === 'cancelled_by_client' ||
@@ -1149,11 +1149,11 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
                     </p>
                   )}
                   <div className="mt-sm flex justify-between text-xs text-neutral-600">
-                    <span style={{ fontVariantNumeric: 'tabular-nums' }}>
-                      📍 {formatDistance(distanceToTarget)} restants
+                    <span className="inline-flex items-center gap-xs" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                      <PinIcon className="h-3.5 w-3.5" /> {formatDistance(distanceToTarget)} restants
                     </span>
-                    <span style={{ fontVariantNumeric: 'tabular-nums' }}>
-                      ⏱ ~{durationToTarget ?? '—'} min
+                    <span className="inline-flex items-center gap-xs" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                      <ClockIcon className="h-3.5 w-3.5" /> ~{durationToTarget ?? '—'} min
                     </span>
                   </div>
                 </div>

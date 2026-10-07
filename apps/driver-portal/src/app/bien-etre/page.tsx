@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { Logo } from '@/components/Logo';
+import { CarIcon, CoinsIcon, GraduationIcon } from '@/components/Icon';
 
 export const metadata = {
   title: 'Bien-être chauffeur — TamCar',
@@ -57,7 +58,7 @@ export default function BienEtrePage() {
 
         {/* Votre véhicule */}
         <Benefit
-          emoji="🚗"
+          icon={<CarIcon className="h-5 w-5" />}
           title="Votre véhicule"
           badge="Formule Cession"
           badgeTone="primary"
@@ -72,7 +73,7 @@ export default function BienEtrePage() {
         <section className="mt-lg rounded-xl border-2 border-gold/40 bg-white p-lg shadow-sm">
           <div className="flex items-start justify-between gap-md">
             <h2 className="flex items-center gap-xs text-base font-extrabold text-neutral-900">
-              <span aria-hidden>💰</span> Votre épargne retraite
+              <CoinsIcon className="h-5 w-5 text-gold" /> Votre épargne retraite
             </h2>
             <span className="flex-none rounded-full bg-gold px-md py-xs text-[10px] font-bold text-neutral-900 shadow-glow-gold">
               Incluse
@@ -90,8 +91,8 @@ export default function BienEtrePage() {
               <thead>
                 <tr className="text-left text-[11px] font-bold uppercase tracking-wider text-neutral-500">
                   <th className="px-md py-sm">Véhicule</th>
-                  <th className="px-md py-sm text-right">Par jour</th>
-                  <th className="px-md py-sm text-right">À vous</th>
+                  <th className="whitespace-nowrap px-sm py-sm text-right">Par jour</th>
+                  <th className="whitespace-nowrap px-sm py-sm text-right">À vous</th>
                 </tr>
               </thead>
               <tbody className="text-neutral-800">
@@ -102,8 +103,8 @@ export default function BienEtrePage() {
                 ].map(([label, day, goal]) => (
                   <tr key={String(label)} className="border-t border-gold/20">
                     <td className="px-md py-sm font-semibold">{label}</td>
-                    <td className="px-md py-sm text-right">{Number(day).toLocaleString('fr-FR')} F</td>
-                    <td className="px-md py-sm text-right font-extrabold">{Number(goal).toLocaleString('fr-FR')} F</td>
+                    <td className="whitespace-nowrap px-sm py-sm text-right">{Number(day).toLocaleString('fr-FR')} F</td>
+                    <td className="whitespace-nowrap px-sm py-sm text-right font-extrabold">{Number(goal).toLocaleString('fr-FR')} F</td>
                   </tr>
                 ))}
               </tbody>
@@ -124,8 +125,9 @@ export default function BienEtrePage() {
             <li className="flex gap-sm">
               <span className="text-primary-500">•</span>
               <span>
-                Après 24 mois de cotisation, vous pouvez{' '}
-                <strong>retirer</strong> votre épargne (voir le tableau).
+                Au bout de 24 mois, si votre compte est à jour, vous pouvez{' '}
+                <strong>demander le retrait</strong> de votre épargne (voir le tableau) :
+                TamCar effectue le virement sous 60 jours au plus.
               </span>
             </li>
             <li className="flex gap-sm">
@@ -174,7 +176,7 @@ export default function BienEtrePage() {
 
         {/* Montée en compétence */}
         <Benefit
-          emoji="🎓"
+          icon={<GraduationIcon className="h-5 w-5" />}
           title="Votre montée en compétence"
           badge="Incluse"
           badgeTone="primary"
@@ -200,13 +202,13 @@ export default function BienEtrePage() {
 }
 
 function Benefit({
-  emoji,
+  icon,
   title,
   badge,
   badgeTone,
   children,
 }: {
-  emoji: string;
+  icon: ReactNode;
   title: string;
   badge: string;
   badgeTone: 'primary' | 'neutral';
@@ -216,7 +218,7 @@ function Benefit({
     <section className="mt-lg rounded-xl border border-neutral-200 bg-white p-lg shadow-sm">
       <div className="flex items-start justify-between gap-md">
         <h2 className="flex items-center gap-xs text-base font-extrabold text-neutral-900">
-          <span aria-hidden>{emoji}</span> {title}
+          <span aria-hidden className="text-primary-700">{icon}</span> {title}
         </h2>
         <span
           className={`flex-none rounded-full px-md py-xs text-[10px] font-bold ${

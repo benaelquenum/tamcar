@@ -707,10 +707,12 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
 
       {/* Bottom sheet */}
       <div className="absolute inset-x-0 bottom-0 z-10">
-        <div className="mx-auto max-w-md rounded-t-2xl bg-white shadow-2xl ring-1 ring-neutral-200">
+        {/* Hauteur bornée : avec plusieurs demandes / réservations / offres TamPass, la feuille dépassait l'écran (main est en
+            overflow-hidden) et le bouton « Se connecter » devenait inaccessible. Le bandeau en ligne reste collé en haut. */}
+        <div className="mx-auto max-h-[78dvh] max-w-md overflow-y-auto overscroll-contain rounded-t-2xl bg-white shadow-2xl ring-1 ring-neutral-200">
           <div className="p-lg">
             {/* Toggle online */}
-            <div className="mb-md flex items-center justify-between">
+            <div className="sticky top-0 z-10 -mx-lg -mt-lg mb-md flex items-center justify-between bg-white px-lg pb-sm pt-lg">
               <div>
                 <p className="text-xs font-bold uppercase tracking-wider text-neutral-500">
                   {driverName}

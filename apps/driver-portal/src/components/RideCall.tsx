@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { freshChannel } from '@/lib/realtime';
 import { callsSupported } from '@/lib/rtc';
@@ -160,7 +161,7 @@ export function RideCall({ rideId, myUserId, active, otherName, otherAvatarUrl, 
           disabled={starting || !!call}
           className={
             buttonClassName ??
-            'flex flex-1 items-center justify-center gap-xs rounded-xl bg-primary-500 py-2 text-xs font-bold text-white shadow-md transition hover:bg-primary-700 disabled:opacity-60'
+            'flex min-w-0 flex-1 items-center justify-center gap-xs rounded-xl bg-primary-500 px-1 py-2 text-xs font-bold text-white shadow-md transition hover:bg-primary-700 disabled:opacity-60'
           }
         >
           <PhoneIcon className="h-4 w-4" />
@@ -168,7 +169,7 @@ export function RideCall({ rideId, myUserId, active, otherName, otherAvatarUrl, 
         </button>
       )}
 
-      {incoming && !call && (
+      {incoming && !call && createPortal(
         <div className="fixed inset-0 z-[70] flex flex-col items-center justify-between bg-gradient-to-br from-primary-700 via-violet-500 to-primary-900 px-lg py-2xl text-white">
           <span className="mt-lg rounded-full bg-white/15 px-md py-xs text-[11px] font-bold uppercase tracking-widest text-white/90">
             Appel entrant · TamCar
@@ -197,17 +198,22 @@ export function RideCall({ rideId, myUserId, active, otherName, otherAvatarUrl, 
               <span className="text-[11px] font-semibold text-white/80">Répondre</span>
             </button>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
-      {call && <CallRoom callId={call.callId} role={call.role} otherName={otherName} otherAvatarUrl={otherAvatarUrl} onClose={handleEnd} />}
+      {call && createPortal(
+        <CallRoom callId={call.callId} role={call.role} otherName={otherName} otherAvatarUrl={otherAvatarUrl} onClose={handleEnd} />,
+        document.body,
+      )}
 
-      {toast && (
+      {toast && createPortal(
         <div className="pointer-events-none fixed inset-x-0 bottom-28 z-[80] flex justify-center px-lg">
           <p className="rounded-full bg-neutral-900/95 px-lg py-sm text-xs font-semibold text-white shadow-xl" role="status">
             {toast}
           </p>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );

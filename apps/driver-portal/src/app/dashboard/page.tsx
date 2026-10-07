@@ -73,6 +73,7 @@ export default async function DriverDashboardPage() {
     { data: planData },
     { data: bannerRows },
     { data: isOpsManager },
+    { data: withdrawalData },
   ] = await Promise.all([
     supabase.rpc('my_wallets'),
     supabase
@@ -100,6 +101,7 @@ export default async function DriverDashboardPage() {
       .order('display_order', { ascending: true })
       .limit(6),
     supabase.rpc('ops_is_manager'),
+    supabase.rpc('my_tamassur_withdrawal_status'),
   ]);
 
   const driverBanners = (bannerRows ?? []) as BannerItem[];
@@ -129,6 +131,13 @@ export default async function DriverDashboardPage() {
   const pnToday = new Date(Date.now() + 3_600_000).toISOString().slice(0, 10);
   const insuranceToday = insurance.find((r) => r.period.slice(0, 10) === pnToday) ?? null;
   const isSunday = new Date(`${pnToday}T12:00:00Z`).getUTCDay() === 0;
+  // Retrait de l'épargne : 2 ans après le premier prélèvement, compte à jour
+  type WithdrawalState = { eligible_on: string | null; late_days: number; reason: string };
+  const wState = ((withdrawalData ?? []) as WithdrawalState[])[0] ?? null;
+  const withdrawalHint =
+    wState?.eligible_on
+      ? `Retrait possible dès le ${new Date(`${wState.eligible_on}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}`
+      : 'Retrait possible 2 ans après le démarrage';
 
   type ProgressRow = {
     volume_today: number;
@@ -220,10 +229,10 @@ export default async function DriverDashboardPage() {
                   Cash disponible
                 </p>
                 <p className="mt-xs text-xs text-primary-100/90">
-                  Retirez sur Mobile Money depuis votre portefeuille
+                  Compensé avec les commissions de vos courses encaissées en direct
                 </p>
               </div>
-              <span className="text-3xl" aria-hidden>💵</span>
+              <CoinsIcon className="h-8 w-8 text-white/90" />
             </div>
             <p
               className="mt-lg text-4xl font-extrabold"
@@ -257,6 +266,8 @@ export default async function DriverDashboardPage() {
           today={insuranceToday}
           isSunday={isSunday}
           balance={revenus}
+          withdrawalHint={withdrawalHint}
+          lateDays={wState?.late_days ?? 0}
         />
 
         {/* Véhicule */}

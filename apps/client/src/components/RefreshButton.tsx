@@ -14,9 +14,10 @@ const HIDDEN_ON = ['/login', '/reset-password', '/auth', '/cgu', '/confidentiali
  * un formulaire en cours n'est pas vidé. C'est ce qu'on veut d'un bouton
  * pressé en pleine course ; un rechargement complet ferait tout perdre.
  *
- * Placement : petit, translucide, au-dessus de la barre d'onglets. Le
- * bouton SOS avait été retiré pour avoir masqué du texte — celui-ci
- * s'efface tant qu'on ne le touche pas.
+ * Placement : languette collée au bord droit, au-dessus de la barre
+ * d'onglets. Les pages ont 16 px de marge latérale : la languette (20 px)
+ * reste dans cette marge au lieu de recouvrir les boutons et montants en
+ * bout de ligne (revue visuelle du 2026-10-07).
  */
 export function RefreshButton() {
   const router = useRouter();
@@ -39,7 +40,7 @@ export function RefreshButton() {
       type="button"
       onClick={handleClick}
       aria-label="Rafraîchir la page"
-      className="fixed right-md z-30 grid h-10 w-10 place-items-center rounded-full bg-white/80 text-neutral-600 opacity-60 shadow-md ring-1 ring-neutral-200 backdrop-blur transition hover:opacity-100 active:scale-95"
+      className="fixed right-0 z-30 grid h-11 w-5 place-items-center rounded-l-full bg-white/80 text-neutral-600 opacity-60 shadow-md ring-1 ring-neutral-200 backdrop-blur transition hover:opacity-100 active:opacity-100"
       style={{ bottom: 'calc(92px + env(safe-area-inset-bottom))' }}
     >
       <svg
@@ -49,7 +50,7 @@ export function RefreshButton() {
         strokeWidth={2.2}
         strokeLinecap="round"
         strokeLinejoin="round"
-        className={`h-4 w-4 ${spinning || pending ? 'animate-spin' : ''}`}
+        className={`h-3.5 w-3.5 ${spinning || pending ? 'animate-spin' : ''}`}
       >
         <path d="M21 12a9 9 0 1 1-2.64-6.36" />
         <path d="M21 3v6h-6" />

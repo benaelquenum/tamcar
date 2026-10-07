@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Logo } from '@/components/Logo';
+import { FileTextIcon, LockIcon } from '@/components/Icon';
 import { TERMS_VERSION } from '@/lib/terms';
 import { acceptTermsAction } from './actions';
 
@@ -34,16 +35,20 @@ export default function ConditionsPage({
           <Link
             href="/cgu"
             target="_blank"
-            className="block rounded-xl border border-neutral-200 bg-neutral-50 px-lg py-md text-sm font-semibold text-neutral-900 hover:border-primary-300 hover:bg-primary-50"
+            className="flex items-center gap-sm rounded-xl border border-neutral-200 bg-neutral-50 px-lg py-md text-sm font-semibold text-neutral-900 hover:border-primary-300 hover:bg-primary-50"
           >
-            📄 Conditions Générales d’Utilisation →
+            <FileTextIcon className="h-4 w-4 text-primary-700" />
+            <span className="flex-1">Conditions Générales d’Utilisation</span>
+            <span aria-hidden>→</span>
           </Link>
           <Link
             href="/confidentialite"
             target="_blank"
-            className="block rounded-xl border border-neutral-200 bg-neutral-50 px-lg py-md text-sm font-semibold text-neutral-900 hover:border-primary-300 hover:bg-primary-50"
+            className="flex items-center gap-sm rounded-xl border border-neutral-200 bg-neutral-50 px-lg py-md text-sm font-semibold text-neutral-900 hover:border-primary-300 hover:bg-primary-50"
           >
-            🔒 Politique de confidentialité →
+            <LockIcon className="h-4 w-4 text-primary-700" />
+            <span className="flex-1">Politique de confidentialité</span>
+            <span aria-hidden>→</span>
           </Link>
         </div>
 

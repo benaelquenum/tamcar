@@ -3,14 +3,14 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Logo } from '@/components/Logo';
-import { PlusIcon } from '@/components/Icon';
+import { BadgeIcon, CarIcon, ChartIcon, CoinsIcon, PlusIcon, WalletIcon } from '@/components/Icon';
 import {
-  WALLET_KIND_META,
   formatFcfa,
   isCredit,
   txLabel,
+  walletKindMeta,
   type Wallet,
-  type WalletKind,
+  type WalletIconKey,
   type WalletTransaction,
 } from '@/lib/wallet';
 import { WalletModal } from './WalletModals';
@@ -126,15 +126,15 @@ function BigWalletCard({
   disabled?: boolean;
   note?: string;
 }) {
-  const meta = WALLET_KIND_META[wallet.kind];
+  const meta = walletKindMeta(wallet.kind);
   return (
     <div className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${meta.gradient} p-lg text-white shadow-glow`}>
-      <div className="flex items-baseline justify-between">
+      <div className="flex items-start justify-between gap-md">
         <div>
           <p className="text-xs font-bold uppercase tracking-wider text-white/80">{meta.label}</p>
           <p className="mt-xs text-xs text-white/80">{meta.sub}</p>
         </div>
-        <span className="text-3xl" aria-hidden>{meta.icon}</span>
+        <WalletKindIcon icon={meta.icon} />
       </div>
       <p className="mt-lg text-4xl font-extrabold" style={{ fontVariantNumeric: 'tabular-nums' }}>
         {formatFcfa(wallet.balance_fcfa)}
@@ -156,9 +156,18 @@ function BigWalletCard({
   );
 }
 
+function WalletKindIcon({ icon }: { icon: WalletIconKey }) {
+  const cls = 'h-8 w-8 text-white/90';
+  return (
+    <span aria-hidden className="flex-none">
+      {icon === 'coins' ? <CoinsIcon className={cls} /> : icon === 'car' ? <CarIcon className={cls} /> : icon === 'chart' ? <ChartIcon className={cls} /> : icon === 'badge' ? <BadgeIcon className={cls} /> : <WalletIcon className={cls} />}
+    </span>
+  );
+}
+
 function TransactionRow({ tx }: { tx: WalletTransaction }) {
   const credit = isCredit(tx.type);
-  const kindMeta = WALLET_KIND_META[tx.wallet_kind];
+  const kindMeta = walletKindMeta(tx.wallet_kind);
   return (
     <div className="flex items-center gap-md rounded-xl border border-neutral-200 bg-white p-md">
       <span className={`grid h-9 w-9 flex-none place-items-center rounded-full text-lg ${credit ? 'bg-primary-50' : 'bg-neutral-100'}`} aria-hidden>
@@ -176,7 +185,7 @@ function TransactionRow({ tx }: { tx: WalletTransaction }) {
         className={`text-sm font-bold ${credit ? 'text-primary-700' : 'text-neutral-900'}`}
         style={{ fontVariantNumeric: 'tabular-nums' }}
       >
-        {credit ? '+' : '−'}{formatFcfa(tx.amount_fcfa)}
+        {credit ? '+' : '−'}{formatFcfa(Math.abs(tx.amount_fcfa))}
         <span className="ml-xs text-[10px] font-medium text-neutral-500">F</span>
       </p>
     </div>

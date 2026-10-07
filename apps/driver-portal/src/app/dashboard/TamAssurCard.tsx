@@ -17,6 +17,8 @@ export function TamAssurCard({
   today,
   isSunday,
   balance,
+  withdrawalHint,
+  lateDays,
 }: {
   amount: number;
   minAmount: number;
@@ -25,6 +27,8 @@ export function TamAssurCard({
   today: TodayCharge;
   isSunday: boolean;
   balance: number;
+  withdrawalHint: string;
+  lateDays: number;
 }) {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState<number>(amount);
@@ -84,7 +88,7 @@ export function TamAssurCard({
           <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-500">
             Mon capital
           </span>
-          <span className="text-[11px] text-neutral-500">Retrait possible dès {formatFcfa(goal)} F</span>
+          <span className="text-[11px] text-neutral-500">{withdrawalHint}</span>
         </div>
         <p className="mt-xs text-2xl font-extrabold text-success" style={{ fontVariantNumeric: 'tabular-nums' }}>
           {formatFcfa(capital)}
@@ -101,6 +105,15 @@ export function TamAssurCard({
           <strong style={{ fontVariantNumeric: 'tabular-nums' }}>{formatFcfa(balance)} F</strong>.
           Le prélèvement continue chaque jour : vos gains et vos recharges
           remboursent ce solde.
+          {lateDays > 0 && (
+            <>
+              {' '}
+              <strong>
+                {lateDays} jour{lateDays > 1 ? 's' : ''} de retard
+              </strong>{' '}
+              (dimanches exclus) : rattrapez-le avant de demander le retrait de votre épargne.
+            </>
+          )}
         </p>
       )}
 

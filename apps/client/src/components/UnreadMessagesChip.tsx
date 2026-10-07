@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { freshChannel } from '@/lib/realtime';
+import { MessageIcon } from '@/components/Icon';
 
 /**
  * Bulle globale « messages non lus » affichée sur l'accueil (hors écran course).
@@ -45,7 +46,7 @@ export function UnreadMessagesChip({ bottomClass = 'bottom-6' }: { bottomClass?:
       href={`/ride/${rideId}`}
       className={`fixed left-1/2 z-40 flex -translate-x-1/2 items-center gap-sm rounded-full bg-primary-600 px-lg py-sm text-sm font-bold text-white shadow-glow ring-2 ring-white ${bottomClass}`}
     >
-      <span aria-hidden>💬</span>
+      <MessageIcon className="h-4 w-4" />
       {count} nouveau{count > 1 ? 'x' : ''} message{count > 1 ? 's' : ''}
       <span className="grid h-5 min-w-[1.25rem] place-items-center rounded-full bg-white px-1 text-xs font-extrabold text-primary-700">
         {count > 9 ? '9+' : count}

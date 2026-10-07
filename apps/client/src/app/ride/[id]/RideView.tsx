@@ -1297,12 +1297,12 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
 
       {/* Bottom sheet */}
       <div ref={sheetRef} className="absolute inset-x-0 bottom-0 z-10">
-        <div className="mx-auto max-w-md rounded-t-2xl bg-white shadow-2xl ring-1 ring-neutral-200">
+        <div className="mx-auto max-h-[88dvh] max-w-md overflow-y-auto overscroll-contain rounded-t-2xl bg-white shadow-2xl ring-1 ring-neutral-200">
           <button
             type="button"
             onClick={() => setSheetMin((v) => !v)}
             aria-label={sheetMin ? 'Agrandir' : 'Réduire'}
-            className="flex w-full items-center justify-center pt-md pb-xs"
+            className="sticky top-0 z-10 flex w-full items-center justify-center rounded-t-2xl bg-white pt-md pb-xs"
           >
             <span className="h-1.5 w-10 rounded-full bg-neutral-200" />
           </button>
@@ -1473,7 +1473,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                 <button
                   type="button"
                   onClick={() => setChatOpen(true)}
-                  className="relative flex flex-1 items-center justify-center gap-xs rounded-xl bg-white py-2 text-xs font-bold text-primary-700 shadow-sm ring-1 ring-primary-300 hover:bg-primary-50"
+                  className="relative flex min-w-0 flex-1 items-center justify-center gap-xs rounded-xl bg-white px-1 py-2 text-xs font-bold text-primary-700 shadow-sm ring-1 ring-primary-300 hover:bg-primary-50"
                 >
                   <MessageIcon className="h-4 w-4" />
                   Message
@@ -1495,7 +1495,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                     href={`https://wa.me/${ride.driver_phone.replace(/^\+/, '')}?text=${encodeURIComponent('Bonjour, je suis votre client TamCar.')}`}
                     target="_blank"
                     rel="noopener"
-                    className="flex flex-1 items-center justify-center gap-xs rounded-xl bg-[#25D366] py-2 text-xs font-bold text-white shadow-sm hover:brightness-110"
+                    className="flex min-w-0 flex-1 items-center justify-center gap-xs rounded-xl bg-[#25D366] px-1 py-2 text-xs font-bold text-white shadow-sm hover:brightness-110"
                     aria-label="Contacter par WhatsApp"
                   >
                     <WhatsAppIcon className="h-4 w-4" />

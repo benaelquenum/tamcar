@@ -3,14 +3,14 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Logo } from '@/components/Logo';
-import { PlusIcon } from '@/components/Icon';
+import { BadgeIcon, CarIcon, ChartIcon, CoinsIcon, PlusIcon, WalletIcon } from '@/components/Icon';
 import {
-  WALLET_KIND_META,
   formatFcfa,
   isCredit,
   txLabel,
+  walletKindMeta,
   type Wallet,
-  type WalletKind,
+  type WalletIconKey,
   type WalletTransaction,
 } from '@/lib/wallet';
 import { WalletModal, EpargneWithdrawModal } from './WalletModals';
@@ -18,13 +18,28 @@ import { WalletModal, EpargneWithdrawModal } from './WalletModals';
 
 type TamassurPending = { id: string; amount_fcfa: number; status: string; due_at: string } | null;
 
+// Règle de retrait de l'épargne (calculée par la base : my_tamassur_withdrawal_status).
+export type TamassurStatus = {
+  start_date: string | null;
+  eligible_on: string | null;
+  epargne_fcfa: number;
+  debt_fcfa: number;
+  late_days: number;
+  can_withdraw: boolean;
+  reason: 'pending' | 'not_started' | 'too_early' | 'in_arrears' | 'empty' | 'ok';
+};
+
+function fmtLongDate(d: string): string {
+  return new Date(`${d}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
 type Props = {
   wallets: Wallet[];
   transactions: WalletTransaction[];
   isDriver: boolean;
   driverApplicationType?: 'cession' | 'proprietaire' | null;
   tamassurPending?: TamassurPending;
-  tamassurGoal?: number;
+  tamassurStatus?: TamassurStatus | null;
 };
 
 export function WalletView({
@@ -33,7 +48,7 @@ export function WalletView({
   isDriver,
   driverApplicationType,
   tamassurPending = null,
-  tamassurGoal = 600000,
+  tamassurStatus = null,
 }: Props) {
   const [modal, setModal] = useState<'topup' | 'withdraw' | 'settle' | 'epargne' | null>(null);
 
@@ -93,27 +108,54 @@ export function WalletView({
               />
             )
           )}
-          {/* TamAssur — épargne récupérable (déblocable à 600 fois la cotisation journalière) */}
-          {isDriver && epargneWallet && (
-            tamassurPending ? (
+          {/* TamAssur — épargne récupérable : retrait possible 2 ans après le démarrage, compte à jour ; paiement manuel jusqu'à 60 jours */}
+          {isDriver && epargneWallet && (() => {
+            const st = tamassurStatus;
+            if (tamassurPending) {
+              return (
+                <BigWalletCard
+                  wallet={epargneWallet}
+                  note={`Retrait de ${formatFcfa(tamassurPending.amount_fcfa)} F en cours : l'équipe TamCar effectue le virement sous 60 jours au plus (avant le ${new Date(tamassurPending.due_at).toLocaleDateString('fr-FR')}).`}
+                />
+              );
+            }
+            if (st?.reason === 'ok') {
+              return (
+                <BigWalletCard
+                  wallet={epargneWallet}
+                  actionLabel="Demander mon retrait"
+                  onAction={() => setModal('epargne')}
+                  note="Votre demande est transmise à l'équipe TamCar, qui effectue le virement : jusqu'à 60 jours."
+                />
+              );
+            }
+            if (st?.reason === 'in_arrears') {
+              return (
+                <BigWalletCard
+                  wallet={epargneWallet}
+                  actionLabel="Régler ma dette"
+                  onAction={() => setModal('settle')}
+                  note={`Retrait ouvert depuis le ${st.eligible_on ? fmtLongDate(st.eligible_on) : '—'}, mais votre compte n'est pas à jour : ${
+                    st.late_days > 0 ? `${st.late_days} jour${st.late_days > 1 ? 's' : ''} de retard (dimanches exclus), ` : ''
+                  }${formatFcfa(st.debt_fcfa)} F à régler pour pouvoir demander votre retrait.`}
+                />
+              );
+            }
+            if (st?.reason === 'too_early' && st.eligible_on) {
+              return (
+                <BigWalletCard
+                  wallet={epargneWallet}
+                  note={`Retrait possible à partir du ${fmtLongDate(st.eligible_on)} (2 ans après le démarrage), si votre compte est à jour. Paiement jusqu'à 60 jours après la demande.`}
+                />
+              );
+            }
+            return (
               <BigWalletCard
                 wallet={epargneWallet}
-                note={`Retrait de ${formatFcfa(tamassurPending.amount_fcfa)} F en cours — paiement sous 30 jours (avant le ${new Date(tamassurPending.due_at).toLocaleDateString('fr-FR')}).`}
+                note="Retrait possible 2 ans après le premier prélèvement, si votre compte est à jour. Paiement jusqu'à 60 jours après la demande."
               />
-            ) : epargneWallet.balance_fcfa >= tamassurGoal ? (
-              <BigWalletCard
-                wallet={epargneWallet}
-                actionLabel="Retirer mon épargne"
-                onAction={() => setModal('epargne')}
-                note="Paiement sous 30 jours après la demande (espèces ou Mobile Money)."
-              />
-            ) : (
-              <BigWalletCard
-                wallet={epargneWallet}
-                note={`Déblocable à ${formatFcfa(tamassurGoal)} F · paiement sous 30 jours après la demande.`}
-              />
-            )
-          )}
+            );
+          })()}
         </div>
 
         {/* Historique */}
@@ -170,15 +212,15 @@ function BigWalletCard({
   disabled?: boolean;
   note?: string;
 }) {
-  const meta = WALLET_KIND_META[wallet.kind];
+  const meta = walletKindMeta(wallet.kind);
   return (
     <div className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${meta.gradient} p-lg text-white shadow-glow`}>
-      <div className="flex items-baseline justify-between">
+      <div className="flex items-start justify-between gap-md">
         <div>
           <p className="text-xs font-bold uppercase tracking-wider text-white/80">{meta.label}</p>
           <p className="mt-xs text-xs text-white/80">{meta.sub}</p>
         </div>
-        <span className="text-3xl" aria-hidden>{meta.icon}</span>
+        <WalletKindIcon icon={meta.icon} />
       </div>
       <p className="mt-lg text-4xl font-extrabold" style={{ fontVariantNumeric: 'tabular-nums' }}>
         {formatFcfa(wallet.balance_fcfa)}
@@ -200,9 +242,18 @@ function BigWalletCard({
   );
 }
 
+function WalletKindIcon({ icon }: { icon: WalletIconKey }) {
+  const cls = 'h-8 w-8 text-white/90';
+  return (
+    <span aria-hidden className="flex-none">
+      {icon === 'coins' ? <CoinsIcon className={cls} /> : icon === 'car' ? <CarIcon className={cls} /> : icon === 'chart' ? <ChartIcon className={cls} /> : icon === 'badge' ? <BadgeIcon className={cls} /> : <WalletIcon className={cls} />}
+    </span>
+  );
+}
+
 function TransactionRow({ tx }: { tx: WalletTransaction }) {
   const credit = isCredit(tx.type);
-  const kindMeta = WALLET_KIND_META[tx.wallet_kind];
+  const kindMeta = walletKindMeta(tx.wallet_kind);
   return (
     <div className="flex items-center gap-md rounded-xl border border-neutral-200 bg-white p-md">
       <span className={`grid h-9 w-9 flex-none place-items-center rounded-full text-lg ${credit ? 'bg-primary-50' : 'bg-neutral-100'}`} aria-hidden>

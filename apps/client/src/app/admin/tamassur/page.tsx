@@ -48,8 +48,10 @@ export default async function AdminTamassurPage() {
       </div>
 
       <p className="mb-lg rounded-md bg-neutral-100 p-md text-xs text-neutral-600">
-        Le montant est déjà réservé (débité de la poche Épargne du chauffeur). Réglez en espèces ou
-        par Mobile Money <strong>sous 30 jours</strong>, puis marquez la demande comme payée.
+        Le montant est déjà réservé (débité de la poche Épargne du chauffeur). <strong>Rien n&apos;est viré
+        automatiquement</strong> : réglez en espèces ou par Mobile Money <strong>sous 60 jours au plus</strong> à
+        compter de la demande, puis marquez-la comme payée (le chauffeur est prévenu). Le chauffeur n&apos;a pu
+        faire sa demande qu&apos;à 2 ans du démarrage, compte à jour.
       </p>
 
       {pending.length > 0 && (
@@ -82,7 +84,7 @@ export default async function AdminTamassurPage() {
                       >
                         {fmt(r.amount_fcfa)} F
                       </p>
-                      <p className={`text-[11px] font-bold ${dl < 0 ? 'text-error' : dl <= 7 ? 'text-warning' : 'text-neutral-500'}`}>
+                      <p className={`text-[11px] font-bold ${dl < 0 ? 'text-error' : dl <= 15 ? 'text-warning' : 'text-neutral-500'}`}>
                         {dl < 0 ? `En retard de ${-dl} j` : `${dl} j restants`}
                       </p>
                     </div>

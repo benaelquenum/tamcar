@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { getCurrentProfile } from '@/lib/session';
 import { createServerSupabase } from '@/lib/supabase-server';
 import type { Wallet, WalletTransaction } from '@/lib/wallet';
+import type { TamassurStatus } from './WalletView';
 import { WalletView } from './WalletView';
 
 export default async function WalletPage() {
@@ -9,13 +10,13 @@ export default async function WalletPage() {
   if (!profile) redirect('/login');
 
   const supabase = createServerSupabase();
-  const [{ data: wallets }, { data: transactions }, { data: driver }, { data: withdrawals }, { data: planData }] =
+  const [{ data: wallets }, { data: transactions }, { data: driver }, { data: withdrawals }, { data: statusData }] =
     await Promise.all([
       supabase.rpc('my_wallets'),
       supabase.rpc('wallet_transactions_for_user', { limit_count: 30 }),
       supabase.from('drivers').select('application_type').eq('profile_id', profile.id).single(),
       supabase.rpc('my_tamassur_withdrawals'),
-      supabase.rpc('my_tamassur_plan'),
+      supabase.rpc('my_tamassur_withdrawal_status'),
     ]);
 
   type Withdrawal = { id: string; amount_fcfa: number; status: string; due_at: string };
@@ -36,7 +37,7 @@ export default async function WalletPage() {
   const visibleWallets = ((wallets ?? []) as Wallet[]).filter((w) => w.kind !== 'tamcar_rachat');
   const visibleTx = ((transactions ?? []) as WalletTransaction[])
     .filter((tx) => !HIDDEN_FOR_DRIVER.has(tx.type) && tx.wallet_kind !== 'tamcar_rachat');
-  const tamassurGoal = ((planData ?? []) as { goal_fcfa: number }[])[0]?.goal_fcfa ?? 600000;
+  const tamassurStatus = ((statusData ?? []) as TamassurStatus[])[0] ?? null;
 
   return (
     <WalletView
@@ -45,7 +46,7 @@ export default async function WalletPage() {
       isDriver
       driverApplicationType={applicationType}
       tamassurPending={tamassurPending}
-      tamassurGoal={tamassurGoal}
+      tamassurStatus={tamassurStatus}
     />
   );
 }
