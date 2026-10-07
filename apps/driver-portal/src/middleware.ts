@@ -16,6 +16,7 @@ const PUBLIC_PREFIXES = [
   '/reset-password',
   '/cgu', // documents légaux consultables sans compte
   '/confidentialite',
+  '/sounds/preview', // page d'écoute des sons d'alerte (aucune donnée)
 ];
 
 export async function middleware(request: NextRequest) {
