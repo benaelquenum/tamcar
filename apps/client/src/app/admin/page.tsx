@@ -434,7 +434,7 @@ export default async function AdminHome() {
                       )}
                     </p>
                     <p className="text-[11px] text-neutral-600">
-                      {new Date(s.created_at).toLocaleString('fr-FR')} · {s.lat.toFixed(4)}, {s.lng.toFixed(4)}
+                      {new Date(s.created_at).toLocaleString('fr-FR', { timeZone: 'Africa/Porto-Novo' })} · {s.lat.toFixed(4)}, {s.lng.toFixed(4)}
                     </p>
                   </div>
                   <a
@@ -496,7 +496,7 @@ export default async function AdminHome() {
                     </p>
                     <p className="text-[11px] text-neutral-600">
                       {r.status === 'requested' ? 'Sans chauffeur' : 'En cours'} ·{' '}
-                      {new Date(r.requested_at).toLocaleString('fr-FR')} · {fmt(r.price_total_fcfa)} F
+                      {new Date(r.requested_at).toLocaleString('fr-FR', { timeZone: 'Africa/Porto-Novo' })} · {fmt(r.price_total_fcfa)} F
                     </p>
                   </div>
                   <Link
@@ -576,7 +576,7 @@ export default async function AdminHome() {
                 <div className="flex-1 min-w-0">
                   <p className="truncate text-sm font-bold text-neutral-900">{u.full_name}</p>
                   <p className="text-[11px] text-neutral-600">
-                    {new Date(u.period).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })} ·{' '}
+                    {new Date(u.period).toLocaleDateString('fr-FR', { timeZone: 'Africa/Porto-Novo', month: 'long', year: 'numeric' })} ·{' '}
                     {fmt(u.collected_fcfa)} / {fmt(u.amount_fcfa)} F collectés
                     {u.months_overdue >= 1 && ` · ${u.months_overdue} mois de retard`}
                   </p>

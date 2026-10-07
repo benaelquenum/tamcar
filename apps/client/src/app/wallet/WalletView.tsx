@@ -184,7 +184,7 @@ function TransactionRow({ tx }: { tx: WalletTransaction }) {
           {failed && <span className="ml-xs rounded-full bg-error/10 px-sm py-0.5 text-[10px] font-bold text-error">Non abouti</span>}
         </p>
         <p className="text-[10px] text-neutral-500">
-          {kindMeta.label} · {new Date(tx.created_at).toLocaleString('fr-FR', {
+          {kindMeta.label} · {new Date(tx.created_at).toLocaleString('fr-FR', { timeZone: 'Africa/Porto-Novo',
             day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
           })}
         </p>

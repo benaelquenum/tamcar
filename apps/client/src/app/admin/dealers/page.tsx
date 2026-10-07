@@ -236,7 +236,7 @@ export default async function AdminDealersPage() {
               <li key={d.dealer_id} className="rounded-lg bg-white p-md text-sm ring-1 ring-neutral-200">
                 <p className="font-semibold text-neutral-700">{d.company_name}</p>
                 <p className="text-[11px] text-neutral-500">
-                  Archivé le {d.archived_at && new Date(d.archived_at).toLocaleDateString('fr-FR')}
+                  Archivé le {d.archived_at && new Date(d.archived_at).toLocaleDateString('fr-FR', { timeZone: 'Africa/Porto-Novo' })}
                   {d.archive_reason && ` · ${d.archive_reason}`}
                 </p>
               </li>

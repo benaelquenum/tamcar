@@ -28,7 +28,7 @@ type RideBrief = {
 };
 
 function fmtDate(iso: string): string {
-  return new Date(iso).toLocaleString('fr-FR', {
+  return new Date(iso).toLocaleString('fr-FR', { timeZone: 'Africa/Porto-Novo',
     day: '2-digit',
     month: '2-digit',
     hour: '2-digit',

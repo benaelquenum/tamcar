@@ -31,7 +31,7 @@ function fmt(n: number): string {
 
 function fmtDate(iso: string | null): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleString('fr-FR', {
+  return new Date(iso).toLocaleString('fr-FR', { timeZone: 'Africa/Porto-Novo',
     weekday: 'long',
     day: '2-digit',
     month: 'long',

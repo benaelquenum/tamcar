@@ -68,7 +68,7 @@ export default async function AdminBonusPage() {
       <div className="mb-lg flex flex-wrap items-baseline justify-between gap-md">
         <h1 className="text-2xl font-extrabold text-neutral-900">Bonus et cotisations chauffeur</h1>
         <p className="text-sm text-neutral-600">
-          Démarrage : <strong>{s.start ? new Date(s.start).toLocaleDateString('fr-FR') : '—'}</strong>
+          Démarrage : <strong>{s.start ? new Date(s.start).toLocaleDateString('fr-FR', { timeZone: 'Africa/Porto-Novo' }) : '—'}</strong>
         </p>
       </div>
 

@@ -287,7 +287,7 @@ export default async function AdminDriversPage() {
                   {d.full_name}
                 </Link>
                 <p className="text-[11px] text-neutral-500">
-                  Archivé le {d.archived_at && new Date(d.archived_at).toLocaleDateString('fr-FR')}
+                  Archivé le {d.archived_at && new Date(d.archived_at).toLocaleDateString('fr-FR', { timeZone: 'Africa/Porto-Novo' })}
                   {d.archive_reason && ` · ${d.archive_reason}`}
                 </p>
               </li>

@@ -75,7 +75,7 @@ export default async function AdminTamassurPage() {
                           '—'
                         )}
                         {' · demandé le '}
-                        {new Date(r.requested_at).toLocaleDateString('fr-FR')}
+                        {new Date(r.requested_at).toLocaleDateString('fr-FR', { timeZone: 'Africa/Porto-Novo' })}
                       </p>
                     </div>
                     <div className="text-right">
@@ -134,7 +134,7 @@ export default async function AdminTamassurPage() {
                   <p className="font-semibold text-neutral-900">{r.full_name}</p>
                   <p className="text-xs text-neutral-500">
                     {r.status === 'paid'
-                      ? `Payé le ${r.paid_at ? new Date(r.paid_at).toLocaleDateString('fr-FR') : '—'} · ${r.method === 'mobile_money' ? 'Mobile Money' : 'Espèces'}`
+                      ? `Payé le ${r.paid_at ? new Date(r.paid_at).toLocaleDateString('fr-FR', { timeZone: 'Africa/Porto-Novo' }) : '—'} · ${r.method === 'mobile_money' ? 'Mobile Money' : 'Espèces'}`
                       : 'Rejeté'}
                   </p>
                 </div>

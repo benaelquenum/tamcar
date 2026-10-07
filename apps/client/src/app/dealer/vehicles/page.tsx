@@ -81,7 +81,7 @@ export default async function DealerVehiclesPage({
                 <div>
                   <dt className="text-neutral-500">Mise en service</dt>
                   <dd className="font-semibold text-neutral-900">
-                    {v.activated_at ? new Date(v.activated_at).toLocaleDateString('fr-FR') : '—'}
+                    {v.activated_at ? new Date(v.activated_at).toLocaleDateString('fr-FR', { timeZone: 'Africa/Porto-Novo' }) : '—'}
                   </dd>
                 </div>
                 <div>

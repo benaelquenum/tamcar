@@ -31,7 +31,7 @@ const VOICE_MAX_S = 30;
 const VIDEO_MAX_S = 5;
 
 function fmtTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  return new Date(iso).toLocaleTimeString('fr-FR', { timeZone: 'Africa/Porto-Novo', hour: '2-digit', minute: '2-digit' });
 }
 
 function getVideoDuration(file: File): Promise<number> {

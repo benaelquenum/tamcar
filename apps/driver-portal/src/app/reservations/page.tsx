@@ -47,7 +47,7 @@ function fmtFcfa(n: number): string {
 }
 
 function fmtDate(iso: string): string {
-  return new Date(iso).toLocaleString('fr-FR', {
+  return new Date(iso).toLocaleString('fr-FR', { timeZone: 'Africa/Porto-Novo',
     weekday: 'long',
     day: '2-digit',
     month: 'long',
@@ -88,7 +88,7 @@ const RENTAL_STATUS: Record<string, { label: string; cls: string }> = {
 };
 
 function fmtTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }).replace(':', 'h');
+  return new Date(iso).toLocaleTimeString('fr-FR', { timeZone: 'Africa/Porto-Novo', hour: '2-digit', minute: '2-digit' }).replace(':', 'h');
 }
 
 function RentalCard({ r }: { r: Rental }) {

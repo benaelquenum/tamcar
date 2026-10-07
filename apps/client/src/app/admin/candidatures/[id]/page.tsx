@@ -72,7 +72,7 @@ export default async function AppointmentDetailPage({ params }: { params: { id: 
             <Row label="Téléphone" value={app.phone} />
             {app.email && <Row label="Email" value={app.email} />}
             <Row label="Formule demandée" value={typeMeta.label} />
-            <Row label="Prise le" value={new Date(app.created_at).toLocaleString('fr-FR')} />
+            <Row label="Prise le" value={new Date(app.created_at).toLocaleString('fr-FR', { timeZone: 'Africa/Porto-Novo' })} />
           </dl>
         </section>
 

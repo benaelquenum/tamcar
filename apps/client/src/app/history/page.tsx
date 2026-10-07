@@ -176,7 +176,7 @@ export default async function HistoryPage({ searchParams }: { searchParams: { ju
                         </span>
                       </span>
                       <span className="text-neutral-500" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                        {new Date(r.requested_at).toLocaleString('fr-FR', {
+                        {new Date(r.requested_at).toLocaleString('fr-FR', { timeZone: 'Africa/Porto-Novo',
                           day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
                         })}
                         {r.distance_km && <> · {r.distance_km.toFixed(1)} km</>}

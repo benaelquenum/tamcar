@@ -87,7 +87,7 @@ export default async function AdminDebtsPage() {
                     'Hors ligne'
                   )}
                   {d.last_seen_at &&
-                    ` · vu le ${new Date(d.last_seen_at).toLocaleDateString('fr-FR')}`}
+                    ` · vu le ${new Date(d.last_seen_at).toLocaleDateString('fr-FR', { timeZone: 'Africa/Porto-Novo' })}`}
                 </p>
               </div>
               <div className="flex-none text-right">

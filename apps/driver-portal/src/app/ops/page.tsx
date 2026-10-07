@@ -139,7 +139,7 @@ export default async function OpsPage() {
             chauffeurs que vous supervisez (moto, tricycle, voiture), jusqu’à {fmt(s.monthly_cap_fcfa)} F par mois. Vos
             propres courses ne comptent pas.
             {!s.commission_started &&
-              ` Les commissions démarrent le ${new Date(s.commission_start).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}.`}
+              ` Les commissions démarrent le ${new Date(s.commission_start).toLocaleDateString('fr-FR', { timeZone: 'Africa/Porto-Novo', day: 'numeric', month: 'long', year: 'numeric' })}.`}
           </p>
         </section>
 

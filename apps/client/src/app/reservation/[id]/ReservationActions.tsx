@@ -44,7 +44,7 @@ function fmtFcfa(n: number | null | undefined): string {
 }
 
 function fmtDate(iso: string): string {
-  return new Date(iso).toLocaleString('fr-FR', {
+  return new Date(iso).toLocaleString('fr-FR', { timeZone: 'Africa/Porto-Novo',
     weekday: 'long',
     day: '2-digit',
     month: 'long',

@@ -36,7 +36,7 @@ function fmtDuration(months: number): string {
 }
 
 function fmtLongDate(d: string): string {
-  return new Date(`${d}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  return new Date(`${d}T12:00:00`).toLocaleDateString('fr-FR', { timeZone: 'Africa/Porto-Novo', day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 type Props = {
@@ -121,7 +121,7 @@ export function WalletView({
               return (
                 <BigWalletCard
                   wallet={epargneWallet}
-                  note={`Retrait de ${formatFcfa(tamassurPending.amount_fcfa)} F en cours : l'équipe TamCar effectue le virement sous 60 jours au plus (avant le ${new Date(tamassurPending.due_at).toLocaleDateString('fr-FR')}).`}
+                  note={`Retrait de ${formatFcfa(tamassurPending.amount_fcfa)} F en cours : l'équipe TamCar effectue le virement sous 60 jours au plus (avant le ${new Date(tamassurPending.due_at).toLocaleDateString('fr-FR', { timeZone: 'Africa/Porto-Novo' })}).`}
                 />
               );
             }
@@ -284,7 +284,7 @@ function TransactionRow({ tx }: { tx: WalletTransaction }) {
           {failed && <span className="ml-xs rounded-full bg-error/10 px-sm py-0.5 text-[10px] font-bold text-error">Non abouti</span>}
         </p>
         <p className="text-[10px] text-neutral-500">
-          {kindMeta.label} · {new Date(tx.created_at).toLocaleString('fr-FR', {
+          {kindMeta.label} · {new Date(tx.created_at).toLocaleString('fr-FR', { timeZone: 'Africa/Porto-Novo',
             day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
           })}
         </p>

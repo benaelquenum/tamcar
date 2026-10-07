@@ -90,7 +90,7 @@ const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
 };
 
 function fmtDate(d: string): string {
-  return new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', {
+  return new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { timeZone: 'Africa/Porto-Novo',
     weekday: 'short',
     day: 'numeric',
     month: 'short',
@@ -254,7 +254,7 @@ export default async function TamPassPage({
             <p className="mt-xs text-xs text-neutral-500">
               {sub.rides_total} trajets · confirme avant le{' '}
               {sub.payment_deadline
-                ? new Date(sub.payment_deadline).toLocaleString('fr-FR', {
+                ? new Date(sub.payment_deadline).toLocaleString('fr-FR', { timeZone: 'Africa/Porto-Novo',
                     weekday: 'short',
                     hour: '2-digit',
                     minute: '2-digit',

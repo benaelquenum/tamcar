@@ -51,7 +51,7 @@ function fmt(n: number): string {
   return n.toLocaleString('fr-FR').replace(/,/g, ' ');
 }
 function fmtWhen(iso: string): string {
-  return new Date(iso).toLocaleString('fr-FR', {
+  return new Date(iso).toLocaleString('fr-FR', { timeZone: 'Africa/Porto-Novo',
     weekday: 'short',
     day: '2-digit',
     month: 'short',
@@ -60,7 +60,7 @@ function fmtWhen(iso: string): string {
   });
 }
 function fmtTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  return new Date(iso).toLocaleTimeString('fr-FR', { timeZone: 'Africa/Porto-Novo', hour: '2-digit', minute: '2-digit' });
 }
 
 function Head({ r }: { r: AdminRental }) {

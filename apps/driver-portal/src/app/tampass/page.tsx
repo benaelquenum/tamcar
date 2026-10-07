@@ -254,7 +254,7 @@ export default async function DriverTamPassPage({
                   </p>
                   <p className="mt-xs text-xs text-neutral-500">
                     {s.rides_remaining}/{s.rides_total} trajets restants · jusqu&apos;au{' '}
-                    {new Date(s.expires_on + 'T00:00:00').toLocaleDateString('fr-FR', {
+                    {new Date(s.expires_on + 'T00:00:00').toLocaleDateString('fr-FR', { timeZone: 'Africa/Porto-Novo',
                       day: 'numeric',
                       month: 'short',
                     })}

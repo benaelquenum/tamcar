@@ -144,7 +144,7 @@ const BOOKING_ACCENT = '#7C3AED';
 async function notify(row: PendingRow) {
   const isBooking = Boolean(row.scheduled_at);
   const when = row.scheduled_at
-    ? new Date(row.scheduled_at).toLocaleString('fr-FR', {
+    ? new Date(row.scheduled_at).toLocaleString('fr-FR', { timeZone: 'Africa/Porto-Novo',
         weekday: 'short', day: '2-digit', month: 'short',
         hour: '2-digit', minute: '2-digit',
       })

@@ -168,13 +168,13 @@ function AdvanceRow({
       <div className="grid grid-cols-2 gap-md text-sm md:grid-cols-4">
         <Cell
           label="Versée le"
-          value={new Date(advance.deposited_at).toLocaleDateString('fr-FR')}
+          value={new Date(advance.deposited_at).toLocaleDateString('fr-FR', { timeZone: 'Africa/Porto-Novo' })}
         />
         <Cell label="Montant" value={`${fmt(advance.amount_fcfa)} F`} />
         {advance.first_driver_activated_at ? (
           <Cell
             label="Activée le"
-            value={new Date(advance.first_driver_activated_at).toLocaleDateString('fr-FR')}
+            value={new Date(advance.first_driver_activated_at).toLocaleDateString('fr-FR', { timeZone: 'Africa/Porto-Novo' })}
             sub={monthsSinceActivation != null ? `${monthsSinceActivation} mois écoulés` : undefined}
           />
         ) : (
@@ -183,7 +183,7 @@ function AdvanceRow({
         {advance.refund_target_at ? (
           <Cell
             label="Échéance"
-            value={new Date(advance.refund_target_at).toLocaleDateString('fr-FR')}
+            value={new Date(advance.refund_target_at).toLocaleDateString('fr-FR', { timeZone: 'Africa/Porto-Novo' })}
             sub={targetReached ? 'Atteinte' : `${daysBetween(advance.first_driver_activated_at ?? advance.deposited_at, new Date(advance.refund_target_at))} j restants`}
           />
         ) : (

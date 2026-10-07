@@ -25,7 +25,7 @@ function fmt(n: number): string {
 }
 function fmtDate(iso: string | null): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+  return new Date(iso).toLocaleDateString('fr-FR', { timeZone: 'Africa/Porto-Novo', day: '2-digit', month: 'short', year: 'numeric' });
 }
 
 export default async function AdminPromosPage() {

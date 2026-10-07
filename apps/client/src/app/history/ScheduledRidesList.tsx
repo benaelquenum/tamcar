@@ -24,7 +24,7 @@ function firstName(name: string | null): string {
 
 function fmtDate(iso: string): string {
   const d = new Date(iso);
-  return d.toLocaleString('fr-FR', {
+  return d.toLocaleString('fr-FR', { timeZone: 'Africa/Porto-Novo',
     weekday: 'short',
     day: '2-digit',
     month: 'short',

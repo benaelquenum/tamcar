@@ -24,7 +24,7 @@ const RIDE_STATUS_LABELS: Record<string, { label: string; cls: string }> = {
 const DAY_LABELS = ['', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
 function fmtDate(d: string): string {
-  return new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', {
+  return new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { timeZone: 'Africa/Porto-Novo',
     weekday: 'short',
     day: 'numeric',
     month: 'short',
@@ -38,7 +38,7 @@ function fmtFcfa(n: number | null): string {
 }
 function fmtDateTime(t: string | null): string {
   return t
-    ? new Date(t).toLocaleString('fr-FR', {
+    ? new Date(t).toLocaleString('fr-FR', { timeZone: 'Africa/Porto-Novo',
         day: '2-digit',
         month: '2-digit',
         hour: '2-digit',

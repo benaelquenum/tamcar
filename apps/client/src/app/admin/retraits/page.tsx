@@ -140,7 +140,7 @@ export default async function AdminPayoutsPage() {
                   <p className="font-semibold text-neutral-900">{r.full_name}</p>
                   <p className="text-xs text-neutral-500">
                     {r.status === 'paid'
-                      ? `Payé le ${r.processed_at ? new Date(r.processed_at).toLocaleDateString('fr-FR') : '—'}${r.reference ? ` · réf. ${r.reference}` : ''}`
+                      ? `Payé le ${r.processed_at ? new Date(r.processed_at).toLocaleDateString('fr-FR', { timeZone: 'Africa/Porto-Novo' }) : '—'}${r.reference ? ` · réf. ${r.reference}` : ''}`
                       : `Refusé${r.failure_reason ? ` · ${r.failure_reason}` : ''}`}
                   </p>
                 </div>
