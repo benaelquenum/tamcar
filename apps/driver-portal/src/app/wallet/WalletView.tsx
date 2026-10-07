@@ -23,10 +23,11 @@ export type TamassurStatus = {
   start_date: string | null;
   eligible_on: string | null;
   epargne_fcfa: number;
+  goal_fcfa: number;
   debt_fcfa: number;
   late_days: number;
   can_withdraw: boolean;
-  reason: 'pending' | 'not_started' | 'too_early' | 'in_arrears' | 'empty' | 'ok';
+  reason: 'pending' | 'not_started' | 'too_early' | 'below_goal' | 'in_arrears' | 'ok';
 };
 
 function fmtLongDate(d: string): string {
@@ -129,6 +130,14 @@ export function WalletView({
                 />
               );
             }
+            if (st?.reason === 'below_goal') {
+              return (
+                <BigWalletCard
+                  wallet={epargneWallet}
+                  note={`Retrait ouvert depuis le ${st.eligible_on ? fmtLongDate(st.eligible_on) : '—'}, dès ${formatFcfa(st.goal_fcfa)} F d'épargne : il vous manque encore ${formatFcfa(Math.max(0, st.goal_fcfa - st.epargne_fcfa))} F.`}
+                />
+              );
+            }
             if (st?.reason === 'in_arrears') {
               return (
                 <BigWalletCard
@@ -145,14 +154,14 @@ export function WalletView({
               return (
                 <BigWalletCard
                   wallet={epargneWallet}
-                  note={`Retrait possible à partir du ${fmtLongDate(st.eligible_on)} (2 ans après le démarrage), si votre compte est à jour. Paiement jusqu'à 60 jours après la demande.`}
+                  note={`Retrait possible à partir du ${fmtLongDate(st.eligible_on)} (2 ans après le démarrage), dès ${formatFcfa(st.goal_fcfa)} F d'épargne et si votre compte est à jour. Paiement jusqu'à 60 jours après la demande.`}
                 />
               );
             }
             return (
               <BigWalletCard
                 wallet={epargneWallet}
-                note="Retrait possible 2 ans après le premier prélèvement, si votre compte est à jour. Paiement jusqu'à 60 jours après la demande."
+                note={`Retrait possible 2 ans après le premier prélèvement${st ? `, dès ${formatFcfa(st.goal_fcfa)} F d'épargne` : ''} et si votre compte est à jour. Paiement jusqu'à 60 jours après la demande.`}
               />
             );
           })()}
@@ -254,13 +263,21 @@ function WalletKindIcon({ icon }: { icon: WalletIconKey }) {
 function TransactionRow({ tx }: { tx: WalletTransaction }) {
   const credit = isCredit(tx.type);
   const kindMeta = walletKindMeta(tx.wallet_kind);
+  // Une recharge abandonnée ou refusée reste dans l'historique : elle ne doit pas ressembler à un crédit reçu.
+  const waiting = tx.status === 'pending';
+  const failed = tx.status === 'failed';
+  const done = !waiting && !failed;
   return (
     <div className="flex items-center gap-md rounded-xl border border-neutral-200 bg-white p-md">
       <span className={`grid h-9 w-9 flex-none place-items-center rounded-full text-lg ${credit ? 'bg-primary-50' : 'bg-neutral-100'}`} aria-hidden>
         {credit ? '↓' : '↑'}
       </span>
       <div className="flex-1">
-        <p className="text-sm font-semibold text-neutral-900">{txLabel(tx.type)}</p>
+        <p className="text-sm font-semibold text-neutral-900">
+          {txLabel(tx.type)}
+          {waiting && <span className="ml-xs rounded-full bg-warning/15 px-sm py-0.5 text-[10px] font-bold text-warning">En attente</span>}
+          {failed && <span className="ml-xs rounded-full bg-error/10 px-sm py-0.5 text-[10px] font-bold text-error">Non abouti</span>}
+        </p>
         <p className="text-[10px] text-neutral-500">
           {kindMeta.label} · {new Date(tx.created_at).toLocaleString('fr-FR', {
             day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
@@ -268,10 +285,10 @@ function TransactionRow({ tx }: { tx: WalletTransaction }) {
         </p>
       </div>
       <p
-        className={`text-sm font-bold ${credit ? 'text-primary-700' : 'text-neutral-900'}`}
+        className={`text-sm font-bold ${!done ? 'text-neutral-400 line-through' : credit ? 'text-primary-700' : 'text-neutral-900'}`}
         style={{ fontVariantNumeric: 'tabular-nums' }}
       >
-        {credit ? '+' : '−'}{formatFcfa(Math.abs(tx.amount_fcfa))}
+        {done ? (credit ? '+' : '−') : ''}{formatFcfa(Math.abs(tx.amount_fcfa))}
         <span className="ml-xs text-[10px] font-medium text-neutral-500">F</span>
       </p>
     </div>

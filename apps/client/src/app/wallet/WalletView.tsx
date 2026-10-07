@@ -168,13 +168,21 @@ function WalletKindIcon({ icon }: { icon: WalletIconKey }) {
 function TransactionRow({ tx }: { tx: WalletTransaction }) {
   const credit = isCredit(tx.type);
   const kindMeta = walletKindMeta(tx.wallet_kind);
+  // Une recharge abandonnée ou refusée reste dans l'historique : elle ne doit pas ressembler à un crédit reçu.
+  const waiting = tx.status === 'pending';
+  const failed = tx.status === 'failed';
+  const done = !waiting && !failed;
   return (
     <div className="flex items-center gap-md rounded-xl border border-neutral-200 bg-white p-md">
       <span className={`grid h-9 w-9 flex-none place-items-center rounded-full text-lg ${credit ? 'bg-primary-50' : 'bg-neutral-100'}`} aria-hidden>
         {credit ? '↓' : '↑'}
       </span>
       <div className="flex-1">
-        <p className="text-sm font-semibold text-neutral-900">{txLabel(tx.type)}</p>
+        <p className="text-sm font-semibold text-neutral-900">
+          {txLabel(tx.type)}
+          {waiting && <span className="ml-xs rounded-full bg-warning/15 px-sm py-0.5 text-[10px] font-bold text-warning">En attente</span>}
+          {failed && <span className="ml-xs rounded-full bg-error/10 px-sm py-0.5 text-[10px] font-bold text-error">Non abouti</span>}
+        </p>
         <p className="text-[10px] text-neutral-500">
           {kindMeta.label} · {new Date(tx.created_at).toLocaleString('fr-FR', {
             day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
@@ -182,10 +190,10 @@ function TransactionRow({ tx }: { tx: WalletTransaction }) {
         </p>
       </div>
       <p
-        className={`text-sm font-bold ${credit ? 'text-primary-700' : 'text-neutral-900'}`}
+        className={`text-sm font-bold ${!done ? 'text-neutral-400 line-through' : credit ? 'text-primary-700' : 'text-neutral-900'}`}
         style={{ fontVariantNumeric: 'tabular-nums' }}
       >
-        {credit ? '+' : '−'}{formatFcfa(Math.abs(tx.amount_fcfa))}
+        {done ? (credit ? '+' : '−') : ''}{formatFcfa(Math.abs(tx.amount_fcfa))}
         <span className="ml-xs text-[10px] font-medium text-neutral-500">F</span>
       </p>
     </div>

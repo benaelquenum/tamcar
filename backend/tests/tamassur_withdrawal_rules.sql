@@ -1,10 +1,11 @@
 -- Retrait de l'épargne TamAssur : 2 ans après le démarrage + compte à jour, décompte du retard (dimanches exclus),
--- demande -> alerte admin (aucun virement), 60 jours, paiement par l'admin, permissions. Rôles réels, tout est annulé.
+-- seuil d'épargne (600 x cotisation : moto 300 000 F), demande -> alerte admin (aucun virement), 60 jours, paiement par l'admin,
+-- permissions. Rôles réels, tout est annulé.
 -- Usage : supabase db query --linked -f backend/tests/tamassur_withdrawal_rules.sql --workdir backend
 do $$
 declare
   d_id uuid; d_prof uuid; adm uuid; w_ep uuid; w_rev uuid;
-  out text := ''; st record; rec public.tamassur_withdrawals; n int; v int; exp_late int; msg text; badge jsonb;
+  out text := ''; st record; rec public.tamassur_withdrawals; n int; v int; exp_late int; msg text; badge jsonb; v_goal int;
 begin
   select dr.id, dr.profile_id into d_id, d_prof from public.drivers dr where dr.status = 'active' limit 1;
   select id into adm from public.profiles where role::text = 'admin' limit 1;
@@ -42,6 +43,16 @@ begin
   delete from public.driver_insurance_charges where driver_id = d_id;
   insert into public.driver_insurance_charges (driver_id, period, amount_fcfa, collected_fcfa, status, collected_at)
   values (d_id, (current_date - interval '2 years' - interval '5 days')::date, 1000, 1000, 'paid', now());
+  -- 3-. 2 ans écoulés mais épargne (50 000 F) sous le seuil : refus
+  v_goal := 600 * public._tamassur_amount(d_id);
+  set local role authenticated;
+  select * into st from public.my_tamassur_withdrawal_status();
+  out := out || '3-a. épargne ' || st.epargne_fcfa || ' F < seuil ' || st.goal_fcfa || ' F : reason=' || st.reason
+        || case when st.reason = 'below_goal' and st.goal_fcfa = v_goal then ' OK' else ' *** KO' end || E'\n';
+  begin perform public.request_tamassur_withdrawal(null); out := out || E'3-b. demande sous le seuil acceptée *** KO\n';
+  exception when others then out := out || '3-b. demande sous le seuil refusée : ' || sqlerrm || E'\n'; end;
+  reset role;
+  update public.wallets set balance_fcfa = v_goal + 1000 where id = w_ep;
   update public.wallets set balance_fcfa = -1500 where id = w_rev;
   select count(*) into n from public.driver_arrears where driver_id = d_id;
   out := out || '3a. dette créée : ligne de retard=' || n || case when n = 1 then ' OK' else ' *** KO' end || E'\n';
@@ -68,7 +79,7 @@ begin
   begin
     rec := public.request_tamassur_withdrawal(null);
     out := out || '5a. demande enregistrée : ' || rec.amount_fcfa || ' F, statut=' || rec.status || ', délai=' || round(extract(epoch from rec.due_at - rec.requested_at) / 86400) || ' jours'
-          || case when rec.status = 'pending' and round(extract(epoch from rec.due_at - rec.requested_at) / 86400) = 60 and rec.amount_fcfa = 50000 then ' OK' else ' *** KO' end || E'\n';
+          || case when rec.status = 'pending' and round(extract(epoch from rec.due_at - rec.requested_at) / 86400) = 60 and rec.amount_fcfa = v_goal + 1000 then ' OK' else ' *** KO' end || E'\n';
   exception when others then out := out || '5a. demande ECHEC : ' || sqlerrm || E'\n'; end;
   reset role;
   select balance_fcfa into v from public.wallets where id = w_ep;

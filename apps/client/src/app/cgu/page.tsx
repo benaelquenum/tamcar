@@ -235,21 +235,23 @@ export default function CguPage() {
           </p>
           <p className="mt-sm">
             <strong>Retrait après 24 mois.</strong> Le retrait ne peut être
-            demandé que <strong>vingt-quatre (24) mois après le premier
-            prélèvement</strong> de la cotisation, et à la condition que le
-            compte du Chauffeur soit <strong>à jour</strong>, c’est-à-dire que
-            son portefeuille « Revenus » ne présente aucune dette envers TamCar.
-            Si le Chauffeur est en retard, l’application lui indique le nombre
-            de jours de retard (dimanches exclus) et le montant à régler : il
-            doit rattraper ce retard avant de pouvoir demander le retrait. À
-            vingt-quatre mois, l’épargne atteint environ 300 000 FCFA pour une
-            moto, 450 000 FCFA pour un tricycle et 600 000 FCFA pour une
-            voiture (six prélèvements par semaine). Le Chauffeur peut alors
-            demander le retrait de la totalité de son épargne, qui correspond
-            exactement aux sommes prélevées sur ses gains. La demande est
-            transmise à TamCar, qui effectue le virement manuellement : aucun
-            versement n’est automatique, et TamCar règle le retrait au plus tard
-            sous soixante (60) jours à compter de la demande.
+            demandé que si <strong>trois conditions</strong> sont réunies :
+            (i) <strong>vingt-quatre (24) mois</strong> se sont écoulés depuis
+            le premier prélèvement de la cotisation ; (ii) l’épargne a atteint{' '}
+            <strong>six cents (600) fois la cotisation journalière</strong>,
+            soit 300 000 FCFA pour une moto, 450 000 FCFA pour un tricycle et
+            600 000 FCFA pour une voiture ; (iii) le compte du Chauffeur est{' '}
+            <strong>à jour</strong>, c’est-à-dire que son portefeuille «
+            Revenus » ne présente aucune dette envers TamCar. Si le Chauffeur
+            est en retard, l’application lui indique le nombre de jours de
+            retard (dimanches exclus) et le montant à régler : il doit
+            rattraper ce retard avant de pouvoir demander le retrait. Le
+            Chauffeur peut alors demander le retrait de la totalité de son
+            épargne, qui correspond exactement aux sommes prélevées sur ses
+            gains. La demande est transmise à TamCar, qui effectue le virement
+            manuellement : aucun versement n’est automatique, et TamCar règle le
+            retrait au plus tard sous soixante (60) jours à compter de la
+            demande.
           </p>
           <p className="mt-sm">
             <strong>Prélèvement ferme et solde négatif.</strong> La cotisation

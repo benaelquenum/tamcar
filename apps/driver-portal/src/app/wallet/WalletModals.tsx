@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { CheckIcon } from '@/components/Icon';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { formatFcfa } from '@/lib/wallet';
+import { FEDAPAY_PUBLIC_KEY, payWithFedapay } from '@/lib/fedapay';
 
 type ModalKind = 'topup' | 'withdraw' | 'settle';
 
@@ -29,7 +30,7 @@ export function WalletModal({ open, onClose, kind, availableBalance, debt }: Pro
   const router = useRouter();
 
   useEffect(() => {
-    if (open && kind === 'settle') setAmount(debt ?? 0);
+    if (open && kind === 'settle') setAmount(Math.max(debt ?? 0, FEDAPAY_PUBLIC_KEY ? 100 : 0));
   }, [open, kind, debt]);
 
   if (!open) return null;
@@ -43,8 +44,8 @@ export function WalletModal({ open, onClose, kind, availableBalance, debt }: Pro
     : kind === 'withdraw' ? 'Retirer mes revenus'
     : 'Régler ma dette';
   const cta = kind === 'topup' ? 'Recharger' : kind === 'withdraw' ? 'Retirer' : 'Régler';
-  const minAmount = kind === 'topup' ? 100 : kind === 'withdraw' ? 500 : 1;
-  const maxAmount = kind === 'settle' ? (debt ?? 0) : 500000;
+  const minAmount = kind === 'topup' ? 100 : kind === 'withdraw' ? 500 : FEDAPAY_PUBLIC_KEY ? 100 : 1;
+  const maxAmount = kind === 'settle' ? Math.max(debt ?? 0, FEDAPAY_PUBLIC_KEY ? 100 : 0) : 500000;
 
   function submit() {
     if (amount < minAmount) {
@@ -55,7 +56,7 @@ export function WalletModal({ open, onClose, kind, availableBalance, debt }: Pro
       setError(`Solde insuffisant (${formatFcfa(availableBalance)} F).`);
       return;
     }
-    if (kind === 'settle' && debt != null && amount > debt) {
+    if (kind === 'settle' && debt != null && amount > maxAmount) {
       setError(`Dette de ${formatFcfa(debt)} F seulement.`);
       return;
     }
@@ -69,11 +70,23 @@ export function WalletModal({ open, onClose, kind, availableBalance, debt }: Pro
         });
         if (rpcErr) { setError(rpcErr.message); return; }
       } else if (kind === 'settle') {
-        const { error: rpcErr } = await supabaseBrowser.rpc('settle_driver_debt', {
-          p_amount: amount,
-          p_provider: provider,
-        });
-        if (rpcErr) { setError(rpcErr.message); return; }
+        if (FEDAPAY_PUBLIC_KEY) {
+          // Paiement réel (FedaPay) : le crédit du portefeuille et la réactivation du compte se font à la réception du webhook.
+          const outcome = await payWithFedapay('initiate_fedapay_debt', { p_amount_fcfa: amount }, amount, 'Règlement de dette TamCar');
+          if (outcome.status === 'error') { setError(outcome.message); return; }
+          if (outcome.status === 'failed') { setError('Paiement refusé. Vous n\'avez pas été débité.'); return; }
+          if (outcome.status === 'pending') {
+            setError('Paiement en attente de confirmation : votre solde se mettra à jour dans quelques minutes.');
+            return;
+          }
+        } else {
+          // Sans clé FedaPay (mode test) : règlement simulé, gratuit
+          const { error: rpcErr } = await supabaseBrowser.rpc('settle_driver_debt', {
+            p_amount: amount,
+            p_provider: provider,
+          });
+          if (rpcErr) { setError(rpcErr.message); return; }
+        }
       } else {
         // Retrait réel : réserve (débite) le wallet puis déclenche le payout FedaPay.
         const { data, error: reqErr } = await supabaseBrowser.rpc('request_driver_payout', {
@@ -120,7 +133,7 @@ export function WalletModal({ open, onClose, kind, availableBalance, debt }: Pro
               {kind === 'topup'
                 ? 'Simulation Mobile Money (intégration API réelle à venir).'
                 : kind === 'settle'
-                  ? 'Encaissement Mobile Money (FeexPay à venir). Régularise votre solde Revenus.'
+                  ? (FEDAPAY_PUBLIC_KEY ? 'Paiement Mobile Money sécurisé (MTN, Moov, carte). Votre compte est réactivé automatiquement dès la réception.' : 'Règlement simulé (mode test).')
                   : 'Vers votre Mobile Money · virement FedaPay. Le solde est débité puis recrédité si le virement échoue.'}
             </p>
           </div>
@@ -176,7 +189,7 @@ export function WalletModal({ open, onClose, kind, availableBalance, debt }: Pro
               ))}
             </div>
 
-            <div className="mt-lg">
+            <div className={`mt-lg ${kind === 'settle' && FEDAPAY_PUBLIC_KEY ? 'hidden' : ''}`}>
               <label className="mb-xs block text-sm font-semibold text-neutral-900">Via</label>
               <div className="grid grid-cols-2 gap-sm">
                 <ProviderChoice

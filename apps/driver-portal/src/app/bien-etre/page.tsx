@@ -125,9 +125,9 @@ export default function BienEtrePage() {
             <li className="flex gap-sm">
               <span className="text-primary-500">•</span>
               <span>
-                Au bout de 24 mois, si votre compte est à jour, vous pouvez{' '}
-                <strong>demander le retrait</strong> de votre épargne (voir le tableau) :
-                TamCar effectue le virement sous 60 jours au plus.
+                Au bout de 24 mois, une fois le montant du tableau atteint et si votre compte est
+                à jour, vous pouvez <strong>demander le retrait</strong> de votre épargne : TamCar
+                effectue le virement sous 60 jours au plus.
               </span>
             </li>
             <li className="flex gap-sm">
