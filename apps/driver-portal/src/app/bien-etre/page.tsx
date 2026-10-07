@@ -83,7 +83,7 @@ export default function BienEtrePage() {
           <p className="mt-md text-sm text-neutral-700">
             Une cotisation <strong className="text-neutral-900">selon votre véhicule</strong>, du lundi au samedi :{' '}
             <strong>prélevée automatiquement</strong>, et c&apos;est toujours
-            votre argent. Au bout de 2 ans :
+            votre argent. À la fin de la durée indiquée :
           </p>
 
           <div className="mt-md overflow-hidden rounded-xl bg-gold/10">
@@ -91,18 +91,20 @@ export default function BienEtrePage() {
               <thead>
                 <tr className="text-left text-[11px] font-bold uppercase tracking-wider text-neutral-500">
                   <th className="px-md py-sm">Véhicule</th>
+                  <th className="whitespace-nowrap px-sm py-sm text-right">Durée</th>
                   <th className="whitespace-nowrap px-sm py-sm text-right">Par jour</th>
                   <th className="whitespace-nowrap px-sm py-sm text-right">À vous</th>
                 </tr>
               </thead>
               <tbody className="text-neutral-800">
                 {[
-                  ['Moto', 500, 300000],
-                  ['Tricycle', 750, 450000],
-                  ['Voiture (toutes catégories)', 1000, 600000],
-                ].map(([label, day, goal]) => (
+                  ['Moto', '1 an', 500, 150000],
+                  ['Tricycle', '2 ans', 750, 450000],
+                  ['Voiture (toutes catégories)', '2 ans', 1000, 600000],
+                ].map(([label, duration, day, goal]) => (
                   <tr key={String(label)} className="border-t border-gold/20">
                     <td className="px-md py-sm font-semibold">{label}</td>
+                    <td className="whitespace-nowrap px-sm py-sm text-right">{duration}</td>
                     <td className="whitespace-nowrap px-sm py-sm text-right">{Number(day).toLocaleString('fr-FR')} F</td>
                     <td className="whitespace-nowrap px-sm py-sm text-right font-extrabold">{Number(goal).toLocaleString('fr-FR')} F</td>
                   </tr>
@@ -125,9 +127,10 @@ export default function BienEtrePage() {
             <li className="flex gap-sm">
               <span className="text-primary-500">•</span>
               <span>
-                Au bout de 24 mois, une fois le montant du tableau atteint et si votre compte est
-                à jour, vous pouvez <strong>demander le retrait</strong> de votre épargne : TamCar
-                effectue le virement sous 60 jours au plus.
+                À la fin de la durée du tableau (1 an pour une moto, 2 ans pour un tricycle ou une
+                voiture), une fois le montant atteint et si votre compte est à jour, vous pouvez{' '}
+                <strong>demander le retrait</strong> de votre épargne : TamCar effectue le virement
+                sous 60 jours au plus.
               </span>
             </li>
             <li className="flex gap-sm">

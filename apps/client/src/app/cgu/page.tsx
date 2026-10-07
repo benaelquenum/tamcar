@@ -234,13 +234,16 @@ export default function CguPage() {
             sur le portefeuille « Revenus » du Chauffeur.
           </p>
           <p className="mt-sm">
-            <strong>Retrait après 24 mois.</strong> Le retrait ne peut être
-            demandé que si <strong>trois conditions</strong> sont réunies :
-            (i) <strong>vingt-quatre (24) mois</strong> se sont écoulés depuis
-            le premier prélèvement de la cotisation ; (ii) l’épargne a atteint{' '}
-            <strong>six cents (600) fois la cotisation journalière</strong>,
-            soit 300 000 FCFA pour une moto, 450 000 FCFA pour un tricycle et
-            600 000 FCFA pour une voiture ; (iii) le compte du Chauffeur est{' '}
+            <strong>Retrait à l’échéance de la durée du véhicule.</strong> Le
+            retrait ne peut être demandé que si <strong>trois conditions</strong>{' '}
+            sont réunies : (i) la durée applicable au véhicule du Chauffeur,
+            soit <strong>douze (12) mois pour une moto et vingt-quatre (24) mois
+            pour un tricycle ou une voiture</strong>, s’est écoulée depuis le
+            premier prélèvement de la cotisation ; (ii) l’épargne a atteint{' '}
+            <strong>vingt-cinq (25) fois la cotisation journalière par mois de
+            durée</strong>, soit 150 000 FCFA pour une moto, 450 000 FCFA pour
+            un tricycle et 600 000 FCFA pour une voiture ; (iii) le compte du
+            Chauffeur est{' '}
             <strong>à jour</strong>, c’est-à-dire que son portefeuille «
             Revenus » ne présente aucune dette envers TamCar. Si le Chauffeur
             est en retard, l’application lui indique le nombre de jours de
@@ -272,8 +275,9 @@ export default function CguPage() {
             somme à restituer en cas de départ (voir ci-dessous).
           </p>
           <p className="mt-sm">
-            <strong>Départ avant 24 mois.</strong> Si la relation prend fin avant
-            24 mois de cotisation (démission, non-renouvellement, résiliation),
+            <strong>Départ avant l’échéance.</strong> Si la relation prend fin avant
+            la durée de cotisation applicable à son véhicule (démission,
+            non-renouvellement, résiliation),
             le Chauffeur ne perd pas son épargne : TamCar lui restitue les
             sommes réellement prélevées sur ses gains au titre de l’épargne, à la date de déblocage de sa ligne auprès de
             l’assureur (24 mois après l’ouverture de cette ligne). La

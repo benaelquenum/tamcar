@@ -1,14 +1,15 @@
--- Retrait de l'épargne TamAssur : 2 ans après le démarrage + compte à jour, décompte du retard (dimanches exclus),
+-- Retrait de l'épargne TamAssur : durée propre au véhicule (moto 12 mois, tricycle et voitures 24 mois) + compte à jour, décompte du retard (dimanches exclus),
 -- seuil d'épargne (600 x cotisation : moto 300 000 F), demande -> alerte admin (aucun virement), 60 jours, paiement par l'admin,
 -- permissions. Rôles réels, tout est annulé.
 -- Usage : supabase db query --linked -f backend/tests/tamassur_withdrawal_rules.sql --workdir backend
 do $$
 declare
   d_id uuid; d_prof uuid; adm uuid; w_ep uuid; w_rev uuid;
-  out text := ''; st record; rec public.tamassur_withdrawals; n int; v int; exp_late int; msg text; badge jsonb; v_goal int;
+  out text := ''; st record; rec public.tamassur_withdrawals; n int; v int; exp_late int; msg text; badge jsonb; v_goal int; v_months int; rc record;
 begin
   select dr.id, dr.profile_id into d_id, d_prof from public.drivers dr where dr.status = 'active' limit 1;
   select id into adm from public.profiles where role::text = 'admin' limit 1;
+  v_months := public._tamassur_months(d_id);
 
   insert into public.wallets (profile_id, kind, balance_fcfa) values (d_prof, 'tamcar_epargne', 0) on conflict (profile_id, kind) do nothing;
   insert into public.wallets (profile_id, kind, balance_fcfa) values (d_prof, 'tamcar_revenus', 0) on conflict (profile_id, kind) do nothing;
@@ -31,10 +32,10 @@ begin
 
   -- 2. premier prélèvement il y a 400 jours : trop tôt
   insert into public.driver_insurance_charges (driver_id, period, amount_fcfa, collected_fcfa, status, collected_at)
-  values (d_id, current_date - 400, 1000, 1000, 'paid', now());
+  values (d_id, (current_date - make_interval(months => v_months) + interval '30 days')::date, 1000, 1000, 'paid', now());
   set local role authenticated;
   select * into st from public.my_tamassur_withdrawal_status();
-  out := out || '2a. 400 jours après : reason=' || st.reason || ' éligible le ' || st.eligible_on || case when st.reason = 'too_early' and st.eligible_on = (current_date - 400 + interval '2 years')::date then ' OK' else ' *** KO' end || E'\n';
+  out := out || '2a. échéance dans 30 jours (' || v_months || ' mois) : reason=' || st.reason || ' éligible le ' || st.eligible_on || case when st.reason = 'too_early' and st.eligible_on = (current_date + interval '30 days')::date then ' OK' else ' *** KO' end || E'\n';
   begin perform public.request_tamassur_withdrawal(null); out := out || '2b. demande acceptée *** KO' || E'\n';
   exception when others then out := out || '2b. demande refusée : ' || sqlerrm || E'\n'; end;
   reset role;
@@ -42,9 +43,9 @@ begin
   -- 3. démarrage il y a plus de 2 ans, mais dette de 1 500 F depuis 10 jours : à rattraper d'abord
   delete from public.driver_insurance_charges where driver_id = d_id;
   insert into public.driver_insurance_charges (driver_id, period, amount_fcfa, collected_fcfa, status, collected_at)
-  values (d_id, (current_date - interval '2 years' - interval '5 days')::date, 1000, 1000, 'paid', now());
+  values (d_id, (current_date - make_interval(months => v_months) - interval '5 days')::date, 1000, 1000, 'paid', now());
   -- 3-. 2 ans écoulés mais épargne (50 000 F) sous le seuil : refus
-  v_goal := 600 * public._tamassur_amount(d_id);
+  v_goal := public._tamassur_goal(d_id);
   set local role authenticated;
   select * into st from public.my_tamassur_withdrawal_status();
   out := out || '3-a. épargne ' || st.epargne_fcfa || ' F < seuil ' || st.goal_fcfa || ' F : reason=' || st.reason
@@ -132,6 +133,20 @@ begin
   begin perform public.request_tamassur_withdrawal(null); out := out || '8f. anonyme demande un retrait *** KO' || E'\n';
   exception when others then out := out || '8f. anonyme refusé OK' || E'\n'; end;
   reset role;
+
+  -- 9. durée et seuil par véhicule (cotisation par défaut) : moto 12 mois / 150 000, tricycle 24 / 450 000, voitures 24 / 600 000
+  for rc in
+    select distinct on (v.category) v.category::text as cat, d.id as did
+      from public.drivers d join public.vehicles v on v.id = d.current_vehicle_id
+     where d.tamassur_fcfa is null order by v.category, d.id
+  loop
+    out := out || '9. ' || rc.cat || ' : ' || public._tamassur_months(rc.did) || ' mois, seuil ' || public._tamassur_goal(rc.did) || ' F'
+           || case
+                when rc.cat = 'moto' then case when public._tamassur_months(rc.did) = 12 and public._tamassur_goal(rc.did) = 150000 then ' OK' else ' *** KO' end
+                when rc.cat = 'tricycle' then case when public._tamassur_months(rc.did) = 24 and public._tamassur_goal(rc.did) = 450000 then ' OK' else ' *** KO' end
+                else case when public._tamassur_months(rc.did) = 24 and public._tamassur_goal(rc.did) = 600000 then ' OK' else ' *** KO' end
+              end || E'\n';
+  end loop;
 
   raise exception E'RESULTATS\n%', out;
 end $$;

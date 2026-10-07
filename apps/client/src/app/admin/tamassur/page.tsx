@@ -51,8 +51,8 @@ export default async function AdminTamassurPage() {
         Le montant est déjà réservé (débité de la poche Épargne du chauffeur). <strong>Rien n&apos;est viré
         automatiquement</strong> : réglez en espèces ou par Mobile Money <strong>sous 60 jours au plus</strong> à
         compter de la demande, puis marquez-la comme payée (le chauffeur est prévenu). Le chauffeur n&apos;a pu
-        faire sa demande qu&apos;après 2 ans, épargne au seuil (300 000 F moto, 450 000 F tricycle, 600 000 F voiture) et
-        compte à jour.
+        faire sa demande qu&apos;après la durée de son véhicule (12 mois moto, 24 mois tricycle et voiture), épargne au seuil
+        (150 000 F moto, 450 000 F tricycle, 600 000 F voiture) et compte à jour.
       </p>
 
       {pending.length > 0 && (

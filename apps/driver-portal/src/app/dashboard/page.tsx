@@ -132,12 +132,12 @@ export default async function DriverDashboardPage() {
   const insuranceToday = insurance.find((r) => r.period.slice(0, 10) === pnToday) ?? null;
   const isSunday = new Date(`${pnToday}T12:00:00Z`).getUTCDay() === 0;
   // Retrait de l'épargne : 2 ans après le premier prélèvement, compte à jour
-  type WithdrawalState = { eligible_on: string | null; goal_fcfa: number; late_days: number; reason: string };
+  type WithdrawalState = { eligible_on: string | null; months: number; goal_fcfa: number; late_days: number; reason: string };
   const wState = ((withdrawalData ?? []) as WithdrawalState[])[0] ?? null;
   const withdrawalHint =
     wState?.eligible_on
       ? `Retrait dès ${formatFcfa(plan.goal_fcfa)} F, à partir du ${new Date(`${wState.eligible_on}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}`
-      : `Retrait dès ${formatFcfa(plan.goal_fcfa)} F, 2 ans après le démarrage`;
+      : `Retrait dès ${formatFcfa(plan.goal_fcfa)} F, ${(wState?.months ?? 24) % 12 === 0 ? `${(wState?.months ?? 24) / 12} an${(wState?.months ?? 24) / 12 > 1 ? 's' : ''}` : `${wState?.months} mois`} après le démarrage`;
 
   type ProgressRow = {
     volume_today: number;

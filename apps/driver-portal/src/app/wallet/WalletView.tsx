@@ -22,6 +22,7 @@ type TamassurPending = { id: string; amount_fcfa: number; status: string; due_at
 export type TamassurStatus = {
   start_date: string | null;
   eligible_on: string | null;
+  months: number;
   epargne_fcfa: number;
   goal_fcfa: number;
   debt_fcfa: number;
@@ -29,6 +30,10 @@ export type TamassurStatus = {
   can_withdraw: boolean;
   reason: 'pending' | 'not_started' | 'too_early' | 'below_goal' | 'in_arrears' | 'ok';
 };
+
+function fmtDuration(months: number): string {
+  return months % 12 === 0 ? `${months / 12} an${months / 12 > 1 ? 's' : ''}` : `${months} mois`;
+}
 
 function fmtLongDate(d: string): string {
   return new Date(`${d}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -154,14 +159,14 @@ export function WalletView({
               return (
                 <BigWalletCard
                   wallet={epargneWallet}
-                  note={`Retrait possible à partir du ${fmtLongDate(st.eligible_on)} (2 ans après le démarrage), dès ${formatFcfa(st.goal_fcfa)} F d'épargne et si votre compte est à jour. Paiement jusqu'à 60 jours après la demande.`}
+                  note={`Retrait possible à partir du ${fmtLongDate(st.eligible_on)} (${fmtDuration(st.months)} après le démarrage), dès ${formatFcfa(st.goal_fcfa)} F d'épargne et si votre compte est à jour. Paiement jusqu'à 60 jours après la demande.`}
                 />
               );
             }
             return (
               <BigWalletCard
                 wallet={epargneWallet}
-                note={`Retrait possible 2 ans après le premier prélèvement${st ? `, dès ${formatFcfa(st.goal_fcfa)} F d'épargne` : ''} et si votre compte est à jour. Paiement jusqu'à 60 jours après la demande.`}
+                note={`Retrait possible ${st ? fmtDuration(st.months) : '1 à 2 ans'} après le premier prélèvement${st ? `, dès ${formatFcfa(st.goal_fcfa)} F d'épargne` : ''} et si votre compte est à jour. Paiement jusqu'à 60 jours après la demande.`}
               />
             );
           })()}
