@@ -1,6 +1,7 @@
 import { createServerSupabase } from '@/lib/supabase-server';
 import { MarkAlertsSeen } from '../AdminAlerts';
 import { ConfirmSubmit } from '@/components/ConfirmSubmit';
+import { ActionForm } from '@/components/ActionForm';
 import { recordDebtPayment } from './actions';
 
 type DebtRow = {
@@ -103,7 +104,7 @@ export default async function AdminDebtsPage() {
                 )}
               </div>
               </div>
-              <form action={recordDebtPayment} className="mt-md flex flex-wrap items-center gap-sm border-t border-neutral-100 pt-md">
+              <ActionForm action={recordDebtPayment} className="mt-md flex flex-wrap items-center gap-sm border-t border-neutral-100 pt-md">
                 <input type="hidden" name="driver_id" value={d.driver_id} />
                 <input
                   name="amount"
@@ -125,7 +126,7 @@ export default async function AdminDebtsPage() {
                 >
                   Enregistrer le paiement
                 </ConfirmSubmit>
-              </form>
+              </ActionForm>
             </div>
           ))}
         </div>

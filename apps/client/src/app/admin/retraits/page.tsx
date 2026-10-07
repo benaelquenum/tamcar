@@ -1,5 +1,6 @@
 import { createServerSupabase } from '@/lib/supabase-server';
 import { ConfirmSubmit } from '@/components/ConfirmSubmit';
+import { ActionForm } from '@/components/ActionForm';
 import { markPayoutPaid, rejectPayout } from './actions';
 
 type Row = {
@@ -92,7 +93,7 @@ export default async function AdminPayoutsPage() {
                 </p>
               </div>
               <div className="grid gap-md md:grid-cols-2">
-                <form action={markPayoutPaid} className="flex gap-sm">
+                <ActionForm action={markPayoutPaid} className="flex flex-wrap gap-sm">
                   <input type="hidden" name="id" value={r.id} />
                   <input
                     name="reference"
@@ -105,8 +106,8 @@ export default async function AdminPayoutsPage() {
                   >
                     Payé
                   </ConfirmSubmit>
-                </form>
-                <form action={rejectPayout} className="flex gap-sm">
+                </ActionForm>
+                <ActionForm action={rejectPayout} className="flex flex-wrap gap-sm">
                   <input type="hidden" name="id" value={r.id} />
                   <input
                     name="reason"
@@ -119,7 +120,7 @@ export default async function AdminPayoutsPage() {
                   >
                     Refuser
                   </ConfirmSubmit>
-                </form>
+                </ActionForm>
               </div>
             </div>
           ))}
