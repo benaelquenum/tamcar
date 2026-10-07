@@ -98,8 +98,8 @@ export default function BienEtrePage() {
               </thead>
               <tbody className="text-neutral-800">
                 {[
-                  ['Moto', '1 an', 500, 150000],
-                  ['Tricycle', '2 ans', 750, 450000],
+                  ['Moto', '1 an', 1000, 300000],
+                  ['Tricycle', '2 ans', 1000, 600000],
                   ['Voiture (toutes catégories)', '2 ans', 1000, 600000],
                 ].map(([label, duration, day, goal]) => (
                   <tr key={String(label)} className="border-t border-gold/20">

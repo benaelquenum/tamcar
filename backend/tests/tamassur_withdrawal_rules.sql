@@ -134,7 +134,7 @@ begin
   exception when others then out := out || '8f. anonyme refusé OK' || E'\n'; end;
   reset role;
 
-  -- 9. durée et seuil par véhicule (cotisation par défaut) : moto 12 mois / 150 000, tricycle 24 / 450 000, voitures 24 / 600 000
+  -- 9. durée et seuil par véhicule (cotisation par défaut) : moto 12 mois / 300 000, tricycle 24 / 600 000, voitures 24 / 600 000
   for rc in
     select distinct on (v.category) v.category::text as cat, d.id as did
       from public.drivers d join public.vehicles v on v.id = d.current_vehicle_id
@@ -142,8 +142,8 @@ begin
   loop
     out := out || '9. ' || rc.cat || ' : ' || public._tamassur_months(rc.did) || ' mois, seuil ' || public._tamassur_goal(rc.did) || ' F'
            || case
-                when rc.cat = 'moto' then case when public._tamassur_months(rc.did) = 12 and public._tamassur_goal(rc.did) = 150000 then ' OK' else ' *** KO' end
-                when rc.cat = 'tricycle' then case when public._tamassur_months(rc.did) = 24 and public._tamassur_goal(rc.did) = 450000 then ' OK' else ' *** KO' end
+                when rc.cat = 'moto' then case when public._tamassur_months(rc.did) = 12 and public._tamassur_goal(rc.did) = 300000 then ' OK' else ' *** KO' end
+                when rc.cat = 'tricycle' then case when public._tamassur_months(rc.did) = 24 and public._tamassur_goal(rc.did) = 600000 then ' OK' else ' *** KO' end
                 else case when public._tamassur_months(rc.did) = 24 and public._tamassur_goal(rc.did) = 600000 then ' OK' else ' *** KO' end
               end || E'\n';
   end loop;

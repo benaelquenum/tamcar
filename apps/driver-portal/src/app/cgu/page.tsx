@@ -213,10 +213,10 @@ export default function CguPage() {
             d’épargne obligatoire pour les Chauffeurs. Chaque jour, du lundi au
             samedi,{' '}
             <strong>une cotisation est placée dans la poche « Épargne TamAssur »</strong>{' '}
-            du Chauffeur. Son montant dépend du véhicule :{' '}
-            <strong>500 FCFA (moto), 750 FCFA (tricycle), 1 000 FCFA (voiture,
-            toutes catégories)</strong> ; le Chauffeur peut choisir un montant
-            supérieur. <strong>La cotisation est intégralement prélevée sur le
+            du Chauffeur. Son montant est de{' '}
+            <strong>1 000 FCFA par jour, quel que soit le véhicule</strong>{' '}
+            (moto, tricycle, voiture, toutes catégories) ; le Chauffeur peut
+            choisir un montant supérieur. <strong>La cotisation est intégralement prélevée sur le
             portefeuille « Revenus » du Chauffeur</strong>. Aucun prélèvement
             n’est opéré le dimanche. Cette épargne est constituée exclusivement
             de sommes prélevées sur le Chauffeur : TamCar n’y ajoute aucune
@@ -239,8 +239,8 @@ export default function CguPage() {
             pour un tricycle ou une voiture</strong>, s’est écoulée depuis le
             premier prélèvement de la cotisation ; (ii) l’épargne a atteint{' '}
             <strong>vingt-cinq (25) fois la cotisation journalière par mois de
-            durée</strong>, soit 150 000 FCFA pour une moto, 450 000 FCFA pour
-            un tricycle et 600 000 FCFA pour une voiture ; (iii) le compte du
+            durée</strong>, soit 300 000 FCFA pour une moto et 600 000 FCFA
+            pour un tricycle ou une voiture ; (iii) le compte du
             Chauffeur est{' '}
             <strong>à jour</strong>, c’est-à-dire que son portefeuille «
             Revenus » ne présente aucune dette envers TamCar. Si le Chauffeur

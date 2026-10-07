@@ -4,6 +4,6 @@
  * incrémenter la date à chaque modification substantielle des documents —
  * tous les chauffeurs devront ré-accepter à leur prochaine connexion.
  */
-export const TERMS_VERSION = '2026-10-15';
+export const TERMS_VERSION = '2026-10-16';
 
 export const TERMS_APP = 'driver' as const;
