@@ -106,6 +106,7 @@ Deno.serve(async (req: Request) => {
     tx?.custom_metadata?.reference ??
     tx?.metadata?.reference ??
     tx?.customMetadata?.reference ??
+    String(tx?.description ?? '').match(/FDP-[0-9a-f]{32}/)?.[0] ??
     '';
   const fedaId: string = String(tx?.id ?? tx?.transaction_id ?? '');
   const amount: number = Number(tx?.amount ?? 0);
@@ -113,7 +114,7 @@ Deno.serve(async (req: Request) => {
   if (!reference) {
     console.error('No reference in event', eventName, 'keys:', Object.keys(tx ?? {}));
     console.error('Full tx:', JSON.stringify(tx));
-    await trace({ event: eventName, provider_tx_id: fedaId, amount_fcfa: amount, outcome: 'no_reference', detail: 'clés : ' + Object.keys(tx ?? {}).join(',') });
+    await trace({ event: eventName, provider_tx_id: fedaId, amount_fcfa: amount, outcome: 'no_reference', detail: JSON.stringify({ metadata: tx?.metadata, custom_metadata: tx?.custom_metadata, description: tx?.description, reference: tx?.reference }) });
     return new Response('No reference', { status: 200 });
   }
 

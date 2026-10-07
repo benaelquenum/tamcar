@@ -48,7 +48,7 @@ async function fedaGet(path: string): Promise<any> {
 }
 
 function refOf(t: any): string {
-  return t?.custom_metadata?.reference ?? t?.metadata?.reference ?? '';
+  return t?.custom_metadata?.reference ?? t?.metadata?.reference ?? String(t?.description ?? '').match(/FDP-[0-9a-f]{32}/)?.[0] ?? '';
 }
 
 function unwrap(data: any): any {

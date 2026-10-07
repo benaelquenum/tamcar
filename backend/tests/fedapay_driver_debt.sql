@@ -80,6 +80,20 @@ begin
   select balance_fcfa into v from public.wallets where id = w_rev;
   out := out || '7. paiement refusé : statut=' || st || ', solde=' || v || case when st = 'failed' and v = -2000 then ' OK' else ' *** KO' end || E'\n';
 
+  -- 7b. refusé PUIS approuvé (second essai dans la fenêtre FedaPay) : le crédit est bien appliqué, une seule fois
+  set local role authenticated;
+  select * into r from public.initiate_fedapay_debt(2000);
+  reset role;
+  set local role service_role;
+  perform public.apply_fedapay_declined(r.reference, 'feda-test-4');
+  perform public.apply_fedapay_success(r.reference, 'feda-test-4', 2000);
+  perform public.apply_fedapay_success(r.reference, 'feda-test-4', 2000);
+  reset role;
+  select status::text into st from public.wallet_transactions where fedapay_reference = r.reference;
+  select balance_fcfa into v from public.wallets where id = w_rev;
+  out := out || '7b. refusé puis approuvé : statut=' || st || ', solde=' || v || case when st = 'success' and v = 0 then ' OK (crédité une fois)' else ' *** KO' end || E'
+';
+
   -- 8. un client (non chauffeur) et un anonyme ne peuvent pas utiliser cette fonction
   if c is not null then
     perform set_config('request.jwt.claims', json_build_object('sub', c, 'role', 'authenticated')::text, true);

@@ -56,12 +56,14 @@ export async function launchFedapayCheckout(opts: LaunchOpts): Promise<LaunchRes
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const config: any = {
     public_key: opts.publicKey,
+    // La référence TamCar doit être DANS l'objet `transaction` (hors de lui, le widget l'ignore : le webhook arrivait sans référence) ;
+    // elle figure aussi dans la description, qui, elle, est toujours transmise : le serveur sait la retrouver dans les deux cas.
     transaction: {
       amount: opts.amountFcfa,
-      description: opts.description || 'Recharge TamCar Crédit',
+      description: `${opts.description || 'Recharge TamCar Crédit'} · ${opts.reference}`,
+      custom_metadata: { reference: opts.reference },
     },
     currency: { iso: 'XOF' },
-    custom_metadata: { reference: opts.reference },
   };
 
   // N'inclure `customer` que si on a de vraies valeurs — sinon le widget

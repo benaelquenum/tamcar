@@ -190,6 +190,11 @@ export function WalletModal({ open, onClose, kind, availableBalance }: Props) {
             >
               {pending ? '…' : `${cta} ${formatFcfa(amount)} FCFA`}
             </button>
+            {pending && (
+              <p className="mt-md text-center text-xs text-neutral-600" role="status">
+                Paiement en cours : gardez cette fenêtre ouverte, la confirmation prend quelques secondes après la fenêtre de paiement.
+              </p>
+            )}
           </>
         )}
       </div>
