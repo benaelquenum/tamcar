@@ -18,15 +18,31 @@ const withPWA = withPWAInit({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // En-têtes de sécurité (revue du 2026-10-07) : pas d'intégration de nos pages dans un cadre étranger (clic piégé), pas de
+  // détection de type MIME, référent limité, API sensibles réservées à notre propre origine.
+  poweredByHeader: false,
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          { key: 'Permissions-Policy', value: 'geolocation=(self), microphone=(self), camera=(self), payment=(), usb=(), accelerometer=(self)' },
+        ],
+      },
+    ];
+  },
   eslint: {
     // On skip le lint pendant le build Vercel (les règles typescript-eslint
     // ne sont pas installées, et on fait le lint en local via l'IDE).
     ignoreDuringBuilds: true,
   },
   typescript: {
-    // MVP en dev : typecheck fait localement dans l'IDE (VS Code, IntelliJ, etc.)
-    // Pas de blocage sur Vercel. À passer à false quand le code sera stable.
-    ignoreBuildErrors: true,
+    // Depuis la revue du 2026-10-07 : 0 erreur de type dans les 4 apps (npx tsc --noEmit), le build échoue si un défaut
+    // de type est introduit.
+    ignoreBuildErrors: false,
   },
 };
 

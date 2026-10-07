@@ -1,7 +1,10 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+
+// Pages d'accueil publiques et de connexion : le bouton y recouvre le contenu sans servir (revue du 2026-10-07).
+const HIDDEN_ON = ['/login', '/reset-password', '/auth', '/cgu', '/confidentialite', '/devenir-chauffeur', '/driver'];
 
 /**
  * Rafraîchissement à la demande, disponible sur toutes les pages.
@@ -17,6 +20,7 @@ import { useRouter } from 'next/navigation';
  */
 export function RefreshButton() {
   const router = useRouter();
+  const pathname = usePathname();
   const [pending, startTransition] = useTransition();
   const [spinning, setSpinning] = useState(false);
 
@@ -27,6 +31,8 @@ export function RefreshButton() {
     // rafraîchissement est instantané.
     window.setTimeout(() => setSpinning(false), 700);
   }
+
+  if (HIDDEN_ON.some((p) => pathname === p || pathname.startsWith(p + '/'))) return null;
 
   return (
     <button
