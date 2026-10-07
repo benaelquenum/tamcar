@@ -20,7 +20,7 @@ export default function ContactPage() {
         <div className="mt-2xl grid gap-lg sm:grid-cols-2">
           <div className="rounded-2xl border border-neutral-200 bg-white p-xl shadow-sm">
             <p className="text-xs font-bold uppercase tracking-wider text-neutral-500">Par e-mail</p>
-            <a href={`mailto:${CONTACT_EMAIL}`} className="mt-sm block break-all text-lg font-extrabold text-primary-700 hover:underline">
+            <a href={`mailto:${CONTACT_EMAIL}`} className="mt-sm block break-words text-base font-extrabold text-primary-700 hover:underline sm:text-lg">
               {CONTACT_EMAIL}
             </a>
           </div>
