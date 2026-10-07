@@ -9,6 +9,7 @@ import { NewRideWatcher } from '@/components/NewRideWatcher';
 import { DataMeter } from '@/components/DataMeter';
 import { NativePushRegistrar } from '@/components/NativePushRegistrar';
 import { RefreshButton } from '@/components/RefreshButton';
+import { OfflineBanner } from '@/components/OfflineBanner';
 
 const sora = Sora({
   subsets: ['latin'],
@@ -57,6 +58,7 @@ export default function RootLayout({
     <html lang="fr" className={sora.variable}>
       <body className="font-sans antialiased">
         <TopProgressBar />
+        <OfflineBanner />
         <NativeBackHandler />
         <DataMeter />
         <NewRideWatcher />

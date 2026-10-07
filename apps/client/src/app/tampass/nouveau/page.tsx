@@ -7,10 +7,18 @@ import {
   AddressAutocomplete,
   type SelectedAddress,
 } from '@/components/AddressAutocomplete';
-import { Map } from '@/components/Map';
 import { getRoute, type RouteResult } from '@/lib/mapbox';
 import { computePrice, type VehicleCategory } from '@/lib/pricing';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+
+import dynamic from 'next/dynamic';
+
+// La carte (MapLibre + Mapbox, ~700 Ko) est chargée À LA DEMANDE : l'écran s'affiche et devient utilisable avant elle
+// (revue du 2026-10-07 : ces écrans pesaient 885 à 936 Ko de JavaScript au premier chargement).
+const Map = dynamic(() => import('@/components/Map').then((m) => m.Map), {
+  ssr: false,
+  loading: () => <div className="h-full w-full animate-pulse bg-neutral-100" aria-hidden="true" />,
+});
 
 const CATEGORIES: { code: VehicleCategory; label: string }[] = [
   { code: 'moto', label: 'Moto' },

@@ -9,7 +9,6 @@ import { VehicleIcon } from '@/components/VehicleIcon';
 import { Avatar } from '@/components/Avatar';
 import { RideTalkie } from '@/components/RideTalkie';
 import { RideCall } from '@/components/RideCall';
-import { Map } from '@/components/Map';
 import { RatingModal } from '@/components/RatingModal';
 import { getRoute, getRouteThrough } from '@/lib/mapbox';
 import { angleDiff, HeadingFilter } from '@/lib/navCamera';
@@ -29,6 +28,15 @@ import { SupportCallButton } from '@/components/SupportCallButton';
 import { RideChat } from '@/components/RideChat';
 import { playMessageSound } from '@/lib/message-sound';
 import { useT } from '@/lib/i18n-client';
+
+import dynamic from 'next/dynamic';
+
+// La carte (MapLibre + Mapbox, ~700 Ko) est chargée À LA DEMANDE : l'écran s'affiche et devient utilisable avant elle
+// (revue du 2026-10-07 : ces écrans pesaient 885 à 936 Ko de JavaScript au premier chargement).
+const Map = dynamic(() => import('@/components/Map').then((m) => m.Map), {
+  ssr: false,
+  loading: () => <div className="h-full w-full animate-pulse bg-neutral-100" aria-hidden="true" />,
+});
 
 type RideStopRow = {
   id: string;

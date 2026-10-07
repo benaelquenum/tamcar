@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { AddressAutocomplete, type SelectedAddress } from '@/components/AddressAutocomplete';
 import { ArrowRightIcon, CarIcon, PlusIcon, StarIcon, LuggageIcon } from '@/components/Icon';
-import { Map } from '@/components/Map';
 import { useLivePosition } from '@/lib/useLivePosition';
 import { SuggestPlaceModal } from '@/components/SuggestPlaceModal';
 import { getRouteThrough, reverseGeocode, type RouteResult, BENIN_POPULAR_PLACES } from '@/lib/mapbox';
@@ -16,6 +15,15 @@ import { supabaseBrowser } from '@/lib/supabase-browser';
 import { isWithinServiceZone, SERVICE_ZONE_LABEL } from '@/lib/service-zone';
 import { useT } from '@/lib/i18n-client';
 import { createRideAction } from './actions';
+
+import dynamic from 'next/dynamic';
+
+// La carte (MapLibre + Mapbox, ~700 Ko) est chargée À LA DEMANDE : l'écran s'affiche et devient utilisable avant elle
+// (revue du 2026-10-07 : ces écrans pesaient 885 à 936 Ko de JavaScript au premier chargement).
+const Map = dynamic(() => import('@/components/Map').then((m) => m.Map), {
+  ssr: false,
+  loading: () => <div className="h-full w-full animate-pulse bg-neutral-100" aria-hidden="true" />,
+});
 
 type AvailabilityRow = {
   category: VehicleCategory;
