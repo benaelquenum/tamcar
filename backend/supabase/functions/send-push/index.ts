@@ -96,9 +96,12 @@ Deno.serve(async (req: Request) => {
     return new Response('Invalid JSON', { status: 400 });
   }
 
-  const { profile_id, title, body: text, url, tag, requireInteraction, live, alert } = body ?? {};
+  const { profile_id, title, body: text, url, tag, requireInteraction, live, alert, ring } = body ?? {};
   const isLive = Boolean(live && typeof live === 'object');
   const isEnd = isLive && Boolean(live.end);
+  // Alerte de course chauffeur : { kind: 'request' | 'end', ride_id, category?, reason?, distance_m? }.
+  const isRing = !isLive && Boolean(ring && typeof ring === 'object');
+  const ringEnd = isRing && ring.kind === 'end';
   const rideKind = isLive && RIDE_ICONS[live.icon] ? live.icon : 'car';
   if (!profile_id || !title) {
     return new Response('profile_id and title required', { status: 400 });
@@ -122,9 +125,15 @@ Deno.serve(async (req: Request) => {
     body: text ?? '',
     url: url ?? '/',
     tag,
-    requireInteraction: Boolean(requireInteraction),
+    requireInteraction: isRing && !ringEnd ? true : Boolean(requireInteraction),
     ...(isLive
       ? { silent: !alert, renotify: false, icon: RIDE_ICONS[rideKind].icon, badge: RIDE_ICONS[rideKind].badge }
+      : {}),
+    ...(isRing
+      ? ringEnd
+        ? { ring: 'end', reason: str(ring.reason) }
+        // Demande de course : même tag = remplacement, renotify = nouvelle alerte sonore à chaque envoi.
+        : { ring: 'request', renotify: true, vibrate: [500, 200, 500, 200, 500, 200, 900], ride_id: str(ring.ride_id) }
       : {}),
   });
 
@@ -133,15 +142,25 @@ Deno.serve(async (req: Request) => {
       await webpush.sendNotification({
         endpoint: s.endpoint,
         keys: { p256dh: s.p256dh, auth: s.auth },
-      }, payload);
+      }, payload,
+      // Alerte de course : urgence haute (traverse la veille Doze) et durée de vie courte : une demande de
+      // 45 s ne doit pas sonner 10 minutes plus tard.
+      isRing ? { urgency: 'high', TTL: ringEnd ? 120 : 45 } : undefined);
       return { id: s.id, ok: true };
     } catch (e: any) {
       const status = e?.statusCode ?? null;
-      const gone = status === 404 || status === 410;
+      // 403 « VAPID credentials ... do not correspond » : abonnement créé avec une ancienne clé, définitivement mort.
+      const staleKey = status === 403 && typeof e?.body === 'string' && e.body.includes('do not correspond');
+      const gone = status === 404 || status === 410 || staleKey;
       if (gone) {
         await admin.from('push_subscriptions').delete().eq('id', s.id);
       }
-      return { id: s.id, ok: false, statusCode: status, gone, message: e?.message ?? String(e) };
+      // `detail` : réponse du service de push (explique un 403 : clé VAPID, jeton d'authentification, etc.).
+      return {
+        id: s.id, ok: false, statusCode: status, gone, message: e?.message ?? String(e),
+        detail: typeof e?.body === 'string' ? e.body.slice(0, 300) : undefined,
+        host: (() => { try { return new URL(s.endpoint).host; } catch { return undefined; } })(),
+      };
     }
   }));
 
@@ -165,7 +184,39 @@ Deno.serve(async (req: Request) => {
           if (!isLive && nativeLive && typeof tag === 'string' && tag.startsWith('ride:') && LIVE_COVERED_TITLES.has(title)) {
             return { token: t.token.slice(0, 12), ok: true, skipped: 'covered-by-live-card' };
           }
-          const message: any = isLive
+          const nativeAlert = t.platform === 'android-alert';
+          // Alerte de course : l'APK chauffeur récent reçoit un message de DONNÉES (sa sonnerie est dessinée par le
+          // code natif) ; les anciens APK gardent une notification classique, remplaçable grâce au tag.
+          const ringMessage: any | null = !isRing
+            ? null
+            : nativeAlert
+              ? {
+                  token: t.token,
+                  data: {
+                    type: ringEnd ? 'ride_request_end' : 'ride_request',
+                    ride_id: str(ring.ride_id),
+                    title: str(title),
+                    body: str(text),
+                    category: str(ring.category),
+                    reason: str(ring.reason),
+                    distance_m: str(ring.distance_m),
+                    booking: ring.booking ? '1' : '0',
+                    url: str(url ?? '/'),
+                    tag: str(tag),
+                  },
+                  android: { priority: 'HIGH', ttl: ringEnd ? '120s' : '45s' },
+                }
+              : {
+                  token: t.token,
+                  notification: { title, body: text ?? '' },
+                  data: { url: url ?? '/', tag: tag ?? '' },
+                  android: {
+                    priority: 'HIGH',
+                    ttl: ringEnd ? '120s' : '45s',
+                    notification: { sound: 'default', ...(typeof tag === 'string' && tag ? { tag } : {}) },
+                  },
+                };
+          const message: any = ringMessage ?? (isLive
             ? {
                 token: t.token,
                 data: {
@@ -199,7 +250,7 @@ Deno.serve(async (req: Request) => {
                     ...(nativeLive && typeof tag === 'string' && tag.startsWith('ride:') ? { tag } : {}),
                   },
                 },
-              };
+              });
           try {
             const res = await fetch(
               `https://fcm.googleapis.com/v1/projects/${sa.project_id}/messages:send`,

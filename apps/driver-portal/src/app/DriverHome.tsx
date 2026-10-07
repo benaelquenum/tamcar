@@ -412,15 +412,15 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
     pollPending();
     const posInterval = setInterval(updatePosition, 30_000);
 
-    // Sondage de sécurité du pool : 45 s quand le temps réel est connecté (les
-    // nouvelles courses arrivent par lui), 8 s sinon ; page cachée : on saute.
-    // Avant : toutes les 5 s en permanence.
+    // Sondage de sécurité du pool : 15 s quand le temps réel est connecté (les nouvelles demandes arrivent par lui,
+    // les annulations par la diffusion « ride_gone »), 8 s sinon ; page cachée : on saute. Avant : 45 s, ce qui
+    // laissait une demande annulée (et sa sonnerie) à l'écran jusqu'à 45 s si un événement était manqué.
     let pendingTimer: ReturnType<typeof setTimeout> | null = null;
     const schedulePoll = () => {
       pendingTimer = setTimeout(async () => {
         if (document.visibilityState === 'visible') await pollPending();
         if (!cancelled) schedulePoll();
-      }, poolRealtimeOkRef.current ? 45_000 : 8_000);
+      }, poolRealtimeOkRef.current ? 15_000 : 8_000);
     };
     schedulePoll();
 
@@ -498,6 +498,15 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
         { event: 'UPDATE', schema: 'public', table: 'rides' },
         () => { void refreshOneshots(); },
       )
+      // Demande annulée / prise par un autre / expirée : la RLS ne montre plus la ligne aux chauffeurs, donc AUCUN
+      // événement postgres_changes ne leur parvient. Le serveur le diffuse (trigger _ride_alert_gone) : on retire
+      // la demande à l'instant (et la boucle sonore s'arrête avec elle), puis on relit le pool.
+      .on('broadcast', { event: 'ride_gone' }, (msg) => {
+        const id = (msg?.payload as { ride_id?: string } | undefined)?.ride_id;
+        if (id) setPending((prev) => prev.filter((p) => p.id !== id));
+        void refetchPool();
+        void refreshOneshots();
+      })
       .subscribe((status) => {
         poolRealtimeOkRef.current = status === 'SUBSCRIBED';
       });
@@ -522,8 +531,9 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
     try {
-      audioEl = new Audio('/sounds/new-request.mp3');
-      audioEl.volume = 0.7;
+      // Sonnerie forte (2026-10-07, ancien son trop discret) : voir design/alert-sounds/build-alert-sounds.py.
+      audioEl = new Audio('/sounds/ride-alarm.mp3');
+      audioEl.volume = 1;
       audioEl.preload = 'auto';
     } catch {
       useCustomFile = false;
@@ -552,7 +562,7 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
           osc.type = 'sine';
           osc.frequency.setValueAtTime(freq, start);
           gain.gain.setValueAtTime(0.0001, start);
-          gain.gain.exponentialRampToValueAtTime(0.22, start + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.6, start + 0.02);
           gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.35);
           osc.connect(gain).connect(ctx.destination);
           osc.start(start);
@@ -598,7 +608,7 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
         await playOnce();
         if (stopped) return;
         await new Promise<void>((r) => {
-          timeoutId = setTimeout(r, 1500);
+          timeoutId = setTimeout(r, 700);
         });
       }
     };

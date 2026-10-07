@@ -24,6 +24,7 @@ type PendingRow = {
   price_total_fcfa: number;
   /** Présent = réservation programmée, absent = course immédiate. */
   scheduled_at?: string | null;
+  requested_category?: string | null;
 };
 
 type LocalNotificationsPlugin = {
@@ -36,9 +37,59 @@ type LocalNotificationsPlugin = {
       iconColor?: string;
     }>;
   }): Promise<unknown>;
+  cancel(opts: { notifications: Array<{ id: number }> }): Promise<void>;
 };
 
 const LocalNotifications = registerPlugin<LocalNotificationsPlugin>('LocalNotifications');
+
+// Sonnerie native de l'APK chauffeur récent (alerte forte en boucle, même app en fond). Absent des anciens APK :
+// les appels échouent et on retombe sur la notification locale classique.
+type RideAlertPlugin = {
+  show(opts: {
+    ride_id: string;
+    title: string;
+    body: string;
+    category?: string;
+    booking?: string;
+    tag?: string;
+  }): Promise<void>;
+  stop(opts: { ride_id: string }): Promise<void>;
+};
+
+const RideAlert = registerPlugin<RideAlertPlugin>('RideAlert');
+
+/** Identifiant stable par course : permet de retirer la notification quand la demande disparaît. */
+function notificationId(rideId: string): number {
+  let h = 0;
+  for (let i = 0; i < rideId.length; i++) h = (h * 31 + rideId.charCodeAt(i)) | 0;
+  return Math.abs(h) % 2147483647 || 1;
+}
+
+/** La demande n'existe plus (annulée, prise, expirée) : on retire l'alerte et on coupe la sonnerie. */
+async function dismiss(rideId: string) {
+  if (isNative()) {
+    try {
+      await RideAlert.stop({ ride_id: rideId });
+    } catch {
+      /* ancien APK */
+    }
+    try {
+      await LocalNotifications.cancel({ notifications: [{ id: notificationId(rideId) }] });
+    } catch {
+      /* plugin absent */
+    }
+    return;
+  }
+  try {
+    const reg = await navigator.serviceWorker?.ready;
+    if (!reg) return;
+    for (const tag of ['new-ride-watch', `new-ride:${rideId}`]) {
+      (await reg.getNotifications({ tag })).forEach((n) => n.close());
+    }
+  } catch {
+    /* ignore */
+  }
+}
 
 function isNative(): boolean {
   try {
@@ -76,6 +127,17 @@ function chime() {
   }
 }
 
+// Sonnerie forte de l'application (2026-10-07 : l'ancien double bip était trop discret).
+function ringOnce() {
+  try {
+    const a = new Audio('/sounds/ride-alarm.mp3');
+    a.volume = 1;
+    void a.play().catch(() => chime());
+  } catch {
+    chime();
+  }
+}
+
 /** Violet TamCar : teinte d'accent des réservations (bleu-violet). */
 const BOOKING_ACCENT = '#7C3AED';
 
@@ -94,10 +156,23 @@ async function notify(row: PendingRow) {
 
   if (isNative()) {
     try {
+      await RideAlert.show({
+        ride_id: row.id,
+        title,
+        body,
+        category: row.requested_category ?? '',
+        booking: isBooking ? '1' : '0',
+        tag: `new-ride:${row.id}`,
+      });
+      return;
+    } catch {
+      /* ancien APK sans sonnerie native : notification locale ci-dessous */
+    }
+    try {
       await LocalNotifications.schedule({
         notifications: [
           {
-            id: Math.floor(Date.now() % 2147483647),
+            id: notificationId(row.id),
             title,
             body,
             // Seule teinte réglable côté Android : l'accent de l'icône.
@@ -202,13 +277,17 @@ export function NewRideWatcher() {
         document.visibilityState === 'visible' &&
         pathnameRef.current === '/';
 
-      chime();
-      try {
-        navigator.vibrate?.([200, 80, 200]);
-      } catch {
-        /* ignore */
+      // Accueil visible : l'écran sonne déjà en boucle, on n'ajoute rien. Ailleurs (autre page, app en fond) : sonnerie
+      // + vibration + alerte.
+      if (!onVisibleHome) {
+        ringOnce();
+        try {
+          navigator.vibrate?.([500, 200, 500, 200, 500]);
+        } catch {
+          /* ignore */
+        }
+        void notify(fresh[0]);
       }
-      if (!onVisibleHome) void notify(fresh[0]);
     };
 
     const schedule = () => {
@@ -244,6 +323,11 @@ export function NewRideWatcher() {
           }, 31_000);
           lateTimers.add(t);
         }
+      })
+      // Demande annulée / prise / expirée : la RLS cache l'événement aux chauffeurs, le serveur le diffuse.
+      .on('broadcast', { event: 'ride_gone' }, (msg) => {
+        const id = (msg?.payload as { ride_id?: string } | undefined)?.ride_id;
+        if (id) void dismiss(id);
       })
       .subscribe((status) => {
         realtimeOk = status === 'SUBSCRIBED';

@@ -29,7 +29,30 @@ self.addEventListener('push', (event) => {
     url = '/',
     vibrate = [80, 40, 80, 40, 80],
     requireInteraction = true, // chauffeur : alertes persistent
+    renotify = false,
+    ring,
   } = payload;
+
+  // Fin d'alerte (la demande a été annulée, prise ou a expiré) : le système exige qu'un push affiche quelque
+  // chose, donc on REMPLACE l'alerte (même tag) par un court message silencieux, puis on le retire.
+  if (ring === 'end') {
+    event.waitUntil(
+      (async () => {
+        await self.registration.showNotification(title, {
+          body,
+          tag,
+          silent: true,
+          requireInteraction: false,
+          icon: '/icons/icon-192.png',
+          data: { url: '/' },
+        });
+        await new Promise((resolve) => setTimeout(resolve, 6000));
+        const list = await self.registration.getNotifications({ tag });
+        list.forEach((n) => n.close());
+      })(),
+    );
+    return;
+  }
 
   const options = {
     body,
@@ -38,6 +61,8 @@ self.addEventListener('push', (event) => {
     requireInteraction,
     icon: '/icons/icon-192.png',
     data: { url },
+    // Nouvelle demande : même tag = remplacement, mais on RE-sonne à chaque envoi (cercles suivants).
+    ...(renotify && tag ? { renotify: true } : {}),
   };
 
   event.waitUntil(self.registration.showNotification(title, options));

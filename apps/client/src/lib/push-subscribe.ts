@@ -39,6 +39,20 @@ export async function subscribeToPush(): Promise<PushSubscription | null> {
   if (!reg) return null;
 
   let sub = await reg.pushManager.getSubscription();
+  // Abonnement créé avec une AUTRE clé VAPID (rotation du 2026-10-07) : le service de push le rejette (403) pour
+  // toujours. On le défait et on en crée un nouveau avec la clé actuelle.
+  if (sub) {
+    const current = sub.options?.applicationServerKey;
+    const wanted = urlBase64ToUint8Array(VAPID_PUBLIC!);
+    if (current) {
+      const have = new Uint8Array(current);
+      const same = have.length === wanted.length && have.every((b, i) => b === wanted[i]);
+      if (!same) {
+        await sub.unsubscribe().catch(() => undefined);
+        sub = null;
+      }
+    }
+  }
   if (!sub) {
     sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
