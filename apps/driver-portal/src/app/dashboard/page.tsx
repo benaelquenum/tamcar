@@ -69,6 +69,7 @@ export default async function DriverDashboardPage() {
     { data: rides },
     { data: vehicle },
     { data: progressData },
+    { data: floorData },
     { data: insuranceData },
     { data: planData },
     { data: bannerRows },
@@ -91,6 +92,7 @@ export default async function DriverDashboardPage() {
           .single()
       : Promise.resolve({ data: null }),
     supabase.rpc('driver_today_volume', { p_driver_id: driver.id }),
+    supabase.rpc('driver_floor_today', { p_driver_id: driver.id }),
     supabase.rpc('my_insurance_status'),
     supabase.rpc('my_tamassur_plan'),
     supabase
@@ -162,6 +164,8 @@ export default async function DriverDashboardPage() {
     bonus_day: true,
   };
 
+  const floor = ((floorData ?? []) as FloorRow[])[0] ?? null;
+
   return (
     <main className="relative min-h-dvh bg-neutral-50">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-64 overflow-hidden">
@@ -214,7 +218,7 @@ export default async function DriverDashboardPage() {
 
         {/* Jauge courses du jour (Formule A uniquement) */}
         {!isProprietaire && (
-          <TodayProgress progress={progress} />
+          <TodayProgress progress={progress} floor={floor} />
         )}
 
         {/* Cash disponible — carte pleine largeur */}
@@ -342,71 +346,139 @@ export default async function DriverDashboardPage() {
   );
 }
 
-function TodayProgress({
-  progress,
-}: {
-  progress: {
-    volume_today: number;
-    floor_fcfa: number;
-    pct: number;
-    bonus_now_fcfa: number;
-    rate_per_1000: number;
-    fcfa_to_floor: number;
-    bonus_started: boolean;
-    bonus_start: string;
-    bonus_day: boolean;
-  };
-}) {
-  if (progress.floor_fcfa <= 0) return null;
-  // La barre va de 0 à 200 % de l'objectif ; le trait pointillé marque 100 %.
-  const barPct = Math.min(100, Math.round(progress.pct / 2));
+type FloorRow = {
+  applies: boolean;
+  versement_fcfa: number;
+  volume_fcfa: number;
+  tamcar_part_fcfa: number;
+  pct: number;
+  surplus_fcfa: number;
+  remaining_fcfa: number;
+  excused: boolean;
+  is_sunday: boolean;
+  started: boolean;
+  starts_on: string;
+  extension_days: number;
+  contract_end_on: string | null;
+};
+
+type BonusProgress = {
+  volume_today: number;
+  floor_fcfa: number;
+  pct: number;
+  bonus_now_fcfa: number;
+  rate_per_1000: number;
+  fcfa_to_floor: number;
+  bonus_started: boolean;
+  bonus_start: string;
+  bonus_day: boolean;
+};
+
+function frDate(iso: string): string {
+  return new Date(`${iso.slice(0, 10)}T12:00:00`).toLocaleDateString('fr-FR', {
+    timeZone: 'Africa/Porto-Novo',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+}
+
+function TodayProgress({ progress, floor }: { progress: BonusProgress; floor: FloorRow | null }) {
+  const hasFloor = !!floor?.applies;
+  if (!hasFloor && progress.floor_fcfa <= 0) return null;
   const above = progress.volume_today > progress.floor_fcfa;
+
+  // Jauge : de 0 à 200 % du versement ; le trait pointillé marque 100 %. Elle repart à zéro à minuit.
+  const gaugePct = hasFloor ? floor!.pct : progress.pct;
+  const barPct = Math.min(100, Math.round(gaugePct / 2));
+  const gaugeBase = hasFloor ? floor!.versement_fcfa : progress.floor_fcfa;
+  const full = hasFloor ? floor!.tamcar_part_fcfa >= floor!.versement_fcfa : above;
 
   return (
     <section className="mt-lg rounded-xl border border-neutral-200 bg-white p-lg shadow-sm">
-      <div className="mb-md flex items-baseline justify-between">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-          Volume du jour
-        </h2>
+      <div className="mb-md flex items-baseline justify-between gap-sm">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-500">Aujourd&apos;hui</h2>
         <span className="text-[10px] font-bold text-neutral-500" style={{ fontVariantNumeric: 'tabular-nums' }}>
-          {progress.pct} % de l&apos;objectif
+          {hasFloor ? 'Repart à zéro à minuit' : `${progress.pct} % de l'objectif`}
         </span>
       </div>
 
-      <div className="flex items-baseline gap-sm">
-        <p
-          className="text-4xl font-extrabold text-neutral-900"
-          style={{ fontVariantNumeric: 'tabular-nums' }}
-        >
-          {formatFcfa(progress.volume_today)}
-        </p>
-        <p className="text-sm text-neutral-500">F / objectif {formatFcfa(progress.floor_fcfa)} F</p>
-      </div>
+      {hasFloor ? (
+        <div className="grid grid-cols-2 gap-md">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">Montant des courses</p>
+            <p className="mt-xs text-2xl font-extrabold text-neutral-900" style={{ fontVariantNumeric: 'tabular-nums' }}>
+              {formatFcfa(floor!.volume_fcfa)} <span className="text-sm font-bold text-neutral-500">F</span>
+            </p>
+          </div>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">Part de TamCar</p>
+            <p className="mt-xs text-2xl font-extrabold text-primary-700" style={{ fontVariantNumeric: 'tabular-nums' }}>
+              {formatFcfa(floor!.tamcar_part_fcfa)} <span className="text-sm font-bold text-neutral-500">F</span>
+            </p>
+            <p className="text-[11px] text-neutral-500">sur {formatFcfa(floor!.versement_fcfa)} F à verser</p>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-baseline gap-sm">
+          <p className="text-4xl font-extrabold text-neutral-900" style={{ fontVariantNumeric: 'tabular-nums' }}>
+            {formatFcfa(progress.volume_today)}
+          </p>
+          <p className="text-sm text-neutral-500">F / objectif {formatFcfa(progress.floor_fcfa)} F</p>
+        </div>
+      )}
 
       <div className="relative mt-md h-3 overflow-visible rounded-full bg-neutral-100">
         <div
           className={`absolute inset-y-0 left-0 rounded-full transition-all ${
-            above ? 'bg-gradient-to-r from-gold to-warning' : 'bg-gradient-to-r from-primary-500 to-primary-700'
+            full ? 'bg-gradient-to-r from-gold to-warning' : 'bg-gradient-to-r from-primary-500 to-primary-700'
           }`}
           style={{ width: `${barPct}%` }}
         />
         <div
           className="absolute inset-y-0 border-l-2 border-dashed border-neutral-400"
           style={{ left: '50%' }}
-          aria-label="Objectif"
+          aria-label={hasFloor ? 'Versement du jour' : 'Objectif'}
         />
       </div>
       <div className="mt-xs flex justify-between text-[10px] text-neutral-500">
         <span>0</span>
-        <span>Objectif {formatFcfa(progress.floor_fcfa)}</span>
-        <span>{formatFcfa(progress.floor_fcfa * 2)}</span>
+        <span>
+          {hasFloor ? 'Versement' : 'Objectif'} {formatFcfa(gaugeBase)}
+        </span>
+        <span>{formatFcfa(gaugeBase * 2)}</span>
       </div>
 
-      <p className="mt-md text-sm text-neutral-800">
+      {hasFloor && (
+        <p className="mt-md text-sm text-neutral-800">
+          {floor!.is_sunday ? (
+            <>Dimanche : pas de versement.</>
+          ) : floor!.excused ? (
+            <>
+              Jour non travaillé enregistré : <strong>rien n&apos;est prélevé</strong> aujourd&apos;hui.
+            </>
+          ) : !floor!.started ? (
+            <>
+              Le <strong>versement quotidien</strong> démarre le {frDate(floor!.starts_on)}.
+            </>
+          ) : floor!.remaining_fcfa > 0 ? (
+            <>
+              Encore <strong>{formatFcfa(floor!.remaining_fcfa)} F</strong> de part de TamCar pour couvrir le versement. À
+              minuit, ce qui manque est prélevé sur votre portefeuille.
+            </>
+          ) : (
+            <>
+              <strong className="text-success">Versement couvert.</strong> Vos courses suivantes comptent toujours pour
+              TamCar : {formatFcfa(floor!.surplus_fcfa)} F au-dessus du versement aujourd&apos;hui.
+            </>
+          )}
+        </p>
+      )}
+
+      <p className={`${hasFloor ? 'mt-sm' : 'mt-md'} text-sm text-neutral-800`}>
         {!progress.bonus_started ? (
           <>
-            Le <strong>bonus de performance</strong> démarre le{' '}
-            {new Date(progress.bonus_start).toLocaleDateString('fr-FR', { timeZone: 'Africa/Porto-Novo', day: 'numeric', month: 'long', year: 'numeric' })}.
+            Le <strong>bonus de performance</strong> démarre le {frDate(progress.bonus_start)}.
           </>
         ) : !progress.bonus_day ? (
           <>Pas de bonus le dimanche.</>
@@ -419,7 +491,7 @@ function TodayProgress({
         ) : (
           <>
             Encore <strong>{formatFcfa(progress.fcfa_to_floor)} F</strong> de courses dans l&apos;app pour atteindre votre
-            objectif. Au-delà, chaque 1 000 F de courses en plus vous rapporte{' '}
+            objectif de bonus. Au-delà, chaque 1 000 F de courses en plus vous rapporte{' '}
             <strong className="text-warning">{formatFcfa(progress.rate_per_1000)} F</strong> de bonus.
           </>
         )}
@@ -428,6 +500,17 @@ function TodayProgress({
         <p className="mt-xs text-[11px] text-neutral-500">
           Le bonus se calcule sur les courses terminées dans l&apos;application, du lundi au samedi : TamCar vous reverse la
           moitié de sa part sur le volume au-dessus de l&apos;objectif.
+        </p>
+      )}
+
+      {hasFloor && floor!.extension_days > 0 && (
+        <p className="mt-md rounded-lg bg-neutral-100 px-md py-sm text-[12px] text-neutral-700">
+          <strong>
+            {floor!.extension_days} jour{floor!.extension_days > 1 ? 's' : ''} non travaillé
+            {floor!.extension_days > 1 ? 's' : ''}
+          </strong>{' '}
+          : votre contrat est prolongé d&apos;autant
+          {floor!.contract_end_on ? <> (fin prévue le {frDate(floor!.contract_end_on)})</> : null}.
         </p>
       )}
     </section>

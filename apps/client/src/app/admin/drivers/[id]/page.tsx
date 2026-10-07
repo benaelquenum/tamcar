@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createServerSupabase } from '@/lib/supabase-server';
 import { PortraitUploader } from './PortraitUploader';
+import { ContractCard, type ContractInfo } from './ContractCard';
 
 const PAGE_SIZE = 100;
 const TZ = 'Africa/Porto-Novo';
@@ -121,6 +122,8 @@ const WALLET_LABEL: Record<string, string> = {
   tamassur_from_rachat: 'TamAssur (moitié sur le fonds de rachat)',
   performance_bonus: 'Bonus de performance',
   approach_bonus: 'Prime d’approche',
+  floor_topup: 'Versement du jour (complément)',
+  floor_refund: 'Versement remboursé (jour non travaillé)',
   tamassur_withdrawal: 'Retrait TamAssur',
   senteur_fee: 'Produits de senteur (fonds de rachat)',
   debt_settlement: 'Règlement de dette',
@@ -131,7 +134,7 @@ const WALLET_LABEL: Record<string, string> = {
 
 const CREDIT_TYPES = new Set([
   'revenue_share_credit', 'rachat_credit', 'dealer_share_credit', 'topup', 'refund',
-  'referral_bonus', 'goodwill_credit', 'cancellation_reimbursement', 'debt_settlement', 'change_return_in', 'performance_bonus', 'approach_bonus',
+  'referral_bonus', 'goodwill_credit', 'cancellation_reimbursement', 'debt_settlement', 'change_return_in', 'performance_bonus', 'approach_bonus', 'floor_refund',
 ]);
 const DEBIT_TYPES = new Set(['cash_commission', 'insurance_premium', 'tamassur_from_rachat', 'withdrawal', 'payment', 'cancellation_fee', 'change_return_out']);
 
@@ -213,7 +216,7 @@ export default async function AdminDriverDetailPage({
   const type = (searchParams?.type ?? '').trim();
   const page = Math.max(1, parseInt(searchParams?.page ?? '1', 10) || 1);
 
-  const [{ data: summaryData, error: sumErr }, { data: countData }, { data: eventData }] = await Promise.all([
+  const [{ data: summaryData, error: sumErr }, { data: countData }, { data: eventData }, { data: contractData }] = await Promise.all([
     supabase.rpc('admin_driver_summary', { p_driver_id: params.id }),
     supabase.rpc('admin_driver_history_counts', { p_driver_id: params.id }),
     supabase.rpc('admin_driver_history', {
@@ -222,6 +225,7 @@ export default async function AdminDriverDetailPage({
       p_limit: PAGE_SIZE,
       p_offset: (page - 1) * PAGE_SIZE,
     }),
+    supabase.rpc('admin_driver_contract', { p_driver_id: params.id }),
   ]);
 
   if (sumErr || !summaryData) {
@@ -258,6 +262,7 @@ export default async function AdminDriverDetailPage({
     return `/admin/drivers/${s.driver_id}${qs ? `?${qs}` : ''}`;
   };
 
+  const contract = (contractData ?? null) as ContractInfo | null;
   const rachatBalance = s.wallets?.tamcar_rachat ?? 0;
   const revenusBalance = s.wallets?.tamcar_revenus ?? 0;
   const tamassurNet = (s.wallet_totals?.tamassur_saving?.sum ?? 0) - (s.wallet_totals?.tamassur_withdrawal?.sum ?? 0);
@@ -332,6 +337,8 @@ export default async function AdminDriverDetailPage({
         currentUrl={s.avatar_url}
         verifiedAt={avatarVerifiedAt}
       />
+
+      {contract && <ContractCard driverId={s.driver_id} info={contract} />}
 
       {/* Chiffres depuis l'enrôlement */}
       <h2 className="mb-sm mt-xl text-sm font-bold uppercase tracking-wider text-neutral-500">Depuis l&apos;enrôlement</h2>

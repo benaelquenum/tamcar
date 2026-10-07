@@ -360,6 +360,61 @@ export default function CguPage() {
           </p>
         </Section>
 
+        <Section n="13 quater" title="Versement quotidien du Chauffeur (formule Cession)">
+          <p>
+            Le Chauffeur en formule Cession verse à TamCar, chaque jour du lundi
+            au samedi, une part minimale du volume des courses, appelée le{' '}
+            <strong>versement</strong> : <strong>2 500 FCFA</strong> pour une
+            moto, <strong>5 000 FCFA</strong> pour un tricycle,{' '}
+            <strong>7 200 FCFA</strong> pour une voiture Essentiel et{' '}
+            <strong>9 000 FCFA</strong> pour une voiture Confort. Il n’y a aucun
+            versement le dimanche.
+          </p>
+          <p className="mt-sm">
+            La <strong>part de TamCar</strong> est la part du prix de chaque course
+            terminée dans l’Application qui ne revient pas au Chauffeur. Elle est
+            retenue course par course et cumulée pour la journée, qui s’arrête à
+            minuit (heure de Porto-Novo). L’Application affiche en direct deux
+            chiffres : le montant total des courses et la part de TamCar, avec une
+            jauge qui se remplit au fil des courses et repart à zéro à minuit.
+          </p>
+          <p className="mt-sm">
+            Si, à minuit, la part de TamCar est inférieure au versement,{' '}
+            <strong>la différence est prélevée sur le portefeuille « Revenus »</strong>{' '}
+            du Chauffeur, y compris lorsque son solde est insuffisant : le solde
+            devient alors négatif et les règles applicables à la dette du
+            Chauffeur s’appliquent (suspension automatique à partir de 5 000 FCFA
+            de dette, levée dès son règlement). Si la part de TamCar atteint ou
+            dépasse le versement, rien n’est prélevé. Le versement est un{' '}
+            <strong>minimum</strong>, non un plafond : au-delà, la part de TamCar
+            continue d’être perçue sur chaque course, et le bonus de
+            l’article 13 ter s’applique.
+          </p>
+          <p className="mt-sm">
+            Exemple : pour un tricycle (versement de 5 000 FCFA), la part de TamCar
+            atteint 3 800 FCFA à minuit ; 1 200 FCFA sont prélevés sur le
+            portefeuille « Revenus ». Un autre jour, elle atteint 5 000 FCFA à
+            17 h et 10 000 FCFA à 20 h : rien n’est prélevé, et les 5 000 FCFA
+            au-delà du versement reviennent à TamCar, sous réserve du bonus de
+            l’article 13 ter.
+          </p>
+          <p className="mt-sm">
+            <strong>Jours non travaillés.</strong> En cas de panne du véhicule ou
+            de maladie du Chauffeur, constatée et enregistrée par TamCar, aucun
+            versement ni aucune cotisation TamAssur n’est prélevé pour les jours
+            concernés ; un jour déjà prélevé est remboursé ; et{' '}
+            <strong>la durée du contrat est prolongée d’un nombre de jours égal
+            au nombre de jours non travaillés</strong>. Le Chauffeur signale sans
+            délai l’événement à TamCar.
+          </p>
+          <p className="mt-sm">
+            Le versement s’applique à compter de la date indiquée dans
+            l’Application. TamCar peut en modifier le montant, pour l’avenir,
+            après information du Chauffeur dans l’Application. Il ne concerne pas
+            la formule Propriétaire.
+          </p>
+        </Section>
+
         <Section n="14" title="Interdiction de contournement">
           <p>
             Il est interdit de conclure, solliciter ou accepter une course en

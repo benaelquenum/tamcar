@@ -24,6 +24,8 @@ export type WalletTxType =
   | 'tamassur_from_rachat'
   | 'performance_bonus'
   | 'approach_bonus'
+  | 'floor_topup'
+  | 'floor_refund'
   | 'ops_commission'
   | 'senteur_fee'
   | 'ops_payout'
@@ -115,6 +117,8 @@ const TX_LABEL: Record<WalletTxType, string> = {
   tamassur_from_rachat: 'TamAssur (vers épargne)',
   performance_bonus: 'Bonus de performance',
   approach_bonus: 'Prime d\'approche',
+  floor_topup: 'Versement du jour (complément)',
+  floor_refund: 'Versement remboursé (jour non travaillé)',
   ops_commission: 'Commission responsable opérations',
   senteur_fee: 'Produits de senteur',
   ops_payout: 'Règlement responsable opérations',
@@ -135,6 +139,7 @@ const CREDIT_TYPES = new Set<WalletTxType>([
   'dealer_share_credit',
   'performance_bonus',
   'approach_bonus',
+  'floor_refund',
   'ops_commission',
   'tamassur_saving',
   'debt_settlement',
