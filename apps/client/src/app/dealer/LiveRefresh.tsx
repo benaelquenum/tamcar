@@ -22,12 +22,10 @@ export function LiveRefresh({ dealerId, updatedAt }: { dealerId: string; updated
       timer.current = setTimeout(() => router.refresh(), 700);
     };
 
-    const ch = freshChannel(`dealer-live:${dealerId}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'rides', filter: `dealer_partner_id=eq.${dealerId}` },
-        refreshSoon,
-      )
+    // Diffusion sans données émise par la base quand une course de ses véhicules change (le partenaire n'a plus
+    // de droit de lecture direct sur les courses : ses chiffres viennent des fonctions dealer_my_*).
+    const ch = freshChannel(`dealer-${dealerId}`)
+      .on('broadcast', { event: 'refresh' }, refreshSoon)
       .subscribe((status) => setConnected(status === 'SUBSCRIBED'));
 
     const poll = setInterval(() => {
