@@ -4,6 +4,7 @@ import { Logo } from '@/components/Logo';
 import { BottomTabBar } from '@/components/BottomTabBar';
 import { ConfirmSubmit } from '@/components/ConfirmSubmit';
 import { CalendarIcon, CheckIcon, PhoneIcon, PinIcon, UserIcon, VipCarIcon, WhatsAppIcon } from '@/components/Icon';
+import { VehicleIcon } from '@/components/VehicleIcon';
 import { getCurrentUser } from '@/lib/session';
 import { createServerSupabase } from '@/lib/supabase-server';
 import { cancelRentalAction } from './actions';
@@ -117,7 +118,8 @@ function BookingCard({ b }: { b: Booking }) {
             {st.label}
           </span>
           {b.requested_category && (
-            <span className="font-semibold uppercase tracking-wider text-neutral-500">
+            <span className="inline-flex items-center gap-xs font-semibold uppercase tracking-wider text-neutral-500">
+              <VehicleIcon category={b.requested_category} className="h-4 w-4 text-violet-700" />
               {CAT_LABEL[b.requested_category] ?? b.requested_category}
             </span>
           )}

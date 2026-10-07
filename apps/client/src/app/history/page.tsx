@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Logo } from '@/components/Logo';
 import { PinIcon, FileTextIcon } from '@/components/Icon';
+import { VehicleIcon } from '@/components/VehicleIcon';
 import { getCurrentUser } from '@/lib/session';
 import { createServerSupabase } from '@/lib/supabase-server';
 import { ScheduledRidesList } from './ScheduledRidesList';
@@ -15,6 +16,7 @@ type RideRow = {
   distance_km: number | null;
   status: string;
   requested_at: string;
+  requested_category: string | null;
 };
 
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
@@ -44,7 +46,7 @@ export default async function HistoryPage({ searchParams }: { searchParams: { ju
   const [{ data: rides }, { data: scheduled }] = await Promise.all([
     supabase
       .from('rides_view')
-      .select('id, pickup_address, dropoff_address, price_total_fcfa, distance_km, status, requested_at')
+      .select('id, pickup_address, dropoff_address, price_total_fcfa, distance_km, status, requested_at, requested_category')
       .eq('client_id', user.id)
       .neq('status', 'scheduled')
       .order('requested_at', { ascending: false })
@@ -165,8 +167,13 @@ export default async function HistoryPage({ searchParams }: { searchParams: { ju
                       </div>
                     </div>
                     <div className="flex items-center justify-between text-[11px]">
-                      <span className={`inline-flex rounded-full px-sm py-0.5 font-bold ${status.color}`}>
-                        {status.label}
+                      <span className="inline-flex items-center gap-xs">
+                        <span className="grid h-6 w-6 flex-none place-items-center rounded-full bg-neutral-100 text-neutral-700">
+                          <VehicleIcon category={r.requested_category} className="h-4 w-4" />
+                        </span>
+                        <span className={`inline-flex rounded-full px-sm py-0.5 font-bold ${status.color}`}>
+                          {status.label}
+                        </span>
                       </span>
                       <span className="text-neutral-500" style={{ fontVariantNumeric: 'tabular-nums' }}>
                         {new Date(r.requested_at).toLocaleString('fr-FR', {

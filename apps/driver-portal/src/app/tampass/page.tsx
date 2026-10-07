@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { createServerSupabase } from '@/lib/supabase-server';
+import { VehicleIcon } from '@/components/VehicleIcon';
 import { acceptOfferAction } from './actions';
 
 type OfferRow = {
@@ -173,7 +174,8 @@ export default async function DriverTamPassPage({
                   <p className="text-lg font-extrabold text-primary-700">
                     ~{o.driver_estimate_fcfa.toLocaleString('fr-FR')} FCFA
                   </p>
-                  <span className="text-[11px] font-bold uppercase text-neutral-500">
+                  <span className="inline-flex items-center gap-xs text-[11px] font-bold uppercase text-neutral-500">
+                    <VehicleIcon category={o.category} className="h-4 w-4 text-primary-700" />
                     {o.category} · {o.weeks} sem.
                   </span>
                 </div>
@@ -227,7 +229,8 @@ export default async function DriverTamPassPage({
                   <div className="flex items-baseline justify-between">
                     <p className="text-base font-extrabold text-neutral-900">
                       {s.client_first_name}
-                      <span className="ml-sm text-xs font-normal uppercase text-neutral-400">
+                      <span className="ml-sm inline-flex items-center gap-xs text-xs font-normal uppercase text-neutral-400">
+                        <VehicleIcon category={s.category} className="h-4 w-4" />
                         {s.category}
                       </span>
                     </p>

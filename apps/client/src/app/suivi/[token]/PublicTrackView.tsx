@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Logo } from '@/components/Logo';
 import { Map } from '@/components/Map';
+import { VehicleIcon } from '@/components/VehicleIcon';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 
 export type PublicTrackRow = {
@@ -142,7 +143,8 @@ export function PublicTrackView({
               )}
             </p>
             {(row.vehicle_brand || row.vehicle_plate) && (
-              <p className="mt-xs text-xs text-neutral-600">
+              <p className="mt-xs flex flex-wrap items-center gap-x-xs text-xs text-neutral-600">
+                <VehicleIcon category={row.requested_category} className="h-4 w-4 text-primary-700" />
                 {[row.vehicle_brand, row.vehicle_model].filter(Boolean).join(' ')}
                 {row.vehicle_color ? ` · ${row.vehicle_color}` : ''}
                 {row.vehicle_plate ? ` · ${row.vehicle_plate}` : ''}

@@ -16,6 +16,7 @@ import {
   LuggageIcon,
 } from '@/components/Icon';
 import { Map } from '@/components/Map';
+import { VehicleIcon } from '@/components/VehicleIcon';
 import { MessagesFab } from '@/components/MessagesFab';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { freshChannel } from '@/lib/realtime';
@@ -789,7 +790,8 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
                       <p className="mt-xs text-sm text-neutral-800">
                         {o.pickup_address} → {o.dropoff_address}
                       </p>
-                      <p className="text-xs text-neutral-500">
+                      <p className="flex items-center gap-xs text-xs text-neutral-500">
+                        <VehicleIcon category={o.category} className="h-4 w-4 text-primary-700" />
                         {o.category}
                         {o.distance_km != null ? ` · ${o.distance_km} km` : ''}
                         {o.duration_min != null ? ` · ${o.duration_min} min` : ''}
@@ -911,7 +913,8 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
                         <p className="text-lg font-extrabold text-primary-700">
                           ~{formatFcfa(o.driver_estimate_fcfa)} FCFA
                         </p>
-                        <span className="text-[11px] font-bold uppercase text-neutral-500">
+                        <span className="inline-flex items-center gap-xs text-[11px] font-bold uppercase text-neutral-500">
+                          <VehicleIcon category={o.category} className="h-4 w-4 text-primary-700" />
                           {o.category} · {o.weeks} sem.
                         </span>
                       </div>
@@ -1208,6 +1211,14 @@ function RideCard({
       <div className={`mt-sm flex flex-wrap items-center gap-x-md gap-y-xs text-[11px] ${
         isBooking ? 'text-white/85' : 'text-neutral-600'
       }`}>
+        {ride.requested_category && (
+          <span className={`inline-flex items-center gap-xs font-bold ${
+            isBooking ? 'text-white' : 'text-primary-700'
+          }`}>
+            <VehicleIcon category={ride.requested_category} className="h-4 w-4" />
+            {catLabel(ride.requested_category)}
+          </span>
+        )}
         {ride.client_first_name && (
           <span className={`inline-flex items-center gap-xs font-semibold ${
             isBooking ? 'text-white' : 'text-neutral-800'

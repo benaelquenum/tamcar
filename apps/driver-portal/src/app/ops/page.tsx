@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Logo } from '@/components/Logo';
 import { PhoneIcon } from '@/components/Icon';
+import { VehicleIcon } from '@/components/VehicleIcon';
 import { getCurrentProfile } from '@/lib/session';
 import { createServerSupabase } from '@/lib/supabase-server';
 import { AutoRefresh } from './AutoRefresh';
@@ -183,6 +184,7 @@ export default async function OpsPage() {
                         <span className="truncate">{d.full_name}</span>
                       </p>
                       <p className="mt-0.5 text-[11px] text-neutral-500">
+                        <VehicleIcon category={d.category} className="mr-xs inline-block h-3.5 w-3.5 align-text-bottom text-primary-700" />
                         {CAT_LABEL[d.category ?? ''] ?? '—'}
                         {d.plate ? ` · ${d.plate}` : ''} ·{' '}
                         {suspended ? <strong className="text-error">suspendu</strong> : d.is_online ? 'en ligne' : `hors ligne, ${ago(d.last_seen_at)}`}

@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation';
 import { getCurrentProfile } from '@/lib/session';
 import { createServerSupabase } from '@/lib/supabase-server';
 import { PrintButton } from './PrintTrigger';
+import { VehicleIcon } from '@/components/VehicleIcon';
 
 type RideDetail = {
   id: string;
@@ -158,7 +159,10 @@ export default async function FacturePage({ params }: { params: { rideId: string
             <tbody>
               <tr className="border-b border-neutral-100">
                 <td className="py-md text-neutral-900">
-                  Course VTC {CAT_LABEL[ride.requested_category ?? ''] ?? ''}
+                  <span className="inline-flex items-center gap-xs">
+                    <VehicleIcon category={ride.requested_category} className="h-5 w-5 text-primary-700" />
+                    Course VTC {CAT_LABEL[ride.requested_category ?? ''] ?? ''}
+                  </span>
                   <p className="text-[11px] text-neutral-500">Prix fixe garanti — aucun surge</p>
                 </td>
                 <td className="py-md text-right text-neutral-700" style={{ fontVariantNumeric: 'tabular-nums' }}>

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { CalendarIcon, CheckIcon } from '@/components/Icon';
+import { VehicleIcon } from '@/components/VehicleIcon';
 
 type Scheduled = {
   id: string;
@@ -94,7 +95,8 @@ export function ScheduledRidesList({ initial, justScheduled }: { initial: Schedu
               </p>
             </div>
             {r.requested_category && (
-              <p className="mt-xs text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
+              <p className="mt-xs flex items-center gap-xs text-[10px] font-semibold uppercase tracking-wider text-neutral-500">
+                <VehicleIcon category={r.requested_category} className="h-4 w-4 text-violet-700" />
                 {CAT_LABEL[r.requested_category] ?? r.requested_category}
               </p>
             )}

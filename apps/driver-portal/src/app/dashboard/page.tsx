@@ -3,7 +3,6 @@ import { redirect } from 'next/navigation';
 import { Logo } from '@/components/Logo';
 import {
   ArrowRightIcon,
-  CarIcon,
   ChartIcon,
   CoinsIcon,
   GiftIcon,
@@ -13,6 +12,7 @@ import {
   WalletIcon,
 } from '@/components/Icon';
 import { Avatar } from '@/components/Avatar';
+import { VehicleIcon } from '@/components/VehicleIcon';
 import { getCurrentProfile } from '@/lib/session';
 import { createServerSupabase } from '@/lib/supabase-server';
 import { logout } from '@/app/login/actions';
@@ -263,7 +263,7 @@ export default async function DriverDashboardPage() {
         {vehicleInfo && (
           <section className="mt-lg rounded-xl border border-neutral-200 bg-white p-lg shadow-sm">
             <h2 className="mb-md flex items-center gap-xs text-xs font-bold uppercase tracking-wider text-neutral-500">
-              <CarIcon className="h-4 w-4" />
+              <VehicleIcon category={vehicleInfo.category} className="h-5 w-5 text-primary-700" />
               Mon véhicule
             </h2>
             <dl className="space-y-sm text-sm">

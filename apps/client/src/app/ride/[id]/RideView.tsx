@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/Logo';
-import { CarIcon, CheckIcon, CompassIcon, CrosshairIcon, PinIcon, SparkleIcon, StarIcon, AlertTriangleIcon, WhatsAppIcon, MessageIcon, ShareIcon } from '@/components/Icon';
+import { CheckIcon, CompassIcon, CrosshairIcon, PinIcon, SparkleIcon, StarIcon, AlertTriangleIcon, WhatsAppIcon, MessageIcon, ShareIcon } from '@/components/Icon';
+import { VehicleIcon } from '@/components/VehicleIcon';
 import { Avatar } from '@/components/Avatar';
 import { RideTalkie } from '@/components/RideTalkie';
 import { RideCall } from '@/components/RideCall';
@@ -1305,7 +1306,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
               className="flex w-full items-center gap-md px-lg pb-md pt-xs text-left"
             >
               <span className={`grid h-11 w-11 flex-none place-items-center rounded-full ${meta.color} text-white`}>
-                <CarIcon className="h-5 w-5" />
+                <VehicleIcon category={ride.vehicle_category ?? ride.requested_category} className="h-6 w-6" />
               </span>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-extrabold text-neutral-900">{statusTitle}</p>
@@ -1434,7 +1435,8 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                     </p>
                   )}
                   {(ride.vehicle_brand || ride.vehicle_model) && (
-                    <p className="text-xs text-neutral-600">
+                    <p className="flex flex-wrap items-center gap-x-xs text-xs text-neutral-600">
+                      <VehicleIcon category={ride.vehicle_category ?? ride.requested_category} className="h-4 w-4 text-primary-700" />
                       {[ride.vehicle_color, ride.vehicle_brand, ride.vehicle_model].filter(Boolean).join(' ')}
                       {ride.vehicle_plate && (
                         <span className="ml-xs rounded bg-neutral-900 px-xs py-0.5 text-[10px] font-bold text-white" style={{ fontVariantNumeric: 'tabular-nums' }}>
@@ -1776,7 +1778,10 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                         className="flex w-full items-center justify-between rounded-xl border-2 border-neutral-200 bg-white p-md text-left hover:border-primary-500 disabled:opacity-50"
                       >
                         <div>
-                          <p className="text-base font-bold text-neutral-900">{label}</p>
+                          <p className="flex items-center gap-xs text-base font-bold text-neutral-900">
+                            <VehicleIcon category={o.category} className="h-5 w-5 text-primary-700" />
+                            {label}
+                          </p>
                           <p className="mt-xs">
                             <span className="inline-flex items-center gap-xs rounded-full bg-primary-50 px-md py-0.5 text-[11px] font-bold text-primary-700 ring-1 ring-primary-100">
                               <span className="relative grid h-1.5 w-1.5 flex-none place-items-center">
@@ -1922,7 +1927,10 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                             className="flex w-full items-center justify-between gap-md rounded-xl border-2 border-neutral-200 bg-white p-md text-left hover:border-primary-500 disabled:opacity-50"
                           >
                             <div className="min-w-0">
-                              <p className="text-base font-bold text-neutral-900">{catLabel(o.category)}</p>
+                              <p className="flex items-center gap-xs text-base font-bold text-neutral-900">
+                                <VehicleIcon category={o.category} className="h-5 w-5 text-primary-700" />
+                                {catLabel(o.category)}
+                              </p>
                               <p className="text-[11px] text-neutral-600" style={{ fontVariantNumeric: 'tabular-nums' }}>
                                 {o.drivers_online_nearby} chauffeur{o.drivers_online_nearby > 1 ? 's' : ''} dispo
                                 {o.eta_min != null ? ` · ~${o.eta_min} min` : ''}

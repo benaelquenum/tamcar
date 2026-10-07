@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { createServerSupabase } from '@/lib/supabase-server';
+import { VehicleIcon } from '@/components/VehicleIcon';
 
 type RecentDriver = {
   driver_id: string;
@@ -73,7 +74,8 @@ export default async function ChauffeursPage() {
                   {d.is_online ? 'En ligne' : 'Hors ligne'}
                 </span>
               </div>
-              <p className="mt-xs text-xs text-neutral-500 capitalize">
+              <p className="mt-xs flex items-center gap-xs text-xs text-neutral-500 capitalize">
+                <VehicleIcon category={d.vehicle_category} className="h-4 w-4 text-primary-700" />
                 {d.vehicle_label ?? d.vehicle_category} · {d.rides_count} course
                 {d.rides_count > 1 ? 's' : ''} ensemble
               </p>

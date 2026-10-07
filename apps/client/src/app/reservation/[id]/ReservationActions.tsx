@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import type { VehicleCategory } from '@/lib/pricing';
 import { CalendarIcon, CheckIcon, PinIcon, UserIcon } from '@/components/Icon';
+import { VehicleIcon } from '@/components/VehicleIcon';
 
 type Ride = {
   id: string;
@@ -276,7 +277,8 @@ export function ReservationActions({ ride }: { ride: Ride }) {
                         className="flex w-full items-center justify-between gap-md rounded-xl border border-neutral-200 bg-white p-md text-left transition hover:border-primary-300 disabled:opacity-50"
                       >
                         <span className="flex-1">
-                          <span className="block text-sm font-bold text-neutral-900">
+                          <span className="flex items-center gap-xs text-sm font-bold text-neutral-900">
+                            <VehicleIcon category={a.category} className="h-5 w-5 text-primary-700" />
                             {CAT_LABEL[a.category] ?? a.category}
                           </span>
                           <span
