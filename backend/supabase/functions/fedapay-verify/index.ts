@@ -40,7 +40,10 @@ async function trace(row: { reference?: string; provider_tx_id?: string; amount_
 
 async function fedaGet(path: string): Promise<any> {
   const res = await fetch(`${FEDA_URL}${path}`, { headers: { Authorization: `Bearer ${FEDA_KEY}`, Accept: 'application/json' } });
-  if (!res.ok) throw new Error(`FedaPay ${path} : HTTP ${res.status}`);
+  if (!res.ok) {
+    const txt = (await res.text().catch(() => '')).replace(/\s+/g, ' ').slice(0, 200);
+    throw new Error(`FedaPay ${path} : HTTP ${res.status} ${txt}`);
+  }
   return await res.json();
 }
 
@@ -48,16 +51,21 @@ function refOf(t: any): string {
   return t?.custom_metadata?.reference ?? t?.metadata?.reference ?? '';
 }
 
-// La transaction FedaPay qui porte notre référence : on parcourt les plus récentes (le paiement vient d'avoir lieu).
-async function findTransaction(reference: string): Promise<any | null> {
-  for (let page = 1; page <= 3; page++) {
-    const data = await fedaGet(`/transactions?per_page=50&page=${page}`);
-    const list: any[] = data['v1/transactions'] ?? data.transactions ?? [];
-    const hit = list.find((t) => refOf(t) === reference);
-    if (hit) return hit;
-    if (list.length < 50) break;
+function unwrap(data: any): any {
+  return data?.['v1/transaction'] ?? data?.transaction ?? data;
+}
+
+// La transaction FedaPay qui porte notre référence.
+// 1. par identifiant (fourni par la fenêtre de paiement) : on vérifie que SA référence est bien la nôtre ;
+// 2. à défaut, parmi les plus récentes de la liste (dernier recours : les paramètres de pagination de FedaPay ne sont pas documentés).
+async function findTransaction(reference: string, id?: string): Promise<any | null> {
+  if (id && /^\d+$/.test(id)) {
+    const t = unwrap(await fedaGet(`/transactions/${id}`));
+    return refOf(t) === reference ? t : null;
   }
-  return null;
+  const data = await fedaGet('/transactions');
+  const list: any[] = data['v1/transactions'] ?? data.transactions ?? [];
+  return list.find((t) => refOf(t) === reference) ?? null;
 }
 
 Deno.serve(async (req: Request) => {
@@ -73,6 +81,7 @@ Deno.serve(async (req: Request) => {
 
   const body = await req.json().catch(() => null);
   const reference = String(body?.reference ?? '');
+  const fedaIdHint = body?.transaction_id != null ? String(body.transaction_id) : undefined;
   if (!/^FDP-[0-9a-f]{32}$/.test(reference)) return json({ error: 'référence invalide' }, 400);
 
   // La transaction doit exister et appartenir à l'appelant
@@ -85,7 +94,7 @@ Deno.serve(async (req: Request) => {
   if (row.status !== 'pending') return json({ status: row.status });
 
   try {
-    const feda = await findTransaction(reference);
+    const feda = await findTransaction(reference, fedaIdHint);
     if (!feda) {
       await trace({ reference, outcome: 'pending', detail: 'transaction FedaPay introuvable (pas encore créée ?)' });
       return json({ status: 'pending' });

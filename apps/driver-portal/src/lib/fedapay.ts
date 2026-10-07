@@ -42,6 +42,8 @@ export type LaunchOpts = {
   customerLastName?: string | null;
   customerFirstName?: string | null;
   description?: string;
+  /** Appelée avec l'identifiant FedaPay de la transaction dès que la fenêtre le communique (sert à la confirmation directe). */
+  onTransaction?: (id: string) => void;
 };
 
 export type LaunchResult = 'completed' | 'cancelled' | 'error';
@@ -74,6 +76,8 @@ export async function launchFedapayCheckout(opts: LaunchOpts): Promise<LaunchRes
   return new Promise<LaunchResult>((resolve) => {
     try {
       config.onComplete = (resp: unknown) => {
+        const tid = (resp as { transaction?: { id?: number | string } } | null)?.transaction?.id;
+        if (tid != null && opts.onTransaction) opts.onTransaction(String(tid));
         const reason = String((resp as { reason?: string } | null)?.reason || '').toUpperCase();
         if (reason === 'CHECKOUT_COMPLETED') resolve('completed');
         else if (reason === 'DIALOG_DISMISSED') resolve('cancelled');
@@ -123,7 +127,9 @@ export async function payWithFedapay(
   const fullName = ((Array.isArray(profileRows) ? profileRows[0] : null) as { full_name?: string } | null)?.full_name?.trim() ?? '';
   const parts = fullName.split(/\s+/);
 
+  let fedaId: string | undefined;
   const launched = await launchFedapayCheckout({
+    onTransaction: (id) => { fedaId = id; },
     publicKey: FEDAPAY_PUBLIC_KEY,
     amountFcfa,
     reference: ref,
@@ -143,7 +149,7 @@ export async function payWithFedapay(
     // Toutes les 3 s : confirmation directe auprès de FedaPay (secours si le webhook tarde ou se perd).
     // Le serveur interroge FedaPay avec la clé secrète : le résultat ne peut pas être falsifié depuis ce navigateur.
     if (i % 3 === 2) {
-      const { data: v } = await supabaseBrowser.functions.invoke('fedapay-verify', { body: { reference: ref } });
+      const { data: v } = await supabaseBrowser.functions.invoke('fedapay-verify', { body: { reference: ref, transaction_id: fedaId } });
       const vs = (v as { status?: string } | null)?.status;
       if (vs === 'success') return { status: 'success' };
       if (vs === 'failed') return { status: 'failed' };
