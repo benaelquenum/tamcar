@@ -70,5 +70,9 @@ verify_jwt = false
 [functions.fedapay-payout]
 verify_jwt = true
 
+# Confirmation directe d'un paiement (secours du webhook) : jeton utilisateur obligatoire, la référence doit appartenir à l'appelant.
+[functions.fedapay-verify]
+verify_jwt = true
+
 [functions.send-push]
 verify_jwt = true

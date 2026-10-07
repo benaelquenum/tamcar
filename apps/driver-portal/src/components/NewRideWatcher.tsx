@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { registerPlugin, Capacitor } from '@capacitor/core';
+import { RideAlert } from '@/lib/rideAlert';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { freshChannel } from '@/lib/realtime';
 import { ringDelaysMs } from '@/lib/rideRings';
@@ -42,21 +43,6 @@ type LocalNotificationsPlugin = {
 
 const LocalNotifications = registerPlugin<LocalNotificationsPlugin>('LocalNotifications');
 
-// Sonnerie native de l'APK chauffeur récent (alerte forte en boucle, même app en fond). Absent des anciens APK :
-// les appels échouent et on retombe sur la notification locale classique.
-type RideAlertPlugin = {
-  show(opts: {
-    ride_id: string;
-    title: string;
-    body: string;
-    category?: string;
-    booking?: string;
-    tag?: string;
-  }): Promise<void>;
-  stop(opts: { ride_id: string }): Promise<void>;
-};
-
-const RideAlert = registerPlugin<RideAlertPlugin>('RideAlert');
 
 /** Identifiant stable par course : permet de retirer la notification quand la demande disparaît. */
 function notificationId(rideId: string): number {

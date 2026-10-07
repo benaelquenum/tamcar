@@ -103,7 +103,7 @@ export type PaymentOutcome =
  * son paiement sur son téléphone) : on interroge donc la base pendant 45 s au lieu de se fier à la fermeture de la fenêtre.
  */
 export async function payWithFedapay(
-  rpcName: 'initiate_fedapay_debt',
+  rpcName: 'initiate_fedapay_debt' | 'initiate_fedapay_topup',
   params: Record<string, unknown>,
   amountFcfa: number,
   description: string,
@@ -140,6 +140,14 @@ export async function payWithFedapay(
     const s = Array.isArray(rows) ? (rows[0] as { status?: string } | undefined)?.status : undefined;
     if (s === 'success') return { status: 'success' };
     if (s === 'failed') return { status: 'failed' };
+    // Toutes les 3 s : confirmation directe auprès de FedaPay (secours si le webhook tarde ou se perd).
+    // Le serveur interroge FedaPay avec la clé secrète : le résultat ne peut pas être falsifié depuis ce navigateur.
+    if (i % 3 === 2) {
+      const { data: v } = await supabaseBrowser.functions.invoke('fedapay-verify', { body: { reference: ref } });
+      const vs = (v as { status?: string } | null)?.status;
+      if (vs === 'success') return { status: 'success' };
+      if (vs === 'failed') return { status: 'failed' };
+    }
   }
   return { status: 'pending' };
 }

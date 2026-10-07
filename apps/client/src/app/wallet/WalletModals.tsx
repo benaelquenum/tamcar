@@ -5,9 +5,7 @@ import { useRouter } from 'next/navigation';
 import { CheckIcon } from '@/components/Icon';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { formatFcfa } from '@/lib/wallet';
-import { launchFedapayCheckout } from '@/lib/fedapay';
-
-const FEDAPAY_PUBLIC_KEY = process.env.NEXT_PUBLIC_FEDAPAY_PUBLIC_KEY;
+import { payWithFedapay } from '@/lib/fedapay';
 
 type ModalKind = 'topup' | 'withdraw';
 
@@ -49,62 +47,13 @@ export function WalletModal({ open, onClose, kind, availableBalance }: Props) {
     setError(null);
     startTransition(async () => {
       if (kind === 'topup') {
-        // Flow FedaPay : initie une transaction pending côté DB,
-        // ouvre le widget, attend le webhook via polling.
-        if (!FEDAPAY_PUBLIC_KEY) {
-          setError('Recharge indisponible (config FedaPay manquante).');
-          return;
-        }
-        const { data, error: initErr } = await supabaseBrowser.rpc('initiate_fedapay_topup', {
-          p_amount_fcfa: amount,
-        });
-        if (initErr || !Array.isArray(data) || !data[0]) {
-          setError(initErr?.message ?? 'Impossible d\'initier la recharge');
-          return;
-        }
-        const ref = (data[0] as { reference: string }).reference;
-
-        // Pré-remplir customer avec les infos du user (évite "undefined" dans le widget)
-        const { data: { user } } = await supabaseBrowser.auth.getUser();
-        const { data: profileRows } = await supabaseBrowser
-          .from('profiles')
-          .select('full_name, phone')
-          .eq('id', user?.id ?? '')
-          .limit(1);
-        const profile = Array.isArray(profileRows) ? profileRows[0] as { full_name?: string; phone?: string } | undefined : undefined;
-        const fullName = profile?.full_name?.trim() ?? '';
-        const parts = fullName.split(/\s+/);
-        const firstName = parts[0] || undefined;
-        const lastName = parts.slice(1).join(' ') || undefined;
-        const email = user?.email || undefined;
-
-        await launchFedapayCheckout({
-          publicKey: FEDAPAY_PUBLIC_KEY,
-          amountFcfa: amount,
-          reference: ref,
-          customerEmail: email,
-          customerFirstName: firstName,
-          customerLastName: lastName,
-        });
-        // Toujours poll — la source de vérité est le webhook, pas l'onComplete
-        // (l'user peut fermer la fenêtre après avoir validé MoMo).
-        let finalStatus: string | null = null;
-        for (let i = 0; i < 45; i++) {
-          await new Promise((r) => setTimeout(r, 1000));
-          const { data: rows } = await supabaseBrowser
-            .from('wallet_transactions')
-            .select('status')
-            .eq('fedapay_reference', ref)
-            .limit(1);
-          const s = Array.isArray(rows) ? (rows[0] as { status?: string } | undefined)?.status : undefined;
-          if (s === 'success' || s === 'failed') { finalStatus = s; break; }
-        }
-        if (finalStatus === 'failed') {
-          setError('Paiement refusé');
-          return;
-        }
-        if (finalStatus !== 'success') {
-          setError('Paiement en attente de confirmation — vérifiez votre portefeuille dans quelques minutes.');
+        // Flow FedaPay : transaction « en attente » en base, fenêtre de paiement, puis suivi du résultat (webhook + confirmation
+        // directe auprès de FedaPay). Voir lib/fedapay.ts.
+        const outcome = await payWithFedapay('initiate_fedapay_topup', { p_amount_fcfa: amount }, amount, 'Recharge TamCar Crédit');
+        if (outcome.status === 'error') { setError(outcome.message); return; }
+        if (outcome.status === 'failed') { setError('Paiement refusé. Vous n\'avez pas été débité.'); return; }
+        if (outcome.status === 'pending') {
+          setError('Paiement en attente de confirmation : votre solde se mettra à jour dans quelques minutes.');
           return;
         }
         setSuccess(true);

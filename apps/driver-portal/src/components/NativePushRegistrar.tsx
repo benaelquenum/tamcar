@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { registerPlugin, Capacitor } from '@capacitor/core';
+import { RideAlert } from '@/lib/rideAlert';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 
 // Enregistrement FCM de l'app NATIVE : demande la permission, récupère le
@@ -25,9 +26,8 @@ type PushNotificationsPlugin = {
 
 const PushNotifications = registerPlugin<PushNotificationsPlugin>('PushNotifications');
 
-// Plugin natif de l'APK qui fait SONNER une demande de course (sonnerie forte en boucle, même app fermée). Absent des
-// anciens APK : l'appel échoue, le jeton reste « android » et reçoit une notification standard.
-const RideAlert = registerPlugin<{ isSupported(): Promise<{ supported: boolean }> }>('RideAlert');
+// Plugin natif de l'APK qui fait SONNER une demande de course : voir lib/rideAlert.ts. Absent des anciens APK : l'appel
+// échoue, le jeton reste « android » et reçoit une notification standard.
 
 async function nativePlatform(): Promise<'android' | 'android-alert'> {
   try {
