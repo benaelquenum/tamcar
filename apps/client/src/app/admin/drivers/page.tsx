@@ -128,12 +128,9 @@ export default async function AdminDriversPage() {
                     </td>
                     <td className="px-md py-md text-right" style={{ fontVariantNumeric: 'tabular-nums' }}>
                       {d.pending_disputes_count > 0 ? (
-                        <a
-                          href="/admin/litiges"
-                          className="inline-block rounded-full bg-warning/15 px-sm py-0.5 text-xs font-bold text-warning hover:bg-warning/30"
-                        >
-                          {d.pending_disputes_count} →
-                        </a>
+                        <span className="inline-block rounded-full bg-warning/15 px-sm py-0.5 text-xs font-bold text-warning">
+                          {d.pending_disputes_count}
+                        </span>
                       ) : (
                         <span className="text-xs text-neutral-400">—</span>
                       )}

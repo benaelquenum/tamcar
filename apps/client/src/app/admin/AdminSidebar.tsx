@@ -7,6 +7,7 @@ import { LogOutIcon, MenuIcon } from '@/components/Icon';
 import { logout } from '@/app/login/actions';
 import { useAdminAlerts, type AdminCounts } from './AdminAlerts';
 import { SITE_URL } from '@/lib/siteUrl';
+import { GuideLauncher } from './guide/GuideLauncher';
 
 const NAV: { href: string; label: string; exact?: boolean; badge?: keyof AdminCounts; external?: boolean }[] = [
   { href: '/admin', label: 'Tableau de bord', exact: true },
@@ -119,6 +120,7 @@ export function AdminSidebar({ fullName }: { fullName: string }) {
       </nav>
 
       <div className="border-t border-white/15 px-sm py-md">
+        <GuideLauncher />
         <Link
           href="/compte"
           className="block truncate rounded-lg px-md py-sm text-xs text-white/75 hover:bg-white/10 hover:text-white"

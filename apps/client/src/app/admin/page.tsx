@@ -603,7 +603,6 @@ export default async function AdminHome() {
           <ShortcutCard href="/admin/vehicles" title="Véhicules" description="Enregistrement, activation, affectation chauffeur." />
           <ShortcutCard href="/admin/candidatures" title="Candidatures & RDV" description="Validation dossiers chauffeurs, KYC, planning." />
           <ShortcutCard href="/admin/dealer-advances" title="Avances Partenaires véhicules" description="Ligne de crédit ADR par partenaire." />
-          <ShortcutCard href="/admin/litiges" title="Litiges" description="Arbitrage des annulations et contestations." />
           <ShortcutCard href="/admin/promos" title="Codes promo" description="Création et suivi des codes promotionnels." />
           <ShortcutCard href="/admin/banners" title="Bannières" description="Communications marketing home client." />
           <ShortcutCard href="/admin/places" title="Lieux (POI)" description="Modération des lieux proposés." />
