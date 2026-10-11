@@ -74,5 +74,17 @@ verify_jwt = true
 [functions.fedapay-verify]
 verify_jwt = true
 
+# FeexPay (paiement Mobile Money). Le webhook n'envoie pas de jeton Supabase : son contenu n'est jamais cru, le statut est relu auprès
+# de FeexPay avec la clé privée, et un secret facultatif (FEEXPAY_WEBHOOK_SECRET) protège l'appel. Les deux autres fonctions sont
+# appelées par l'application avec le jeton de l'utilisateur ; la référence doit lui appartenir.
+[functions.feexpay-webhook]
+verify_jwt = false
+
+[functions.feexpay-pay]
+verify_jwt = true
+
+[functions.feexpay-verify]
+verify_jwt = true
+
 [functions.send-push]
 verify_jwt = true

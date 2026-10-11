@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckIcon } from '@/components/Icon';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { formatFcfa } from '@/lib/wallet';
-import { payWithFedapay } from '@/lib/fedapay';
+import { fetchPaymentsConfig, payWithMobileMoney, type Network, type PaymentsConfig } from '@/lib/payments';
+import { MobileMoneyFields, WaitingForConfirmation } from '@/components/MobileMoneyFields';
 
 type ModalKind = 'topup' | 'withdraw';
 
@@ -26,8 +27,29 @@ export function WalletModal({ open, onClose, kind, availableBalance }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const router = useRouter();
+  const [network, setNetwork] = useState<Network>('mtn');
+  const [phone, setPhone] = useState('');
+  const [cfg, setCfg] = useState<PaymentsConfig | null>(null);
+  const [waiting, setWaiting] = useState(false);
+
+  useEffect(() => {
+    if (!open || kind !== 'topup') return;
+    let alive = true;
+    fetchPaymentsConfig().then((c) => { if (alive) setCfg(c); });
+    // Numéro du compte comme valeur par défaut (modifiable : le numéro Mobile Money peut être un autre)
+    supabaseBrowser.auth.getUser().then(async ({ data }) => {
+      if (!data.user) return;
+      const { data: rows } = await supabaseBrowser.from('profiles').select('phone').eq('id', data.user.id).limit(1);
+      const p = (Array.isArray(rows) ? rows[0] : null) as { phone?: string | null } | null;
+      const national = p?.phone ? p.phone.replace(/^\+?229/, '') : '';
+      if (alive && national) setPhone((cur) => cur || national);
+    });
+    return () => { alive = false; };
+  }, [open, kind]);
 
   if (!open) return null;
+
+  const realTopup = kind === 'topup' && !!cfg?.feexpay;
 
   const chips = kind === 'topup' ? AMOUNT_CHIPS_TOPUP : AMOUNT_CHIPS_WITHDRAW;
   const title = kind === 'topup' ? 'Recharger TamCar Crédit' : 'Retirer mes revenus';
@@ -47,13 +69,29 @@ export function WalletModal({ open, onClose, kind, availableBalance }: Props) {
     setError(null);
     startTransition(async () => {
       if (kind === 'topup') {
-        // Flow FedaPay : transaction « en attente » en base, fenêtre de paiement, puis suivi du résultat (webhook + confirmation
-        // directe auprès de FedaPay). Voir lib/fedapay.ts.
-        const outcome = await payWithFedapay('initiate_fedapay_topup', { p_amount_fcfa: amount }, amount, 'Recharge TamCar Crédit');
-        if (outcome.status === 'error') { setError(outcome.message); return; }
-        if (outcome.status === 'failed') { setError('Paiement refusé. Vous n\'avez pas été débité.'); return; }
-        if (outcome.status === 'pending') {
-          setError('Paiement en attente de confirmation : votre solde se mettra à jour dans quelques minutes.');
+        if (cfg?.feexpay) {
+          // Paiement réel FeexPay : demande de confirmation sur le téléphone du client, puis suivi du résultat (webhook +
+          // confirmation directe). Voir lib/payments.ts.
+          const outcome = await payWithMobileMoney({
+            rpcName: 'initiate_fedapay_topup',
+            amountFcfa: amount,
+            network,
+            phone,
+            onWaiting: () => setWaiting(true),
+          });
+          setWaiting(false);
+          if (outcome.status === 'error') { setError(outcome.message); return; }
+          if (outcome.status === 'failed') { setError(outcome.reason); return; }
+          if (outcome.status === 'pending') {
+            setError('Paiement en attente de confirmation : votre solde se mettra à jour dès que vous aurez confirmé sur votre téléphone.');
+            return;
+          }
+        } else if (cfg?.testMode) {
+          // Paiement réel pas encore branché : recharge simulée (gratuite), réservée au mode TEST
+          const { error: rpcErr } = await supabaseBrowser.rpc('topup_tamcar_credit', { amount_fcfa: amount, provider });
+          if (rpcErr) { setError(rpcErr.message); return; }
+        } else {
+          setError('Le paiement Mobile Money n’est pas encore disponible. Réessayez plus tard.');
           return;
         }
         setSuccess(true);
@@ -104,7 +142,7 @@ export function WalletModal({ open, onClose, kind, availableBalance }: Props) {
             <h2 className="text-xl font-extrabold text-neutral-900">{title}</h2>
             <p className="mt-xs text-xs text-neutral-600">
               {kind === 'topup'
-                ? 'Paiement sécurisé via FedaPay (MTN, Moov, carte).'
+                ? (realTopup ? 'Paiement Mobile Money sécurisé (MTN, Moov, Celtiis).' : 'Recharge simulée (mode test).')
                 : 'Vers votre Mobile Money · Simulation (intégration réelle à venir).'}
             </p>
           </div>
@@ -132,6 +170,11 @@ export function WalletModal({ open, onClose, kind, availableBalance }: Props) {
           </div>
         ) : (
           <>
+            {kind === 'topup' && cfg && !cfg.feexpay && cfg.testMode && (
+              <div className="mb-md rounded-md bg-warning/15 p-md text-xs font-bold text-warning">
+                MODE TEST : cette recharge est simulée, aucun argent n&apos;est prélevé.
+              </div>
+            )}
             <label className="mb-xs block text-sm font-semibold text-neutral-900">Montant</label>
             <div className="flex items-center overflow-hidden rounded-xl bg-neutral-100 shadow-sm ring-1 ring-neutral-200 transition focus-within:ring-2 focus-within:ring-primary-500">
               <input
@@ -160,7 +203,11 @@ export function WalletModal({ open, onClose, kind, availableBalance }: Props) {
               ))}
             </div>
 
-            <div className="mt-lg">
+            {realTopup && (
+              <MobileMoneyFields network={network} onNetwork={setNetwork} phone={phone} onPhone={setPhone} disabled={pending} />
+            )}
+
+            <div className={`mt-lg ${realTopup ? 'hidden' : ''}`}>
               <label className="mb-xs block text-sm font-semibold text-neutral-900">Via</label>
               <div className="grid grid-cols-2 gap-sm">
                 <ProviderChoice
@@ -185,14 +232,15 @@ export function WalletModal({ open, onClose, kind, availableBalance }: Props) {
             <button
               type="button"
               onClick={submit}
-              disabled={pending || amount < minAmount}
+              disabled={pending || amount < minAmount || (kind === 'topup' && !cfg) || (realTopup && phone.replace(/\D/g, '').length < 8)}
               className="mt-lg w-full rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-md text-base font-bold text-white shadow-glow disabled:cursor-not-allowed disabled:opacity-50"
             >
               {pending ? '…' : `${cta} ${formatFcfa(amount)} FCFA`}
             </button>
-            {pending && (
+            {pending && waiting && <WaitingForConfirmation network={network} phone={phone} />}
+            {pending && !waiting && (
               <p className="mt-md text-center text-xs text-neutral-600" role="status">
-                Paiement en cours : gardez cette fenêtre ouverte, la confirmation prend quelques secondes après la fenêtre de paiement.
+                Envoi de la demande de paiement…
               </p>
             )}
           </>

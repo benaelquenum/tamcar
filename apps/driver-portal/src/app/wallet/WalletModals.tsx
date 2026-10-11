@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { CheckIcon } from '@/components/Icon';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { formatFcfa } from '@/lib/wallet';
-import { FEDAPAY_PUBLIC_KEY, payWithFedapay } from '@/lib/fedapay';
+import { fetchPaymentsConfig, payWithMobileMoney, type Network, type PaymentsConfig } from '@/lib/payments';
+import { MobileMoneyFields, WaitingForConfirmation } from '@/components/MobileMoneyFields';
 
 type ModalKind = 'topup' | 'withdraw' | 'settle';
 
@@ -27,13 +28,35 @@ export function WalletModal({ open, onClose, kind, availableBalance, debt }: Pro
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [manual, setManual] = useState(false);
+  const [network, setNetwork] = useState<Network>('mtn');
+  const [phone, setPhone] = useState('');
+  const [cfg, setCfg] = useState<PaymentsConfig | null>(null);
+  const [waiting, setWaiting] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    if (open && kind === 'settle') setAmount(Math.max(debt ?? 0, FEDAPAY_PUBLIC_KEY ? 100 : 0));
-  }, [open, kind, debt]);
+    if (!open || kind === 'withdraw') return;
+    let alive = true;
+    fetchPaymentsConfig().then((c) => { if (alive) setCfg(c); });
+    // Numéro du compte comme valeur par défaut (modifiable : le numéro Mobile Money peut être un autre)
+    supabaseBrowser.auth.getUser().then(async ({ data }) => {
+      if (!data.user) return;
+      const { data: rows } = await supabaseBrowser.from('profiles').select('phone').eq('id', data.user.id).limit(1);
+      const p = (Array.isArray(rows) ? rows[0] : null) as { phone?: string | null } | null;
+      const national = p?.phone ? p.phone.replace(/^\+?229/, '') : '';
+      if (alive && national) setPhone((cur) => cur || national);
+    });
+    return () => { alive = false; };
+  }, [open, kind]);
+
+  useEffect(() => {
+    if (open && kind === 'settle') setAmount(Math.max(debt ?? 0, cfg?.feexpay ? 100 : 0));
+  }, [open, kind, debt, cfg?.feexpay]);
 
   if (!open) return null;
+
+  // Paiement Mobile Money réel (FeexPay) pour la recharge et le règlement de dette ; le retrait reste manuel
+  const real = kind !== 'withdraw' && !!cfg?.feexpay;
 
   const chips =
     kind === 'topup' ? AMOUNT_CHIPS_TOPUP
@@ -44,8 +67,8 @@ export function WalletModal({ open, onClose, kind, availableBalance, debt }: Pro
     : kind === 'withdraw' ? 'Retirer mes revenus'
     : 'Régler ma dette';
   const cta = kind === 'topup' ? 'Recharger' : kind === 'withdraw' ? 'Retirer' : 'Régler';
-  const minAmount = kind === 'topup' ? 100 : kind === 'withdraw' ? 500 : FEDAPAY_PUBLIC_KEY ? 100 : 1;
-  const maxAmount = kind === 'settle' ? Math.max(debt ?? 0, FEDAPAY_PUBLIC_KEY ? 100 : 0) : 500000;
+  const minAmount = kind === 'topup' ? 100 : kind === 'withdraw' ? 500 : cfg?.feexpay ? 100 : 1;
+  const maxAmount = kind === 'settle' ? Math.max(debt ?? 0, cfg?.feexpay ? 100 : 0) : 500000;
 
   function submit() {
     if (amount < minAmount) {
@@ -63,24 +86,33 @@ export function WalletModal({ open, onClose, kind, availableBalance, debt }: Pro
 
     setError(null);
     startTransition(async () => {
-      if (kind === 'topup') {
-        const { error: rpcErr } = await supabaseBrowser.rpc('topup_tamcar_credit', {
-          amount_fcfa: amount,
-          provider,
-        });
-        if (rpcErr) { setError(rpcErr.message); return; }
-      } else if (kind === 'settle') {
-        if (FEDAPAY_PUBLIC_KEY) {
-          // Paiement réel (FedaPay) : le crédit du portefeuille et la réactivation du compte se font à la réception du webhook.
-          const outcome = await payWithFedapay('initiate_fedapay_debt', { p_amount_fcfa: amount }, amount, 'Règlement de dette TamCar');
+      if (kind === 'topup' || kind === 'settle') {
+        if (cfg?.feexpay) {
+          // Paiement réel (FeexPay) : demande de confirmation sur le téléphone ; le crédit du portefeuille (et, pour une dette,
+          // la réactivation du compte) se fait à la réception du résultat (webhook / confirmation directe). Voir lib/payments.ts.
+          const outcome = await payWithMobileMoney({
+            rpcName: kind === 'topup' ? 'initiate_fedapay_topup' : 'initiate_fedapay_debt',
+            amountFcfa: amount,
+            network,
+            phone,
+            onWaiting: () => setWaiting(true),
+          });
+          setWaiting(false);
           if (outcome.status === 'error') { setError(outcome.message); return; }
-          if (outcome.status === 'failed') { setError('Paiement refusé. Vous n\'avez pas été débité.'); return; }
+          if (outcome.status === 'failed') { setError(outcome.reason); return; }
           if (outcome.status === 'pending') {
-            setError('Paiement en attente de confirmation : votre solde se mettra à jour dans quelques minutes.');
+            setError('Paiement en attente de confirmation : votre solde se mettra à jour dès que vous aurez confirmé sur votre téléphone.');
             return;
           }
+        } else if (kind === 'topup') {
+          // Paiement réel pas encore branché (mode test) : recharge simulée, gratuite
+          const { error: rpcErr } = await supabaseBrowser.rpc('topup_tamcar_credit', {
+            amount_fcfa: amount,
+            provider,
+          });
+          if (rpcErr) { setError(rpcErr.message); return; }
         } else {
-          // Sans clé FedaPay (mode test) : règlement simulé, gratuit
+          // Paiement réel pas encore branché (mode test) : règlement simulé, gratuit
           const { error: rpcErr } = await supabaseBrowser.rpc('settle_driver_debt', {
             p_amount: amount,
             p_provider: provider,
@@ -131,10 +163,10 @@ export function WalletModal({ open, onClose, kind, availableBalance, debt }: Pro
             <h2 className="text-xl font-extrabold text-neutral-900">{title}</h2>
             <p className="mt-xs text-xs text-neutral-600">
               {kind === 'topup'
-                ? 'Simulation Mobile Money (intégration API réelle à venir).'
+                ? (real ? 'Paiement Mobile Money sécurisé (MTN, Moov, Celtiis).' : 'Simulation Mobile Money (mode test).')
                 : kind === 'settle'
-                  ? (FEDAPAY_PUBLIC_KEY ? 'Paiement Mobile Money sécurisé (MTN, Moov, carte). Votre compte est réactivé automatiquement dès la réception.' : 'Règlement simulé (mode test).')
-                  : 'Vers votre Mobile Money · virement FedaPay. Le solde est débité puis recrédité si le virement échoue.'}
+                  ? (real ? 'Paiement Mobile Money sécurisé (MTN, Moov, Celtiis). Votre compte est réactivé automatiquement dès la réception.' : 'Règlement simulé (mode test).')
+                  : 'Vers votre Mobile Money. Le solde est débité puis recrédité si le virement échoue.'}
             </p>
           </div>
           <button
@@ -161,9 +193,9 @@ export function WalletModal({ open, onClose, kind, availableBalance, debt }: Pro
           </div>
         ) : (
           <>
-            {kind === 'settle' && !FEDAPAY_PUBLIC_KEY && (
+            {kind !== 'withdraw' && cfg && !cfg.feexpay && (
               <div className="mb-md rounded-md bg-warning/15 p-md text-xs font-bold text-warning">
-                MODE TEST : ce règlement est simulé, aucun argent n&apos;est prélevé.
+                MODE TEST : {kind === 'settle' ? 'ce règlement' : 'cette recharge'} est simulé{kind === 'settle' ? '' : 'e'}, aucun argent n&apos;est prélevé.
               </div>
             )}
             <label className="mb-xs block text-sm font-semibold text-neutral-900">Montant</label>
@@ -194,7 +226,11 @@ export function WalletModal({ open, onClose, kind, availableBalance, debt }: Pro
               ))}
             </div>
 
-            <div className={`mt-lg ${kind === 'settle' && FEDAPAY_PUBLIC_KEY ? 'hidden' : ''}`}>
+            {real && (
+              <MobileMoneyFields network={network} onNetwork={setNetwork} phone={phone} onPhone={setPhone} disabled={pending} />
+            )}
+
+            <div className={`mt-lg ${real ? 'hidden' : ''}`}>
               <label className="mb-xs block text-sm font-semibold text-neutral-900">Via</label>
               <div className="grid grid-cols-2 gap-sm">
                 <ProviderChoice
@@ -219,14 +255,15 @@ export function WalletModal({ open, onClose, kind, availableBalance, debt }: Pro
             <button
               type="button"
               onClick={submit}
-              disabled={pending || amount < minAmount}
+              disabled={pending || amount < minAmount || (kind !== 'withdraw' && !cfg) || (real && phone.replace(/\D/g, '').length < 8)}
               className="mt-lg w-full rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-md text-base font-bold text-white shadow-glow disabled:cursor-not-allowed disabled:opacity-50"
             >
               {pending ? '…' : `${cta} ${formatFcfa(amount)} FCFA`}
             </button>
-            {pending && (
+            {pending && waiting && <WaitingForConfirmation network={network} phone={phone} />}
+            {pending && !waiting && (
               <p className="mt-md text-center text-xs text-neutral-600" role="status">
-                Paiement en cours : gardez cette fenêtre ouverte, la confirmation prend quelques secondes après la fenêtre de paiement.
+                {real ? 'Envoi de la demande de paiement…' : 'Traitement en cours…'}
               </p>
             )}
           </>
