@@ -95,6 +95,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
           ['Nommer un responsable ville ou régler sa commission', '**Responsables ville**.'],
           ['Suivre les avances de démarrage des partenaires', '**ADR**.'],
           ['Créer un code promo', '**Promos** → « Créer un code ».'],
+          ['Offrir les gadgets du semestre aux meilleurs chauffeurs et clients', '**Gadgets** : choisir le tour, vérifier le classement, **Valider le classement**, puis suivre la remise des cadeaux.'],
           ['Changer les bannières de l’accueil', '**Bannières**.'],
           ['Valider ou ajouter un lieu sur la carte', '**Lieux**.'],
           ['Vérifier ou lancer une sauvegarde', '**Sauvegardes**.'],
@@ -340,6 +341,10 @@ export const GUIDE_SECTIONS: GuideSection[] = [
         text: 'Les candidats chauffeurs qui ont pris rendez-vous. Le haut de la page montre le planning à venir ; un rendez-vous dont l’heure est passée est surligné. Le bas liste les dossiers récemment traités.',
       },
       {
+        type: 'p',
+        text: 'Le candidat choisit son créneau dans l’application : du **lundi au vendredi**, de **9 h 00 à 11 h 30** puis de **14 h 00 à 18 h 00** (heure de Cotonou), par tranches de 30 minutes, jusqu’à 30 jours à l’avance et avec 2 heures de préavis au minimum. Un créneau déjà pris n’est plus proposé aux autres.',
+      },
+      {
         type: 'steps',
         items: [
           'Cliquer sur le rendez-vous : le dossier s’ouvre avec les **documents attendus** à présenter.',
@@ -535,6 +540,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
           ['TamAssur : cotisation quotidienne', 'Le montant prélevé chaque jour ouvré sur le chauffeur pour son épargne (1 000 F pour tous les véhicules).'],
           ['TamAssur : durée avant retrait', 'Le nombre de mois de cotisation avant que le chauffeur puisse demander son épargne (moto 12, tricycle et voitures 24).'],
           ['Réservations : pénalité d’annulation tardive', 'Le montant (200 F) prélevé à celui qui annule à moins de 10 minutes du départ et reversé en entier à l’autre partie (client ou chauffeur). Gratuit avant. Un désistement du chauffeur relance toujours la recherche et ne le repropose plus pour cette course.'],
+          ['Gadgets des meilleurs', 'Les critères du classement des chauffeurs et des clients (courses minimales, note minimale, annulations tolérées), le nombre de gagnants, la valeur des cadeaux et le budget d’un tour. Le classement lui-même est dans l’onglet **Gadgets**.'],
           ['Paiements', '**Paiement réel FeexPay** (à 1 une fois les clés posées : recharges et règlements de dette par Mobile Money), **mode TEST** (recharges et règlements gratuits, simulés) et **virements automatiques** des retraits.'],
         ],
       },
@@ -543,6 +549,45 @@ export const GUIDE_SECTIONS: GuideSection[] = [
         tone: 'warn',
         title: 'Avant le lancement',
         text: 'Dans le groupe Paiements : mettre « Paiement réel FeexPay » à **1** une fois les clés FeexPay posées, puis « Paiements en mode TEST » à **0** au lancement. Tant que le mode TEST vaut 1, un bandeau jaune s’affiche en haut de tout le back-office. Laissez « virements automatiques » à 0 tant qu’un test réel n’est pas validé : les retraits restent payés à la main.',
+      },
+    ],
+  },
+  {
+    id: 'gadgets',
+    group: 'Argent des chauffeurs',
+    title: 'Gadgets',
+    path: '/admin/gadgets',
+    blocks: [
+      {
+        type: 'p',
+        text: 'Tous les 6 mois (un tour par semestre : janvier–juin, juillet–décembre), TamCar offre un gadget aux meilleurs **chauffeurs** et aux meilleurs **clients**. Le classement se calcule tout seul à partir des courses, des notes et des annulations ; vous n’avez qu’à le vérifier, le valider et suivre la remise des cadeaux.',
+      },
+      {
+        type: 'table',
+        head: ['Critère', 'Chauffeurs', 'Clients'],
+        rows: [
+          ['Classement', 'Nombre de courses terminées sur le tour ; à égalité, la meilleure note, puis le volume', 'Idem'],
+          ['Courses minimales', '100 (réglable)', '10 (réglable)'],
+          ['Note minimale', '4,7 (réglable)', '4,5 (réglable)'],
+          ['Annulations imputables', 'Aucune tolérée (réglable) : annulation de sa part, ou désistement à moins de 10 minutes d’une réservation', 'Aucune tolérée (réglable) : annulation avec frais'],
+          ['Gagnants par tour', '5 (réglable)', '5 (réglable)'],
+          ['Valeur du cadeau prévue', '13 000 F environ', '6 000 F environ'],
+        ],
+      },
+      {
+        type: 'steps',
+        items: [
+          'Ouvrir **Gadgets** : le tour en cours s’affiche, avec un classement provisoire des chauffeurs et des clients. Les gagnants sont surlignés en vert ; pour les autres, la colonne Statut dit pourquoi ils ne sont pas éligibles.',
+          'Quand le tour est terminé, cliquer sur **Valider le classement** (une fois pour les chauffeurs, une fois pour les clients). Les gagnants sont enregistrés et reçoivent une notification. Valider deux fois ne crée pas de doublon.',
+          'Dans **Remise des cadeaux**, indiquer le cadeau choisi pour chaque gagnant, puis passer son statut à **Remis** quand il l’a reçu (ou **Refusé**). Le bouton **Enregistrer** garde la date de remise.',
+          'Surveiller le **budget** en haut de page : la dépense prévue (gagnants × valeur du cadeau) est comparée au budget du tour. Elle passe en rouge si elle le dépasse.',
+        ],
+      },
+      {
+        type: 'note',
+        tone: 'info',
+        title: 'Réglages',
+        text: 'Les seuils, le nombre de gagnants, la valeur des cadeaux et le budget se changent dans **Bonus chauffeur**, groupe « Gadgets ». La note minimale s’écrit en dixièmes d’étoile (47 = 4,7 ; 0 = pas de condition). Un compte administrateur n’entre jamais dans le classement.',
       },
     ],
   },
@@ -705,6 +750,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
           ['Chaque soir, 23 h 55 (lundi–samedi)', 'Calcul et crédit du **bonus de performance** des chauffeurs qui ont dépassé leur objectif.'],
           ['Chaque nuit, 00 h 10 (lundi–samedi, pour la veille)', 'Clôture du **versement quotidien** des chauffeurs en formule Cession : le manque éventuel est prélevé sur leur portefeuille Revenus.'],
           ['Chaque jour, 5 h', '**Sauvegarde** des données.'],
+          ['En continu', 'Le **classement des gadgets** (meilleurs chauffeurs et clients du semestre) se recalcule à chaque ouverture de la page Gadgets ; seule la validation est manuelle.'],
           ['En continu', '**Suspension** d’un chauffeur dont la dette atteint 5 000 F, **réactivation** dès qu’elle repasse sous ce seuil.'],
           ['En continu', 'Les **litiges** sur les annulations sont tranchés par des règles automatiques.'],
         ],
