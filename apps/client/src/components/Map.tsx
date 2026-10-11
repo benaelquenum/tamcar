@@ -102,8 +102,7 @@ function makeStopEl(n: number): HTMLDivElement {
   return el;
 }
 
-// Marqueur du véhicule suivi : la silhouette pivote vers le cap, l'anneau
-// bleu « vous êtes ici » reste fixe autour d'elle.
+// Marqueur du véhicule suivi : la silhouette, posée directement sur la carte (ni disque ni anneau), pivote vers le cap.
 function makePuckEl(category?: string, self = false, color?: string | null): HTMLDivElement {
   const el = document.createElement('div');
   el.className = 'tc-veh-marker' + (self ? ' me' : '');

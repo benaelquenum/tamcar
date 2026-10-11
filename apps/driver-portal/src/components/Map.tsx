@@ -111,22 +111,17 @@ function makeStopEl(n: number): HTMLDivElement {
 // Taille du pion « moi » (px) : assez grand pour se repérer d'un coup d'œil, au volant comme à l'arrêt.
 export const SELF_PUCK_SIZE = 64;
 
-// Marqueur du véhicule suivi : la silhouette pivote vers le cap, l'anneau
-// bleu « vous êtes ici » reste fixe autour d'elle. `radar` ajoute le signal qui
-// émane du pion quand le chauffeur attend une course (hors course).
+// Marqueur du véhicule suivi : la silhouette, posée directement sur la carte (ni disque ni anneau), pivote vers le cap.
 export function makePuckEl(
   category?: string,
   self = false,
   color?: string | null,
-  opts: { size?: number; radar?: boolean } = {},
+  opts: { size?: number } = {},
 ): HTMLDivElement {
   const el = document.createElement('div');
   el.className = 'tc-veh-marker' + (self ? ' me' : '');
-  const radar = opts.radar
-    ? '<span class="tc-self-radar"></span><span class="tc-self-radar d1"></span><span class="tc-self-radar d2"></span>'
-    : '';
   el.innerHTML =
-    radar + `<span class="tc-veh-nub-rot">${vehicleMarkerSvg({ category, color, self, size: opts.size ?? 56 })}</span>`;
+    `<span class="tc-veh-nub-rot">${vehicleMarkerSvg({ category, color, self, size: opts.size ?? 56 })}</span>`;
   return el;
 }
 
@@ -180,8 +175,6 @@ type Props = {
   selfColor?: string | null;
   /** Position live du client (vue chauffeur) — pion cyan pulsant. */
   clientLocation?: [number, number] | null;
-  /** Pion « moi » hors course : la silhouette du véhicule est entourée d'un signal radar. */
-  selfBeacon?: boolean;
   /**
    * Mode NAVIGATION (comme Yango) : la caméra suit cette position, la carte
    * pivote pour garder le sens de marche vers le HAUT de l'écran, le véhicule
@@ -223,7 +216,6 @@ export function Map({
   selfCategory,
   selfColor,
   clientLocation,
-  selfBeacon,
   follow = null,
   navHeading = null,
   navSpeedKmh = null,
@@ -582,7 +574,7 @@ export function Map({
     }
   }, [assignedDriver]);
 
-  // Pion « MOI » (position du chauffeur) : silhouette de son véhicule sur un disque à anneau bleu, qui glisse
+  // Pion « MOI » (position du chauffeur) : silhouette de son véhicule posée directement sur la carte, qui glisse
   // en douceur. Recentre la carte à la première apparition (repérage immédiat).
   useEffect(() => {
     const map = mapRef.current;
@@ -600,7 +592,7 @@ export function Map({
     const target: [number, number] = selfLocation;
 
     if (!selfMarkerRef.current) {
-      const el = makePuckEl(selfCategory, true, selfColor, { size: SELF_PUCK_SIZE, radar: Boolean(selfBeacon) });
+      const el = makePuckEl(selfCategory, true, selfColor, { size: SELF_PUCK_SIZE });
       selfMarkerRef.current = new GL.Marker({ element: el, anchor: 'center' })
         .setLngLat(target)
         .addTo(map);
@@ -643,7 +635,7 @@ export function Map({
     return () => {
       if (selfRafRef.current != null) { cancelAnimationFrame(selfRafRef.current); selfRafRef.current = null; }
     };
-  }, [selfLocation, selfCategory, selfColor, selfBeacon]);
+  }, [selfLocation, selfCategory, selfColor]);
 
   // Pion client live (vue chauffeur) — point cyan pulsant.
   useEffect(() => {

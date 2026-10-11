@@ -208,7 +208,7 @@ const STATE_COLOR = { busy: '#F59E0B', free: '#16A34A', stale: '#9CA3AF' } as co
 
 function markerHtml(d: LiveDriver, selected: boolean, heading: number): string {
   const state = driverState(d);
-  const ring = selected ? 'box-shadow:0 0 0 3px #2563EB,0 0 0 6px rgba(37,99,235,.25);border-radius:50%;' : '';
+  const ring = selected ? 'filter:drop-shadow(0 0 2px #2563EB) drop-shadow(0 0 5px #2563EB);' : '';
   return (
     `<span style="display:block;position:relative;width:44px;height:44px;${ring}opacity:${state === 'stale' ? 0.5 : 1}">` +
     `<span class="tc-veh-nub-rot" style="display:block;transform:rotate(${heading}deg)">` +

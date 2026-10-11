@@ -157,7 +157,7 @@ export type MarkerOptions = {
   category?: string;
   /** `vehicles.color`, texte libre. Ignoré s'il n'est pas reconnu. */
   color?: string | null;
-  /** Anneau bleu « vous êtes ici » — marqueur du chauffeur lui-même. */
+  /** Marqueur du chauffeur lui-même : fin contour blanc (lisible sur tout fond de carte), jamais de disque ni d'anneau. */
   self?: boolean;
   /** Côté du marqueur en pixels. 50 par défaut, 56 pour le véhicule suivi. */
   size?: number;
@@ -181,11 +181,7 @@ export function vehicleMarkerSvg({
 
   return (
     `<svg viewBox="0 0 40 40" width="${size}" height="${size}" ` +
-    `style="display:block;overflow:visible;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35))">` +
-    (self
-      // L'anneau ne tourne pas avec le véhicule : il dit « moi », pas « cap ».
-      ? `<circle cx="20" cy="20" r="17.5" fill="none" stroke="#2563EB" stroke-width="2.5" opacity="0.55"/>`
-      : '') +
+    `style="display:block;overflow:visible;filter:${self ? 'drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff) ' : ''}drop-shadow(0 1px 2px rgba(0,0,0,.35))">` +
     headingCone(c) +
     body +
     `</svg>`

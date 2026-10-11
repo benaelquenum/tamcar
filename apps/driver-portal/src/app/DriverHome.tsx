@@ -696,7 +696,6 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt, vehi
           selfLocation={position}
           selfCategory={vehicleCategory ?? undefined}
           selfColor={vehicleColor}
-          selfBeacon
           pendingPickups={pending.map((r) => ({
             ride_id: r.id,
             lat: r.pickup_lat,
