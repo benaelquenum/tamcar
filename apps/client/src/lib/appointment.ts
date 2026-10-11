@@ -110,16 +110,22 @@ export const REQUIRED_DOCS = requiredDocs(null);
 
 export const TAMCAR_RDV_ADDRESS = 'Ilot 2054, M/HOUNGBEDJI, Mènontin Cotonou';
 
+// Les rendez-vous sont à l'heure de Porto-Novo (UTC+1), quel que soit le fuseau du serveur ou de l'appareil.
+const TZ = 'Africa/Porto-Novo';
+
 const DAY_FMT = new Intl.DateTimeFormat('fr-FR', {
+  timeZone: TZ,
   weekday: 'long',
   day: '2-digit',
   month: 'long',
 });
 const TIME_FMT = new Intl.DateTimeFormat('fr-FR', {
+  timeZone: TZ,
   hour: '2-digit',
   minute: '2-digit',
 });
 const FULL_FMT = new Intl.DateTimeFormat('fr-FR', {
+  timeZone: TZ,
   weekday: 'long',
   day: '2-digit',
   month: 'long',
@@ -136,4 +142,25 @@ export function formatSlotTime(iso: string): string {
 }
 export function formatSlotFull(iso: string): string {
   return FULL_FMT.format(new Date(iso));
+}
+
+const KEY_FMT = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' });
+const WEEKDAY_SHORT_FMT = new Intl.DateTimeFormat('fr-FR', { timeZone: TZ, weekday: 'short' });
+const MONTH_SHORT_FMT = new Intl.DateTimeFormat('fr-FR', { timeZone: TZ, month: 'short' });
+const DAY_NUM_FMT = new Intl.DateTimeFormat('fr-FR', { timeZone: TZ, day: 'numeric' });
+const HOUR_FMT = new Intl.DateTimeFormat('fr-FR', { timeZone: TZ, hour: 'numeric', hourCycle: 'h23' });
+
+/** Jour du créneau à Porto-Novo, au format AAAA-MM-JJ. */
+export function slotDayKey(iso: string): string {
+  return KEY_FMT.format(new Date(iso));
+}
+/** Pastille d'un jour : « lun. », « 12 », « oct. ». */
+export function slotDayParts(iso: string): { weekday: string; day: string; month: string } {
+  const d = new Date(iso);
+  return { weekday: WEEKDAY_SHORT_FMT.format(d), day: DAY_NUM_FMT.format(d), month: MONTH_SHORT_FMT.format(d) };
+}
+/** Heure (0-23) du créneau à Porto-Novo : sépare la matinée de l'après-midi. */
+export function slotHour(iso: string): number {
+  // « 09 h » en fr-FR : on ne garde que les chiffres
+  return parseInt(HOUR_FMT.format(new Date(iso)), 10);
 }

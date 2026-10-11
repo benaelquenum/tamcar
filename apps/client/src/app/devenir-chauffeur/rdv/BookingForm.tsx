@@ -6,7 +6,11 @@ import { supabaseBrowser } from '@/lib/supabase-browser';
 import {
   APPLICATION_TYPE_META,
   formatSlotDay,
+  formatSlotFull,
   formatSlotTime,
+  slotDayKey,
+  slotDayParts,
+  slotHour,
   type AvailableSlot,
   type DriverApplicationType,
 } from '@/lib/appointment';
@@ -36,15 +40,29 @@ export function BookingForm({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Groupe les créneaux par jour
-  const slotsByDay = useMemo(() => {
-    const groups = new Map<string, AvailableSlot[]>();
+  // Vue compacte : les jours sont rangés par semaine (une rangée lundi-vendredi) ; toucher un jour déroule ses créneaux
+  const [openDay, setOpenDay] = useState<string | null>(null);
+  const weeks = useMemo(() => {
+    const byDay = new Map<string, AvailableSlot[]>();
     for (const s of slots) {
-      const dayKey = s.slot_at.slice(0, 10);
-      if (!groups.has(dayKey)) groups.set(dayKey, []);
-      groups.get(dayKey)!.push(s);
+      const key = slotDayKey(s.slot_at);
+      const list = byDay.get(key);
+      if (list) list.push(s);
+      else byDay.set(key, [s]);
     }
-    return Array.from(groups.entries()).slice(0, 20);
+    const byWeek = new Map<string, { key: string; dow: number; slots: AvailableSlot[] }[]>();
+    for (const [key, daySlots] of Array.from(byDay.entries())) {
+      const d = new Date(`${key}T12:00:00Z`);
+      const dow = d.getUTCDay() === 0 ? 7 : d.getUTCDay();
+      d.setUTCDate(d.getUTCDate() - (dow - 1));
+      const monday = d.toISOString().slice(0, 10);
+      const list = byWeek.get(monday) ?? [];
+      list.push({ key, dow, slots: daySlots });
+      byWeek.set(monday, list);
+    }
+    return Array.from(byWeek.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([monday, days]) => ({ monday, days: days.sort((a, b) => a.dow - b.dow) }));
   }, [slots]);
 
   const canSubmit =
@@ -172,43 +190,104 @@ export function BookingForm({
           3. Choisissez un créneau
         </p>
         <p className="mt-xs text-[10px] text-neutral-500">
-          Lun–Ven, tranches de 30 min. Un créneau non affiché est déjà pris.
+          Du lundi au vendredi, de 9h00 à 11h30 puis de 14h00 à 18h00 (heure de Cotonou), par tranches de 30 min. Touchez un
+          jour pour voir ses horaires libres.
         </p>
 
-        {slotsByDay.length === 0 ? (
+        {weeks.length === 0 ? (
           <div className="mt-md rounded-xl bg-warning/10 p-lg text-center text-sm text-neutral-900">
             Aucun créneau disponible actuellement. Revenez plus tard ou contactez l&apos;équipe.
           </div>
         ) : (
           <div className="mt-md space-y-md">
-            {slotsByDay.map(([dayKey, daySlots]) => (
-              <div key={dayKey}>
-                <p className="text-xs font-semibold uppercase text-neutral-700">
-                  {formatSlotDay(daySlots[0].slot_at)}
-                </p>
-                <div className="mt-xs flex flex-wrap gap-xs">
-                  {daySlots.map((s) => {
-                    const selected = selectedSlot === s.slot_at;
-                    return (
-                      <button
-                        type="button"
-                        key={s.slot_at}
-                        onClick={() => setSelectedSlot(s.slot_at)}
-                        className={`rounded-lg px-md py-xs text-sm font-semibold transition ${
-                          selected
-                            ? 'bg-primary-500 text-white shadow-glow'
-                            : 'bg-neutral-100 text-neutral-900 hover:bg-primary-100'
-                        }`}
-                        style={{ fontVariantNumeric: 'tabular-nums' }}
-                      >
-                        {formatSlotTime(s.slot_at)}
-                      </button>
-                    );
-                  })}
+            {weeks.map(({ monday, days }) => {
+              const open = days.find((d) => d.key === openDay);
+              const weekMonth = slotDayParts(`${monday}T12:00:00Z`).month;
+              return (
+                <div key={monday}>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+                    Semaine du {slotDayParts(`${monday}T12:00:00Z`).day} {slotDayParts(`${monday}T12:00:00Z`).month}
+                  </p>
+                  <div className="mt-xs grid grid-cols-5 gap-xs">
+                    {days.map((d) => {
+                      const parts = slotDayParts(d.slots[0].slot_at);
+                      const isOpen = openDay === d.key;
+                      const hasChoice = selectedSlot !== null && slotDayKey(selectedSlot) === d.key;
+                      return (
+                        <button
+                          type="button"
+                          key={d.key}
+                          onClick={() => setOpenDay(isOpen ? null : d.key)}
+                          aria-expanded={isOpen}
+                          style={{ gridColumnStart: d.dow }}
+                          className={`flex flex-col items-center rounded-lg py-xs text-center transition ${
+                            hasChoice
+                              ? 'bg-primary-500 text-white shadow-glow'
+                              : isOpen
+                                ? 'bg-primary-50 text-primary-700 ring-2 ring-primary-500'
+                                : 'bg-neutral-100 text-neutral-900 hover:bg-primary-100'
+                          }`}
+                        >
+                          <span className="text-[10px] font-semibold uppercase">{parts.weekday}</span>
+                          <span className="text-lg font-extrabold leading-tight" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                            {parts.day}
+                          </span>
+                          {parts.month !== weekMonth && <span className="text-[10px] font-semibold">{parts.month}</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Créneaux du jour touché, déroulés sous sa semaine */}
+                  {open && (
+                    <div className="mt-xs rounded-xl bg-neutral-50 p-md ring-1 ring-neutral-200">
+                      <p className="text-xs font-bold text-neutral-900 first-letter:uppercase">
+                        {formatSlotDay(open.slots[0].slot_at)}
+                        <span className="ml-xs font-medium text-neutral-500">
+                          · {open.slots.length} créneau{open.slots.length > 1 ? 'x' : ''} libre{open.slots.length > 1 ? 's' : ''}
+                        </span>
+                      </p>
+                      {([['Matin', (h: number) => h < 13], ['Après-midi', (h: number) => h >= 13]] as const).map(([label, inPart]) => {
+                        const part = open.slots.filter((s) => inPart(slotHour(s.slot_at)));
+                        if (part.length === 0) return null;
+                        return (
+                          <div key={label} className="mt-sm">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">{label}</p>
+                            <div className="mt-xs grid grid-cols-4 gap-xs">
+                              {part.map((s) => {
+                                const selected = selectedSlot === s.slot_at;
+                                return (
+                                  <button
+                                    type="button"
+                                    key={s.slot_at}
+                                    onClick={() => setSelectedSlot(s.slot_at)}
+                                    className={`rounded-lg py-xs text-sm font-semibold transition ${
+                                      selected
+                                        ? 'bg-primary-500 text-white shadow-glow'
+                                        : 'bg-white text-neutral-900 ring-1 ring-neutral-200 hover:bg-primary-100'
+                                    }`}
+                                    style={{ fontVariantNumeric: 'tabular-nums' }}
+                                  >
+                                    {formatSlotTime(s.slot_at)}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
+        )}
+
+        {selectedSlot && (
+          <p className="mt-md rounded-xl bg-primary-50 p-md text-sm font-semibold text-primary-700">
+            Créneau choisi : {formatSlotFull(selectedSlot)}
+          </p>
         )}
       </section>
 
