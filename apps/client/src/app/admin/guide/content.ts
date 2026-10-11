@@ -342,7 +342,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
       },
       {
         type: 'p',
-        text: 'Le candidat choisit son créneau dans l’application : du **lundi au vendredi**, de **9 h 00 à 11 h 30** puis de **14 h 00 à 18 h 00** (heure de Cotonou), par tranches de 30 minutes, jusqu’à 30 jours à l’avance et avec 2 heures de préavis au minimum. Un créneau déjà pris n’est plus proposé aux autres.',
+        text: 'Le candidat choisit son créneau dans l’application : du **lundi au vendredi**, de **9 h 00 à 11 h 30** puis de **14 h 00 à 18 h 00** (heure de Cotonou), par tranches de 30 minutes, jusqu’à 30 jours à l’avance et avec 2 heures de préavis au minimum. **Trois candidats au plus** peuvent prendre le même créneau (réglable dans **Bonus chauffeur**, groupe « Rendez-vous des candidats chauffeurs ») : le créneau n’est plus proposé quand il est complet, et une annulation libère une place. Plusieurs candidats peuvent donc figurer à la même heure dans le planning.',
       },
       {
         type: 'steps',
@@ -540,6 +540,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
           ['TamAssur : cotisation quotidienne', 'Le montant prélevé chaque jour ouvré sur le chauffeur pour son épargne (1 000 F pour tous les véhicules).'],
           ['TamAssur : durée avant retrait', 'Le nombre de mois de cotisation avant que le chauffeur puisse demander son épargne (moto 12, tricycle et voitures 24).'],
           ['Réservations : pénalité d’annulation tardive', 'Le montant (200 F) prélevé à celui qui annule à moins de 10 minutes du départ et reversé en entier à l’autre partie (client ou chauffeur). Gratuit avant. Un désistement du chauffeur relance toujours la recherche et ne le repropose plus pour cette course.'],
+          ['Rendez-vous des candidats chauffeurs', 'Le nombre maximal de candidats par créneau de 30 minutes (3 aujourd’hui).'],
           ['Gadgets des meilleurs', 'Les critères du classement des chauffeurs et des clients (courses minimales, note minimale, annulations tolérées), le nombre de gagnants, la valeur des cadeaux et le budget d’un tour. Le classement lui-même est dans l’onglet **Gadgets**.'],
           ['Paiements', '**Paiement réel FeexPay** (à 1 une fois les clés posées : recharges et règlements de dette par Mobile Money), **mode TEST** (recharges et règlements gratuits, simulés) et **virements automatiques** des retraits.'],
         ],
