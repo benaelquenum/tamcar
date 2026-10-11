@@ -27,7 +27,7 @@ export function WalletModal({ open, onClose, kind, availableBalance, debt }: Pro
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [manual, setManual] = useState(false);
+  const [result, setResult] = useState<'paid' | 'processing' | 'manual' | null>(null);
   const [network, setNetwork] = useState<Network>('mtn');
   const [phone, setPhone] = useState('');
   const [cfg, setCfg] = useState<PaymentsConfig | null>(null);
@@ -120,7 +120,8 @@ export function WalletModal({ open, onClose, kind, availableBalance, debt }: Pro
           if (rpcErr) { setError(rpcErr.message); return; }
         }
       } else {
-        // Retrait réel : réserve (débite) le wallet puis déclenche le payout FedaPay.
+        // Retrait réel : réserve (débite) le wallet, puis la fonction FeexPay envoie le virement si le réglage « virement
+        // automatique » est actif et que le retrait respecte les règles de validation ; sinon TamCar le paie à la main.
         const { data, error: reqErr } = await supabaseBrowser.rpc('request_driver_payout', {
           p_amount_fcfa: amount,
           p_provider: provider,
@@ -129,26 +130,27 @@ export function WalletModal({ open, onClose, kind, availableBalance, debt }: Pro
         const payout = (Array.isArray(data) ? data[0] : data) as { id?: string } | null;
         if (!payout?.id) { setError('Retrait impossible pour le moment.'); return; }
 
-        const { data: fnData, error: fnErr } = await supabaseBrowser.functions.invoke('fedapay-payout', {
+        const { data: fnData, error: fnErr } = await supabaseBrowser.functions.invoke('feexpay-payout', {
           body: { payout_id: payout.id },
         });
         if (fnErr) {
-          setError('Retrait en cours de traitement — vérifiez votre historique dans quelques minutes.');
-          return;
+          // La demande est enregistrée et le montant réservé : l'équipe la traite (ou la vérification automatique, si le virement est parti)
+          setResult('manual');
+        } else {
+          const status = (fnData as { status?: string } | null)?.status;
+          if (status === 'failed') {
+            setError('Retrait refusé par l\'opérateur — le montant a été recrédité.');
+            return;
+          }
+          // 'paid' : envoyé et confirmé ; 'processing' : parti, confirmation en cours ; 'manual' / 'hold' : TamCar le paie (ou le valide d'abord)
+          setResult(status === 'paid' ? 'paid' : status === 'processing' ? 'processing' : 'manual');
         }
-        const status = (fnData as { status?: string } | null)?.status;
-        if (status === 'failed') {
-          setError('Retrait refusé par l\'opérateur — le montant a été recrédité.');
-          return;
-        }
-        // 'manual' : pas de virement automatique, TamCar paie à la main (/admin/retraits) ; 'processing' : webhook
-        if (status === 'manual') setManual(true);
       }
       setSuccess(true);
       setTimeout(() => {
         onClose();
         setSuccess(false);
-        setManual(false);
+        setResult(null);
         setAmount(0);
         router.refresh();
       }, kind === 'withdraw' ? 2600 : 900);
@@ -188,7 +190,7 @@ export function WalletModal({ open, onClose, kind, availableBalance, debt }: Pro
               {formatFcfa(amount)} FCFA
             </p>
             <p className="mt-xs text-sm text-neutral-600">
-              {kind === 'topup' ? 'Crédit ajouté à votre compte' : kind === 'settle' ? 'Dette régularisée' : manual ? 'Demande envoyée : TamCar vous paie sous 24 h' : 'Retrait demandé'}
+              {kind === 'topup' ? 'Crédit ajouté à votre compte' : kind === 'settle' ? 'Dette régularisée' : result === 'paid' ? 'Retrait envoyé sur votre Mobile Money' : result === 'processing' ? 'Retrait en cours : vous recevrez la confirmation de votre opérateur dans quelques instants' : result === 'manual' ? 'Demande envoyée : TamCar vous paie sous 24 h' : 'Retrait demandé'}
             </p>
           </div>
         ) : (

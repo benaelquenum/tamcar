@@ -13,7 +13,8 @@
 
 // deno-lint-ignore-file no-explicit-any
 import {
-  REF_RE, admin, applyOutcome, feexConfig, getPayinStatus, json, refFromCallback, secretFromAuthHeader, timingSafeEqual, trace,
+  REF_RE, admin, applyOutcome, feexConfig, getPayinStatus, getPayoutStatus, isProviderRef, json, payoutIdFromCallback, refFromCallback,
+  secretFromAuthHeader, timingSafeEqual, trace,
 } from '../_shared/feexpay.ts';
 
 Deno.serve(async (req: Request) => {
@@ -49,10 +50,51 @@ Deno.serve(async (req: Request) => {
     return json({ ok: true, ignored: 'env' });
   }
 
-  // Retraits (payouts) : traités à la main pour l'instant (payouts_auto = 0)
-  if (String(event.type ?? '').toLowerCase() === 'payout') {
-    await trace('webhook', { event: label, provider_tx_id: providerRef, amount_fcfa: amount, outcome: 'ignored', detail: 'payout : traité à la main' });
-    return json({ ok: true, ignored: 'payout' });
+  // Retraits (payouts) : le webhook désigne seulement LE retrait concerné (par notre marqueur TCP-… ou par l'identifiant FeexPay déjà
+  // enregistré) ; l'issue est relue chez FeexPay avec la clé privée, puis appliquée par la base (idempotent), comme pour un payin.
+  const eventType = String(event.type ?? '').toLowerCase();
+  const cbPayoutId = payoutIdFromCallback(event.callback_info);
+  let payoutRow: { id: string; fedapay_payout_id: string | null; status: string } | null = null;
+  if (isProviderRef(providerRef)) {
+    const { data } = await admin.from('driver_payouts').select('id, fedapay_payout_id, status').eq('fedapay_payout_id', providerRef).maybeSingle();
+    payoutRow = (data as any) ?? null;
+  }
+  if (!payoutRow && cbPayoutId) {
+    const { data } = await admin.from('driver_payouts').select('id, fedapay_payout_id, status').eq('id', cbPayoutId).maybeSingle();
+    payoutRow = (data as any) ?? null;
+  }
+  if (payoutRow || /payout|retrait|transfert/.test(eventType)) {
+    if (!payoutRow) {
+      await trace('webhook', { event: label, provider_tx_id: providerRef, amount_fcfa: amount, outcome: 'ignored', detail: 'retrait inconnu de TamCar' });
+      return json({ ok: true, ignored: 'payout' });
+    }
+    try {
+      let ref = payoutRow.fedapay_payout_id ?? '';
+      if (!ref && isProviderRef(providerRef)) {
+        // le webhook est arrivé avant l'enregistrement de l'identifiant par la fonction d'envoi
+        await admin.rpc('feexpay_payout_set_ref', { p_payout_id: payoutRow.id, p_ref: providerRef });
+        ref = providerRef;
+      }
+      if (!ref) {
+        await trace('webhook', { event: label, reference: payoutRow.id, provider_tx_id: providerRef, outcome: 'error', detail: 'identifiant FeexPay du retrait inconnu' });
+        return new Response('Unknown payout', { status: 500 }); // FeexPay retente une fois ; la vérification planifiée prend le relais
+      }
+      const st = await getPayoutStatus(ref);
+      if (st.status === 'success') {
+        await admin.rpc('feexpay_payout_finalize', { p_payout_id: payoutRow.id, p_status: 'success', p_ref: ref, p_reason: null });
+        await trace('webhook', { event: label, reference: payoutRow.id, provider_tx_id: ref, amount_fcfa: st.amount, outcome: 'paid' });
+      } else if (st.status === 'failed') {
+        const reason = st.reason || "Refusé par l'opérateur";
+        await admin.rpc('feexpay_payout_finalize', { p_payout_id: payoutRow.id, p_status: 'failed', p_ref: ref, p_reason: reason });
+        await trace('webhook', { event: label, reference: payoutRow.id, provider_tx_id: ref, amount_fcfa: st.amount, outcome: 'failed', detail: reason });
+      } else {
+        await trace('webhook', { event: label, reference: payoutRow.id, provider_tx_id: ref, outcome: 'pending' });
+      }
+    } catch (e) {
+      await trace('webhook', { event: label, reference: payoutRow.id, provider_tx_id: providerRef, outcome: 'error', detail: String(e) });
+      return new Response('Handler error', { status: 500 });
+    }
+    return json({ ok: true });
   }
 
   // Notre référence : renvoyée par FeexPay dans callback_info ; à défaut, retrouvée par l'identifiant FeexPay enregistré

@@ -88,3 +88,11 @@ verify_jwt = true
 
 [functions.send-push]
 verify_jwt = true
+
+# FeexPay — retraits chauffeur. feexpay-payout : appelée par l'application (jeton de l'utilisateur ; le retrait doit lui appartenir) ou par
+# l'équipe. feexpay-payout-check : appelée par pg_cron avec le jeton de service (le rôle est revérifié dans la fonction).
+[functions.feexpay-payout]
+verify_jwt = true
+
+[functions.feexpay-payout-check]
+verify_jwt = true

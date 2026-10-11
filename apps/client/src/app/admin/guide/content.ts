@@ -84,7 +84,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
           ['Voir tout ce qu’un chauffeur a fait', '**Chauffeurs** → lien « Historique complet » sous son nom (fiche chauffeur).'],
           ['Déclarer une panne ou une maladie (jours non travaillés)', '**Chauffeurs** → « Historique complet » → carte « Contrat de cession et versement ».'],
           ['Enregistrer un paiement de dette reçu en espèces', '**Dettes chauffeur**, ligne du chauffeur → **Enregistrer le paiement**.'],
-          ['Payer un retrait de gains demandé par un chauffeur', '**Retraits chauffeur** : envoyer l’argent, puis **Payé** (ou **Refuser**).'],
+          ['Payer un retrait de gains demandé par un chauffeur', '**Retraits chauffeur** : **Envoyer par FeexPay** (virement automatique), ou envoyer l’argent vous-même puis **Payé** (ou **Refuser**).'],
           ['Payer un retrait d’épargne TamAssur', '**Retraits TamAssur** : **Payé en espèces** ou **Payé par Mobile Money**.'],
           ['Changer les objectifs, versements, bonus, cotisations, durée TamAssur', '**Bonus chauffeur**, groupe de réglages concerné.'],
           ['Passer les paiements en réel (fin du mode TEST)', '**Bonus chauffeur** → groupe « Paiements » → « Paiements en mode TEST » à 0.'],
@@ -600,19 +600,29 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     blocks: [
       {
         type: 'p',
-        text: 'Les demandes de retrait des gains d’un chauffeur vers son Mobile Money. Le montant est **déjà débité** de ses revenus (mis de côté) au moment de la demande.',
+        text: 'Les demandes de retrait des gains d’un chauffeur (son portefeuille **Revenus**) vers son Mobile Money, de 500 à 500 000 F, un retrait à la fois. Le montant est **déjà débité** de ses revenus (mis de côté) au moment de la demande. Ce n’est pas la même chose que les retraits d’épargne TamAssur (page à part).',
       },
       {
         type: 'steps',
         items: [
-          'Envoyer le montant sur le Mobile Money du chauffeur (le numéro figure sur la demande).',
-          'Cliquer sur **Payé**, en saisissant si possible la **référence** de l’opération : le chauffeur est prévenu.',
+          '**Envoyer par FeexPay** : le virement Mobile Money (MTN ou Moov) part tout de suite. Le chauffeur est prévenu quand l’opérateur confirme. Le bouton **Vérifier** relit l’issue chez FeexPay si elle n’est pas encore arrivée.',
+          'Ou envoyer vous-même le montant sur le Mobile Money du chauffeur (le numéro figure sur la demande), puis cliquer sur **Payé**, en saisissant si possible la **référence** de l’opération : le chauffeur est prévenu.',
           'Si vous ne pouvez pas payer, cliquer sur **Refuser** (avec un motif facultatif) : le montant est recrédité au chauffeur.',
         ],
       },
       {
         type: 'p',
-        text: 'Le bas de la page conserve l’**historique** des retraits payés et refusés.',
+        text: '**Virement automatique.** Quand le réglage « virements automatiques » (Bonus chauffeur, groupe Paiements) est à 1, les retraits partent seuls par FeexPay s’ils respectent trois règles : montant au plus 100 000 F, au plus 200 000 F déjà reçus ce jour par le chauffeur, et numéro ayant déjà reçu un retrait payé. Sinon le retrait **attend votre validation** (encadré orange avec le motif) : un clic sur « Envoyer par FeexPay » le valide et l’envoie. Les seuils se règlent au même endroit ; à 0 tout est payé à la main.',
+      },
+      {
+        type: 'note',
+        tone: 'warn',
+        title: 'Un retrait parti chez FeexPay ne se paie plus à la main',
+        text: 'Une fois le virement lancé, « Payé » et « Refuser » sont bloqués pour ce retrait (risque de payer deux fois ou de recréditer à tort) : seul le résultat de FeexPay le clôt. En cas de doute (« Envoi incertain », ou pas de confirmation après 30 minutes), vérifiez le virement dans le tableau de bord FeexPay (Payout) : s’il est parti, cliquez sur « Vérifier » ; s’il n’existe pas, payez à la main ou refusez.',
+      },
+      {
+        type: 'p',
+        text: 'Le bas de la page conserve l’**historique** des retraits payés et refusés. Les frais FeexPay du virement (1 % annoncé) sont à la charge de TamCar, pas du chauffeur.',
       },
     ],
   },
@@ -751,6 +761,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
           ['Chaque soir, 23 h 55 (lundi–samedi)', 'Calcul et crédit du **bonus de performance** des chauffeurs qui ont dépassé leur objectif.'],
           ['Chaque nuit, 00 h 10 (lundi–samedi, pour la veille)', 'Clôture du **versement quotidien** des chauffeurs en formule Cession : le manque éventuel est prélevé sur leur portefeuille Revenus.'],
           ['Chaque jour, 5 h', '**Sauvegarde** des données.'],
+          ['Toutes les 2 minutes', 'Vérification des **retraits chauffeur** partis chez FeexPay : confirmés → payés ; échoués → chauffeur recrédité ; sans réponse après 30 minutes → signalés à l’équipe.'],
           ['En continu', 'Le **classement des gadgets** (meilleurs chauffeurs et clients du semestre) se recalcule à chaque ouverture de la page Gadgets ; seule la validation est manuelle.'],
           ['En continu', '**Suspension** d’un chauffeur dont la dette atteint 5 000 F, **réactivation** dès qu’elle repasse sous ce seuil.'],
           ['En continu', 'Les **litiges** sur les annulations sont tranchés par des règles automatiques.'],

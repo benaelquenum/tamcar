@@ -11,7 +11,7 @@
 
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from 'npm:@supabase/supabase-js@2.45.0';
-import { mapStatus, reasonOf, type PayStatus } from './feexpay-core.ts';
+import { isDefinitiveRefusal, isProviderRef, mapStatus, reasonOf, type PayStatus } from './feexpay-core.ts';
 
 export * from './feexpay-core.ts';
 
@@ -41,7 +41,7 @@ export const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('S
 
 /** Une ligne dans payment_events par appel (lecture admin) : on voit ce que FeexPay a envoyé et ce que TamCar en a fait. */
 export async function trace(
-  source: 'pay' | 'verify' | 'webhook',
+  source: 'pay' | 'verify' | 'webhook' | 'payout',
   row: { event?: string; reference?: string; provider_tx_id?: string; amount_fcfa?: number; outcome: string; detail?: string },
 ) {
   try {
@@ -86,7 +86,7 @@ export async function getPayinStatus(key: string, byCallbackInfo = false): Promi
 
 /** Applique le résultat final d'un payin dans le portefeuille (idempotent, montant vérifié par la base). Retourne le statut TamCar. */
 export async function applyOutcome(
-  source: 'pay' | 'verify' | 'webhook',
+  source: 'pay' | 'verify' | 'webhook' | 'payout',
   reference: string,
   st: PayinStatus,
   event?: string,
@@ -111,4 +111,67 @@ export async function applyOutcome(
   }
   await trace(source, { event, reference, provider_tx_id: st.providerRef, amount_fcfa: st.amount, outcome: 'pending' });
   return 'pending';
+}
+
+// ------------------------------------------------------------------------------------------------------------------------------
+// Retraits (payouts) : envoi et relecture du statut. Documentation : « Payout (Retrait) » et « Statut des payouts ».
+// ------------------------------------------------------------------------------------------------------------------------------
+
+export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+export type PayoutSend =
+  | { kind: 'accepted'; ref: string; status: PayStatus; reason: string; raw: any }
+  | { kind: 'refused'; http: number; message: string }   // refus définitif (4xx) : l'argent n'est pas parti
+  | { kind: 'unknown'; message: string };                // réponse ambiguë (5xx, délai dépassé…) : le virement est peut-être parti
+
+/** Lance un retrait. Ne retente JAMAIS : un second appel pourrait payer deux fois. */
+export async function sendPayout(body: Record<string, unknown>): Promise<PayoutSend> {
+  const cfg = feexConfig();
+  let res: Response;
+  try {
+    res = await fetch(`${cfg.base}/api/payouts/public/transfer/global`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${cfg.key}`, 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(25000),
+    });
+  } catch (e) {
+    return { kind: 'unknown', message: `appel FeexPay sans réponse : ${String(e)}` };
+  }
+  const raw = await res.json().catch(() => null);
+  const message = reasonOf(raw) || String(raw?.message ?? raw?.error ?? '') || `HTTP ${res.status}`;
+  if (res.ok) {
+    const ref = raw?.reference;
+    if (!isProviderRef(ref)) return { kind: 'unknown', message: `FeexPay a répondu sans identifiant de retrait exploitable (${message})` };
+    return { kind: 'accepted', ref, status: mapStatus(raw?.status), reason: reasonOf(raw), raw };
+  }
+  if (isDefinitiveRefusal(res.status)) return { kind: 'refused', http: res.status, message: `HTTP ${res.status} : ${message}` };
+  return { kind: 'unknown', message: `HTTP ${res.status} : ${message}` };
+}
+
+export type PayoutStatus = { status: PayStatus; amount: number; reason: string; found: boolean; raw: any };
+
+/** Statut d'un retrait auprès de FeexPay (clé privée). « PENDING » et « IN PENDING STATE » = toujours en cours. */
+export async function getPayoutStatus(ref: string): Promise<PayoutStatus> {
+  if (!isProviderRef(ref)) throw new Error('identifiant de retrait invalide');
+  const cfg = feexConfig();
+  const res = await fetch(`${cfg.base}/api/payouts/status/public/${encodeURIComponent(ref)}`, {
+    headers: { Authorization: `Bearer ${cfg.key}`, Accept: 'application/json' },
+    signal: AbortSignal.timeout(15000),
+  });
+  const body = await res.json().catch(() => null);
+  if (res.status === 404) return { status: 'pending', amount: 0, reason: '', found: false, raw: body };
+  if (!res.ok) throw new Error(`FeexPay statut du retrait : HTTP ${res.status} ${JSON.stringify(body ?? '').slice(0, 160)}`);
+  return { status: mapStatus(body?.status ?? body?.responsecode), amount: Number(body?.amount ?? 0), reason: reasonOf(body), found: true, raw: body };
+}
+
+/** Utilisateur appelant (jeton de l'application) et rôle admin éventuel. */
+export async function callerOf(req: Request): Promise<{ uid: string; isAdmin: boolean } | null> {
+  const jwt = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '').trim();
+  if (!jwt) return null;
+  const { data } = await admin.auth.getUser(jwt);
+  const uid = data?.user?.id;
+  if (!uid) return null;
+  const { data: p } = await admin.from('profiles').select('role').eq('id', uid).maybeSingle();
+  return { uid, isAdmin: (p as any)?.role === 'admin' };
 }

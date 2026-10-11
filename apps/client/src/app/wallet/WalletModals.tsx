@@ -116,7 +116,7 @@ export function WalletModal({ open, onClose, kind, availableBalance }: Props) {
           setError('Retrait impossible pour le moment.');
           return;
         }
-        const { data: fnData } = await supabaseBrowser.functions.invoke('fedapay-payout', {
+        const { data: fnData } = await supabaseBrowser.functions.invoke('feexpay-payout', {
           body: { payout_id: payout.id },
         });
         if ((fnData as { status?: string } | null)?.status === 'failed') {

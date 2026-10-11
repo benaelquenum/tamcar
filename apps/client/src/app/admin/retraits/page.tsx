@@ -1,7 +1,8 @@
 import { createServerSupabase } from '@/lib/supabase-server';
 import { ConfirmSubmit } from '@/components/ConfirmSubmit';
 import { ActionForm } from '@/components/ActionForm';
-import { markPayoutPaid, rejectPayout } from './actions';
+import Link from 'next/link';
+import { checkPayout, markPayoutPaid, rejectPayout, sendPayoutViaFeexpay } from './actions';
 
 type Row = {
   id: string;
@@ -17,6 +18,11 @@ type Row = {
   reference: string | null;
   processed_at: string | null;
   balance_fcfa: number | null;
+  hold_reason: string | null;
+  auto: boolean;
+  provider_ref: string | null;
+  last_error: string | null;
+  sent_at: string | null;
 };
 
 const PROVIDER: Record<string, string> = { mtn: 'MTN MoMo', moov: 'Moov Money', internal: 'Interne' };
@@ -36,10 +42,13 @@ export const dynamic = 'force-dynamic';
 
 export default async function AdminPayoutsPage() {
   const supabase = createServerSupabase();
-  const [{ data: openData }, { data: doneData }] = await Promise.all([
+  const [{ data: openData }, { data: doneData }, { data: cfgData }] = await Promise.all([
     supabase.rpc('admin_driver_payouts', { p_scope: 'open' }),
     supabase.rpc('admin_driver_payouts', { p_scope: 'done' }),
+    supabase.rpc('payouts_config'),
   ]);
+  const cfg = (Array.isArray(cfgData) ? cfgData[0] : cfgData) as { auto?: boolean; max_fcfa?: number } | null;
+  const autoOn = Boolean(cfg?.auto);
   const open = (Array.isArray(openData) ? openData : []) as Row[];
   const done = ((Array.isArray(doneData) ? doneData : []) as Row[]).slice(0, 40);
   const openTotal = open.reduce((s, r) => s + r.amount_fcfa, 0);
@@ -59,10 +68,22 @@ export default async function AdminPayoutsPage() {
         </p>
       </div>
 
+      <p
+        className={`mb-sm rounded-md p-md text-xs font-semibold ${autoOn ? 'bg-success/10 text-success' : 'bg-neutral-100 text-neutral-700'}`}
+      >
+        {autoOn
+          ? `Virement automatique ACTIVÉ : les retraits jusqu’à ${fmt(cfg?.max_fcfa ?? 0)} F partent tout seuls par FeexPay (MTN et Moov). Les autres attendent votre validation.`
+          : 'Virement automatique DÉSACTIVÉ : tous les retraits sont payés à la main, ou d’un clic par « Envoyer par FeexPay ».'}{' '}
+        <Link href="/admin/bonus" className="underline">
+          Réglages
+        </Link>
+      </p>
       <p className="mb-lg rounded-md bg-neutral-100 p-md text-xs text-neutral-600">
-        Le montant est déjà débité des revenus du chauffeur (réservé). Envoyez-le sur son Mobile Money, puis
-        cliquez <strong>Payé</strong> (avec la référence de l&apos;opération si vous l&apos;avez) : le chauffeur est
-        prévenu. Si vous ne pouvez pas payer, cliquez <strong>Refuser</strong> : le montant lui est recrédité.
+        Le montant est déjà débité des revenus du chauffeur (réservé). <strong>Envoyer par FeexPay</strong> fait le virement
+        Mobile Money pour vous (le chauffeur est prévenu à la confirmation de l&apos;opérateur). Sinon, envoyez-le vous-même
+        puis cliquez <strong>Payé</strong> (avec la référence de l&apos;opération si vous l&apos;avez). Si vous ne pouvez pas payer,
+        cliquez <strong>Refuser</strong> : le montant est recrédité. Un retrait déjà parti chez FeexPay ne peut plus être payé ni
+        refusé à la main : utilisez <strong>Vérifier</strong>.
       </p>
 
       {open.length === 0 ? (
@@ -92,6 +113,46 @@ export default async function AdminPayoutsPage() {
                   {fmt(r.amount_fcfa)} F
                 </p>
               </div>
+              {(r.hold_reason || r.status === 'processing') && (
+                <div
+                  className={`mb-md rounded-md p-sm text-xs font-semibold ${
+                    r.hold_reason ? 'bg-warning/15 text-warning' : 'bg-primary-50 text-primary-700'
+                  }`}
+                >
+                  {r.hold_reason
+                    ? r.hold_reason
+                    : r.provider_ref
+                      ? `Parti chez FeexPay${r.sent_at ? ` ${ago(r.sent_at)}` : ''} · en attente de la confirmation de l’opérateur · réf. ${r.provider_ref.slice(0, 8)}`
+                      : 'Envoi en cours…'}
+                </div>
+              )}
+              {r.status === 'processing' && r.provider_ref ? (
+                <ActionForm action={checkPayout} className="flex flex-wrap items-center gap-sm">
+                  <input type="hidden" name="id" value={r.id} />
+                  <ConfirmSubmit
+                    message="Relire l’issue de ce virement chez FeexPay ?"
+                    className="flex-none rounded-md bg-primary-700 px-lg py-sm text-sm font-bold text-white hover:bg-primary-800"
+                    pendingLabel="Vérification…"
+                  >
+                    Vérifier
+                  </ConfirmSubmit>
+                  <span className="text-xs text-neutral-500">Le chauffeur est prévenu et le retrait clos dès que FeexPay confirme.</span>
+                </ActionForm>
+              ) : (
+              <>
+              {r.status === 'pending' && (
+                <ActionForm action={sendPayoutViaFeexpay} className="mb-md flex flex-wrap items-center gap-sm">
+                  <input type="hidden" name="id" value={r.id} />
+                  <ConfirmSubmit
+                    message={`Envoyer ${fmt(r.amount_fcfa)} F à ${r.full_name} (${r.msisdn}, ${PROVIDER[r.provider] ?? r.provider}) par FeexPay ? L’argent part immédiatement.`}
+                    className="flex-none rounded-md bg-primary-700 px-lg py-sm text-sm font-bold text-white hover:bg-primary-800"
+                    pendingLabel="Envoi…"
+                  >
+                    Envoyer par FeexPay
+                  </ConfirmSubmit>
+                  <span className="text-xs text-neutral-500">Virement Mobile Money automatique (MTN et Moov).</span>
+                </ActionForm>
+              )}
               <div className="grid gap-md md:grid-cols-2">
                 <ActionForm action={markPayoutPaid} className="flex flex-wrap gap-sm">
                   <input type="hidden" name="id" value={r.id} />
@@ -122,6 +183,8 @@ export default async function AdminPayoutsPage() {
                   </ConfirmSubmit>
                 </ActionForm>
               </div>
+              </>
+              )}
             </div>
           ))}
         </section>

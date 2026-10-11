@@ -72,5 +72,31 @@ eq('timingSafeEqual égaux', core.timingSafeEqual('abc', 'abc'), true);
 eq('timingSafeEqual différents', core.timingSafeEqual('abc', 'abd'), false);
 eq('timingSafeEqual longueurs', core.timingSafeEqual('abc', 'abcd'), false);
 
+// Retraits (payouts)
+const UUID = '6a00a986-fcb9-4491-93d5-28693034ef95';
+eq('réseau mtn', core.payoutNetwork('mtn'), 'MTN');
+eq('réseau Moov', core.payoutNetwork(' Moov '), 'MOOV');
+eq('réseau celtiis non géré', core.payoutNetwork('celtiis'), null);
+eq('réseau vide', core.payoutNetwork(null), null);
+eq('motif ≤ 30 caractères, sans caractère spécial', core.PAYOUT_MOTIF.length <= 30 && /^[A-Za-z0-9 ]+$/.test(core.PAYOUT_MOTIF), true);
+eq('callback_info', core.payoutCallback(UUID), `TCP-${UUID}`);
+eq('retrouver notre retrait (chaîne)', core.payoutIdFromCallback(`TCP-${UUID}`), UUID);
+eq('retrouver notre retrait (objet)', core.payoutIdFromCallback({ cb: `TCP-${UUID.toUpperCase()}` }), UUID);
+eq('callback étranger', core.payoutIdFromCallback('order_12345'), '');
+eq('callback de payin : pas un retrait', core.payoutIdFromCallback('FDP-0123456789abcdef0123456789abcdef'), '');
+eq('identifiant FeexPay valide', core.isProviderRef(UUID), true);
+eq('identifiant FeexPay piégé (adresse)', core.isProviderRef(`${UUID}/../x`), false);
+eq('identifiant FeexPay vide', core.isProviderRef(''), false);
+eq('corps de la requête', core.buildPayoutBody({ phone: '2290197000000', amount: 1000.4, shop: 'SHOP', network: 'MTN', payoutId: UUID }),
+  { phoneNumber: '2290197000000', amount: 1000, shop: 'SHOP', network: 'MTN', motif: 'Retrait TamCar', callback_info: `TCP-${UUID}` });
+eq('statut « IN PENDING STATE » = en cours', core.mapStatus('IN PENDING STATE'), 'pending');
+eq('statut inconnu = en cours', core.mapStatus('WHATEVER'), 'pending');
+eq('400 = refus définitif', core.isDefinitiveRefusal(400), true);
+eq('403 = refus définitif', core.isDefinitiveRefusal(403), true);
+eq('429 = ambigu', core.isDefinitiveRefusal(429), false);
+eq('408 = ambigu', core.isDefinitiveRefusal(408), false);
+eq('500 = ambigu', core.isDefinitiveRefusal(500), false);
+eq('200 : pas un refus', core.isDefinitiveRefusal(200), false);
+
 console.log(fails === 0 ? '\nTous les contrôles passent.' : `\n${fails} contrôle(s) en échec.`);
 process.exit(fails === 0 ? 0 : 1);
