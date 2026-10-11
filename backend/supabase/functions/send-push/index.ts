@@ -248,6 +248,11 @@ Deno.serve(async (req: Request) => {
                     sound: 'default',
                     // Même tag que la carte de suivi : une notification de fin de course la remplace sur place.
                     ...(nativeLive && typeof tag === 'string' && tag.startsWith('ride:') ? { tag } : {}),
+                    // Réservations (rappels H-30/20/10/5, désistement, annulation) : canal à importance HAUTE de l'APK, pour une
+                    // notification qui s'affiche en haut de l'écran avec son et vibration, au lieu du canal par défaut (discret).
+                    ...(typeof tag === 'string' && (tag.startsWith('booking-') || tag.startsWith('msg:'))
+                      ? { channel_id: nativeAlert ? 'ride_booking_v1' : nativeLive ? 'ride_alert' : undefined }
+                      : {}),
                   },
                 },
               });

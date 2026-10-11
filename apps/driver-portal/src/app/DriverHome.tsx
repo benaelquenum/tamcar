@@ -16,6 +16,7 @@ import {
   LuggageIcon,
 } from '@/components/Icon';
 import { Map } from '@/components/Map';
+import { ChevronDownIcon } from '@/components/Icon';
 import { VehicleIcon } from '@/components/VehicleIcon';
 import { MessagesFab } from '@/components/MessagesFab';
 import { supabaseBrowser } from '@/lib/supabase-browser';
@@ -165,6 +166,18 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
   const [offers, setOffers] = useState<TamPassOffer[]>([]);
   const [acceptingOfferId, setAcceptingOfferId] = useState<string | null>(null);
   const [oneshots, setOneshots] = useState<OneshotReq[]>([]);
+  // Volet du bas replié : le chauffeur voit toute la carte (positions, demandes). Le choix est mémorisé ; les alertes sonores
+  // des nouvelles demandes continuent de retentir volet fermé, et une pastille indique le nombre de demandes en attente.
+  const [sheetOpen, setSheetOpen] = useState(true);
+  useEffect(() => {
+    try {
+      if (localStorage.getItem('tamcar.driver.sheetOpen') === '0') setSheetOpen(false);
+    } catch { /* stockage indisponible */ }
+  }, []);
+  function toggleSheet(open: boolean) {
+    setSheetOpen(open);
+    try { localStorage.setItem('tamcar.driver.sheetOpen', open ? '1' : '0'); } catch { /* ignore */ }
+  }
   const [respondingId, setRespondingId] = useState<string | null>(null);
   const [scheduledPending, setScheduledPending] = useState<ScheduledBooking[]>([]);
   const [myBookings, setMyBookings] = useState<MyBooking[]>([]);
@@ -718,10 +731,41 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
         {/* Hauteur bornée : avec plusieurs demandes / réservations / offres TamPass, la feuille dépassait l'écran (main est en
             overflow-hidden) et le bouton « Se connecter » devenait inaccessible. Le bandeau en ligne reste collé en haut. */}
         <div className="mx-auto max-h-[78dvh] max-w-md overflow-y-auto overscroll-contain rounded-t-2xl bg-white shadow-2xl ring-1 ring-neutral-200">
-          <div className="p-lg">
+          {/* Volet replié : une barre compacte, la carte reste entièrement visible */}
+          {!sheetOpen && (
+            <button
+              type="button"
+              onClick={() => toggleSheet(true)}
+              aria-label="Afficher le panneau"
+              className="flex w-full items-center gap-sm px-lg py-md text-left"
+            >
+              <span className={`h-2.5 w-2.5 flex-none rounded-full ${isOnline ? 'animate-pulse bg-primary-500' : 'bg-neutral-400'}`} />
+              <span className="flex-1 text-sm font-extrabold text-neutral-900">
+                {isOnline ? 'En ligne' : 'Hors ligne'}
+                {(pending.length + oneshots.length) > 0 && (
+                  <span className="ml-sm rounded-full bg-error px-sm py-0.5 text-[11px] font-extrabold text-white">
+                    {pending.length + oneshots.length} demande{pending.length + oneshots.length > 1 ? 's' : ''}
+                  </span>
+                )}
+              </span>
+              <span className="flex items-center gap-xs text-xs font-bold text-primary-700">
+                Afficher
+                <ChevronDownIcon className="h-4 w-4 rotate-180" />
+              </span>
+            </button>
+          )}
+          <div className={sheetOpen ? 'p-lg' : 'hidden'}>
             {/* Toggle online */}
             <div className="sticky top-0 z-10 -mx-lg -mt-lg mb-md flex items-center justify-between bg-white px-lg pb-sm pt-lg">
-              <div>
+              <button
+                type="button"
+                onClick={() => toggleSheet(false)}
+                aria-label="Réduire le panneau pour voir la carte"
+                className="mr-sm grid h-10 w-10 flex-none place-items-center rounded-full bg-neutral-100 text-neutral-700 ring-1 ring-neutral-200 hover:bg-neutral-200"
+              >
+                <ChevronDownIcon className="h-5 w-5" />
+              </button>
+              <div className="min-w-0 flex-1">
                 <p className="text-xs font-bold uppercase tracking-wider text-neutral-500">
                   {driverName}
                 </p>

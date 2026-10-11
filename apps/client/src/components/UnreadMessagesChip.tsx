@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { freshChannel } from '@/lib/realtime';
 import { MessageIcon } from '@/components/Icon';
+import { playMessageSound } from '@/lib/message-sound';
 
 /**
  * Bulle globale « messages non lus » affichée sur l'accueil (hors écran course).
@@ -29,8 +30,14 @@ export function UnreadMessagesChip({ bottomClass = 'bottom-6' }: { bottomClass?:
     }
 
     refresh();
+    let myId: string | null = null;
+    void supabaseBrowser.auth.getUser().then(({ data }) => { myId = data.user?.id ?? null; });
     const channel = freshChannel('global_unread_messages')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'ride_messages' }, () => refresh())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ride_messages' }, (payload) => {
+        // Chaque message reçu (pas les siens) fait sonner l'appareil, même hors de l'écran de la course
+        if (payload.eventType === 'INSERT' && (payload.new as { sender_id?: string }).sender_id !== myId) playMessageSound();
+        void refresh();
+      })
       .subscribe();
 
     return () => {

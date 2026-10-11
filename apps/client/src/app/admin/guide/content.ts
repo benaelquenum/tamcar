@@ -534,6 +534,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
           ['Annulation par le client', 'Les frais appliqués quand le client annule alors que le chauffeur est arrivé ou tout proche.'],
           ['TamAssur : cotisation quotidienne', 'Le montant prélevé chaque jour ouvré sur le chauffeur pour son épargne (1 000 F pour tous les véhicules).'],
           ['TamAssur : durée avant retrait', 'Le nombre de mois de cotisation avant que le chauffeur puisse demander son épargne (moto 12, tricycle et voitures 24).'],
+          ['Réservations : pénalité d’annulation tardive', 'Le montant (200 F) prélevé à celui qui annule à moins de 10 minutes du départ et reversé en entier à l’autre partie (client ou chauffeur). Gratuit avant. Un désistement du chauffeur relance toujours la recherche et ne le repropose plus pour cette course.'],
           ['Paiements', '**Paiement réel FeexPay** (à 1 une fois les clés posées : recharges et règlements de dette par Mobile Money), **mode TEST** (recharges et règlements gratuits, simulés) et **virements automatiques** des retraits.'],
         ],
       },

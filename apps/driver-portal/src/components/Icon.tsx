@@ -390,3 +390,11 @@ export function FileTextIcon({ className = 'h-4 w-4', strokeWidth = 2 }: IconPro
     </svg>
   );
 }
+
+export function ChevronDownIcon({ className = 'h-5 w-5', strokeWidth = 2.5 }: { className?: string; strokeWidth?: number }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={`shrink-0 ${className}`}>
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  );
+}

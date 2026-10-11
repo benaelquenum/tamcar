@@ -133,6 +133,13 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
   const [hasRated, setHasRated] = useState<boolean | null>(null);
   const [ratingOpen, setRatingOpen] = useState(false);
   const router = useRouter();
+  // Course terminée et client noté : retour automatique à l'accueil après 3 secondes
+  const [backHome, setBackHome] = useState(false);
+  useEffect(() => {
+    if (!backHome) return;
+    const t = setTimeout(() => router.push('/'), 3000);
+    return () => clearTimeout(t);
+  }, [backHome, router]);
 
   // Réservation : règles de départ anticipé (H-30) et de pénalité de désistement tardif (H-10)
   const bookingAt = ride.scheduled_at ? new Date(ride.scheduled_at).getTime() : null;
@@ -1440,8 +1447,17 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
           onClose={() => setRatingOpen(false)}
           rideId={ride.id}
           ratedName={titleCaseName(ride.client_full_name) || 'Client'}
-          onSubmitted={() => setHasRated(true)}
+          onSubmitted={() => { setHasRated(true); setBackHome(true); }}
         />
+      )}
+
+      {backHome && (
+        <div
+          role="status"
+          className="fixed inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-[60] mx-auto w-fit rounded-full bg-neutral-900 px-lg py-sm text-sm font-bold text-white shadow-xl"
+        >
+          Merci ! Retour à l&apos;accueil dans 3 secondes…
+        </div>
       )}
 
     </main>

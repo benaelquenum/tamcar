@@ -259,7 +259,7 @@ public final class RideLiveNotifier {
 
     // ------------------------------------------------------------------ outils
 
-    private static void ensureChannels(Context ctx) {
+    static void ensureChannels(Context ctx) {
         if (Build.VERSION.SDK_INT < 26) return;
         NotificationManager m = ctx.getSystemService(NotificationManager.class);
         if (m == null) return;
