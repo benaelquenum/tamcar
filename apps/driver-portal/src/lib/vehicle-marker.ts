@@ -183,8 +183,9 @@ export function vehicleMarkerSvg({
     `<svg viewBox="0 0 40 40" width="${size}" height="${size}" ` +
     `style="display:block;overflow:visible;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35))">` +
     (self
-      // L'anneau ne tourne pas avec le véhicule : il dit « moi », pas « cap ».
-      ? `<circle cx="20" cy="20" r="17.5" fill="none" stroke="#2563EB" stroke-width="2.5" opacity="0.55"/>`
+      // Disque blanc + anneau bleu : le pion « moi » reste lisible sur n'importe quel fond de carte.
+      // Il ne tourne pas avec le véhicule : il dit « moi », pas « cap ».
+      ? `<circle cx="20" cy="20" r="17.5" fill="#FFFFFF" fill-opacity="0.92" stroke="#2563EB" stroke-width="2.6"/>`
       : '') +
     headingCone(c) +
     body +

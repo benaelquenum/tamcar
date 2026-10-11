@@ -77,6 +77,7 @@ export type DriverRideForView = {
   completion_distance_from_dropoff_m: number | null;
   completion_auto_accept_at: string | null;
   vehicle_category: string | null;
+  vehicle_color?: string | null;
   /** Heure de la réservation (course issue d'une réservation) ; null pour une course immédiate */
   scheduled_at?: string | null;
 };
@@ -850,6 +851,7 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
           dropoff={ride.status === 'in_progress' ? [ride.dropoff_lng, ride.dropoff_lat] : undefined}
           selfLocation={driverPos}
           selfCategory={ride.vehicle_category ?? undefined}
+          selfColor={ride.vehicle_color}
           clientLocation={
             clientLive ??
             (ride.client_live_lng != null && ride.client_live_lat != null

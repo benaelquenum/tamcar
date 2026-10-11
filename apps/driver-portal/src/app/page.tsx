@@ -59,12 +59,27 @@ export default async function HomePage() {
     );
   }
 
+  // Silhouette du pion « moi » sur la carte : catégorie et couleur du véhicule du chauffeur
+  let vehicleCategory: string | null = null;
+  let vehicleColor: string | null = null;
+  if (driverRow.current_vehicle_id) {
+    const { data: vehicle } = await supabase
+      .from('vehicles')
+      .select('category, color')
+      .eq('id', driverRow.current_vehicle_id)
+      .maybeSingle();
+    vehicleCategory = vehicle?.category ?? null;
+    vehicleColor = vehicle?.color ?? null;
+  }
+
   return (
     <DriverHome
       driverName={profile.full_name}
       initialIsOnline={driverRow.is_online}
       hasVehicle={driverRow.current_vehicle_id !== null}
       debt={debt}
+      vehicleCategory={vehicleCategory}
+      vehicleColor={vehicleColor}
     />
   );
 }

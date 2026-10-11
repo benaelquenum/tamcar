@@ -40,7 +40,11 @@ body {
   line-height: 0;
   cursor: pointer;
 }
+/* Le conteneur tournant est dans le flux (et non absolu) : le marqueur prend la taille de la silhouette, ce qui la
+   centre sur la position réelle et la fait pivoter autour de son centre (il était décalé d'une demi-taille). */
 .tc-veh-marker .tc-veh-nub-rot {
+  position: relative;
+  inset: auto;
   display: block;
   transition: transform 0.6s ease;
 }

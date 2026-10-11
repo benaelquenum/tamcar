@@ -29,13 +29,15 @@ export default async function DriverRideDetail({ params }: { params: { id: strin
 
   // Catégorie du véhicule qui fait la course (pour le pin sur la carte)
   let vehicleCategory: string | null = null;
+  let vehicleColor: string | null = null;
   if (ride.vehicle_id) {
     const { data: vehicle } = await supabase
       .from('vehicles')
-      .select('category')
+      .select('category, color')
       .eq('id', ride.vehicle_id)
       .single();
     vehicleCategory = vehicle?.category ?? null;
+    vehicleColor = vehicle?.color ?? null;
   }
 
   const initialRide: DriverRideForView = {
@@ -69,6 +71,7 @@ export default async function DriverRideDetail({ params }: { params: { id: strin
     completion_distance_from_dropoff_m: ride.completion_distance_from_dropoff_m ?? null,
     completion_auto_accept_at: ride.completion_auto_accept_at ?? null,
     vehicle_category: vehicleCategory,
+    vehicle_color: vehicleColor,
     scheduled_at: (ride as { scheduled_at?: string | null }).scheduled_at ?? null,
   };
 

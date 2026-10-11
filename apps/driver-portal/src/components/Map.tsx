@@ -108,25 +108,25 @@ function makeStopEl(n: number): HTMLDivElement {
   return el;
 }
 
+// Taille du pion « moi » (px) : assez grand pour se repérer d'un coup d'œil, au volant comme à l'arrêt.
+export const SELF_PUCK_SIZE = 64;
+
 // Marqueur du véhicule suivi : la silhouette pivote vers le cap, l'anneau
-// bleu « vous êtes ici » reste fixe autour d'elle.
-function makePuckEl(category?: string, self = false, color?: string | null): HTMLDivElement {
+// bleu « vous êtes ici » reste fixe autour d'elle. `radar` ajoute le signal qui
+// émane du pion quand le chauffeur attend une course (hors course).
+export function makePuckEl(
+  category?: string,
+  self = false,
+  color?: string | null,
+  opts: { size?: number; radar?: boolean } = {},
+): HTMLDivElement {
   const el = document.createElement('div');
   el.className = 'tc-veh-marker' + (self ? ' me' : '');
+  const radar = opts.radar
+    ? '<span class="tc-self-radar"></span><span class="tc-self-radar d1"></span><span class="tc-self-radar d2"></span>'
+    : '';
   el.innerHTML =
-    `<span class="tc-veh-nub-rot">${vehicleMarkerSvg({ category, color, self, size: 56 })}</span>`;
-  return el;
-}
-
-// Pion « moi » hors course : un point + un signal qui émane de lui (radar).
-function makeBeaconEl(): HTMLDivElement {
-  const el = document.createElement('div');
-  el.className = 'tc-self-beacon';
-  el.innerHTML =
-    '<span class="tc-beacon-ring"></span>' +
-    '<span class="tc-beacon-ring d1"></span>' +
-    '<span class="tc-beacon-ring d2"></span>' +
-    '<span class="tc-beacon-dot"></span>';
+    radar + `<span class="tc-veh-nub-rot">${vehicleMarkerSvg({ category, color, self, size: opts.size ?? 56 })}</span>`;
   return el;
 }
 
@@ -176,9 +176,11 @@ type Props = {
   selfLocation?: [number, number] | null;
   /** Catégorie du véhicule du chauffeur (silhouette du pion « moi »). */
   selfCategory?: string;
+  /** `vehicles.color` du chauffeur : teinte de sa silhouette (texte libre, repli sur la catégorie). */
+  selfColor?: string | null;
   /** Position live du client (vue chauffeur) — pion cyan pulsant. */
   clientLocation?: [number, number] | null;
-  /** Rendu du pion « moi » en beacon (point + signal) au lieu de la pastille véhicule. */
+  /** Pion « moi » hors course : la silhouette du véhicule est entourée d'un signal radar. */
   selfBeacon?: boolean;
   /**
    * Mode NAVIGATION (comme Yango) : la caméra suit cette position, la carte
@@ -219,6 +221,7 @@ export function Map({
   pickupPulse = false,
   selfLocation,
   selfCategory,
+  selfColor,
   clientLocation,
   selfBeacon,
   follow = null,
@@ -579,7 +582,7 @@ export function Map({
     }
   }, [assignedDriver]);
 
-  // Pion « MOI » (position du chauffeur) : pastille bleue à halo, qui glisse
+  // Pion « MOI » (position du chauffeur) : silhouette de son véhicule sur un disque à anneau bleu, qui glisse
   // en douceur. Recentre la carte à la première apparition (repérage immédiat).
   useEffect(() => {
     const map = mapRef.current;
@@ -597,7 +600,7 @@ export function Map({
     const target: [number, number] = selfLocation;
 
     if (!selfMarkerRef.current) {
-      const el = selfBeacon ? makeBeaconEl() : makePuckEl(selfCategory, true);
+      const el = makePuckEl(selfCategory, true, selfColor, { size: SELF_PUCK_SIZE, radar: Boolean(selfBeacon) });
       selfMarkerRef.current = new GL.Marker({ element: el, anchor: 'center' })
         .setLngLat(target)
         .addTo(map);
@@ -640,7 +643,7 @@ export function Map({
     return () => {
       if (selfRafRef.current != null) { cancelAnimationFrame(selfRafRef.current); selfRafRef.current = null; }
     };
-  }, [selfLocation, selfCategory, selfBeacon]);
+  }, [selfLocation, selfCategory, selfColor, selfBeacon]);
 
   // Pion client live (vue chauffeur) — point cyan pulsant.
   useEffect(() => {

@@ -40,10 +40,30 @@ body {
   line-height: 0;
   cursor: pointer;
 }
+/* Le conteneur tournant est dans le flux (et non absolu) : le marqueur prend la taille de la silhouette, ce qui la
+   centre sur la position réelle et la fait pivoter autour de son centre. */
 .tc-veh-marker .tc-veh-nub-rot {
+  position: relative;
+  inset: auto;
   display: block;
   transition: transform 0.6s ease;
 }
+
+/* Signal radar du pion « moi » hors course : trois ondes concentriques qui partent du véhicule. */
+.tc-veh-marker .tc-self-radar {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 60px;
+  height: 60px;
+  margin: -30px 0 0 -30px;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.28);
+  animation: tc-pulse 2.4s ease-out infinite;
+  pointer-events: none;
+}
+.tc-veh-marker .tc-self-radar.d1 { animation-delay: 0.8s; }
+.tc-veh-marker .tc-self-radar.d2 { animation-delay: 1.6s; }
 
 .tc-driver-pin {
   width: 26px;
@@ -200,27 +220,6 @@ body {
   background: #06B6D4;
   border: 2.5px solid white;
   box-shadow: 0 2px 6px rgba(6, 182, 212, 0.6);
-}
-
-/* Pion « moi » chauffeur hors course : un point + un signal radar. */
-.tc-self-beacon { position: relative; width: 18px; height: 18px; }
-.tc-self-beacon .tc-beacon-ring {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: rgba(37, 99, 235, 0.3);
-  animation: tc-pulse 1.8s ease-out infinite;
-  pointer-events: none;
-}
-.tc-self-beacon .tc-beacon-ring.d1 { animation-delay: 0.6s; }
-.tc-self-beacon .tc-beacon-ring.d2 { animation-delay: 1.2s; }
-.tc-self-beacon .tc-beacon-dot {
-  position: absolute;
-  inset: 5px;
-  border-radius: 50%;
-  background: #2563EB;
-  border: 2.5px solid #fff;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 
 /* ============================================================

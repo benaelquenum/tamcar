@@ -126,6 +126,9 @@ type Props = {
   initialIsOnline: boolean;
   hasVehicle: boolean;
   debt: number;
+  /** Silhouette et couleur du pion « moi » sur la carte (véhicule actuel du chauffeur). */
+  vehicleCategory?: string | null;
+  vehicleColor?: string | null;
 };
 
 // Tolérance de découvert wallet : en dessous, le chauffeur reste en ligne
@@ -152,7 +155,7 @@ function fmtSched(iso: string): string {
   });
 }
 
-export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Props) {
+export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt, vehicleCategory, vehicleColor }: Props) {
   const router = useRouter();
   const [isOnline, setIsOnline] = useState(initialIsOnline);
   const [busy, setBusy] = useState(false);
@@ -691,6 +694,8 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
       <div className="absolute inset-0">
         <Map
           selfLocation={position}
+          selfCategory={vehicleCategory ?? undefined}
+          selfColor={vehicleColor}
           selfBeacon
           pendingPickups={pending.map((r) => ({
             ride_id: r.id,
