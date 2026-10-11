@@ -66,7 +66,7 @@ export async function payWithMobileMoney(opts: {
   amountFcfa: number;
   network: Network;
   phone: string;
-  /** Appelée dès que la demande est partie chez l'opérateur (le client doit confirmer sur son téléphone). */
+  /** Appelée dès que la demande de paiement est lancée : le client doit confirmer sur son téléphone. */
   onWaiting?: () => void;
 }): Promise<PaymentOutcome> {
   const e164 = formatBeninPhone(opts.phone);
@@ -77,6 +77,10 @@ export async function payWithMobileMoney(opts: {
     return { status: 'error', message: error?.message ?? 'Impossible d’initier le paiement.' };
   }
   const reference = (data[0] as { reference: string }).reference;
+
+  // Dès que la demande part : l'écran passe sur « Confirmez sur votre téléphone ». Chez Moov, l'appel reste ouvert jusqu'à la
+  // confirmation du client (code PIN) : sans cela, l'écran restait sur « Envoi de la demande… » pendant toute la saisie du code.
+  opts.onWaiting?.();
 
   const { data: pay, error: payErr } = await supabaseBrowser.functions.invoke('feexpay-pay', {
     body: { reference, network: opts.network, phone: e164 },
@@ -91,15 +95,14 @@ export async function payWithMobileMoney(opts: {
   if (first?.status === 'success') return { status: 'success' };
   if (first?.status === 'failed') return { status: 'failed', reason: friendlyReason(first.reason) };
 
-  opts.onWaiting?.();
   const started = Date.now();
   for (let i = 0; Date.now() - started < WAIT_MS; i++) {
-    await new Promise((r) => setTimeout(r, 2000));
+    await new Promise((r) => setTimeout(r, 1000));
     const { data: rows } = await supabaseBrowser.from('wallet_transactions').select('status').eq('fedapay_reference', reference).limit(1);
     const s = Array.isArray(rows) ? (rows[0] as { status?: string } | undefined)?.status : undefined;
     if (s === 'success') return { status: 'success' };
     if (s === 'failed') return { status: 'failed', reason: friendlyReason('') };
-    // Toutes les 6 s : confirmation directe auprès de FeexPay (secours si le webhook tarde ou se perd)
+    // Toutes les 3 s : confirmation directe auprès de FeexPay (secours si le webhook tarde ou se perd)
     if (i % 3 === 2) {
       const { data: v } = await supabaseBrowser.functions.invoke('feexpay-verify', { body: { reference } });
       const vs = v as { status?: string; reason?: string } | null;

@@ -53,10 +53,13 @@ Deno.serve(async (req: Request) => {
 
   const amount = Number(row.amount_fcfa);
   const description = row.type === 'topup' ? 'Recharge TamCar Credit' : 'Reglement dette TamCar';
-  await admin.rpc('feexpay_record_payin', { p_reference: reference, p_provider_ref: null, p_network: network, p_phone_last4: phone.slice(-4) });
+  // L'enregistrement de l'opérateur part en parallèle de l'appel à FeexPay (il n'a pas besoin d'attendre sa réponse)
+  // (Promise.resolve déclenche l'envoi tout de suite : le constructeur de requête de supabase-js n'envoie qu'au premier .then)
+  const preRecord = Promise.resolve(admin.rpc('feexpay_record_payin', { p_reference: reference, p_provider_ref: null, p_network: network, p_phone_last4: phone.slice(-4) })).catch(() => null);
 
   let res: Response;
   let resBody: any = null;
+  const t0 = Date.now();
   try {
     res = await fetch(`${cfg.base}/api/transactions/public/requesttopay/${CHANNEL[network]}`, {
       method: 'POST',
@@ -71,6 +74,9 @@ Deno.serve(async (req: Request) => {
     await trace('pay', { reference, amount_fcfa: amount, outcome: 'error', detail: `appel FeexPay impossible : ${String(e)}` });
     return json({ status: 'pending', uncertain: true });
   }
+
+  await preRecord;
+  const ms = Date.now() - t0;
 
   // Refus immédiat (numéro invalide, clé refusée, montant hors limites…) : rien n'a été demandé au client
   if (res.status >= 400 && res.status < 500) {
@@ -89,7 +95,7 @@ Deno.serve(async (req: Request) => {
   const providerRef = String(resBody?.reference ?? '');
   await admin.rpc('feexpay_record_payin', { p_reference: reference, p_provider_ref: providerRef, p_network: network, p_phone_last4: phone.slice(-4) });
   const st = mapStatus(resBody?.status);
-  await trace('pay', { reference, provider_tx_id: providerRef, amount_fcfa: amount, outcome: 'pending', detail: `demande envoyée (${network}, …${phone.slice(-4)}) : ${resBody?.status ?? '?'}` });
+  await trace('pay', { reference, provider_tx_id: providerRef, amount_fcfa: amount, outcome: 'pending', detail: `demande envoyée (${network}, …${phone.slice(-4)}) : ${resBody?.status ?? '?'} — FeexPay a répondu en ${(ms / 1000).toFixed(1)} s` });
 
   if (st === 'pending' || !providerRef) return json({ status: 'pending' });
 

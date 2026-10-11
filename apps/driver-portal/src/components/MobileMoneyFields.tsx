@@ -77,8 +77,8 @@ export function WaitingForConfirmation({ network, phone }: { network: Network; p
       <span className="mx-auto mb-sm block h-8 w-8 animate-spin rounded-full border-4 border-primary-200 border-t-primary-600" aria-hidden />
       <p className="text-sm font-bold text-neutral-900">Confirmez le paiement sur votre téléphone</p>
       <p className="mt-xs text-xs text-neutral-700">
-        Une demande {label} vient d’être envoyée au <strong>{phone}</strong>. Saisissez votre code PIN pour valider. Cette fenêtre se met
-        à jour toute seule : ne la fermez pas.
+        Une demande {label} arrive sur le <strong>{phone}</strong> : saisissez votre code PIN pour valider (comptez 10 à 20 secondes).
+        Cette fenêtre se met à jour toute seule : ne la fermez pas.
       </p>
     </div>
   );
