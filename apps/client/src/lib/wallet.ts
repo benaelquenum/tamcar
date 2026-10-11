@@ -28,6 +28,7 @@ export type WalletTxType =
   | 'floor_refund'
   | 'ops_commission'
   | 'senteur_fee'
+  | 'fleet_upkeep_fee'
   | 'ops_payout'
   | 'adjustment';
 
@@ -121,6 +122,7 @@ const TX_LABEL: Record<WalletTxType, string> = {
   floor_refund: 'Versement remboursé (jour non travaillé)',
   ops_commission: 'Commission responsable opérations',
   senteur_fee: 'Produits de senteur',
+  fleet_upkeep_fee: 'Maintien en flotte (fonds de rachat)',
   ops_payout: 'Règlement responsable opérations',
   tamassur_withdrawal: 'Retrait épargne TamAssur',
   goodwill_credit: 'Crédit d\'excuse',

@@ -126,6 +126,7 @@ const WALLET_LABEL: Record<string, string> = {
   floor_refund: 'Versement remboursé (jour non travaillé)',
   tamassur_withdrawal: 'Retrait TamAssur',
   senteur_fee: 'Produits de senteur (fonds de rachat)',
+  fleet_upkeep_fee: 'Maintien en flotte (fonds de rachat)',
   debt_settlement: 'Règlement de dette',
   goodwill_credit: 'Geste commercial',
   change_return_in: 'Monnaie reçue',
