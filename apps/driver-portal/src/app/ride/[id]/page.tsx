@@ -13,7 +13,7 @@ export default async function DriverRideDetail({ params }: { params: { id: strin
   const { data: ride, error } = await supabase
     .from('rides_view')
     .select(
-      'id, status, driver_id, vehicle_id, pickup_address, pickup_lat, pickup_lng, dropoff_address, dropoff_lat, dropoff_lng, distance_km, duration_min, price_total_fcfa, driver_share_fcfa, driver_rachat_fcfa, client_id, completion_requested_at, completion_recomputed_price_fcfa, completion_distance_from_dropoff_m, completion_auto_accept_at, passenger_name, passenger_phone, client_live_lat, client_live_lng',
+      'id, status, driver_id, vehicle_id, pickup_address, pickup_lat, pickup_lng, dropoff_address, dropoff_lat, dropoff_lng, distance_km, duration_min, price_total_fcfa, driver_share_fcfa, driver_rachat_fcfa, client_id, completion_requested_at, completion_recomputed_price_fcfa, completion_distance_from_dropoff_m, completion_auto_accept_at, passenger_name, passenger_phone, client_live_lat, client_live_lng, scheduled_at',
     )
     .eq('id', params.id)
     .single();
@@ -69,6 +69,7 @@ export default async function DriverRideDetail({ params }: { params: { id: strin
     completion_distance_from_dropoff_m: ride.completion_distance_from_dropoff_m ?? null,
     completion_auto_accept_at: ride.completion_auto_accept_at ?? null,
     vehicle_category: vehicleCategory,
+    scheduled_at: (ride as { scheduled_at?: string | null }).scheduled_at ?? null,
   };
 
   return <DriverRideView initialRide={initialRide} myUserId={profile.id} />;

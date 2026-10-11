@@ -171,6 +171,14 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
   const [acceptingSchedId, setAcceptingSchedId] = useState<string | null>(null);
   const [cancellingSchedId, setCancellingSchedId] = useState<string | null>(null);
   const [desistConfirmId, setDesistConfirmId] = useState<string | null>(null);
+  // Pénalité de désistement tardif (réglage serveur, 200 F par défaut)
+  const [bookingPenalty, setBookingPenalty] = useState(200);
+  useEffect(() => {
+    void supabaseBrowser.rpc('booking_config').then(({ data }) => {
+      const row = (Array.isArray(data) ? data[0] : data) as { penalty_fcfa?: number } | null;
+      if (typeof row?.penalty_fcfa === 'number') setBookingPenalty(row.penalty_fcfa);
+    });
+  }, []);
 
   // Fil unique : courses immédiates d'abord (le client attend maintenant),
   // puis les réservations par heure de départ croissante.
@@ -854,11 +862,17 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
                       </div>
                       <p className="mt-xs text-sm font-semibold text-neutral-900">{b.client_first_name}</p>
                       <p className="text-xs text-neutral-700">{b.pickup_address} → {b.dropoff_address}</p>
+                      <Link
+                        href={`/ride/${b.id}`}
+                        className="mt-md flex w-full items-center justify-center rounded-lg bg-violet-600 py-sm text-xs font-bold text-white hover:bg-violet-700"
+                      >
+                        Ouvrir la réservation
+                      </Link>
                       <button
                         type="button"
                         onClick={() => setDesistConfirmId(b.id)}
                         disabled={cancellingSchedId === b.id}
-                        className="mt-md w-full rounded-lg bg-white py-xs text-[11px] font-bold text-neutral-600 ring-1 ring-neutral-300 hover:bg-neutral-50 disabled:opacity-50"
+                        className="mt-sm w-full rounded-lg bg-white py-xs text-[11px] font-bold text-neutral-600 ring-1 ring-neutral-300 hover:bg-neutral-50 disabled:opacity-50"
                       >
                         {cancellingSchedId === b.id ? '…' : 'Se désister'}
                       </button>
@@ -881,10 +895,23 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt }: Pr
                   <h2 className="text-xl font-extrabold text-neutral-900">
                     Se désister de cette réservation ?
                   </h2>
-                  <p className="mt-sm rounded-md bg-warning/10 p-md text-sm text-neutral-700">
-                    Elle repartira aussitôt vers d&apos;autres chauffeurs et le client sera
-                    prévenu. Évitez les désistements de dernière minute.
-                  </p>
+                  {(() => {
+                    const target = myBookings.find((x) => x.id === desistConfirmId);
+                    const late = target ? Date.now() >= new Date(target.scheduled_at).getTime() - 10 * 60_000 : false;
+                    return late ? (
+                      <p className="mt-sm rounded-md bg-warning/10 p-md text-sm text-neutral-700">
+                        À moins de 10 minutes du départ, le client recevra{' '}
+                        <strong style={{ fontVariantNumeric: 'tabular-nums' }}>{formatFcfa(bookingPenalty)} F</strong>,{' '}
+                        <strong>prélevés sur votre solde Revenus</strong>, et vous recevrez un avertissement. La réservation repart
+                        aussitôt vers d&apos;autres chauffeurs.
+                      </p>
+                    ) : (
+                      <p className="mt-sm rounded-md bg-primary-50 p-md text-sm text-neutral-700">
+                        Plus de 10 minutes avant le départ : <strong>c&apos;est gratuit</strong>. Elle repart aussitôt vers
+                        d&apos;autres chauffeurs et le client en est prévenu. Évitez pourtant les désistements tardifs.
+                      </p>
+                    );
+                  })()}
                   <div className="mt-lg flex flex-col gap-sm">
                     <button
                       type="button"

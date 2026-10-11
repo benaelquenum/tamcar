@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabase-browser';
@@ -61,6 +61,24 @@ export function ReservationActions({ ride }: { ride: Ride }) {
   const [showAlternatives, setShowAlternatives] = useState(false);
   const [alternatives, setAlternatives] = useState<Alternative[] | null>(null);
 
+  // Pénalité d'annulation tardive (réglage serveur, 200 F par défaut)
+  const [penalty, setPenalty] = useState(200);
+  useEffect(() => {
+    void supabaseBrowser.rpc('booking_config').then(({ data }) => {
+      const row = (Array.isArray(data) ? data[0] : data) as { penalty_fcfa?: number } | null;
+      if (typeof row?.penalty_fcfa === 'number') setPenalty(row.penalty_fcfa);
+    });
+  }, []);
+
+  // Le chauffeur engagé s'est-il désisté pendant que l'écran était ouvert ? On le dit au client (la recherche est déjà relancée).
+  const wasConfirmed = useRef(ride.driver_confirmed);
+  const [desisted, setDesisted] = useState(false);
+  useEffect(() => {
+    if (wasConfirmed.current && !ride.driver_confirmed) setDesisted(true);
+    if (ride.driver_confirmed) setDesisted(false);
+    wasConfirmed.current = ride.driver_confirmed;
+  }, [ride.driver_confirmed]);
+
   // La recherche a-t-elle assez duré pour qu'on propose les options ?
   // Deux sources : le marqueur posé par le cron, et l'horloge locale —
   // l'écran ne doit pas attendre le tick suivant pour réagir.
@@ -86,13 +104,15 @@ export function ReservationActions({ ride }: { ride: Ride }) {
   const decisionTime =
     !ride.driver_confirmed && (graceElapsed || ride.driver_search_prompted_at != null);
 
-  // Un chauffeur peut s'engager pendant que l'écran est ouvert : la page
-  // bascule d'elle-même sur la course confirmée.
+  // L'écran se met à jour tout seul, dans les deux sens : un chauffeur s'engage, ou se désiste (la recherche repart alors
+  // automatiquement). Avant, le rafraîchissement s'arrêtait dès qu'un chauffeur était engagé : le client restait devant
+  // « Un chauffeur est engagé » après un désistement.
   useEffect(() => {
-    if (ride.driver_confirmed) return;
-    const t = setInterval(() => router.refresh(), 8_000);
+    const t = setInterval(() => {
+      if (document.visibilityState === 'visible') router.refresh();
+    }, 5_000);
     return () => clearInterval(t);
-  }, [router, ride.driver_confirmed]);
+  }, [router]);
 
   const loadAlternatives = useCallback(async () => {
     const { data } = await supabaseBrowser.rpc('preview_alternative_offers', {
@@ -137,7 +157,12 @@ export function ReservationActions({ ride }: { ride: Ride }) {
   }
 
   async function handleCancel() {
-    if (!confirm('Annuler définitivement cette réservation ? C’est gratuit jusqu’à 10 minutes avant le départ.')) {
+    const late = Date.now() >= new Date(ride.scheduled_at).getTime() - 10 * 60_000;
+    const message =
+      late && ride.driver_confirmed
+        ? `Annuler maintenant vous coûte ${fmtFcfa(penalty)} FCFA, reversés à votre chauffeur (annulation à moins de 10 minutes du départ). Annuler quand même ?`
+        : 'Annuler définitivement cette réservation ? C’est gratuit jusqu’à 10 minutes avant le départ.';
+    if (!confirm(message)) {
       return;
     }
     setBusy('cancel');
@@ -200,7 +225,7 @@ export function ReservationActions({ ride }: { ride: Ride }) {
             </p>
             <p className="mt-xs text-xs">
               Vous serez rappelé 30, 20, 10 et 5 minutes avant le départ. L’annulation
-              reste gratuite jusqu’à 10 minutes avant, puis coûte 200 FCFA.
+              reste gratuite jusqu’à 10 minutes avant, puis coûte {fmtFcfa(penalty)} FCFA.
             </p>
           </div>
           <Link
@@ -210,9 +235,33 @@ export function ReservationActions({ ride }: { ride: Ride }) {
             <UserIcon className="h-4 w-4" />
             Voir le chauffeur et le détail de la course
           </Link>
+          {error && (
+            <p className="mt-md rounded-lg bg-error/10 p-sm text-xs font-semibold text-error">{error}</p>
+          )}
+          <button
+            type="button"
+            onClick={handleCancel}
+            disabled={busy !== null}
+            className="mt-sm w-full rounded-xl bg-neutral-100 py-md text-sm font-bold text-neutral-700 transition hover:bg-neutral-200 disabled:opacity-50"
+          >
+            {busy === 'cancel' ? 'Annulation…' : 'Annuler la réservation'}
+          </button>
+          <p className="mt-xs text-center text-[11px] text-neutral-500">
+            Gratuit jusqu’à 10 minutes avant le départ, puis {fmtFcfa(penalty)} FCFA reversés à votre chauffeur.
+          </p>
         </>
       ) : (
         <>
+          {desisted && (
+            <div className="mt-lg rounded-xl border border-warning/40 bg-warning/10 p-md" role="status">
+              <p className="text-sm font-bold text-neutral-900">Votre chauffeur s’est désisté</p>
+              <p className="mt-xs text-xs text-neutral-700">
+                Pas d’inquiétude : nous avons relancé la recherche d’un autre chauffeur. Vous êtes prévenu dès que l’un d’eux
+                s’engage. Si le désistement a eu lieu à moins de 10 minutes du départ, {fmtFcfa(penalty)} FCFA sont crédités sur
+                votre TamCar Crédit.
+              </p>
+            </div>
+          )}
           <div className="mt-lg rounded-xl bg-neutral-100 p-md">
             <p className="flex items-center gap-xs text-sm font-bold text-neutral-900">
               <span className="h-2 w-2 animate-pulse rounded-full bg-primary-500" />
@@ -234,6 +283,17 @@ export function ReservationActions({ ride }: { ride: Ride }) {
             <p className="mt-md rounded-lg bg-error/10 p-sm text-xs font-semibold text-error">
               {error}
             </p>
+          )}
+
+          {!decisionTime && (
+            <button
+              type="button"
+              onClick={handleCancel}
+              disabled={busy !== null}
+              className="mt-lg w-full rounded-xl bg-neutral-100 py-md text-sm font-bold text-neutral-700 transition hover:bg-neutral-200 disabled:opacity-50"
+            >
+              {busy === 'cancel' ? 'Annulation…' : 'Annuler la réservation'}
+            </button>
           )}
 
           {decisionTime && (

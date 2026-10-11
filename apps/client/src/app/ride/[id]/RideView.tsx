@@ -562,6 +562,44 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
   const isActive = ['requested', 'matched', 'arrived', 'in_progress'].includes(ride.status);
   const hasDriver = ride.driver_id !== null;
 
+  // Réservation : si le chauffeur se désiste avant H-10, elle redevient « scheduled » SANS chauffeur → écran de décision.
+  useEffect(() => {
+    if (ride.status === 'scheduled' && ride.driver_id === null) router.replace(`/reservation/${ride.id}`);
+  }, [ride.status, ride.driver_id, ride.id, router]);
+
+  // Désistement du chauffeur après la bascule (course redevenue « requested ») : on le dit, la recherche est déjà relancée.
+  const prevDriverRef = useRef<string | null>(ride.driver_id);
+  const [driverLeft, setDriverLeft] = useState(false);
+  useEffect(() => {
+    if (prevDriverRef.current !== null && ride.driver_id === null && ride.status === 'requested') setDriverLeft(true);
+    if (ride.driver_id !== null) setDriverLeft(false);
+    prevDriverRef.current = ride.driver_id;
+  }, [ride.driver_id, ride.status]);
+
+  // Annulation d'une réservation engagée (avant la bascule H-10) : gratuite, ou pénalité reversée au chauffeur après H-10
+  const [bookingPenalty, setBookingPenalty] = useState(200);
+  useEffect(() => {
+    if (ride.status !== 'scheduled') return;
+    void supabaseBrowser.rpc('booking_config').then(({ data }) => {
+      const row = (Array.isArray(data) ? data[0] : data) as { penalty_fcfa?: number } | null;
+      if (typeof row?.penalty_fcfa === 'number') setBookingPenalty(row.penalty_fcfa);
+    });
+  }, [ride.status]);
+  async function handleCancelScheduled() {
+    if (cancelling) return;
+    if (!confirm(`Annuler cette réservation ? C’est gratuit jusqu’à 10 minutes avant le départ ; ensuite ${bookingPenalty} FCFA sont reversés à votre chauffeur.`)) return;
+    setCancelling(true);
+    setCancelError(null);
+    const { error } = await supabaseBrowser.rpc('cancel_scheduled_ride', { p_ride_id: ride.id });
+    if (error) {
+      setCancelError(error.message);
+      setCancelling(false);
+      return;
+    }
+    router.push('/history');
+    router.refresh();
+  }
+
   // Badge « photo vérifiée par TamCar » : la photo du chauffeur a été prise et contrôlée par TamCar.
   const [photoVerified, setPhotoVerified] = useState(false);
   useEffect(() => {
@@ -1559,6 +1597,34 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                 </svg>
                 {t('ride.add_stop')}
               </button>
+            )}
+
+            {driverLeft && (
+              <div className="rounded-xl border border-warning/40 bg-warning/10 p-md" role="status">
+                <p className="text-sm font-bold text-neutral-900">Votre chauffeur s’est désisté</p>
+                <p className="mt-xs text-xs text-neutral-700">
+                  Nous cherchons un autre chauffeur pour vous. Si c’était à moins de 10 minutes du départ, {bookingPenalty} FCFA ont été
+                  crédités sur votre TamCar Crédit.
+                </p>
+              </div>
+            )}
+
+            {/* Réservation engagée, pas encore passée en course : le client peut annuler */}
+            {ride.status === 'scheduled' && (
+              <>
+                {cancelError && <p className="text-center text-xs text-error">{cancelError}</p>}
+                <button
+                  type="button"
+                  onClick={handleCancelScheduled}
+                  disabled={cancelling}
+                  className="w-full rounded-xl border-2 border-neutral-200 py-md text-sm font-bold text-neutral-600 transition hover:border-error hover:text-error disabled:opacity-50"
+                >
+                  {cancelling ? 'Annulation…' : 'Annuler la réservation'}
+                </button>
+                <p className="text-center text-[11px] text-neutral-500">
+                  Gratuit jusqu’à 10 minutes avant le départ, puis {bookingPenalty} FCFA reversés à votre chauffeur.
+                </p>
+              </>
             )}
 
             {/* Timeline complète : départ → escales → destination finale */}

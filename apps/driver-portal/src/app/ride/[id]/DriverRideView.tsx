@@ -42,6 +42,7 @@ function metersBetween(a: [number, number], b: [number, number]): number {
 }
 
 type RideStatus =
+  | 'scheduled'
   | 'requested'
   | 'matched'
   | 'arrived'
@@ -76,6 +77,8 @@ export type DriverRideForView = {
   completion_distance_from_dropoff_m: number | null;
   completion_auto_accept_at: string | null;
   vehicle_category: string | null;
+  /** Heure de la réservation (course issue d'une réservation) ; null pour une course immédiate */
+  scheduled_at?: string | null;
 };
 
 // Joue un mp3 court. En cas de blocage autoplay ou fichier manquant :
@@ -130,6 +133,26 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
   const [hasRated, setHasRated] = useState<boolean | null>(null);
   const [ratingOpen, setRatingOpen] = useState(false);
   const router = useRouter();
+
+  // Réservation : règles de départ anticipé (H-30) et de pénalité de désistement tardif (H-10)
+  const bookingAt = ride.scheduled_at ? new Date(ride.scheduled_at).getTime() : null;
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  const [bookingPenalty, setBookingPenalty] = useState(200);
+  useEffect(() => {
+    if (bookingAt == null) return;
+    const t = setInterval(() => setNowMs(Date.now()), 15_000);
+    void supabaseBrowser.rpc('booking_config').then(({ data }) => {
+      const row = (Array.isArray(data) ? data[0] : data) as { penalty_fcfa?: number } | null;
+      if (typeof row?.penalty_fcfa === 'number') setBookingPenalty(row.penalty_fcfa);
+    });
+    return () => clearInterval(t);
+  }, [bookingAt]);
+  const isBooking = bookingAt != null;
+  const bookingLate = isBooking && nowMs >= (bookingAt as number) - 10 * 60_000;
+  const canStartBooking = isBooking && nowMs >= (bookingAt as number) - 30 * 60_000;
+  const bookingHour = bookingAt != null
+    ? new Date(bookingAt).toLocaleTimeString('fr-FR', { timeZone: 'Africa/Porto-Novo', hour: '2-digit', minute: '2-digit' })
+    : '';
 
   const isTerminated =
     ride.status === 'cancelled_by_client' ||
@@ -677,16 +700,28 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
     if (cancelling) return;
     setCancelling(true);
     setErr(null);
-    const { error } = await supabaseBrowser.rpc('cancel_ride_by_driver', {
-      ride_id: ride.id,
-      p_reason: null,
-    });
+    // Réservation encore « à venir » : désistement avant la bascule ; sinon désistement de la course (qui, pour une réservation,
+    // relance la recherche d'un autre chauffeur côté serveur)
+    const { error } = ride.status === 'scheduled'
+      ? await supabaseBrowser.rpc('cancel_scheduled_by_driver', { p_ride_id: ride.id })
+      : await supabaseBrowser.rpc('cancel_ride_by_driver', { ride_id: ride.id, p_reason: null });
     setCancelling(false);
     if (error) {
       setErr(error.message);
       return;
     }
     router.push('/');
+  }
+
+  // Départ anticipé : à partir de 30 minutes avant l'heure, la réservation passe en course ordinaire (arrivé, client à bord…).
+  function handleStartBooking() {
+    setErr(null);
+    startTransition(async () => {
+      const { error } = await supabaseBrowser.rpc('driver_start_booking', { p_ride_id: ride.id });
+      if (error) { setErr(error.message); return; }
+      setRide((r) => ({ ...r, status: 'matched' }));
+      router.refresh();
+    });
   }
 
   // Les actions retournent leur erreur ; le try/catch ne couvre plus que
@@ -789,6 +824,7 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
 
   const statusLabel = (() => {
     switch (ride.status) {
+      case 'scheduled': return 'Réservation à venir';
       case 'matched': return 'En route vers le client';
       case 'arrived': return 'Attente du client au point de départ';
       case 'in_progress': return 'Course en cours';
@@ -1180,6 +1216,33 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
               <div className="mb-md rounded-md bg-error/10 p-md text-sm text-error">{err}</div>
             )}
 
+            {ride.status === 'scheduled' && (
+              <div className="mb-md rounded-xl border border-violet-500/30 bg-violet-500/5 p-md">
+                <p className="text-sm font-extrabold text-neutral-900">Réservation à {bookingHour}</p>
+                <p className="mt-xs text-xs text-neutral-700">
+                  {canStartBooking
+                    ? 'Vous pouvez partir vers le client : la suite se passe comme une course ordinaire (« Je suis arrivé », « Client à bord »…).'
+                    : `Le départ vers le client s’ouvre 30 minutes avant l’heure (à partir de ${new Date((bookingAt as number) - 30 * 60_000).toLocaleTimeString('fr-FR', { timeZone: 'Africa/Porto-Novo', hour: '2-digit', minute: '2-digit' })}).`}
+                </p>
+                <button
+                  type="button"
+                  onClick={handleStartBooking}
+                  disabled={!canStartBooking || pending}
+                  className="mt-sm flex w-full items-center justify-center gap-sm rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-md text-base font-bold text-white shadow-md transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {pending ? '…' : (<><ArrowRightIcon />Partir vers le client</>)}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCancelConfirmOpen(true)}
+                  disabled={pending || cancelling}
+                  className="mt-sm w-full rounded-xl border-2 border-error/30 py-md text-sm font-bold text-error transition hover:bg-error/5 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {cancelling ? '…' : 'Me désister'}
+                </button>
+              </div>
+            )}
+
             {nextAction && (
               <button
                 type="button"
@@ -1203,7 +1266,7 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
                 disabled={pending || cancelling}
                 className="mt-sm w-full rounded-xl border-2 border-error/30 py-md text-sm font-bold text-error transition hover:bg-error/5 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {cancelling ? '…' : 'Annuler la course'}
+                {cancelling ? '…' : isBooking ? 'Me désister' : 'Annuler la course'}
               </button>
             )}
 
@@ -1218,14 +1281,28 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
                   onClick={(e) => e.stopPropagation()}
                 >
                   <h2 className="text-xl font-extrabold text-neutral-900">
-                    Annuler cette course ?
+                    {isBooking ? 'Vous désister de cette réservation ?' : 'Annuler cette course ?'}
                   </h2>
-                  <p className="mt-sm rounded-md bg-warning/10 p-md text-sm text-neutral-700">
-                    Le client recevra un geste commercial de{' '}
-                    <strong style={{ fontVariantNumeric: 'tabular-nums' }}>200 F</strong>,{' '}
-                    <strong>prélevé sur votre solde Revenus</strong>. Les annulations
-                    répétées nuisent à votre fiabilité auprès des clients.
-                  </p>
+                  {isBooking && !bookingLate ? (
+                    <p className="mt-sm rounded-md bg-primary-50 p-md text-sm text-neutral-700">
+                      Plus de 10 minutes avant le départ : <strong>c’est gratuit</strong>. La réservation est remise à d’autres
+                      chauffeurs et le client en est prévenu.
+                    </p>
+                  ) : isBooking ? (
+                    <p className="mt-sm rounded-md bg-warning/10 p-md text-sm text-neutral-700">
+                      À moins de 10 minutes du départ, le client recevra{' '}
+                      <strong style={{ fontVariantNumeric: 'tabular-nums' }}>{formatFcfa(bookingPenalty)} F</strong>,{' '}
+                      <strong>prélevés sur votre solde Revenus</strong>, et vous recevrez un avertissement. La réservation sera
+                      aussitôt proposée à d’autres chauffeurs.
+                    </p>
+                  ) : (
+                    <p className="mt-sm rounded-md bg-warning/10 p-md text-sm text-neutral-700">
+                      Le client recevra un geste commercial de{' '}
+                      <strong style={{ fontVariantNumeric: 'tabular-nums' }}>200 F</strong>,{' '}
+                      <strong>prélevé sur votre solde Revenus</strong>. Les annulations
+                      répétées nuisent à votre fiabilité auprès des clients.
+                    </p>
+                  )}
                   <div className="mt-lg flex flex-col gap-sm">
                     <button
                       type="button"
@@ -1241,7 +1318,7 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
                       disabled={cancelling}
                       className="w-full rounded-xl border-2 border-error/30 py-md text-sm font-bold text-error transition hover:bg-error/5 disabled:opacity-50"
                     >
-                      {cancelling ? '…' : "Confirmer l'annulation"}
+                      {cancelling ? '…' : isBooking ? 'Confirmer le désistement' : "Confirmer l'annulation"}
                     </button>
                   </div>
                 </div>
