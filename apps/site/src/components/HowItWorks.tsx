@@ -10,7 +10,7 @@ const STEPS = [
     ring: 'ring-error/30',
     tag: 'Rouge · on s’arrête et on prépare',
     title: 'Vous apportez votre véhicule',
-    body: 'Voiture, moto ou tricycle. Vous versez une avance de démarrage remboursable, qui couvre l’inspection, l’habillage et les formalités. Elle vous est rendue.',
+    body: 'Voiture, moto ou tricycle. Aucune avance de démarrage ne vous est demandée : TamCar avance l’inspection, l’habillage et le kit du chauffeur.',
   },
   {
     color: 'text-warning',

@@ -19,13 +19,13 @@ restent des applications.
 défilement), `Exhaust` (échappement), `Reveal` (apparition). Tout est désactivé par `prefers-reduced-motion`.
 
 ## Confidentialité : aucun chiffre de politique sur le site public
-Parts (propriétaire, fonds de rachat, TamCar), planchers de recettes, avance de démarrage et simulations n'apparaissent
+Parts (propriétaire, fonds de rachat, TamCar), planchers de recettes, maintien en flotte et simulations n'apparaissent
 **nulle part** dans les pages publiques ni dans le code envoyé au navigateur. Ils sont communiqués à un prospect par une
 proposition personnalisée (bouton « Recevoir la proposition » : e-mail prérempli, `PROPOSAL_MAILTO` dans `src/lib/config.ts`),
 puis disponibles aux partenaires connectés. Seuls restent publics les chiffres **chauffeurs** (40 % / 80 %, durées de
 contrat), qui doivent être connus de tout recruté.
 
-- `src/lib/simulator.server.ts` : toutes les règles (30 %, 7 % puis 8 %, planchers, durées, senteurs). Marqué
+- `src/lib/simulator.server.ts` : toutes les règles (30 %, 7 % puis 8 %, maintien en flotte de 3 %, planchers, durées). Marqué
   `server-only` : le build échoue si un composant client l'importe. À tenir aligné avec `plan-affaires/build_proposition_flotte.py`.
 - `src/app/espace/simulateur/actions.ts` : action serveur qui refait le contrôle d'accès (partenaire ou admin) et ne
   renvoie que des résultats. `src/lib/simulator-ui.ts` : types et mise en forme, sans aucune règle.
