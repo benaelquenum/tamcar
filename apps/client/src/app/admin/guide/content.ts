@@ -193,6 +193,36 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     ],
   },
   {
+    id: 'tampass',
+    group: 'Pilotage',
+    title: 'TamPass',
+    path: '/admin/tampass',
+    blocks: [
+      {
+        type: 'p',
+        text: 'Les abonnements de trajets réguliers (TamPass) de tous les clients : client, statut, trajet, rythme, trajets faits et à venir, chauffeur titulaire et prochaine course. Les comptes administrateur portent la mention « compte admin » : un pass de test y crée de vraies courses chaque soir de semaine, la carte du haut le signale.',
+      },
+      {
+        type: 'table',
+        head: ['Règle', 'Fonctionnement'],
+        rows: [
+          ['Chauffeur titulaire', 'Le chauffeur qui accepte l’offre s’engage pour **toutes** les courses de l’abonnement. Chaque course est créée la veille à 20 h, déjà affectée à lui, comme une réservation acceptée.'],
+          ['Désistement', 'Le titulaire peut se désister d’**une** course (gratuit avant 10 minutes du départ, pénalité de 200 F ensuite). Seule cette course repart en recherche, sans lui ; il reste titulaire des autres.'],
+          ['Garantie de ponctualité', 'Sans chauffeur 20 minutes après l’heure du créneau, la course est annulée, le trajet est recrédité au client et 500 F lui sont offerts.'],
+          ['Objectif du jour', 'Une course TamPass terminée compte dans le volume du chauffeur, donc dans son objectif journalier, son versement et son bonus, pour le jour où elle a été **faite**.'],
+        ],
+      },
+      {
+        type: 'steps',
+        items: [
+          'Ouvrir **TamPass** : les abonnements en cours sont en haut, les terminés en dessous (estompés).',
+          'Pour arrêter un abonnement, saisir un motif si besoin, cocher **Rembourser les trajets non effectués** pour recréditer le client (trajets restants et courses annulées, au prix unitaire du pass), puis **Arrêter l’abonnement**.',
+          'Les courses à venir sont annulées, le chauffeur et le client sont prévenus. Une course déjà commencée n’est pas touchée.',
+        ],
+      },
+    ],
+  },
+  {
     id: 'carte',
     group: 'Pilotage',
     title: 'Carte en direct',
@@ -801,6 +831,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
           ['Chaque soir, 23 h 55 (lundi–samedi)', 'Calcul et crédit du **bonus de performance** des chauffeurs qui ont dépassé leur objectif.'],
           ['Chaque nuit, 00 h 10 (lundi–samedi, pour la veille)', 'Clôture du **versement quotidien** des chauffeurs en formule Cession : le manque éventuel est prélevé sur leur portefeuille Revenus.'],
           ['Chaque jour, 5 h', '**Sauvegarde** des données.'],
+          ['Chaque soir, 20 h', '**TamPass** : création des courses du lendemain, déjà affectées au chauffeur titulaire de chaque abonnement.'],
           ['Dernier jour du mois, 22 h 50', 'Prélèvement **maintien en flotte** sur le fonds de rachat des chauffeurs en formule Cession (voitures), sur le volume du mois.'],
           ['Toutes les 2 minutes', 'Vérification des **retraits chauffeur** partis chez FeexPay : confirmés → payés ; échoués → chauffeur recrédité ; sans réponse après 30 minutes → signalés à l’équipe.'],
           ['En continu', 'Le **classement des gadgets** (meilleurs chauffeurs et clients du semestre) se recalcule à chaque ouverture de la page Gadgets ; seule la validation est manuelle.'],

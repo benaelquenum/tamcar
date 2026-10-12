@@ -13,6 +13,7 @@ const NAV: { href: string; label: string; exact?: boolean; badge?: keyof AdminCo
   { href: '/admin', label: 'Tableau de bord', exact: true },
   { href: '/admin/sos', label: 'SOS', badge: 'sos_active' },
   { href: '/admin/rides', label: 'Courses' },
+  { href: '/admin/tampass', label: 'TamPass' },
   { href: '/admin/drivers', label: 'Chauffeurs' },
   { href: '/admin/carte', label: 'Carte en direct' },
   { href: '/admin/dealers', label: 'Partenaires véhicule' },
