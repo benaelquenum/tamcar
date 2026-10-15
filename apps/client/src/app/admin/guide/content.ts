@@ -572,6 +572,8 @@ export const GUIDE_SECTIONS: GuideSection[] = [
           ['Annulation par le client', 'Les frais appliqués quand le client annule alors que le chauffeur est arrivé ou tout proche.'],
           ['TamAssur : cotisation quotidienne', 'Le montant prélevé chaque jour ouvré sur le chauffeur pour son épargne (1 000 F pour tous les véhicules).'],
           ['TamAssur : durée avant retrait', 'Le nombre de mois de cotisation avant que le chauffeur puisse demander son épargne (moto 12, tricycle et voitures 24).'],
+          ['TamAssur : épargne garantie', 'Le montant que TamCar garantit par année de cotisation (250 000 F). La part épargnée de chaque cotisation en découle (834 F sur 1 000 F).'],
+          ['Décès ou invalidité', 'Les taux (50 % avant 12 mois, 100 % ensuite) et la durée de 12 mois appliqués aux cotisations réellement prélevées.'],
           ['Réservations : pénalité d’annulation tardive', 'Le montant (200 F) prélevé à celui qui annule à moins de 10 minutes du départ et reversé en entier à l’autre partie (client ou chauffeur). Gratuit avant. Un désistement du chauffeur relance toujours la recherche et ne le repropose plus pour cette course.'],
           ['Rendez-vous des candidats chauffeurs', 'Le nombre maximal de candidats par créneau de 30 minutes (3 aujourd’hui).'],
           ['Gadgets des meilleurs', 'Les critères du classement des chauffeurs et des clients (courses minimales, note minimale, annulations tolérées), le nombre de gagnants, la valeur des cadeaux et le budget d’un tour. Le classement lui-même est dans l’onglet **Gadgets**.'],
@@ -709,8 +711,9 @@ export const GUIDE_SECTIONS: GuideSection[] = [
       {
         type: 'ul',
         items: [
-          'Le chauffeur n’a pu demander son retrait qu’après la durée de son véhicule (**12 mois pour la moto, 24 mois pour le tricycle et les voitures**), avec une épargne d’au moins **300 000 F (moto)** ou **600 000 F (tricycle et voitures)**, et un **compte à jour**.',
+          'Le chauffeur n’a pu demander son retrait qu’après la durée de son véhicule (**12 mois pour la moto, 24 mois pour le tricycle et les voitures**), avec l’épargne garantie atteinte : **250 000 F (moto)** ou **500 000 F (tricycle et voitures)**, et un **compte à jour**.',
           'Le montant est déjà réservé sur son épargne. **Rien n’est viré automatiquement.**',
+          'Sur chaque cotisation de 1 000 F, **834 F** vont dans l’épargne ; les 166 F restants couvrent les frais du contrat et la garantie de TamCar.',
         ],
       },
       {
@@ -719,6 +722,18 @@ export const GUIDE_SECTIONS: GuideSection[] = [
           'Dans « À régler », repérer la demande ; le délai restant est indiqué (60 jours au plus à compter de la demande).',
           'Payer le chauffeur en espèces ou par Mobile Money.',
           'Cliquer sur **Payé en espèces** ou **Payé par Mobile Money** : le chauffeur est prévenu et la demande passe dans l’historique.',
+        ],
+      },
+      {
+        type: 'p',
+        text: '**Décès ou invalidité.** En bas de la page, le **calculateur** donne le montant à restituer : choisir le chauffeur et la date de l’événement. Il additionne les **cotisations réellement prélevées** jusqu’à cette date (dimanches et jours non travaillés exclus) et applique le taux selon la durée de cotisation : **la moitié** avant 12 mois, **la totalité** à partir de 12 mois. Les dettes éventuelles sont affichées mais **ne sont pas déduites**. Les taux et la durée se règlent dans **Bonus chauffeur**.',
+      },
+      {
+        type: 'table',
+        head: ['Exemple', 'Calcul'],
+        rows: [
+          ['Événement après 6 mois, 153 jours prélevés', '153 000 F de cotisations × 50 % = **76 500 F** à restituer'],
+          ['Événement après 12 mois, 314 jours prélevés', '314 000 F de cotisations × 100 % = **314 000 F** à restituer'],
         ],
       },
     ],

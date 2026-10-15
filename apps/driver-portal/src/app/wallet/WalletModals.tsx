@@ -341,7 +341,7 @@ export function EpargneWithdrawModal({
         <div className="mb-lg flex items-start justify-between">
           <div>
             <h2 className="text-xl font-extrabold text-neutral-900">Retirer mon épargne</h2>
-            <p className="mt-xs text-xs text-neutral-600">Épargne TamAssur · capital récupérable</p>
+            <p className="mt-xs text-xs text-neutral-600">Épargne TamAssur · garantie TamCar</p>
           </div>
           <button
             type="button"

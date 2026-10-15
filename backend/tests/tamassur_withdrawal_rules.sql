@@ -1,5 +1,5 @@
 -- Retrait de l'épargne TamAssur : durée propre au véhicule (moto 12 mois, tricycle et voitures 24 mois) + compte à jour, décompte du retard (dimanches exclus),
--- seuil d'épargne (600 x cotisation : moto 300 000 F), demande -> alerte admin (aucun virement), 60 jours, paiement par l'admin,
+-- objectif d'épargne garantie (250 000 F par an : moto 250 000 F, tricycle et voitures 500 000 F), demande -> alerte admin (aucun virement), 60 jours, paiement par l'admin,
 -- permissions. Rôles réels, tout est annulé.
 -- Usage : supabase db query --linked -f backend/tests/tamassur_withdrawal_rules.sql --workdir backend
 do $$
@@ -142,9 +142,9 @@ begin
   loop
     out := out || '9. ' || rc.cat || ' : ' || public._tamassur_months(rc.did) || ' mois, seuil ' || public._tamassur_goal(rc.did) || ' F'
            || case
-                when rc.cat = 'moto' then case when public._tamassur_months(rc.did) = 12 and public._tamassur_goal(rc.did) = 300000 then ' OK' else ' *** KO' end
-                when rc.cat = 'tricycle' then case when public._tamassur_months(rc.did) = 24 and public._tamassur_goal(rc.did) = 600000 then ' OK' else ' *** KO' end
-                else case when public._tamassur_months(rc.did) = 24 and public._tamassur_goal(rc.did) = 600000 then ' OK' else ' *** KO' end
+                when rc.cat = 'moto' then case when public._tamassur_months(rc.did) = 12 and public._tamassur_goal(rc.did) = 250000 then ' OK' else ' *** KO' end
+                when rc.cat = 'tricycle' then case when public._tamassur_months(rc.did) = 24 and public._tamassur_goal(rc.did) = 500000 then ' OK' else ' *** KO' end
+                else case when public._tamassur_months(rc.did) = 24 and public._tamassur_goal(rc.did) = 500000 then ' OK' else ' *** KO' end
               end || E'\n';
   end loop;
 

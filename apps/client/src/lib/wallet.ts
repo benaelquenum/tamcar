@@ -88,7 +88,7 @@ const KIND_META: Record<WalletKind, WalletKindMeta> = {
   },
   tamcar_epargne: {
     label: 'TamAssur — Épargne',
-    sub: 'Votre capital récupérable',
+    sub: 'Épargne garantie par TamCar',
     gradient: 'from-success to-cyan',
     icon: 'badge',
   },

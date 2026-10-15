@@ -71,10 +71,12 @@ export function TamAssurCard({
             TamAssur
           </h2>
           <p className="mt-xs text-sm text-neutral-700">
-            Assurance épargne —{' '}
+            Épargne garantie TamCar —{' '}
             <strong style={{ fontVariantNumeric: 'tabular-nums' }}>{formatFcfa(amount)} F</strong>{' '}
-            / jour, du lundi au samedi, prélevés automatiquement. Capital
-            récupérable.
+            / jour, du lundi au samedi, prélevés automatiquement. TamCar vous
+            garantit{' '}
+            <strong style={{ fontVariantNumeric: 'tabular-nums' }}>{formatFcfa(goal)} F</strong>{' '}
+            à l&apos;échéance.
           </p>
         </div>
         <span className={`flex-none rounded-full px-md py-xs text-[10px] font-bold ${badge.cls}`}>

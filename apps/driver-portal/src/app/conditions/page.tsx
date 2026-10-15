@@ -60,11 +60,11 @@ export default function ConditionsPage({
             <GiftIcon className="h-4 w-4" /> Vos avantages chauffeur
           </p>
           <p className="mt-xs text-[13px] leading-relaxed text-neutral-700">
-            En roulant avec TamCar, vous vous constituez une{' '}
-            <strong>épargne retraite qui vous appartient</strong> : chaque jour sauf le dimanche,{' '}
-            une cotisation de 1 000 F est mise de côté pour vous, quel que soit votre
-            véhicule (300 000 F après 1 an pour une moto, 600 000 F après 2 ans pour un
-            tricycle ou une voiture). Ces sommes vous sont rendues intégralement.
+            En roulant avec TamCar, vous bénéficiez d&apos;une{' '}
+            <strong>épargne garantie par TamCar</strong> : chaque jour sauf le dimanche,{' '}
+            une cotisation de 1 000 F est prélevée, quel que soit votre véhicule, et TamCar
+            vous garantit 250 000 F après 1 an pour une moto, 500 000 F après 2 ans pour un
+            tricycle ou une voiture.
           </p>
           <Link
             href="/bien-etre"

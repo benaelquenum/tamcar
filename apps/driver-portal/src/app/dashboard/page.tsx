@@ -128,7 +128,7 @@ export default async function DriverDashboardPage() {
   type InsuranceRow = { period: string; amount_fcfa: number; collected_fcfa: number; status: string };
   const insurance = (insuranceData ?? []) as InsuranceRow[];
   type TamAssurPlan = { min_amount: number; amount: number; fund_pct: number; goal_fcfa: number };
-  const plan = ((planData ?? []) as TamAssurPlan[])[0] ?? { min_amount: 1000, amount: 1000, fund_pct: 50, goal_fcfa: 600000 };
+  const plan = ((planData ?? []) as TamAssurPlan[])[0] ?? { min_amount: 1000, amount: 1000, fund_pct: 50, goal_fcfa: 500000 };
   // Date « aujourd'hui » côté Porto-Novo (UTC+1, pas de DST au Bénin)
   const pnToday = new Date(Date.now() + 3_600_000).toISOString().slice(0, 10);
   const insuranceToday = insurance.find((r) => r.period.slice(0, 10) === pnToday) ?? null;

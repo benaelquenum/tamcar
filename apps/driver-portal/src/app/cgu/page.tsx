@@ -209,18 +209,31 @@ export default function CguPage() {
 
         <Section n="13 bis" title="Épargne TamAssur du Chauffeur">
           <p>
-            <strong>Principe.</strong> L’épargne TamAssur est un dispositif
-            d’épargne obligatoire pour les Chauffeurs. Chaque jour, du lundi au
-            samedi,{' '}
-            <strong>une cotisation est placée dans la poche « Épargne TamAssur »</strong>{' '}
-            du Chauffeur. Son montant est de{' '}
+            <strong>Principe : l’épargne garantie TamCar.</strong> TamCar offre à
+            ses Chauffeurs une épargne garantie. Chaque jour, du lundi au samedi,
+            une cotisation de{' '}
             <strong>1 000 FCFA par jour, quel que soit le véhicule</strong>{' '}
-            (moto, tricycle, voiture, toutes catégories) ; le Chauffeur peut
-            choisir un montant supérieur. <strong>La cotisation est intégralement prélevée sur le
-            portefeuille « Revenus » du Chauffeur</strong>. Aucun prélèvement
-            n’est opéré le dimanche. Cette épargne est constituée exclusivement
-            de sommes prélevées sur le Chauffeur : TamCar n’y ajoute aucune
-            somme.
+            (moto, tricycle, voiture, toutes catégories) est{' '}
+            <strong>prélevée sur le portefeuille « Revenus » du Chauffeur</strong> ;
+            le Chauffeur peut choisir un montant supérieur. Aucun prélèvement
+            n’est opéré le dimanche.{' '}
+            <strong>En contrepartie, TamCar garantit au Chauffeur 250 000 FCFA par
+            année de cotisation complète</strong> : 250 000 FCFA après douze (12)
+            mois pour une moto, 500 000 FCFA après vingt-quatre (24) mois pour un
+            tricycle ou une voiture. Cette garantie est due même si le rendement
+            du contrat d’assurance-épargne ci-dessous est inférieur : TamCar en
+            supporte le risque.
+          </p>
+          <p className="mt-sm">
+            <strong>Constitution de l’épargne.</strong> Sur chaque cotisation de
+            1 000 FCFA,{' '}
+            <strong>834 FCFA sont placés dans la poche « Épargne TamAssur »</strong>{' '}
+            du Chauffeur ; les 166 FCFA restants couvrent les frais du contrat
+            d’assurance-épargne souscrit par TamCar et la garantie qu’elle
+            accorde, et ne sont pas épargnés. Vingt-cinq (25) jours de cotisation
+            par mois suffisent pour atteindre le montant garanti ; les
+            cotisations versées au-delà sont épargnées dans les mêmes conditions
+            et augmentent d’autant la somme restituée.
           </p>
           <p className="mt-sm">
             <strong>Montage et responsabilités.</strong> TamCar a souscrit, en
@@ -238,8 +251,8 @@ export default function CguPage() {
             soit <strong>douze (12) mois pour une moto et vingt-quatre (24) mois
             pour un tricycle ou une voiture</strong>, s’est écoulée depuis le
             premier prélèvement de la cotisation ; (ii) l’épargne a atteint{' '}
-            <strong>vingt-cinq (25) fois la cotisation journalière par mois de
-            durée</strong>, soit 300 000 FCFA pour une moto et 600 000 FCFA
+            <strong>le montant garanti pour la durée de son véhicule</strong>,
+            soit 250 000 FCFA pour une moto et 500 000 FCFA
             pour un tricycle ou une voiture ; (iii) le compte du
             Chauffeur est{' '}
             <strong>à jour</strong>, c’est-à-dire que son portefeuille «
@@ -248,8 +261,7 @@ export default function CguPage() {
             retard (dimanches exclus) et le montant à régler : il doit
             rattraper ce retard avant de pouvoir demander le retrait. Le
             Chauffeur peut alors demander le retrait de la totalité de son
-            épargne, qui correspond exactement aux sommes prélevées sur ses
-            gains. La demande est transmise à TamCar, qui effectue le virement
+            épargne, qui ne peut être inférieure au montant garanti. La demande est transmise à TamCar, qui effectue le virement
             manuellement : aucun versement n’est automatique, et TamCar règle le
             retrait au plus tard sous soixante (60) jours à compter de la
             demande.
@@ -276,9 +288,12 @@ export default function CguPage() {
             <strong>Départ avant l’échéance.</strong> Si la relation prend fin avant
             la durée de cotisation applicable à son véhicule (démission,
             non-renouvellement, résiliation),
-            le Chauffeur ne perd pas son épargne : TamCar lui restitue les
-            sommes réellement prélevées sur ses gains au titre de l’épargne, dans un délai maximal de 90 jours à compter de la
-            fin de la relation. La
+            le Chauffeur ne perd pas son épargne : TamCar lui restitue l’épargne
+            constituée à la date de fin de la relation (les 834 FCFA placés sur
+            chaque cotisation), dans un délai maximal de 90 jours à compter de la
+            fin de la relation. Le montant garanti de 250 000 FCFA par année est
+            acquis à l’échéance de la durée du véhicule ; avant cette échéance,
+            seule l’épargne constituée est restituée. La
             restitution est faite sous déduction des seules sommes que le
             Chauffeur doit à TamCar et, le cas échéant, de la réparation prévue
             ci-dessous.
@@ -291,9 +306,15 @@ export default function CguPage() {
             de la ligne, au Chauffeur ou, en cas de décès, à ses ayants droit :
           </p>
           <ul className="ml-lg list-disc space-y-xs">
-            <li><strong>la moitié</strong> des cotisations prélevées si la période de cotisation est inférieure à un (1) an ;</li>
-            <li><strong>la totalité</strong> de ces cotisations à partir d’un (1) an.</li>
+            <li><strong>la moitié</strong> des cotisations réellement prélevées jusqu’à la date de l’événement si la période de cotisation est inférieure à un (1) an ;</li>
+            <li><strong>la totalité</strong> de ces cotisations réellement prélevées à partir d’un (1) an.</li>
           </ul>
+          <p className="mt-sm">
+            Le calcul tient compte des seuls jours de cotisation effectivement
+            prélevés (dimanches et jours non travaillés exclus) et de la durée
+            écoulée depuis le premier prélèvement. Il est indépendant du montant
+            garanti à l’échéance.
+          </p>
           <p className="mt-sm">
             <strong>Faute grave.</strong> En cas de faute grave établie du
             Chauffeur (fraude, abandon du véhicule, accident causé par une

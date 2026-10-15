@@ -76,14 +76,14 @@ export default function BienEtrePage() {
               <CoinsIcon className="h-5 w-5 text-gold" /> Votre épargne retraite
             </h2>
             <span className="flex-none rounded-full bg-gold px-md py-xs text-[10px] font-bold text-neutral-900 shadow-glow-gold">
-              Incluse
+              Garantie TamCar
             </span>
           </div>
 
           <p className="mt-md text-sm text-neutral-700">
-            Une cotisation <strong className="text-neutral-900">selon votre véhicule</strong>, du lundi au samedi :{' '}
-            <strong>prélevée automatiquement</strong>, et c&apos;est toujours
-            votre argent. À la fin de la durée indiquée :
+            Un avantage TamCar : <strong className="text-neutral-900">une épargne garantie</strong>. Vous cotisez{' '}
+            <strong>1 000 F par jour</strong>, du lundi au samedi, prélevés automatiquement, et{' '}
+            <strong>TamCar vous garantit 250 000 F par année</strong>. À la fin de la durée indiquée :
           </p>
 
           <div className="mt-md overflow-hidden rounded-xl bg-gold/10">
@@ -93,14 +93,14 @@ export default function BienEtrePage() {
                   <th className="px-md py-sm">Véhicule</th>
                   <th className="whitespace-nowrap px-sm py-sm text-right">Durée</th>
                   <th className="whitespace-nowrap px-sm py-sm text-right">Par jour</th>
-                  <th className="whitespace-nowrap px-sm py-sm text-right">À vous</th>
+                  <th className="whitespace-nowrap px-sm py-sm text-right">Garanti</th>
                 </tr>
               </thead>
               <tbody className="text-neutral-800">
                 {[
-                  ['Moto', '1 an', 1000, 300000],
-                  ['Tricycle', '2 ans', 1000, 600000],
-                  ['Voiture (toutes catégories)', '2 ans', 1000, 600000],
+                  ['Moto', '1 an', 1000, 250000],
+                  ['Tricycle', '2 ans', 1000, 500000],
+                  ['Voiture (toutes catégories)', '2 ans', 1000, 500000],
                 ].map(([label, duration, day, goal]) => (
                   <tr key={String(label)} className="border-t border-gold/20">
                     <td className="px-md py-sm font-semibold">{label}</td>
@@ -113,7 +113,7 @@ export default function BienEtrePage() {
             </table>
           </div>
           <p className="mt-xs text-xs font-bold uppercase tracking-wider text-neutral-500">
-            à vous, rendus intégralement
+            garantis par TamCar
           </p>
 
           <ul className="mt-md space-y-xs text-sm text-neutral-700">
@@ -136,8 +136,9 @@ export default function BienEtrePage() {
             <li className="flex gap-sm">
               <span className="text-primary-500">•</span>
               <span>
-                <strong>TamCar ouvre et gère le plan pour vous</strong> — tarif
-                de groupe négocié, vous n&apos;avez rien à faire.
+                <strong>TamCar ouvre et gère le contrat pour vous</strong> — tarif
+                de groupe négocié, vous n&apos;avez rien à faire, et le montant
+                est garanti même si le rendement est inférieur.
               </span>
             </li>
           </ul>
@@ -145,16 +146,17 @@ export default function BienEtrePage() {
           {/* Divulgation honnête du financement — ton pro / marketing */}
           <div className="mt-md rounded-xl bg-gold/10 p-md">
             <p className="text-[11px] font-extrabold uppercase tracking-wider text-gold">
-              Votre argent, votre avenir — au grand jour
+              La garantie TamCar — au grand jour
             </p>
             <p className="mt-xs text-[12px] leading-relaxed text-neutral-700">
-              Cette cotisation n&apos;est pas une charge : c&apos;est{' '}
-              <strong>votre</strong> capital qui se construit tout seul pendant
-              que vous roulez. TamCar négocie le plan de groupe et gère tout,
-              aucun papier à remplir. Résultat : au
-              terme de votre contrat, vous repartez avec un pécule que{' '}
-              <strong>peu de chauffeurs parviennent à mettre de côté
-              seuls</strong>. La discipline en plus, sans l&apos;effort.
+              Sur chaque cotisation de 1 000 F, <strong>834 F sont mis de côté pour
+              vous</strong> ; les 166 F restants couvrent les frais du contrat
+              d&apos;assurance-épargne et la garantie que TamCar vous accorde.
+              TamCar négocie le plan de groupe, gère tout et{' '}
+              <strong>supporte le risque</strong>. Résultat : au terme de votre
+              contrat, vous repartez avec au moins{' '}
+              <strong>250 000 F par année</strong>, un pécule que{' '}
+              <strong>peu de chauffeurs parviennent à mettre de côté seuls</strong>.
             </p>
             <p className="mt-xs text-[12px] leading-relaxed text-neutral-700">
               Le prélèvement a lieu du lundi au samedi, y compris les jours où

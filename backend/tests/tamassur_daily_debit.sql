@@ -10,7 +10,7 @@ declare
 begin
   update public._push_settings set value = '2020-01-01' where key = 'tamassur_debit_from';
 
-  -- 1. un chauffeur de chaque catégorie : débit de 1 000 F sur Revenus, crédit de 1 000 F sur Épargne
+  -- 1. un chauffeur de chaque catégorie : débit de 1 000 F sur Revenus, crédit de 834 F sur Épargne (part épargnée de la garantie de 250 000 F par an)
   for rc in
     select distinct on (v.category) v.category::text as cat, d.id as did, d.profile_id as pid
       from public.drivers d join public.vehicles v on v.id = d.current_vehicle_id
@@ -33,7 +33,7 @@ begin
     select balance_fcfa into v1 from public.wallets where profile_id = rc.pid and kind::text = 'tamcar_revenus';
     select balance_fcfa into e1 from public.wallets where profile_id = rc.pid and kind::text = 'tamcar_epargne';
     out := out || '   ' || rc.cat || ' : Revenus 3000 -> ' || v1 || ', Épargne 0 -> ' || e1
-           || case when v1 = 2000 and e1 = 1000 then ' OK (1 000 F)' else ' *** KO' end || E'\n';
+           || case when v1 = 2000 and e1 = 834 then ' OK (cotisation 1 000 F, 834 F épargnés)' else ' *** KO' end || E'\n';
   end loop;
 
   -- 2. rejouer le même jour : aucun second prélèvement
@@ -55,7 +55,7 @@ begin
   r := public.charge_driver_insurance(date '2026-10-07');
   select balance_fcfa into v1 from public.wallets where profile_id = d_prof and kind::text = 'tamcar_revenus';
   select balance_fcfa into e1 from public.wallets where profile_id = d_prof and kind::text = 'tamcar_epargne';
-  out := out || '4. solde 200 F : Revenus -> ' || v1 || ', Épargne -> ' || e1 || case when v1 = -800 and e1 = 2000 then ' OK (négatif accepté, épargne créditée)' else ' *** KO' end || E'\n';
+  out := out || '4. solde 200 F : Revenus -> ' || v1 || ', Épargne -> ' || e1 || case when v1 = -800 and e1 = 1668 then ' OK (négatif accepté, épargne créditée)' else ' *** KO' end || E'\n';
 
   -- 5. endettement : suspension automatique à -5 000 F, réactivation dès que le solde remonte
   update public.wallets set balance_fcfa = -4500 where profile_id = d_prof and kind::text = 'tamcar_revenus';
