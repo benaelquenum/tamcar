@@ -120,8 +120,10 @@ export default function BienEtrePage() {
             <li className="flex gap-sm">
               <span className="text-primary-500">•</span>
               <span>
-                Mis de côté <strong>automatiquement chaque jour</strong>, sans
-                effort de votre part.
+                Mis de côté <strong>automatiquement</strong>, sans effort de votre part. En formule
+                Cession, la cotisation est <strong>comprise dans votre objectif du jour</strong>{' '}
+                (3 500 F pour une moto) : chaque jour où il est atteint, votre jauge d&apos;épargne
+                avance de 834 F.
               </span>
             </li>
             <li className="flex gap-sm">

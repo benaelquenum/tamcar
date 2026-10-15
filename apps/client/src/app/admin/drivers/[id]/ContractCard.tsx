@@ -1,10 +1,12 @@
 import { ActionForm } from '@/components/ActionForm';
-import { excuseDays, removeExcusedDay, setCessionStart } from './contractActions';
+import { declareOfflinePayment, excuseDays, removeExcusedDay, setCessionStart } from './contractActions';
 
 export type ContractInfo = {
   application_type: string;
   category: string | null;
   versement_fcfa: number;
+  target_fcfa?: number;
+  cotisation_fcfa?: number;
   start_on: string | null;
   manual_start: boolean;
   months: number;
@@ -13,7 +15,20 @@ export type ContractInfo = {
   days: Array<{ id: string; day: string; reason: string; note: string | null; closed: boolean }>;
 };
 
+export type OfflinePayment = {
+  id: string;
+  day: string;
+  amount_fcfa: number;
+  method: string;
+  note: string | null;
+  created_at: string;
+  created_by_name: string | null;
+  day_status: string | null;
+  day_saved_fcfa: number | null;
+};
+
 const REASON_LABEL: Record<string, string> = { panne: 'Panne', maladie: 'Maladie', autre: 'Autre' };
+const METHOD_LABEL: Record<string, string> = { cash: 'Espèces', mobile_money: 'Mobile Money' };
 
 const fmt = (n: number) => n.toLocaleString('fr-FR');
 const frDate = (iso: string) =>
@@ -28,7 +43,17 @@ const duration = (months: number) =>
 
 const inputCls = 'rounded-md border border-neutral-300 px-sm py-sm text-sm';
 
-export function ContractCard({ driverId, info }: { driverId: string; info: ContractInfo }) {
+export function ContractCard({
+  driverId,
+  info,
+  offline = [],
+  today,
+}: {
+  driverId: string;
+  info: ContractInfo;
+  offline?: OfflinePayment[];
+  today: string;
+}) {
   if (info.application_type !== 'cession') {
     return (
       <section className="mt-lg rounded-2xl bg-white p-lg text-sm text-neutral-600 shadow-sm ring-1 ring-neutral-200">
@@ -46,7 +71,11 @@ export function ContractCard({ driverId, info }: { driverId: string; info: Contr
         <div className="rounded-xl bg-neutral-100 p-md">
           <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">Versement par jour</p>
           <p className="mt-xs text-lg font-extrabold text-neutral-900">{fmt(info.versement_fcfa)} F</p>
-          <p className="text-[11px] text-neutral-500">part de TamCar, lundi au samedi</p>
+          <p className="text-[11px] text-neutral-500">
+            {info.target_fcfa
+              ? `objectif ${fmt(info.target_fcfa)} F avec la cotisation de ${fmt(info.cotisation_fcfa ?? 0)} F`
+              : 'part de TamCar, lundi au samedi'}
+          </p>
         </div>
         <div className="rounded-xl bg-neutral-100 p-md">
           <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">Début</p>
@@ -77,6 +106,63 @@ export function ContractCard({ driverId, info }: { driverId: string; info: Contr
           Enregistrer
         </button>
       </ActionForm>
+
+      <h3 className="mt-lg text-xs font-bold uppercase tracking-wider text-neutral-500">
+        Déclarer un versement hors application
+      </h3>
+      <p className="mt-xs text-[12px] text-neutral-600">
+        Le chauffeur a fait des courses hors application et a remis l&apos;argent à TamCar (espèces ou Mobile Money) : le
+        montant reçu s&apos;ajoute à la part de TamCar du jour. Si l&apos;objectif
+        {info.target_fcfa ? ` de ${fmt(info.target_fcfa)} F` : ''} est atteint, son épargne du jour est créditée, un manque déjà
+        prélevé est remboursé, et son tableau de bord se met à jour tout seul.
+      </p>
+      <ActionForm action={declareOfflinePayment} className="mt-sm flex flex-wrap items-end gap-sm">
+        <input type="hidden" name="driver_id" value={driverId} />
+        <label className="text-xs font-bold text-neutral-600">
+          Jour concerné
+          <input type="date" name="day" required defaultValue={today} max={today} className={`${inputCls} mt-xs block`} />
+        </label>
+        <label className="text-xs font-bold text-neutral-600">
+          Montant reçu (F)
+          <input type="number" name="amount" required min={1} step={1} inputMode="numeric" className={`${inputCls} mt-xs block w-32`} />
+        </label>
+        <label className="text-xs font-bold text-neutral-600">
+          Reçu en
+          <select name="method" defaultValue="cash" className={`${inputCls} mt-xs block`}>
+            <option value="cash">Espèces</option>
+            <option value="mobile_money">Mobile Money</option>
+          </select>
+        </label>
+        <input name="note" placeholder="Référence ou précision (facultatif)" className={`${inputCls} min-w-0 flex-1`} aria-label="Précision" />
+        <button type="submit" className="rounded-md bg-primary-700 px-md py-sm text-sm font-bold text-white hover:bg-primary-800">
+          Enregistrer le versement
+        </button>
+      </ActionForm>
+
+      {offline.length > 0 && (
+        <ul className="mt-md divide-y divide-neutral-100 rounded-xl ring-1 ring-neutral-200">
+          {offline.map((o) => (
+            <li key={o.id} className="flex flex-wrap items-center gap-sm px-md py-sm text-sm">
+              <span className="font-semibold text-neutral-900">{frDate(o.day)}</span>
+              <span className="font-bold text-neutral-900">{fmt(o.amount_fcfa)} F</span>
+              <span className="rounded-full bg-neutral-100 px-sm py-0.5 text-[11px] font-bold text-neutral-700">
+                {METHOD_LABEL[o.method] ?? o.method}
+              </span>
+              {o.day_saved_fcfa ? (
+                <span className="rounded-full bg-success/15 px-sm py-0.5 text-[11px] font-bold text-success">
+                  objectif atteint, +{fmt(o.day_saved_fcfa)} F d&apos;épargne
+                </span>
+              ) : (
+                <span className="rounded-full bg-neutral-100 px-sm py-0.5 text-[11px] font-bold text-neutral-500">
+                  objectif non atteint
+                </span>
+              )}
+              {o.note ? <span className="min-w-0 flex-1 truncate text-xs text-neutral-500">{o.note}</span> : <span className="flex-1" />}
+              <span className="text-[11px] text-neutral-500">{o.created_by_name ?? 'admin'}</span>
+            </li>
+          ))}
+        </ul>
+      )}
 
       <h3 className="mt-lg text-xs font-bold uppercase tracking-wider text-neutral-500">Déclarer des jours non travaillés</h3>
       <p className="mt-xs text-[12px] text-neutral-600">

@@ -8,6 +8,8 @@ import { formatFcfa } from '@/lib/wallet';
 
 
 type TodayCharge = { amount_fcfa: number; collected_fcfa: number; status: string } | null;
+// Objectif quotidien « tout compris » (formule Cession) : versement + cotisation, épargne gagnée le jour où il est atteint
+type DailyGoal = { target: number; savings: number; reached: boolean; excused: boolean } | null;
 
 export function TamAssurCard({
   amount,
@@ -19,6 +21,7 @@ export function TamAssurCard({
   balance,
   withdrawalHint,
   lateDays,
+  daily,
 }: {
   amount: number;
   minAmount: number;
@@ -29,6 +32,7 @@ export function TamAssurCard({
   balance: number;
   withdrawalHint: string;
   lateDays: number;
+  daily: DailyGoal;
 }) {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState<number>(amount);
@@ -54,10 +58,16 @@ export function TamAssurCard({
   }
 
   const badge: { txt: string; cls: string } = isSunday
-    ? { txt: 'Dimanche : aucun prélèvement', cls: 'bg-neutral-100 text-neutral-500' }
-    : today?.status === 'paid'
-      ? { txt: "Aujourd'hui : prélevé", cls: 'bg-success/15 text-success' }
-      : { txt: 'Prélevé ce soir à 22 h', cls: 'bg-neutral-100 text-neutral-500' };
+    ? { txt: daily ? 'Dimanche : pas d’objectif' : 'Dimanche : aucun prélèvement', cls: 'bg-neutral-100 text-neutral-500' }
+    : daily
+      ? daily.excused
+        ? { txt: 'Jour non travaillé', cls: 'bg-neutral-100 text-neutral-500' }
+        : daily.reached
+          ? { txt: `Aujourd'hui : +${formatFcfa(daily.savings)} F`, cls: 'bg-success/15 text-success' }
+          : { txt: `Objectif du jour : ${formatFcfa(daily.target)} F`, cls: 'bg-neutral-100 text-neutral-500' }
+      : today?.status === 'paid'
+        ? { txt: "Aujourd'hui : prélevé", cls: 'bg-success/15 text-success' }
+        : { txt: 'Prélevé ce soir à 22 h', cls: 'bg-neutral-100 text-neutral-500' };
 
   const CHIPS = Array.from(new Set([minAmount, minAmount * 1.5, minAmount * 2, minAmount * 3].map((v) => Math.round(v / 250) * 250)));
   const pct = Math.min(100, Math.round((capital / Math.max(1, goal)) * 100));
@@ -96,14 +106,22 @@ export function TamAssurCard({
         <div className="mt-sm h-2 overflow-hidden rounded-full bg-neutral-200">
           <div className="h-full rounded-full bg-success transition-all" style={{ width: `${pct}%` }} />
         </div>
+        {daily && (
+          <p className="mt-sm text-[11px] text-neutral-600">
+            La jauge se remplit chaque jour un peu plus quand l&apos;objectif de{' '}
+            <strong style={{ fontVariantNumeric: 'tabular-nums' }}>{formatFcfa(daily.target)} F</strong> est atteint (+
+            {formatFcfa(daily.savings)} F).
+          </p>
+        )}
       </div>
 
       {balance < 0 && (
         <p className="mt-md rounded-md bg-warning/10 p-sm text-[11px] text-warning">
           Votre solde Revenus est de{' '}
           <strong style={{ fontVariantNumeric: 'tabular-nums' }}>{formatFcfa(balance)} F</strong>.
-          Le prélèvement continue chaque jour : vos gains et vos recharges
-          remboursent ce solde.
+          {daily
+            ? 'Le manque sur le versement continue d’être prélevé chaque nuit : vos gains et vos recharges remboursent ce solde.'
+            : 'Le prélèvement continue chaque jour : vos gains et vos recharges remboursent ce solde.'}
           {lateDays > 0 && (
             <>
               {' '}
@@ -116,7 +134,7 @@ export function TamAssurCard({
         </p>
       )}
 
-      {!editing ? (
+      {daily ? null : !editing ? (
         <button
           type="button"
           onClick={() => {

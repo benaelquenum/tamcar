@@ -50,6 +50,40 @@ export async function removeExcusedDay(_prev: State, formData: FormData): Promis
   return { ok: 'Jour retiré.' };
 }
 
+/**
+ * Versement reçu HORS application (espèces ou Mobile Money) : il compte dans la part de TamCar du jour.
+ * Objectif atteint -> épargne créditée, manque déjà prélevé remboursé ; le tableau de bord du chauffeur se met à jour seul.
+ */
+export async function declareOfflinePayment(_prev: State, formData: FormData): Promise<State> {
+  const driverId = String(formData.get('driver_id') || '');
+  const day = String(formData.get('day') || '');
+  const amount = Math.floor(Number(formData.get('amount') || 0));
+  const method = String(formData.get('method') || '');
+  const note = String(formData.get('note') || '').trim();
+  if (!driverId) return { error: 'Chauffeur introuvable.' };
+  if (!day) return { error: 'Indiquez le jour concerné.' };
+  if (!(amount >= 1)) return { error: 'Indiquez le montant reçu.' };
+  if (method !== 'cash' && method !== 'mobile_money') return { error: 'Choisissez espèces ou Mobile Money.' };
+  const supabase = createServerSupabase();
+  const { data, error } = await supabase.rpc('admin_declare_offline_payment', {
+    p_driver_id: driverId,
+    p_day: day,
+    p_amount: amount,
+    p_method: method,
+    p_note: note || null,
+  });
+  if (error) return { error: error.message };
+  revalidatePath(`/admin/drivers/${driverId}`);
+  const r = (data ?? {}) as { reached?: boolean; part_fcfa?: number; target_fcfa?: number; saved_fcfa?: number };
+  const fmt = (n: number) => n.toLocaleString('fr-FR');
+  if (r.reached) {
+    return { ok: `Enregistré. Objectif atteint (${fmt(r.part_fcfa ?? 0)} F sur ${fmt(r.target_fcfa ?? 0)} F) : l'épargne du jour est créditée et le chauffeur est prévenu.` };
+  }
+  return {
+    ok: `Enregistré. Part de TamCar du jour : ${fmt(r.part_fcfa ?? 0)} F sur ${fmt(r.target_fcfa ?? 0)} F, objectif pas encore atteint.`,
+  };
+}
+
 /** Date de début de la cession (remise du véhicule). À défaut, le premier prélèvement TamAssur sert de repère. */
 export async function setCessionStart(_prev: State, formData: FormData): Promise<State> {
   const driverId = String(formData.get('driver_id') || '');

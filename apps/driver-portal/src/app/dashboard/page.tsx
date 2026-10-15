@@ -272,6 +272,16 @@ export default async function DriverDashboardPage() {
           balance={revenus}
           withdrawalHint={withdrawalHint}
           lateDays={wState?.late_days ?? 0}
+          daily={
+            floor?.applies && floor.started
+              ? {
+                  target: floor.versement_fcfa,
+                  savings: floor.savings_fcfa,
+                  reached: floor.reached,
+                  excused: floor.excused,
+                }
+              : null
+          }
         />
 
         {/* Véhicule */}
@@ -360,6 +370,10 @@ type FloorRow = {
   starts_on: string;
   extension_days: number;
   contract_end_on: string | null;
+  cotisation_fcfa: number;
+  savings_fcfa: number;
+  offline_fcfa: number;
+  reached: boolean;
 };
 
 type BonusProgress = {
@@ -416,7 +430,12 @@ function TodayProgress({ progress, floor }: { progress: BonusProgress; floor: Fl
             <p className="mt-xs text-2xl font-extrabold text-primary-700" style={{ fontVariantNumeric: 'tabular-nums' }}>
               {formatFcfa(floor!.tamcar_part_fcfa)} <span className="text-sm font-bold text-neutral-500">F</span>
             </p>
-            <p className="text-[11px] text-neutral-500">sur {formatFcfa(floor!.versement_fcfa)} F à verser</p>
+            <p className="text-[11px] text-neutral-500">objectif {formatFcfa(floor!.versement_fcfa)} F</p>
+            {floor!.offline_fcfa > 0 && (
+              <p className="text-[11px] text-neutral-500">
+                dont {formatFcfa(floor!.offline_fcfa)} F versés hors application
+              </p>
+            )}
           </div>
         </div>
       ) : (
@@ -438,13 +457,13 @@ function TodayProgress({ progress, floor }: { progress: BonusProgress; floor: Fl
         <div
           className="absolute inset-y-0 border-l-2 border-dashed border-neutral-400"
           style={{ left: '50%' }}
-          aria-label={hasFloor ? 'Versement du jour' : 'Objectif'}
+          aria-label="Objectif du jour"
         />
       </div>
       <div className="mt-xs flex justify-between text-[10px] text-neutral-500">
         <span>0</span>
         <span>
-          {hasFloor ? 'Versement' : 'Objectif'} {formatFcfa(gaugeBase)}
+          Objectif {formatFcfa(gaugeBase)}
         </span>
         <span>{formatFcfa(gaugeBase * 2)}</span>
       </div>
@@ -461,15 +480,24 @@ function TodayProgress({ progress, floor }: { progress: BonusProgress; floor: Fl
             <>
               Le <strong>versement quotidien</strong> démarre le {frDate(floor!.starts_on)}.
             </>
-          ) : floor!.remaining_fcfa > 0 ? (
+          ) : floor!.reached ? (
             <>
-              Encore <strong>{formatFcfa(floor!.remaining_fcfa)} F</strong> de part de TamCar pour couvrir le versement. À
-              minuit, ce qui manque est prélevé sur votre portefeuille.
+              <strong className="text-success">Objectif atteint.</strong> Votre épargne garantie avance de{' '}
+              <strong>{formatFcfa(floor!.savings_fcfa)} F</strong> aujourd&apos;hui. Vos courses suivantes comptent toujours
+              pour TamCar : {formatFcfa(floor!.surplus_fcfa)} F au-dessus de l&apos;objectif.
+            </>
+          ) : floor!.tamcar_part_fcfa >= floor!.versement_fcfa - floor!.cotisation_fcfa ? (
+            <>
+              Le versement de <strong>{formatFcfa(floor!.versement_fcfa - floor!.cotisation_fcfa)} F</strong> est couvert.
+              Encore <strong>{formatFcfa(floor!.remaining_fcfa)} F</strong> pour atteindre l&apos;objectif et faire avancer
+              votre épargne garantie de {formatFcfa(floor!.savings_fcfa)} F aujourd&apos;hui.
             </>
           ) : (
             <>
-              <strong className="text-success">Versement couvert.</strong> Vos courses suivantes comptent toujours pour
-              TamCar : {formatFcfa(floor!.surplus_fcfa)} F au-dessus du versement aujourd&apos;hui.
+              Encore <strong>{formatFcfa(floor!.remaining_fcfa)} F</strong> de part de TamCar pour atteindre l&apos;objectif
+              de {formatFcfa(floor!.versement_fcfa)} F. À minuit, si l&apos;objectif n&apos;est pas atteint, le manque sur le
+              versement de {formatFcfa(floor!.versement_fcfa - floor!.cotisation_fcfa)} F est prélevé sur votre portefeuille
+              et l&apos;épargne n&apos;avance pas ce jour-là.
             </>
           )}
         </p>

@@ -33,6 +33,7 @@ begin
 
   -- 3. le prélèvement quotidien : Revenus -1 000 F, Épargne +834 F, trace de la part épargnée
   update public._push_settings set value = '2020-01-01' where key = 'tamassur_debit_from';
+  update public._push_settings set value = '2099-01-01' where key = 'floor_debit_from';  -- prélèvement séparé de 22 h (avant l'objectif tout compris)
   perform public.charge_driver_insurance(date '2027-01-04');
   select balance_fcfa into v from public.wallets where profile_id = d_prof and kind::text = 'tamcar_epargne';
   select balance_fcfa into n from public.wallets where profile_id = d_prof and kind::text = 'tamcar_revenus';
