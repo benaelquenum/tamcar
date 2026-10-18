@@ -317,22 +317,27 @@ export const GUIDE_SECTIONS: GuideSection[] = [
       { type: 'h3', text: 'Déclarer un versement hors application (espèces, Mobile Money)' },
       {
         type: 'p',
-        text: 'Pour un chauffeur en formule Cession, l’**objectif du jour est « tout compris »** : versement + cotisation TamAssur (**3 500 F** moto, 6 000 F tricycle, 8 200 F Essentiel, 10 000 F Confort). Objectif atteint dans la journée : rien n’est prélevé et **834 F** sont épargnés (la jauge d’épargne avance). Sinon, seul le manque sur le versement est prélevé à minuit, sans épargne ce jour-là.',
+        text: 'Pour un chauffeur en formule Cession, l’**objectif du jour est « tout compris »** : versement + cotisation TamAssur (**3 500 F** moto, 6 000 F tricycle, 8 200 F Essentiel, 10 000 F Confort). Objectif atteint dans la journée : rien n’est prélevé et **834 F** sont épargnés (la jauge d’épargne avance). Sinon, le **manque sur l’objectif** (3 500 F moins la part de TamCar) est prélevé à minuit sur le portefeuille Revenus, et les 834 F sont épargnés quand même : la cotisation est payée.',
       },
       {
         type: 'steps',
         items: [
           'Le chauffeur a fait des courses **hors application** et vous remet la part de TamCar en **espèces** ou par **Mobile Money**. Vérifiez que vous avez bien reçu l’argent.',
-          'Dans la carte « Contrat de cession et versement », section **Déclarer un versement hors application**, choisir le **jour concerné**, le **montant reçu** et le moyen (espèces ou Mobile Money), puis **Enregistrer le versement**.',
-          'Le montant s’ajoute à la part de TamCar du jour. Si l’**objectif est atteint**, l’épargne du jour est créditée et un manque déjà prélevé est **remboursé**.',
-          'Le **tableau de bord du chauffeur se met à jour tout seul** et il reçoit une notification. La liste sous le formulaire garde la trace de chaque versement (jour, montant, moyen, qui l’a enregistré, objectif atteint ou non).',
+          'Dans la carte « Contrat de cession et versement », section **Déclarer un versement hors application**, choisir le **jour concerné**, le **montant reçu** et le moyen (espèces, ou Mobile Money MTN, Moov ou Celtiis), puis **Enregistrer le versement**.',
+          'Le montant s’ajoute à la part de TamCar du jour : il réduit le manque à prélever, et un manque **déjà prélevé est remboursé** à due concurrence.',
+          'Le **tableau de bord du chauffeur se met à jour tout seul** et il reçoit une notification. La liste sous le formulaire garde la trace de chaque versement (jour, montant, moyen, numéro d’écriture comptable, qui l’a enregistré).',
+          '**TamCar Office** : l’encaissement est passé automatiquement (journal Caisse ou Mobile Money : compte de caisse ou de l’opérateur au débit, commissions sur courses au crédit). Rien à saisir.',
         ],
+      },
+      {
+        type: 'p',
+        text: '**Annuler un versement** (erreur de saisie, argent jamais reçu) : bouton **Annuler** sur la ligne du versement, avec un motif. Le jour est recalculé (si la journée est close, le manque est prélevé de nouveau), le chauffeur est prévenu et l’écriture est **extournée** dans TamCar Office. Le versement reste affiché, barré, avec son motif. L’épargne déjà créditée pour ce jour reste acquise. **Pour corriger, annulez ici**, ne passez pas l’extourne à la main dans TamCar Office.',
       },
       {
         type: 'note',
         tone: 'info',
         title: 'Limites',
-        text: 'On peut déclarer un jour jusqu’à 30 jours en arrière, jamais dans le futur, jamais un dimanche, ni un jour déjà déclaré non travaillé. Un versement enregistré ne peut pas être supprimé : en cas d’erreur de saisie, prévenez le développeur.',
+        text: 'On peut déclarer un jour jusqu’à 30 jours en arrière, jamais dans le futur, jamais un dimanche, ni un jour déclaré non travaillé.',
       },
       { type: 'h3', text: 'Déclarer des jours non travaillés (panne, maladie)' },
       {
@@ -583,7 +588,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
         rows: [
           ['Objectifs quotidiens', 'Le volume de courses à atteindre chaque jour par catégorie ; au-delà, le chauffeur gagne un bonus.'],
           ['Part de TamCar sur le volume', 'Le pourcentage de chaque course qui revient à TamCar (et au propriétaire du véhicule) par catégorie.'],
-          ['Versement quotidien (formule Cession)', 'La part de TamCar à couvrir chaque jour, du lundi au samedi. L’objectif du jour « tout compris » est le versement + la cotisation TamAssur (3 500 F pour une moto). Objectif atteint : rien n’est prélevé et l’épargne du jour est gagnée. Sinon, si la part de TamCar est inférieure au versement, le manque est prélevé sur le portefeuille Revenus du chauffeur, sans épargne ce jour-là.'],
+          ['Versement quotidien (formule Cession)', 'La part de TamCar à couvrir chaque jour, du lundi au samedi. L’objectif du jour « tout compris » est le versement + la cotisation TamAssur (3 500 F pour une moto). Objectif atteint : rien n’est prélevé et l’épargne du jour est gagnée. Sinon, la différence entre l’objectif et la part de TamCar est prélevée à minuit sur le portefeuille Revenus du chauffeur, et l’épargne du jour est gagnée quand même.'],
           ['Bonus', 'Le pourcentage de sa part que TamCar reverse au chauffeur sur le volume au-dessus de l’objectif (50 % aujourd’hui).'],
           ['Priorité de proximité', 'Comment une course s’ouvre autour du client : les chauffeurs les plus proches la voient d’abord, les autres après un délai. « Priorité active » à 0 remet l’ancien fonctionnement.'],
           ['Prime d’approche', 'Prime versée au chauffeur qui vient de loin chercher le client : distance gratuite, tarif au kilomètre, plafond par course.'],
@@ -865,7 +870,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
         rows: [
           ['Chaque soir, 22 h (lundi–samedi)', 'Prélèvement de la cotisation **TamAssur** sur le portefeuille Revenus de chaque chauffeur actif (jamais le dimanche, ni un jour non travaillé déclaré).'],
           ['Chaque soir, 23 h 55 (lundi–samedi)', 'Calcul et crédit du **bonus de performance** des chauffeurs qui ont dépassé leur objectif.'],
-          ['Chaque nuit, 00 h 10 (lundi–samedi, pour la veille)', 'Clôture du **versement quotidien** des chauffeurs en formule Cession : le manque éventuel sur le versement est prélevé sur leur portefeuille Revenus ; l’épargne du jour est créditée si l’objectif est atteint (versements hors application compris).'],
+          ['Chaque nuit, 00 h 10 (lundi–samedi, pour la veille)', 'Clôture du **versement quotidien** des chauffeurs en formule Cession : le manque éventuel sur l’objectif est prélevé sur leur portefeuille Revenus, et l’épargne du jour est créditée (versements hors application compris).'],
           ['Chaque jour, 5 h', '**Sauvegarde** des données.'],
           ['Chaque soir, 20 h', '**TamPass** : création des courses du lendemain, déjà affectées au chauffeur titulaire de chaque abonnement.'],
           ['Dernier jour du mois, 22 h 50', 'Prélèvement **maintien en flotte** sur le fonds de rachat des chauffeurs en formule Cession (voitures), sur le volume du mois.'],

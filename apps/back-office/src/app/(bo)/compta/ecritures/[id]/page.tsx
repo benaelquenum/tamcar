@@ -79,6 +79,11 @@ export default async function EcritureDetailPage({
                 Automatique
               </span>
             )}
+            {e.source === 'offline_payment' && (
+              <span className="rounded-full bg-info/10 px-md py-xs text-xs font-bold text-info">
+                Versement hors application
+              </span>
+            )}
           </div>
         </div>
 
@@ -131,10 +136,12 @@ export default async function EcritureDetailPage({
             <p className="text-xs text-neutral-400">
               {e.source === 'platform'
                 ? 'Écriture générée par la synchronisation plateforme.'
-                : 'Aucun justificatif lié.'}
+                : e.source === 'offline_payment'
+                  ? 'Écriture générée par l’enregistrement d’un versement hors application (fiche chauffeur de la console admin). Pour la corriger, annulez le versement depuis cette fiche : l’extourne se passe toute seule.'
+                  : 'Aucun justificatif lié.'}
             </p>
           )}
-          {isAdmin && !e.reversed_by && e.source !== 'reversal' && (
+          {isAdmin && !e.reversed_by && e.source !== 'reversal' && e.source !== 'offline_payment' && (
             <ReverseButton entryId={e.id} />
           )}
         </div>

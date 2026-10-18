@@ -486,18 +486,11 @@ function TodayProgress({ progress, floor }: { progress: BonusProgress; floor: Fl
               <strong>{formatFcfa(floor!.savings_fcfa)} F</strong> aujourd&apos;hui. Vos courses suivantes comptent toujours
               pour TamCar : {formatFcfa(floor!.surplus_fcfa)} F au-dessus de l&apos;objectif.
             </>
-          ) : floor!.tamcar_part_fcfa >= floor!.versement_fcfa - floor!.cotisation_fcfa ? (
-            <>
-              Le versement de <strong>{formatFcfa(floor!.versement_fcfa - floor!.cotisation_fcfa)} F</strong> est couvert.
-              Encore <strong>{formatFcfa(floor!.remaining_fcfa)} F</strong> pour atteindre l&apos;objectif et faire avancer
-              votre épargne garantie de {formatFcfa(floor!.savings_fcfa)} F aujourd&apos;hui.
-            </>
           ) : (
             <>
               Encore <strong>{formatFcfa(floor!.remaining_fcfa)} F</strong> de part de TamCar pour atteindre l&apos;objectif
-              de {formatFcfa(floor!.versement_fcfa)} F. À minuit, si l&apos;objectif n&apos;est pas atteint, le manque sur le
-              versement de {formatFcfa(floor!.versement_fcfa - floor!.cotisation_fcfa)} F est prélevé sur votre portefeuille
-              et l&apos;épargne n&apos;avance pas ce jour-là.
+              de {formatFcfa(floor!.versement_fcfa)} F. À minuit, ce qui manque est prélevé sur votre portefeuille : l&apos;objectif
+              est alors atteint et votre épargne garantie avance de {formatFcfa(floor!.savings_fcfa)} F.
             </>
           )}
         </p>

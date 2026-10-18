@@ -1,5 +1,6 @@
 import { ActionForm } from '@/components/ActionForm';
-import { declareOfflinePayment, excuseDays, removeExcusedDay, setCessionStart } from './contractActions';
+import { ConfirmSubmit } from '@/components/ConfirmSubmit';
+import { cancelOfflinePayment, declareOfflinePayment, excuseDays, removeExcusedDay, setCessionStart } from './contractActions';
 
 export type ContractInfo = {
   application_type: string;
@@ -20,15 +21,21 @@ export type OfflinePayment = {
   day: string;
   amount_fcfa: number;
   method: string;
+  operator: string | null;
   note: string | null;
   created_at: string;
   created_by_name: string | null;
   day_status: string | null;
   day_saved_fcfa: number | null;
+  cancelled_at: string | null;
+  cancel_reason: string | null;
+  entry_no: string | null;
 };
 
 const REASON_LABEL: Record<string, string> = { panne: 'Panne', maladie: 'Maladie', autre: 'Autre' };
-const METHOD_LABEL: Record<string, string> = { cash: 'Espèces', mobile_money: 'Mobile Money' };
+const OPERATOR_LABEL: Record<string, string> = { mtn: 'MTN', moov: 'Moov', celtiis: 'Celtiis' };
+const methodLabel = (o: OfflinePayment) =>
+  o.method === 'cash' ? 'Espèces' : `Mobile Money${o.operator ? ` ${OPERATOR_LABEL[o.operator] ?? o.operator}` : ''}`;
 
 const fmt = (n: number) => n.toLocaleString('fr-FR');
 const frDate = (iso: string) =>
@@ -113,8 +120,9 @@ export function ContractCard({
       <p className="mt-xs text-[12px] text-neutral-600">
         Le chauffeur a fait des courses hors application et a remis l&apos;argent à TamCar (espèces ou Mobile Money) : le
         montant reçu s&apos;ajoute à la part de TamCar du jour. Si l&apos;objectif
-        {info.target_fcfa ? ` de ${fmt(info.target_fcfa)} F` : ''} est atteint, son épargne du jour est créditée, un manque déjà
-        prélevé est remboursé, et son tableau de bord se met à jour tout seul.
+        {info.target_fcfa ? ` de ${fmt(info.target_fcfa)} F` : ''} est atteint, il n&apos;y a plus de manque à prélever (un manque
+        déjà prélevé est remboursé) et son tableau de bord se met à jour tout seul. L&apos;encaissement est passé dans TamCar
+        Office (caisse ou compte Mobile Money, produit en commissions sur courses).
       </p>
       <ActionForm action={declareOfflinePayment} className="mt-sm flex flex-wrap items-end gap-sm">
         <input type="hidden" name="driver_id" value={driverId} />
@@ -128,9 +136,11 @@ export function ContractCard({
         </label>
         <label className="text-xs font-bold text-neutral-600">
           Reçu en
-          <select name="method" defaultValue="cash" className={`${inputCls} mt-xs block`}>
+          <select name="how" defaultValue="cash" className={`${inputCls} mt-xs block`}>
             <option value="cash">Espèces</option>
-            <option value="mobile_money">Mobile Money</option>
+            <option value="mtn">Mobile Money MTN</option>
+            <option value="moov">Mobile Money Moov</option>
+            <option value="celtiis">Mobile Money Celtiis</option>
           </select>
         </label>
         <input name="note" placeholder="Référence ou précision (facultatif)" className={`${inputCls} min-w-0 flex-1`} aria-label="Précision" />
@@ -142,15 +152,18 @@ export function ContractCard({
       {offline.length > 0 && (
         <ul className="mt-md divide-y divide-neutral-100 rounded-xl ring-1 ring-neutral-200">
           {offline.map((o) => (
-            <li key={o.id} className="flex flex-wrap items-center gap-sm px-md py-sm text-sm">
-              <span className="font-semibold text-neutral-900">{frDate(o.day)}</span>
-              <span className="font-bold text-neutral-900">{fmt(o.amount_fcfa)} F</span>
-              <span className="rounded-full bg-neutral-100 px-sm py-0.5 text-[11px] font-bold text-neutral-700">
-                {METHOD_LABEL[o.method] ?? o.method}
-              </span>
-              {o.day_saved_fcfa ? (
+            <li key={o.id} className={`flex flex-wrap items-center gap-sm px-md py-sm text-sm ${o.cancelled_at ? 'bg-neutral-50' : ''}`}>
+              <span className={`font-semibold ${o.cancelled_at ? 'text-neutral-400 line-through' : 'text-neutral-900'}`}>{frDate(o.day)}</span>
+              <span className={`font-bold ${o.cancelled_at ? 'text-neutral-400 line-through' : 'text-neutral-900'}`}>{fmt(o.amount_fcfa)} F</span>
+              <span className="rounded-full bg-neutral-100 px-sm py-0.5 text-[11px] font-bold text-neutral-700">{methodLabel(o)}</span>
+              {o.cancelled_at ? (
+                <span className="rounded-full bg-warning/15 px-sm py-0.5 text-[11px] font-bold text-warning">
+                  annulé le {frDate(o.cancelled_at)}
+                  {o.cancel_reason ? ` : ${o.cancel_reason}` : ''}
+                </span>
+              ) : o.day_saved_fcfa ? (
                 <span className="rounded-full bg-success/15 px-sm py-0.5 text-[11px] font-bold text-success">
-                  objectif atteint, +{fmt(o.day_saved_fcfa)} F d&apos;épargne
+                  épargne du jour +{fmt(o.day_saved_fcfa)} F
                 </span>
               ) : (
                 <span className="rounded-full bg-neutral-100 px-sm py-0.5 text-[11px] font-bold text-neutral-500">
@@ -158,7 +171,22 @@ export function ContractCard({
                 </span>
               )}
               {o.note ? <span className="min-w-0 flex-1 truncate text-xs text-neutral-500">{o.note}</span> : <span className="flex-1" />}
+              {o.entry_no && <span className="font-mono text-[11px] text-neutral-400">{o.entry_no}</span>}
               <span className="text-[11px] text-neutral-500">{o.created_by_name ?? 'admin'}</span>
+              {!o.cancelled_at && (
+                <ActionForm action={cancelOfflinePayment} className="flex flex-wrap items-center gap-xs">
+                  <input type="hidden" name="id" value={o.id} />
+                  <input type="hidden" name="driver_id" value={driverId} />
+                  <input name="reason" placeholder="Motif" className={`${inputCls} w-32 py-xs text-xs`} aria-label="Motif de l’annulation" />
+                  <ConfirmSubmit
+                    message={`Annuler le versement de ${fmt(o.amount_fcfa)} F du ${frDate(o.day)} ? La part du jour sera recalculée et l’écriture comptable extournée.`}
+                    className="text-xs font-bold text-error hover:underline"
+                    pendingLabel="Annulation…"
+                  >
+                    Annuler
+                  </ConfirmSubmit>
+                </ActionForm>
+              )}
             </li>
           ))}
         </ul>

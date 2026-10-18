@@ -100,7 +100,7 @@ export type BoEntry = {
   entry_date: string;
   label: string;
   document_id: string | null;
-  source: 'manual' | 'expense' | 'platform' | 'reversal';
+  source: 'manual' | 'expense' | 'platform' | 'reversal' | 'offline_payment';
   reverses: string | null;
   reversed_by: string | null;
   created_at: string;

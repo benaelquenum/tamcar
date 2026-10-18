@@ -240,9 +240,10 @@ export default function CguPage() {
           <p className="mt-sm">
             <strong>Chauffeur en formule Cession.</strong> La cotisation de
             1 000 FCFA est comprise dans l’objectif quotidien décrit à
-            l’article 13 quater, sans prélèvement séparé : un jour de cotisation
-            est un jour où l’objectif est atteint, et c’est ce jour-là que les
-            834 FCFA sont placés dans la poche « Épargne TamAssur ».
+            l’article 13 quater, sans prélèvement séparé : chaque jour travaillé
+            du lundi au samedi, l’objectif est atteint par la part de TamCar sur
+            les courses ou complété à minuit par un prélèvement, et les 834 FCFA
+            sont placés dans la poche « Épargne TamAssur ».
           </p>
           <p className="mt-sm">
             <strong>Montage et responsabilités.</strong> TamCar a souscrit, en
@@ -422,27 +423,24 @@ export default function CguPage() {
             poche « Épargne TamAssur » et la jauge d’épargne avance d’autant.
           </p>
           <p className="mt-sm">
-            <strong>Objectif non atteint.</strong> Si la part de TamCar est
-            comprise entre le versement et l’objectif, rien n’est prélevé, mais
-            aucune épargne n’est gagnée ce jour-là. Si elle est inférieure au
-            versement,{' '}
-            <strong>la différence avec le versement est prélevée sur le portefeuille « Revenus »</strong>{' '}
+            <strong>Objectif non atteint.</strong> Si, à minuit, la part de TamCar
+            est inférieure à l’objectif du jour,{' '}
+            <strong>la différence est prélevée sur le portefeuille « Revenus »</strong>{' '}
             du Chauffeur, y compris lorsque son solde est insuffisant : le solde
             devient alors négatif et les règles applicables à la dette du
             Chauffeur s’appliquent (suspension automatique à partir de 5 000 FCFA
-            de dette, levée dès son règlement), et aucune épargne n’est gagnée
-            ce jour-là. L’objectif est un <strong>minimum</strong>, non un
+            de dette, levée dès son règlement). L’objectif étant alors atteint,
+            le Chauffeur gagne l’épargne du jour comme s’il l’avait atteint par
+            ses courses. L’objectif est un <strong>minimum</strong>, non un
             plafond : au-delà, la part de TamCar continue d’être perçue sur
             chaque course, et le bonus de l’article 13 ter s’applique.
           </p>
           <p className="mt-sm">
-            Exemple : pour une moto (versement de 2 500 FCFA, objectif du jour de
-            3 500 FCFA), la part de TamCar atteint 3 500 FCFA à 17 h : rien n’est
-            prélevé et 834 FCFA sont épargnés. Un autre jour, elle atteint
-            3 000 FCFA à minuit : rien n’est prélevé, mais aucune épargne n’est
-            gagnée. Un autre jour encore, elle atteint 1 800 FCFA : 700 FCFA
-            (2 500 − 1 800) sont prélevés sur le portefeuille « Revenus » et
-            aucune épargne n’est gagnée.
+            Exemple : pour une moto (objectif du jour de 3 500 FCFA), la part de
+            TamCar atteint 3 500 FCFA à 17 h : rien n’est prélevé et 834 FCFA sont
+            épargnés. Un autre jour, elle atteint 1 800 FCFA à minuit : 1 700 FCFA
+            (3 500 − 1 800) sont prélevés sur le portefeuille « Revenus » et
+            834 FCFA sont épargnés.
           </p>
           <p className="mt-sm">
             <strong>Courses hors Application.</strong> Lorsque le Chauffeur
@@ -450,11 +448,13 @@ export default function CguPage() {
             correspondant à des courses effectuées en dehors de l’Application,
             TamCar peut les enregistrer pour la journée concernée (au plus 30
             jours en arrière) après en avoir constaté la remise. Le montant
-            enregistré s’ajoute à la part de TamCar du jour : si l’objectif est
-            atteint, le Chauffeur gagne l’épargne du jour et un manque déjà
-            prélevé lui est remboursé ; son tableau de bord est mis à jour
-            automatiquement. Cet enregistrement relève de la seule décision de
-            TamCar.
+            enregistré s’ajoute à la part de TamCar du jour : il réduit d’autant
+            la différence à prélever, et un manque déjà prélevé est remboursé à
+            due concurrence ; le tableau de bord du Chauffeur est mis à jour
+            automatiquement. TamCar peut annuler un enregistrement (erreur de
+            saisie, somme non reçue) : la part du jour est alors recalculée et
+            la différence éventuelle prélevée de nouveau. Ces enregistrements
+            relèvent de la seule décision de TamCar.
           </p>
           <p className="mt-sm">
             <strong>Jours non travaillés.</strong> En cas de panne du véhicule ou

@@ -285,6 +285,12 @@ export const GUIDE_SECTIONS: GuideSection[] = [
       },
       {
         type: 'note',
+        tone: 'info',
+        title: 'Versements hors application',
+        text: 'Une écriture « Versement hors application » ne s’extourne **pas** à la main ici : elle est liée à la fiche du chauffeur. Pour la corriger, le fondateur **annule le versement** depuis cette fiche (bouton Annuler) ; l’extourne se passe alors automatiquement et le compte du chauffeur est recalculé.',
+      },
+      {
+        type: 'note',
         tone: 'warn',
         title: 'Réservé au fondateur',
         text: 'L’extourne et la saisie libre d’écritures sont réservées au fondateur. Si le secrétariat repère une erreur sur une écriture déjà passée, il **ne la corrige pas** : il la signale.',
@@ -324,6 +330,10 @@ export const GUIDE_SECTIONS: GuideSection[] = [
           [
             'Sync plateforme',
             'Un bouton à cliquer une fois par jour ou par semaine : il comptabilise l’activité des courses. **Aucun risque à cliquer deux fois** — un jour déjà comptabilisé n’est jamais repris.',
+          ],
+          [
+            'Versements hors application',
+            'Quand un chauffeur remet à TamCar (espèces ou Mobile Money) la part de courses faites hors application, le fondateur l’enregistre dans la console admin, sur la fiche du chauffeur. **L’écriture arrive toute seule ici** (journal Caisse ou Mobile Money, badge « Versement hors application »). Rien à saisir.',
           ],
         ],
       },

@@ -110,7 +110,7 @@ export function TamAssurCard({
           <p className="mt-sm text-[11px] text-neutral-600">
             La jauge se remplit chaque jour un peu plus quand l&apos;objectif de{' '}
             <strong style={{ fontVariantNumeric: 'tabular-nums' }}>{formatFcfa(daily.target)} F</strong> est atteint (+
-            {formatFcfa(daily.savings)} F).
+            {formatFcfa(daily.savings)} F). À minuit, ce qui manque est prélevé pour l&apos;atteindre.
           </p>
         )}
       </div>
@@ -120,7 +120,7 @@ export function TamAssurCard({
           Votre solde Revenus est de{' '}
           <strong style={{ fontVariantNumeric: 'tabular-nums' }}>{formatFcfa(balance)} F</strong>.
           {daily
-            ? 'Le manque sur le versement continue d’être prélevé chaque nuit : vos gains et vos recharges remboursent ce solde.'
+            ? 'Le manque sur l’objectif continue d’être prélevé chaque nuit : vos gains et vos recharges remboursent ce solde.'
             : 'Le prélèvement continue chaque jour : vos gains et vos recharges remboursent ce solde.'}
           {lateDays > 0 && (
             <>

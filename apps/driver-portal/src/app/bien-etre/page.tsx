@@ -122,8 +122,8 @@ export default function BienEtrePage() {
               <span>
                 Mis de côté <strong>automatiquement</strong>, sans effort de votre part. En formule
                 Cession, la cotisation est <strong>comprise dans votre objectif du jour</strong>{' '}
-                (3 500 F pour une moto) : chaque jour où il est atteint, votre jauge d&apos;épargne
-                avance de 834 F.
+                (3 500 F pour une moto) : chaque jour travaillé, votre jauge d&apos;épargne avance de
+                834 F, que l&apos;objectif soit atteint par vos courses ou complété à minuit.
               </span>
             </li>
             <li className="flex gap-sm">

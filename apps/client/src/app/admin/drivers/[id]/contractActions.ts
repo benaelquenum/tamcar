@@ -58,12 +58,13 @@ export async function declareOfflinePayment(_prev: State, formData: FormData): P
   const driverId = String(formData.get('driver_id') || '');
   const day = String(formData.get('day') || '');
   const amount = Math.floor(Number(formData.get('amount') || 0));
-  const method = String(formData.get('method') || '');
+  const how = String(formData.get('how') || '');
   const note = String(formData.get('note') || '').trim();
   if (!driverId) return { error: 'Chauffeur introuvable.' };
   if (!day) return { error: 'Indiquez le jour concerné.' };
   if (!(amount >= 1)) return { error: 'Indiquez le montant reçu.' };
-  if (method !== 'cash' && method !== 'mobile_money') return { error: 'Choisissez espèces ou Mobile Money.' };
+  if (!['cash', 'mtn', 'moov', 'celtiis'].includes(how)) return { error: 'Choisissez espèces ou l’opérateur Mobile Money.' };
+  const method = how === 'cash' ? 'cash' : 'mobile_money';
   const supabase = createServerSupabase();
   const { data, error } = await supabase.rpc('admin_declare_offline_payment', {
     p_driver_id: driverId,
@@ -71,16 +72,42 @@ export async function declareOfflinePayment(_prev: State, formData: FormData): P
     p_amount: amount,
     p_method: method,
     p_note: note || null,
+    p_operator: method === 'mobile_money' ? how : null,
   });
   if (error) return { error: error.message };
   revalidatePath(`/admin/drivers/${driverId}`);
-  const r = (data ?? {}) as { reached?: boolean; part_fcfa?: number; target_fcfa?: number; saved_fcfa?: number };
+  const r = (data ?? {}) as {
+    reached?: boolean;
+    part_fcfa?: number;
+    target_fcfa?: number;
+    refunded_fcfa?: number;
+    entry_no?: string;
+  };
   const fmt = (n: number) => n.toLocaleString('fr-FR');
+  const office = r.entry_no ? ` Écriture ${r.entry_no} passée dans TamCar Office.` : '';
+  const refund = (r.refunded_fcfa ?? 0) > 0 ? ` ${fmt(r.refunded_fcfa ?? 0)} F déjà prélevés ont été remboursés.` : '';
   if (r.reached) {
-    return { ok: `Enregistré. Objectif atteint (${fmt(r.part_fcfa ?? 0)} F sur ${fmt(r.target_fcfa ?? 0)} F) : l'épargne du jour est créditée et le chauffeur est prévenu.` };
+    return { ok: `Enregistré. Objectif atteint (${fmt(r.part_fcfa ?? 0)} F sur ${fmt(r.target_fcfa ?? 0)} F), le chauffeur est prévenu.${refund}${office}` };
   }
   return {
-    ok: `Enregistré. Part de TamCar du jour : ${fmt(r.part_fcfa ?? 0)} F sur ${fmt(r.target_fcfa ?? 0)} F, objectif pas encore atteint.`,
+    ok: `Enregistré. Part de TamCar du jour : ${fmt(r.part_fcfa ?? 0)} F sur ${fmt(r.target_fcfa ?? 0)} F, objectif pas encore atteint.${refund}${office}`,
+  };
+}
+
+/** Annule un versement hors application (erreur de saisie, argent jamais reçu) : le jour est recalculé et l'écriture comptable est extournée. */
+export async function cancelOfflinePayment(_prev: State, formData: FormData): Promise<State> {
+  const id = String(formData.get('id') || '');
+  const driverId = String(formData.get('driver_id') || '');
+  const reason = String(formData.get('reason') || '').trim();
+  if (!id) return { error: 'Versement introuvable.' };
+  const supabase = createServerSupabase();
+  const { data, error } = await supabase.rpc('admin_cancel_offline_payment', { p_id: id, p_reason: reason || null });
+  if (error) return { error: error.message };
+  revalidatePath(`/admin/drivers/${driverId}`);
+  const r = (data ?? {}) as { extra_debited_fcfa?: number };
+  const extra = r.extra_debited_fcfa ?? 0;
+  return {
+    ok: `Versement annulé, écriture comptable extournée.${extra > 0 ? ` ${extra.toLocaleString('fr-FR')} F ont été prélevés au chauffeur pour compléter la part du jour.` : ''}`,
   };
 }
 
