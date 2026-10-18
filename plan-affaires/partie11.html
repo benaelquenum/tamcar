@@ -1,0 +1,441 @@
+<!-- ============================================================ 11 · p.1 · 11.1 -->
+<section class="page" data-filigrane="TamCar">
+  <div class="sec-head"><span class="num">11</span><h1>Architecture technique de la plateforme</h1></div>
+
+  <div class="h-serif" style="margin-top:14px">11.1 · Principes d’architecture</div>
+  <p class="intro">La plateforme est déjà en production côté code : quatre applications, une base de données unique et des services gérés. Quatre choix la structurent.</p>
+  <div class="row c-1-1 stretch" style="margin-top:8px">
+    <div class="tile">
+      <div class="ico">{{ico:database}}</div>
+      <h4>La base de données porte les règles</h4>
+      <p>Le calcul du prix, la répartition des recettes, les mouvements de portefeuille et les droits d’accès sont des fonctions PostgreSQL, exécutées de façon atomique. Les applications affichent et déclenchent ; elles ne décident pas.</p>
+    </div>
+    <div class="tile violet">
+      <div class="ico">{{ico:cloud}}</div>
+      <h4>Des services gérés</h4>
+      <p>Supabase pour la base, l’authentification, le temps réel et les fonctions serveur ; Vercel pour les applications. Aucun serveur à administrer : une équipe réduite peut exploiter la plateforme.</p>
+    </div>
+  </div>
+  <div class="row c-1-1 stretch">
+    <div class="tile vert">
+      <div class="ico">{{ico:smartphone}}</div>
+      <h4>Une seule base de code</h4>
+      <p>Les applications web installables et les coques Android partagent le même code. La coque charge l’application en production : une correction est diffusée sans republier l’APK.</p>
+    </div>
+    <div class="tile or">
+      <div class="ico">{{ico:layers}}</div>
+      <h4>Des briques remplaçables</h4>
+      <p>PostgreSQL standard, clients open source, moteur de carte commutable par une variable d’environnement, prestataire de paiement isolé derrière un webhook : chaque dépendance externe peut changer.</p>
+    </div>
+  </div>
+
+  <div class="rule-label" style="margin-top:16px">Le dépôt en chiffres</div>
+  <div class="row c-4" style="margin-top:8px">
+    <div class="kpi"><b>106</b><span>écrans</span><small>4 applications web</small></div>
+    <div class="kpi"><b>86</b><span>tables</span><small>toutes sous contrôle d’accès par ligne</small></div>
+    <div class="kpi"><b>330</b><span>fonctions métier</span><small>plus 127 fonctions internes</small></div>
+    <div class="kpi"><b>238</b><span>migrations</span><small>historique daté du schéma</small></div>
+  </div>
+  <div class="src">Environ 64 000 lignes de TypeScript, 63 000 lignes de SQL de migration (historique cumulé, redéfinitions comprises) et 3 000 lignes de fonctions serveur. Chiffres lus dans le dépôt à la date de ce document.</div>
+
+  <div class="rule-label" style="margin-top:14px">Périmètre fonctionnel déjà couvert par le code</div>
+  <div class="card" style="margin-top:8px">
+    <ul class="liste deux" style="margin-top:0">
+      <li>commande immédiate et réservation à l’avance ;</li>
+      <li>tarification par catégorie, tarif fixe du corridor ;</li>
+      <li>mise en relation des chauffeurs, suivi en direct ;</li>
+      <li>messagerie, appels, alerte SOS, lien de suivi public ;</li>
+      <li>portefeuilles, recharge, décaissement des chauffeurs ;</li>
+      <li>abonnements TamPass et épargne assurance des chauffeurs ;</li>
+      <li>recrutement des chauffeurs, rendez-vous, avertissements ;</li>
+      <li>concessionnaires, avances, responsables par ville ;</li>
+      <li>codes promo, parrainage, lieux favoris ;</li>
+      <li>comptabilité, trésorerie, paie et congés (TamCar Office).</li>
+    </ul>
+  </div>
+
+  <div class="pn"><b><!--PN--></b> sur <!--TOTAL--></div>
+</section>
+
+<!-- ============================================================ 11 · p.2 · 11.2 -->
+<section class="page" data-filigrane="TamCar">
+  <div class="sec-head"><span class="num">11</span><h1>Architecture technique de la plateforme <small>(suite)</small></h1></div>
+
+  <div class="h-serif" style="margin-top:14px">11.2 · La pile technique en un coup d’œil</div>
+  <table class="tbl txt" style="margin-top:10px">
+    <colgroup><col style="width:15%"><col style="width:36%"><col style="width:49%"></colgroup>
+    <thead><tr><th>Couche</th><th>Technologie</th><th>Rôle dans TamCar</th></tr></thead>
+    <tbody>
+      <tr><td>Interfaces</td><td>Next.js 14 (routeur applicatif), React 18, TypeScript, Tailwind CSS</td><td>Quatre applications : passagers, chauffeurs, TamCar Office (back-office) et site vitrine.</td></tr>
+      <tr><td>Mobile</td><td>Capacitor 8 (Android)</td><td>Deux coques Android qui chargent l’application en production. Modules natifs : géolocalisation en arrière-plan, notifications push et locales, synthèse vocale pour le guidage du chauffeur.</td></tr>
+      <tr><td>Base de données</td><td>PostgreSQL 15 (Supabase), PostGIS</td><td>Données, règles métier, droits d’accès, calculs géographiques.</td></tr>
+      <tr><td>Extensions</td><td>pg_trgm, unaccent, pgcrypto, pg_cron, pg_net</td><td>Recherche de lieux tolérante aux fautes, tâches planifiées, appels HTTP sortants depuis la base.</td></tr>
+      <tr><td>Authentification</td><td>Supabase Auth</td><td>Sessions à jetons JWT, cookies côté serveur (@supabase/ssr). E-mail et mot de passe ; code SMS par téléphone possible.</td></tr>
+      <tr><td>Temps réel</td><td>Supabase Realtime</td><td>Diffusion par WebSocket des changements de courses, de chauffeurs, de messages, d’arrêts et d’appels.</td></tr>
+      <tr><td>Fonctions serveur</td><td>12 Edge Functions (Deno, TypeScript)</td><td>Notifications, webhooks de paiement, décaissements, bot WhatsApp, lecture de justificatifs.</td></tr>
+      <tr><td>Hébergement</td><td>Vercel (région Dublin) ; Supabase (région Europe de l’Ouest, Irlande)</td><td>Applications web d’un côté ; base, authentification, fichiers et fonctions de l’autre.</td></tr>
+      <tr><td>Cartographie</td><td>Mapbox GL JS ; MapLibre GL + PMTiles (Protomaps) en cours de bascule ; Google Places en secours</td><td>Fonds de carte, itinéraires, recherche de lieux (la base de lieux TamCar est interrogée d’abord).</td></tr>
+      <tr><td>Notifications</td><td>Web Push (VAPID), Firebase Cloud Messaging (FCM v1)</td><td>Offres de courses aux chauffeurs, suivi de course, rappels de réservation.</td></tr>
+      <tr><td>Paiement</td><td>Mobile Money : FeexPay</td><td>Recharge du portefeuille et décaissement des revenus des chauffeurs, confirmés par webhook signé.</td></tr>
+      <tr><td>Messagerie</td><td>API WhatsApp Cloud (Meta)</td><td>Bot Tamy : commande de course par WhatsApp.</td></tr>
+      <tr><td>Intelligence artificielle</td><td>API Anthropic, Claude Haiku 4.5</td><td>Lecture des justificatifs de dépenses dans TamCar Office.</td></tr>
+      <tr><td>Développement</td><td>Git, SQL versionné, Gradle (APK), Claude Code</td><td>Versionnement du code et du schéma, construction Android, assistant de développement.</td></tr>
+    </tbody>
+  </table>
+  <div class="rnote">Vérifié dans le code : Next.js 14, React 18, Capacitor 8, PostgreSQL 15, les extensions, les six Edge Functions, la région Vercel « dub1 ». Le code de paiement est FedaPay ; FeexPay est le prestataire retenu depuis le 14 août (commit) mais n’est pas encore intégré. « Supabase en nuage » : je n’ai pas lu la région du projet.</div>
+
+  <div class="pn"><b><!--PN--></b> sur <!--TOTAL--></div>
+</section>
+
+<!-- ============================================================ 11 · p.3 · 11.3 -->
+<section class="page" data-filigrane="TamCar">
+  <div class="sec-head"><span class="num">11</span><h1>Architecture technique de la plateforme <small>(suite)</small></h1></div>
+
+  <div class="h-serif" style="margin-top:14px">11.3 · Architecture d’ensemble</div>
+  <div class="schema"><svg viewBox="0 0 720 424" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, system-ui, sans-serif"><defs><marker id="ab" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#2454D5"/></marker><marker id="av" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#7828E7"/></marker><marker id="ao" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#097C72"/></marker></defs><text x="68" y="15" text-anchor="middle" font-size="9" font-weight="700" fill="#4E5B6F" letter-spacing="1">UTILISATEURS</text><text x="235" y="15" text-anchor="middle" font-size="9" font-weight="700" fill="#4E5B6F" letter-spacing="1">VERCEL · DUBLIN</text><text x="460" y="15" text-anchor="middle" font-size="9" font-weight="700" fill="#4E5B6F" letter-spacing="1">SUPABASE</text><text x="658" y="15" text-anchor="middle" font-size="9" font-weight="700" fill="#4E5B6F" letter-spacing="1">SERVICES EXTERNES</text><rect x="8" y="34" width="120" height="56" rx="9" fill="#EFF4FE" stroke="#C9D6F2" stroke-width="1.2"/><text x="68.0" y="60.0" text-anchor="middle" font-size="10.5" font-weight="700" fill="#071B3A">Passagers</text><text x="68.0" y="73.0" text-anchor="middle" font-size="8.5" fill="#4E5B6F">web installable · Android</text><rect x="8" y="112" width="120" height="56" rx="9" fill="#EFF4FE" stroke="#C9D6F2" stroke-width="1.2"/><text x="68.0" y="138.0" text-anchor="middle" font-size="10.5" font-weight="700" fill="#071B3A">Chauffeurs</text><text x="68.0" y="151.0" text-anchor="middle" font-size="8.5" fill="#4E5B6F">web installable · Android</text><rect x="8" y="190" width="120" height="56" rx="9" fill="#EFF4FE" stroke="#C9D6F2" stroke-width="1.2"/><text x="68.0" y="216.0" text-anchor="middle" font-size="10.5" font-weight="700" fill="#071B3A">Équipe TamCar</text><text x="68.0" y="229.0" text-anchor="middle" font-size="8.5" fill="#4E5B6F">back-office</text><rect x="8" y="268" width="120" height="56" rx="9" fill="#EFF4FE" stroke="#C9D6F2" stroke-width="1.2"/><text x="68.0" y="294.0" text-anchor="middle" font-size="10.5" font-weight="700" fill="#071B3A">WhatsApp</text><text x="68.0" y="307.0" text-anchor="middle" font-size="8.5" fill="#4E5B6F">bot Tamy, via l’API de Meta</text><rect x="160" y="28" width="150" height="312" rx="14" fill="#F7F9FF" stroke="#C9D6F2" stroke-width="1.2"/><rect x="172" y="40" width="126" height="56" rx="9" fill="#fff" stroke="#C9D6F2" stroke-width="1.2"/><text x="235.0" y="66.0" text-anchor="middle" font-size="10.5" font-weight="700" fill="#071B3A">App passagers</text><text x="235.0" y="79.0" text-anchor="middle" font-size="8.5" fill="#4E5B6F">Next.js 14</text><rect x="172" y="118" width="126" height="56" rx="9" fill="#fff" stroke="#C9D6F2" stroke-width="1.2"/><text x="235.0" y="144.0" text-anchor="middle" font-size="10.5" font-weight="700" fill="#071B3A">App chauffeurs</text><text x="235.0" y="157.0" text-anchor="middle" font-size="8.5" fill="#4E5B6F">Next.js 14</text><rect x="172" y="196" width="126" height="56" rx="9" fill="#fff" stroke="#C9D6F2" stroke-width="1.2"/><text x="235.0" y="222.0" text-anchor="middle" font-size="10.5" font-weight="700" fill="#071B3A">TamCar Office</text><text x="235.0" y="235.0" text-anchor="middle" font-size="8.5" fill="#4E5B6F">Next.js 14</text><rect x="172" y="274" width="126" height="56" rx="9" fill="#fff" stroke="#C9D6F2" stroke-width="1.2"/><text x="235.0" y="300.0" text-anchor="middle" font-size="10.5" font-weight="700" fill="#071B3A">Site vitrine</text><text x="235.0" y="313.0" text-anchor="middle" font-size="8.5" fill="#4E5B6F">Next.js 14</text><rect x="350" y="28" width="220" height="360" rx="14" fill="#F4FBF9" stroke="#9DD9D0" stroke-width="1.2"/><rect x="362" y="40" width="196" height="112" rx="9" fill="#fff" stroke="#097C72" stroke-width="1.4"/><text x="460" y="66" text-anchor="middle" font-size="11.5" font-weight="700" fill="#071B3A">PostgreSQL 15 + PostGIS</text><text x="460" y="86" text-anchor="middle" font-size="9" fill="#4E5B6F">règles métier · droits par ligne</text><text x="460" y="100" text-anchor="middle" font-size="9" fill="#4E5B6F">tâches planifiées · déclencheurs</text><text x="460" y="126" text-anchor="middle" font-size="9" font-weight="700" fill="#097C72">86 tables · 330 fonctions · 238 migrations</text><rect x="362" y="162" width="196" height="102" rx="9" fill="#fff" stroke="#097C72" stroke-width="1.4"/><text x="460" y="188" text-anchor="middle" font-size="11.5" font-weight="700" fill="#071B3A">Edge Functions (12)</text><text x="460" y="208" text-anchor="middle" font-size="9" fill="#4E5B6F">notifications push · WhatsApp</text><text x="460" y="222" text-anchor="middle" font-size="9" fill="#4E5B6F">webhooks et décaissements de paiement</text><text x="460" y="236" text-anchor="middle" font-size="9" fill="#4E5B6F">lecture de justificatifs par IA</text><text x="460" y="252" text-anchor="middle" font-size="8.4" fill="#4E5B6F">Deno · TypeScript</text><rect x="362" y="274" width="196" height="44" rx="9" fill="#fff" stroke="#C9D6F2" stroke-width="1.2"/><text x="460.0" y="294.0" text-anchor="middle" font-size="10" font-weight="700" fill="#071B3A">Storage privé</text><text x="460.0" y="307.0" text-anchor="middle" font-size="8" fill="#4E5B6F">justificatifs du back-office</text><rect x="362" y="328" width="94" height="48" rx="9" fill="#fff" stroke="#C9D6F2" stroke-width="1.2"/><text x="409.0" y="350.0" text-anchor="middle" font-size="10" font-weight="700" fill="#071B3A">Auth</text><text x="409.0" y="363.0" text-anchor="middle" font-size="8" fill="#4E5B6F">jetons JWT</text><rect x="464" y="328" width="94" height="48" rx="9" fill="#fff" stroke="#C9D6F2" stroke-width="1.2"/><text x="511.0" y="350.0" text-anchor="middle" font-size="10" font-weight="700" fill="#071B3A">Realtime</text><text x="511.0" y="363.0" text-anchor="middle" font-size="8" fill="#4E5B6F">WebSocket</text><rect x="600" y="34" width="116" height="50" rx="9" fill="#F4F0FF" stroke="#CDBDF5" stroke-width="1.2"/><text x="658.0" y="57.0" text-anchor="middle" font-size="9.8" font-weight="700" fill="#071B3A">Cartes</text><text x="658.0" y="70.0" text-anchor="middle" font-size="7.800000000000001" fill="#4E5B6F">Mapbox · MapLibre + PMTiles</text><rect x="600" y="96" width="116" height="50" rx="9" fill="#F4F0FF" stroke="#CDBDF5" stroke-width="1.2"/><text x="658.0" y="119.0" text-anchor="middle" font-size="9.8" font-weight="700" fill="#071B3A">Recherche de lieux</text><text x="658.0" y="132.0" text-anchor="middle" font-size="7.800000000000001" fill="#4E5B6F">base TamCar · Google Places</text><rect x="600" y="158" width="116" height="50" rx="9" fill="#F4F0FF" stroke="#CDBDF5" stroke-width="1.2"/><text x="658.0" y="181.0" text-anchor="middle" font-size="9.8" font-weight="700" fill="#071B3A">Notifications</text><text x="658.0" y="194.0" text-anchor="middle" font-size="7.800000000000001" fill="#4E5B6F">Web Push · FCM</text><rect x="600" y="220" width="116" height="50" rx="9" fill="#F4F0FF" stroke="#CDBDF5" stroke-width="1.2"/><text x="658.0" y="243.0" text-anchor="middle" font-size="9.8" font-weight="700" fill="#071B3A">Mobile Money</text><text x="658.0" y="256.0" text-anchor="middle" font-size="7.800000000000001" fill="#4E5B6F">FeexPay</text><rect x="600" y="282" width="116" height="50" rx="9" fill="#F4F0FF" stroke="#CDBDF5" stroke-width="1.2"/><text x="658.0" y="305.0" text-anchor="middle" font-size="9.8" font-weight="700" fill="#071B3A">WhatsApp</text><text x="658.0" y="318.0" text-anchor="middle" font-size="7.800000000000001" fill="#4E5B6F">API Cloud de Meta</text><rect x="600" y="344" width="116" height="50" rx="9" fill="#F4F0FF" stroke="#CDBDF5" stroke-width="1.2"/><text x="658.0" y="367.0" text-anchor="middle" font-size="9.8" font-weight="700" fill="#071B3A">Intelligence artificielle</text><text x="658.0" y="380.0" text-anchor="middle" font-size="7.800000000000001" fill="#4E5B6F">API Anthropic</text><line x1="128" y1="62" x2="170" y2="68" stroke="#2454D5" stroke-width="1.6" marker-end="url(#ab)"/><line x1="128" y1="140" x2="170" y2="146" stroke="#2454D5" stroke-width="1.6" marker-end="url(#ab)"/><line x1="128" y1="218" x2="170" y2="224" stroke="#2454D5" stroke-width="1.6" marker-end="url(#ab)"/><line x1="298" y1="68" x2="360" y2="64" stroke="#2454D5" stroke-width="1.6" marker-end="url(#ab)"/><line x1="298" y1="146" x2="360" y2="84" stroke="#2454D5" stroke-width="1.6" marker-end="url(#ab)"/><line x1="298" y1="224" x2="360" y2="104" stroke="#2454D5" stroke-width="1.6" marker-end="url(#ab)"/><line x1="298" y1="302" x2="360" y2="124" stroke="#2454D5" stroke-width="1.6" marker-end="url(#ab)"/><path d="M8 62 L3 62 L3 404 L510 404 L510 378" fill="none" stroke="#7828E7" stroke-width="1.5" marker-end="url(#av)"/><text x="290" y="418" text-anchor="middle" font-size="8.8" fill="#7828E7">temps réel : les navigateurs se connectent directement à Supabase</text><line x1="558" y1="213" x2="598" y2="183" stroke="#097C72" stroke-width="1.5" marker-end="url(#ao)"/><line x1="558" y1="213" x2="598" y2="245" stroke="#097C72" stroke-width="1.5" marker-end="url(#ao)"/><line x1="558" y1="213" x2="598" y2="307" stroke="#097C72" stroke-width="1.5" marker-end="url(#ao)"/><line x1="558" y1="213" x2="598" y2="369" stroke="#097C72" stroke-width="1.5" marker-end="url(#ao)"/><text x="716" y="418" text-anchor="end" font-size="8.8" fill="#097C72">vert : appels sortants et webhooks signés</text></svg></div>
+  <div class="row c-1-1 stretch" style="margin-top:12px">
+    <div class="tile">
+      <div class="ico">{{ico:zap}}</div>
+      <h4>Lire et écrire</h4>
+      <p>Les applications appellent des fonctions PostgreSQL (RPC) avec le jeton de l’utilisateur. Les droits sont appliqués par la base, ligne par ligne, pas par le code de l’application.</p>
+    </div>
+    <div class="tile violet">
+      <div class="ico">{{ico:route}}</div>
+      <h4>Suivre en temps réel</h4>
+      <p>Les changements des tables courses, chauffeurs, messages, arrêts et appels sont diffusés par WebSocket. Le navigateur se connecte directement à Supabase, sans passer par Vercel.</p>
+    </div>
+  </div>
+  <div class="row c-1-1 stretch">
+    <div class="tile vert">
+      <div class="ico">{{ico:bell}}</div>
+      <h4>Prévenir</h4>
+      <p>Un changement de statut déclenche un trigger SQL, qui appelle une Edge Function par <span class="mono">pg_net</span> : notification push aux chauffeurs et aux passagers, message WhatsApp.</p>
+    </div>
+    <div class="tile or">
+      <div class="ico">{{ico:shield}}</div>
+      <h4>Recevoir</h4>
+      <p>Les prestataires de paiement et WhatsApp rappellent des Edge Functions. La signature de chaque appel est vérifiée avant tout traitement, puis une fonction SQL met la base à jour.</p>
+    </div>
+  </div>
+
+  <div class="pn"><b><!--PN--></b> sur <!--TOTAL--></div>
+</section>
+
+<!-- ============================================================ 11 · p.4 · 11.4 -->
+<section class="page" data-filigrane="TamCar">
+  <div class="sec-head"><span class="num">11</span><h1>Architecture technique de la plateforme <small>(suite)</small></h1></div>
+
+  <div class="h-serif" style="margin-top:14px">11.4 · La base de données</div>
+  <p class="intro">Une seule base PostgreSQL porte les 86 tables du produit, réparties en huit domaines. Le schéma est décrit par 238 migrations datées.</p>
+  <div class="row c-4" style="margin-top:8px">
+    <div class="dom b"><b>Identité et accès<em>9</em></b><p>Profils, consentements (CGU), jetons de notification, parrainage, lieux favoris.</p></div>
+<div class="dom b"><b>Courses<em>10</em></b><p>Courses, réservations et locations, arrêts, messages, appels, liens de suivi, notes, alertes SOS.</p></div>
+<div class="dom v"><b>Chauffeurs, véhicules, partenaires<em>22</em></b><p>Chauffeurs, véhicules, partenaires, candidatures, rendez-vous, avertissements, villes et responsables, versements quotidiens et jours non travaillés, bonus, récompenses, alertes.</p></div>
+<div class="dom g"><b>Portefeuilles et paiements<em>6</em></b><p>Portefeuilles, journal des mouvements, décaissements, épargne assurance.</p></div>
+<div class="dom o"><b>Tarifs, lieux, promotions<em>9</em></b><p>Grilles de prix, tarifs de location, prix du corridor, points de rabattement, lieux, codes promo, bannières.</p></div>
+<div class="dom v"><b>Abonnements TamPass<em>4</em></b><p>Formules, abonnements, courses programmées, événements.</p></div>
+<div class="dom g"><b>WhatsApp (Tamy)<em>4</em></b><p>Contacts, sessions, messages et courses commandées par WhatsApp.</p></div>
+<div class="dom r"><b>TamCar Office<em>22</em></b><p>Comptabilité en partie double, trésorerie, paie, congés, échéances, documents, audit, sauvegardes.</p></div>
+
+  </div>
+
+  <div class="rule-label" style="margin-top:16px">Ce que PostgreSQL fait pour la plateforme</div>
+  <table class="tbl txt" style="margin-top:8px">
+    <colgroup><col style="width:24%"><col style="width:76%"></colgroup>
+    <thead><tr><th>Mécanisme</th><th>Usage</th></tr></thead>
+    <tbody>
+      <tr><td>PostGIS</td><td>Positions en type géographique, index spatiaux : recherche des chauffeurs dans un rayon, rattachement d’une course à une ville, contrôle de la zone de service.</td></tr>
+      <tr><td>pg_trgm et unaccent</td><td>Recherche de lieux tolérante aux fautes de frappe et aux accents, sur la base de lieux de TamCar.</td></tr>
+      <tr><td>Contrôle d’accès par ligne</td><td>Activé sur les 83 tables, avec 161 politiques : un passager ne voit que ses courses, un chauffeur les siennes et le fil des offres, un concessionnaire ses véhicules.</td></tr>
+      <tr><td>Fonctions métier</td><td>330 fonctions appelables par les applications (prix, acceptation d’une course, portefeuilles, abonnements, candidatures…), plus 127 fonctions internes non exposées.</td></tr>
+      <tr><td>Triggers et pg_net</td><td>Un changement de statut déclenche les notifications sans code applicatif supplémentaire.</td></tr>
+      <tr><td>pg_cron</td><td>21 tâches planifiées : rappels de réservation, génération et suivi nocturnes des courses TamPass, prélèvements quotidien et mensuel liés à l’assurance des chauffeurs.</td></tr>
+      <tr><td>Types et vues</td><td>19 types énumérés (statuts de course, catégories de véhicule, types de mouvement) et 9 vues pour l’administration et les états.</td></tr>
+    </tbody>
+  </table>
+  <div class="callout" style="margin-top:12px">
+    <strong>Conséquence pratique.</strong> Un même calcul sert toutes les interfaces : l’application passagers, l’application chauffeurs, le bot WhatsApp
+    et le back-office appellent les mêmes fonctions. Une règle corrigée dans la base l’est partout.
+  </div>
+
+  <div class="pn"><b><!--PN--></b> sur <!--TOTAL--></div>
+</section>
+
+<!-- ============================================================ 11 · p.5 · 11.5 -->
+<section class="page" data-filigrane="TamCar">
+  <div class="sec-head"><span class="num">11</span><h1>Architecture technique de la plateforme <small>(suite)</small></h1></div>
+
+  <div class="h-serif" style="margin-top:14px">11.5 · Une course, de la commande à l’encaissement</div>
+  <p class="intro">Le cycle de vie d’une course est une machine à états dans la base : chaque transition est une fonction qui contrôle qui l’appelle et dans quel état se trouve la course.</p>
+  <div class="flow">
+    <div class="st"><i>Statut</i><b>Demandée</b><span class="mono">create_ride</span><small>prix calculé par la base, zone de service vérifiée, course proposée aux chauffeurs</small></div>
+    <div class="st"><i>Statut</i><b>Acceptée</b><span class="mono">accept_ride</span><small>premier chauffeur servi ; répartition des recettes figée sur la course</small></div>
+    <div class="st"><i>Statut</i><b>Sur place</b><span class="mono">driver_arrived</span><small>le chauffeur est au point de prise en charge</small></div>
+    <div class="st"><i>Statut</i><b>En cours</b><span class="mono">driver_start_ride</span><small>passager à bord, arrêts et destination suivis en direct</small></div>
+    <div class="st"><i>Statut</i><b>Terminée</b><span class="mono">driver_complete_ride</span><small>portefeuilles crédités, ou commission débitée si paiement en espèces</small></div>
+  </div>
+  <p class="mini" style="margin-top:8px">Sorties possibles : annulée par le passager, annulée par le chauffeur, expirée si aucun chauffeur n’est trouvé. Frais d’annulation et pénalités de réservation sont appliqués par la base.</p>
+
+  <div class="row c-1-1 stretch" style="margin-top:12px">
+    <div class="card">
+      <h3>Le prix, calculé une seule fois</h3>
+      <p>La fonction <span class="mono">compute_price</span> calcule le prix dans la base : base, kilomètres, minutes, minimum, supplément climatisation et nuit, arrondi aux 50 F. Le même calcul sert les cinq catégories : moto, tricycle, essentiel, confort, premium.</p>
+      <p>Entre deux points de rabattement du corridor Cotonou ↔ Porto-Novo, le prix est fixe. La zone de service est un enchaînement de cinq cercles de 15 km (Ouidah, Pahou, Cotonou, Sèmè-Podji, Porto-Novo), écrit à l’identique dans la base et dans l’application.</p>
+    </div>
+    <div class="card">
+      <h3>La mise en relation, sans verrou applicatif</h3>
+      <p>Les chauffeurs de la bonne catégorie, dans un rayon de 10 km, voient la course dans leur fil (<span class="mono">pending_rides_for_driver</span>) et reçoivent une notification. L’acceptation est <strong>une seule instruction SQL conditionnelle</strong> : la course passe à « acceptée » seulement si elle est encore « demandée » et sans chauffeur.</p>
+      <p>Deux chauffeurs qui acceptent au même instant ne peuvent donc pas obtenir la même course, et <strong>aucun verrou n’est géré par l’application</strong>. Un chauffeur peut enchaîner une seconde course proche de l’arrivée de la première.</p>
+    </div>
+  </div>
+
+  <div class="rule-label" style="margin-top:14px">Autour de la course</div>
+  <div class="row c-3 stretch" style="margin-top:8px">
+    <div class="tile">
+      <div class="ico">{{ico:coins}}</div>
+      <h4>Répartition des recettes</h4>
+      <p>Fixée à l’acceptation. Le plan retient 40 % chauffeur, 30 % propriétaire, 5 % de fonds de cession et 25 % TamCar pour un véhicule qui n’appartient pas au chauffeur (6.2) ; 80 / 20 s’il est propriétaire. Les montants sont stockés sur la course.</p>
+    </div>
+    <div class="tile violet">
+      <div class="ico">{{ico:clock}}</div>
+      <h4>Réservation à l’avance</h4>
+      <p>Une réservation est diffusée aux chauffeurs, avec plancher de 30 minutes, rappels et pénalités. Des tâches planifiées la libèrent à l’heure et relancent la recherche si personne n’a accepté.</p>
+    </div>
+    <div class="tile vert">
+      <div class="ico">{{ico:shield}}</div>
+      <h4>Sécurité en course</h4>
+      <p>Alerte SOS traitée par l’administration, messagerie liée à la course, lien de suivi public par jeton (sans compte), notation réciproque.</p>
+    </div>
+  </div>
+
+  <div class="pn"><b><!--PN--></b> sur <!--TOTAL--></div>
+</section>
+
+<!-- ============================================================ 11 · p.6 · 11.6 -->
+<section class="page" data-filigrane="TamCar">
+  <div class="sec-head"><span class="num">11</span><h1>Architecture technique de la plateforme <small>(suite)</small></h1></div>
+
+  <div class="h-serif" style="margin-top:14px">11.6 · Portefeuilles, paiements et comptabilité</div>
+  <p class="intro">Tout mouvement d’argent passe par un portefeuille et laisse une ligne dans un journal : rien n’est modifié sans trace.</p>
+  <div class="row c-4" style="margin-top:8px">
+    <div class="dom"><b>Crédit</b><p>Portefeuille du passager : recharge Mobile Money, paiement des courses.</p></div>
+    <div class="dom g"><b>Revenus</b><p>Portefeuille du chauffeur ou du concessionnaire : part de chaque course, retrait vers Mobile Money.</p></div>
+    <div class="dom v"><b>Rachat</b><p>Séquestre de cession : part du prix mise de côté pour le chauffeur.</p></div>
+    <div class="dom o"><b>Épargne</b><p>Épargne assurance du chauffeur (TamAssur), alimentée par un prélèvement programmé.</p></div>
+  </div>
+
+  <div class="rule-label" style="margin-top:14px">Recharge : du paiement au crédit</div>
+  <div class="flow vert">
+    <div class="st"><i>1</i><b>Paiement</b><small>l’application ouvre le widget du prestataire avec une référence créée par TamCar</small></div>
+    <div class="st"><i>2</i><b>Confirmation</b><small>le prestataire appelle une Edge Function (webhook)</small></div>
+    <div class="st"><i>3</i><b>Signature</b><small>HMAC-SHA256 vérifié en temps constant ; sinon rejet</small></div>
+    <div class="st"><i>4</i><b>Crédit</b><small>une fonction SQL crédite le portefeuille et écrit le journal</small></div>
+  </div>
+  <div class="rule-label" style="margin-top:12px">Décaissement : du portefeuille au Mobile Money du chauffeur</div>
+  <div class="flow viol">
+    <div class="st"><i>1</i><b>Demande</b><small><span class="mono">request_driver_payout</span> réserve le montant</small></div>
+    <div class="st"><i>2</i><b>Envoi</b><small>une Edge Function crée puis lance le décaissement chez le prestataire</small></div>
+    <div class="st"><i>3</i><b>Résultat</b><small>le webhook annonce « envoyé » ou « échoué »</small></div>
+    <div class="st"><i>4</i><b>Clôture</b><small>débit définitif, ou remboursement automatique du portefeuille</small></div>
+  </div>
+  <div class="callout ajout" style="margin-top:10px">
+    <strong>Prestataire de paiement : FeexPay.</strong> L’intégration de la recharge, du décaissement et des webhooks signés est livrée avant le lancement. Elle repose sur une couche
+    isolée (deux Edge Functions et un module d’appel côté application) ; les portefeuilles, le journal et les fonctions de crédit sont indépendants du prestataire.
+  </div>
+
+  <div class="h-serif" style="margin-top:18px">TamCar Office : la comptabilité est dans la plateforme</div>
+  <div class="row c-1-1 stretch" style="margin-top:8px">
+    <div class="card">
+      <h3>Comptabilité en partie double</h3>
+      <p>Plan de comptes SYSCOHADA révisé (environ 90 comptes), sept journaux, écritures équilibrées, numérotées et immuables : une erreur se corrige par extourne. Balance, grand livre, position de trésorerie, bilan et compte de résultat sont calculés par des fonctions SQL.</p>
+    </div>
+    <div class="card">
+      <h3>Reliée aux flux de la plateforme</h3>
+      <p>Les mouvements de portefeuille génèrent chaque jour une écriture de synthèse ; le solde résiduel est la commission de TamCar. S’y ajoutent la paie (ITS), les congés, les échéances, les documents et un journal d’audit.</p>
+    </div>
+  </div>
+  <div class="callout" style="margin-top:10px">
+    <strong>Lecture de justificatifs par IA.</strong> Une photo de facture ou une phrase libre est analysée par une Edge Function (Claude Haiku 4.5) qui propose fournisseur, date, montant,
+    catégorie comptable et mode de paiement, avec un indice de confiance. Un humain valide avant toute écriture. Accès réservé au back-office, pièces lues côté serveur dans un stockage privé.
+  </div>
+
+  <div class="pn"><b><!--PN--></b> sur <!--TOTAL--></div>
+</section>
+
+<!-- ============================================================ 11 · p.7 · 11.7 -->
+<section class="page" data-filigrane="TamCar">
+  <div class="sec-head"><span class="num">11</span><h1>Architecture technique de la plateforme <small>(suite)</small></h1></div>
+
+  <div class="h-serif" style="margin-top:14px">11.7 · Applications, mobile, cartes et temps réel</div>
+  <table class="tbl txt" style="margin-top:10px">
+    <colgroup><col style="width:18%"><col style="width:10%"><col style="width:72%"></colgroup>
+    <thead><tr><th>Application</th><th>Écrans</th><th>Contenu</th></tr></thead>
+    <tbody>
+      <tr><td>Passagers</td><td>62</td><td>Commande et réservation, suivi en direct, portefeuille, TamPass, parrainage, lieux favoris, historique, factures, candidature chauffeur. Inclut les écrans d’administration (courses, chauffeurs, véhicules, concessionnaires, litiges, dettes, promotions, lieux, villes).</td></tr>
+      <tr><td>Chauffeurs</td><td>16</td><td>Fil des offres avec prix et part du chauffeur, navigation guidée avec voix, revenus et portefeuille, réservations, abonnements TamPass, historique.</td></tr>
+      <tr><td>TamCar Office</td><td>27</td><td>Comptabilité, trésorerie, paie, congés, échéances, documents, tableau de bord de la plateforme, guide d’utilisation.</td></tr>
+      <tr><td>Site vitrine</td><td>1</td><td>Présentation publique.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="row c-1-1 stretch" style="margin-top:12px">
+    <div class="card">
+      <h3>Mobile</h3>
+      <p>Les applications sont des web apps installables. Deux coques Android (Capacitor) les chargent en production et ajoutent ce que le navigateur ne fait pas : position en arrière-plan pour le chauffeur, notifications reçues application fermée (FCM), notifications locales, synthèse vocale.</p>
+      <p>Un service worker minimal gère les notifications ; la mise en cache hors ligne est désactivée pour l’instant, car elle perturbait les actions serveur de Next.js.</p>
+    </div>
+    <div class="card">
+      <h3>Position du chauffeur</h3>
+      <p>Les positions trop imprécises sont écartées et les cinq dernières sont moyennées, pondérées par leur précision : le point affiché ne « danse » plus. Sur la carte du passager, les chauffeurs sont arrondis à une grille d’environ 220 m, sans identité ni cap, cinq véhicules au plus : seule la catégorie est visible.</p>
+    </div>
+  </div>
+
+  <div class="rule-label" style="margin-top:14px">Cartes : sortir de la dépendance à un fournisseur</div>
+  <div class="row c-1-1 stretch" style="margin-top:8px">
+    <div class="card">
+      <p><strong>Aujourd’hui</strong> : Mapbox pour les fonds de carte, le géocodage et les itinéraires ; la base de lieux de TamCar est interrogée d’abord, Google Places en secours.</p>
+    </div>
+    <div class="card">
+      <p><strong>En cours</strong> : MapLibre GL avec des tuiles PMTiles (Protomaps) hébergées par TamCar. Le moteur se choisit par variable d’environnement, sans modifier le code ; le retour à Mapbox est immédiat.</p>
+    </div>
+  </div>
+  <div class="row c-1-1 stretch">
+    <div class="card">
+      <p><strong>Temps réel</strong> : un canal par composant, avec des noms de topic uniques et un nettoyage systématique avant chaque abonnement. Cette règle vient d’une erreur réellement rencontrée avec Supabase Realtime, documentée dans le code.</p>
+    </div>
+    <div class="card">
+      <p><strong>Langues</strong> : français et anglais.</p>
+    </div>
+  </div>
+
+  <div class="pn"><b><!--PN--></b> sur <!--TOTAL--></div>
+</section>
+
+<!-- ============================================================ 11 · p.8 · 11.8 -->
+<section class="page" data-filigrane="TamCar">
+  <div class="sec-head"><span class="num">11</span><h1>Architecture technique de la plateforme <small>(suite)</small></h1></div>
+
+  <div class="h-serif" style="margin-top:14px">11.8 · Sécurité</div>
+  <p class="intro"><strong>La sécurité repose d’abord sur la base</strong> : c’est elle qui refuse, même si une application se trompe.</p>
+  <div class="row c-3 stretch" style="margin-top:8px">
+    <div class="tile">
+      <div class="ico">{{ico:lock}}</div>
+      <h4>Accès par ligne</h4>
+      <p>Toutes les tables (83) sont protégées par 161 politiques, selon le rôle : passager, chauffeur, concessionnaire, administrateur, back-office.</p>
+    </div>
+    <div class="tile violet">
+      <div class="ico">{{ico:code}}</div>
+      <h4>Fonctions durcies</h4>
+      <p>Les fonctions privilégiées fixent leur chemin de recherche, contrôlent l’identité et le propriétaire de la ressource, et les fonctions internes sont retirées de l’API publique.</p>
+    </div>
+    <div class="tile vert">
+      <div class="ico">{{ico:shield}}</div>
+      <h4>Secrets côté serveur</h4>
+      <p>La clé de service n’existe que dans les Edge Functions. Le navigateur ne porte que des clés publiques (Supabase, carte, notifications).</p>
+    </div>
+  </div>
+
+  <table class="tbl txt" style="margin-top:14px">
+    <colgroup><col style="width:26%"><col style="width:74%"></colgroup>
+    <thead><tr><th>Sujet</th><th>Mesure en place</th></tr></thead>
+    <tbody>
+      <tr><td>Webhooks</td><td>Paiement : signature HMAC-SHA256 vérifiée, comparaison en temps constant. WhatsApp : signature X-Hub-Signature-256 vérifiée avant tout traitement. Un appel non signé est rejeté.</td></tr>
+      <tr><td>Sessions</td><td>Jetons JWT renouvelés automatiquement, cookies côté serveur, routes protégées par un intergiciel ; les routes publiques sont listées explicitement.</td></tr>
+      <tr><td>Consentement</td><td>Tant que la version en vigueur des conditions d’utilisation n’est pas acceptée, toute requête protégée est renvoyée vers l’écran d’acceptation. L’acceptation est horodatée et versionnée.</td></tr>
+      <tr><td>Vie privée</td><td>Chauffeurs visibles de façon anonyme et arrondie sur la carte du passager. Lien de suivi public limité au statut, au trajet, au prénom du chauffeur, au véhicule et à sa position ; il expire six heures après la fin de la course.</td></tr>
+      <tr><td>Fichiers</td><td>Justificatifs du back-office dans un espace de stockage privé, lus côté serveur uniquement.</td></tr>
+      <tr><td>Intelligence artificielle</td><td>Fonction réservée aux rôles du back-office, jeton vérifié ; la clé du fournisseur n’est jamais exposée.</td></tr>
+      <tr><td>Traçabilité</td><td>Journal d’audit du back-office, écritures comptables immuables, journal de tous les mouvements de portefeuille.</td></tr>
+      <tr><td>Abus</td><td>Seuil de dette des chauffeurs avec blocage de la mise en ligne, frais d’annulation, compteurs d’absence, avertissements, module de litiges.</td></tr>
+    </tbody>
+  </table>
+  <div class="callout ajout" style="margin-top:12px">
+    <strong>Point de vigilance.</strong> La politique de confidentialité est publiée ; la conformité à la réglementation béninoise sur les données personnelles et une revue de sécurité indépendante sont réalisées avant le passage à l’échelle.
+  </div>
+
+
+  <div class="pn"><b><!--PN--></b> sur <!--TOTAL--></div>
+</section>
+
+<!-- ============================================================ 11 · p.9 · 11.9 -->
+<section class="page" data-filigrane="TamCar">
+  <div class="sec-head"><span class="num">11</span><h1>Architecture technique de la plateforme <small>(suite)</small></h1></div>
+
+  <div class="h-serif" style="margin-top:14px">11.9 · Exploitation, qualité et coûts</div>
+  <div class="row c-1-1 stretch" style="margin-top:10px">
+    <div class="card">
+      <h3>Du code à la production</h3>
+      <p>Le code et le schéma sont dans Git. Les applications web sont construites et déployées sur Vercel. Chaque évolution de la base est un fichier SQL daté, appliqué dans l’ordre sur le projet Supabase. Les APK Android se construisent avec Gradle ; comme les coques chargent le site, elles changent rarement.</p>
+    </div>
+    <div class="card">
+      <h3>Développement assisté</h3>
+      <p>Le produit est développé par le fondateur avec Claude Code, un assistant de programmation. Ce choix explique la vitesse de production du code ; il rend d’autant plus utiles la revue humaine, les tests et la documentation, que la feuille de route technique organise (11.10).</p>
+    </div>
+  </div>
+
+  <div class="rule-label ajout" style="margin-top:14px">Industrialisation prévue avec le développeur</div>
+  <div class="card ajout" style="margin-top:8px">
+    <ul class="liste deux" style="margin-top:0">
+      <li>tests automatisés des fonctions critiques : prix, répartition des recettes, portefeuilles, acceptation d’une course ;</li>
+      <li>intégration continue : construction et tests à chaque modification ;</li>
+      <li>supervision des erreurs et des performances, avec des alertes sur les Edge Functions et les webhooks ;</li>
+      <li>sauvegardes de la base, avec restauration testée ;</li>
+      <li>test de charge à l’échelle de l’objectif de 36 mois, avant l’extension ;</li>
+      <li>revue de sécurité indépendante (11.8).</li>
+    </ul>
+  </div>
+
+  <div class="rule-label" style="margin-top:14px">Coûts et ressources dans le plan</div>
+  <div class="row c-4" style="margin-top:8px">
+    <div class="kpi"><b>18 750 F</b><span>par mois</span><small>Supabase, offre Pro (25 USD)</small></div>
+    <div class="kpi"><b>15 000 F</b><span>par mois</span><small>Vercel, offre Pro (20 USD), au lancement commercial</small></div>
+    <div class="kpi"><b>75 000 F</b><span>par mois</span><small>enveloppe d’infrastructure du plan (8.3), dont 41 250 F pour cartes, SMS, WhatsApp et nom de domaine</small></div>
+    <div class="kpi"><b>200 000 F</b><span>par mois, dès le mois 13</span><small>développeur salarié (5.4)</small></div>
+  </div>
+  <div class="src">Taux retenu : 1 USD = 750 F. Outil de développement assisté : 75 000 F par mois, du mois 1 au mois 12 (8.3). Vercel est gratuit pendant le développement.</div>
+  <div class="rnote">Le budget d’infrastructure de 75 000 F par mois est l’hypothèse du plan ; je n’ai pas les factures Supabase et Vercel pour la confronter à la réalité.</div>
+
+  <div class="pn"><b><!--PN--></b> sur <!--TOTAL--></div>
+</section>
+
+<!-- ============================================================ 11 · p.10 · 11.10 -->
+<section class="page" data-filigrane="TamCar">
+  <div class="sec-head"><span class="num">11</span><h1>Architecture technique de la plateforme <small>(suite)</small></h1></div>
+
+  <div class="h-serif" style="margin-top:14px">11.10 · Feuille de route technique</div>
+  <p class="intro">Les chantiers sont classés par échéance : ce qui conditionne le lancement, ce qui suit, ce qui relève de la croissance.</p>
+  <div class="row c-3 stretch" style="margin-top:8px">
+    <div class="tile">
+      <div class="ico">{{ico:flag}}</div>
+      <h4>Avant le lancement</h4>
+      <p><strong>Paiement automatique</strong> : intégrer FeexPay pour la recharge et le décaissement, sur le modèle des webhooks signés existants.</p>
+      <p><strong>Commande par WhatsApp</strong> : tout le processus de commande, du départ au suivi de la course, passe par WhatsApp ; configuration chez Meta (numéro, modèles, webhook), puis essais.</p>
+      <p><strong>Trackers GPS</strong> : pose sur les véhicules de TamCar et suivi de leur renouvellement annuel.</p>
+      <p><strong>Webhooks et secrets</strong> : configuration chez le prestataire, puis essais en bac à sable avec de petits montants.</p>
+    </div>
+    <div class="tile violet">
+      <div class="ico">{{ico:calendar}}</div>
+      <h4>Les douze premiers mois</h4>
+      <p><strong>Cartes</strong> : finir la bascule vers MapLibre et PMTiles, puis héberger les polices et le géocodage.</p>
+      <p><strong>Suivi des trackers</strong> : recevoir leurs positions dans la plateforme pour contrôler l’usage et alerter.</p>
+      <p><strong>Espace concessionnaire</strong> : suivi de leurs véhicules, avances et versements.</p>
+    </div>
+    <div class="tile vert">
+      <div class="ico">{{ico:chart}}</div>
+      <h4>Croissance</h4>
+      <p><strong>Industrialisation</strong> avec le développeur (mois 13) : tests, intégration continue, supervision, revue de sécurité.</p>
+      
+      <p><strong>États financiers</strong> : passer des états déjà calculés à la liasse fiscale complète dans TamCar Office.</p>
+      <p><strong>Passage à l’échelle</strong> : dimensionnement de la base, de l’hébergement des tuiles et du temps réel.</p>
+    </div>
+  </div>
+
+  <div class="callout ajout" style="margin-top:14px">
+    <strong>Risques techniques identifiés.</strong> Dépendance à quelques services gérés (Supabase, Vercel) : atténuée par l’usage de PostgreSQL standard et de code portable. Dépendance aux cartes de
+    Mapbox : atténuée par la bascule en cours. Concentration de la connaissance du code sur le fondateur : atténuée par le développeur du mois 13, la documentation et les tests. Un seul prestataire de paiement à la fois :
+    la couche d’intégration est isolée pour pouvoir en changer.
+  </div>
+  <div class="rnote">Les trackers GPS ne sont pas intégrés à la plateforme aujourd’hui : le suivi en direct repose sur le téléphone du chauffeur (backlog « Traccar »). L’ordre des chantiers est ma proposition.</div>
+
+  <div class="pn"><b><!--PN--></b> sur <!--TOTAL--></div>
+</section>

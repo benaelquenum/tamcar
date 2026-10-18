@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>TamCar — Résumé du plan d’affaires</title>
+<link rel="stylesheet" href="plan.css">
+<style>
+  /* ---- Spécifique au résumé ---- */
+  .page { padding-bottom: 20mm; }
+  .res p, .res .card p, .res .tile p, .res .callout { font-size: 10.3px; line-height: 1.5; }
+  .res .liste li { font-size: 10.2px; }
+  .res .tile { padding: 12px 13px 11px; }
+  .res .tile .ico { width: 30px; height: 30px; margin-bottom: 7px; }
+  .res .tile h4 { font-size: 11.8px; margin-bottom: 4px; }
+  .res .tile p { font-size: 9.9px; }
+  .res .h-serif { margin-top: 12px; font-size: 15px; }
+  .res .row { margin-top: 9px; }
+  .res .kpi { padding: 13px 10px 10px; }
+  .res .kpi b { font-size: 21px; }
+  .res .kpi span { font-size: 9.6px; }
+  .res .kpi small { font-size: 8.4px; }
+  .res .tbl { font-size: 9.6px; }
+  .res .tbl th { padding: 7px 6px; font-size: 8px; }
+  .res .tbl td { padding: 6px 6px; }
+  .res .src { font-size: 8px; margin-top: 6px; }
+  .res .hero h2 { font-size: 22px; }
+  .res .hero p { font-size: 11px; }
+  .res .eyebrow { margin-bottom: 7px; }
+  .res .bar4 { height: 30px; }
+  .res .bar4 > div { font-size: 9.4px; }
+  .res .sec-head { margin-bottom: 0; }
+  .res .stack { display: flex; height: 26px; border-radius: 999px; overflow: hidden; margin: 6px 0 4px; }
+  .res .stack > div { display: flex; align-items: center; justify-content: center; font: 700 9px var(--sans); color: #fff; white-space: nowrap; }
+  .res .stack .s1 { background: linear-gradient(90deg, #0E7490, #14B8A6); }
+  .res .stack .s2 { background: linear-gradient(90deg, #B45309, #F59E0B); }
+  .res .stack .s3 { background: linear-gradient(90deg, #6D28D9, #8B5CF6); }
+  .res .stack .s4 { background: linear-gradient(90deg, #153C97, #2251CB); }
+  .res .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font: 400 8.8px var(--sans); color: var(--sourdine); }
+  .res .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+  .res .flow .st { font-size: 8.8px; }
+  .res .fin { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+  .res .note { font: 400 8.6px/1.4 var(--sans); color: var(--sourdine); margin-top: 6px; text-align: left; }
+  .res .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 9px; }
+  .res .trio3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin-top: 9px; }
+  .res .trio3 > .tile, .res .duo > .tile { height: 100%; }
+  .res .big { font: 800 26px/1 'Segoe UI Black', var(--sans); color: var(--bleu); }
+</style>
+</head>
+<body class="res">
+
+<!-- ============================================================ 1 · COUVERTURE -->
+<section class="page cover">
+  <span class="cercle" style="left:-70mm; top:58mm; width:140mm; height:140mm"></span>
+  <span class="cercle" style="left:-30mm; top:34mm; width:190mm; height:190mm; opacity:.6"></span>
+  <img class="filigrane-logo" src="assets/icone-blanc.png" alt="">
+
+  <header>
+    <img src="assets/logo-blanc.png" alt="TamCar">
+    <span>Résumé du plan d’affaires · 2026</span>
+  </header>
+
+  <div class="titre">
+    <span class="pill">Synthèse pour investisseur · Bénin</span>
+    <h1>Ta course est claire.<em>Ta course éclair.</em></h1>
+    <p class="lead">
+      TamCar est une <strong>plateforme numérique de transport urbain de personnes</strong>,
+      qui met en relation des <strong>passagers</strong> et des
+      <strong>conducteurs partenaires</strong> au Bénin. Ce résumé présente en dix pages
+      l’essentiel du plan d’affaires complet : le projet, le marché, le modèle économique,
+      les prévisions financières, les risques et l’opération proposée.
+    </p>
+  </div>
+
+  <div class="objectifs">
+    <div class="rule-label">Marchés &amp; financement</div>
+    <div class="trio">
+      <div>
+        <h6>01 · Marchés</h6>
+        <b>2 pôles</b>
+        <strong>Cotonou &amp; Grand Nokoué, Parakou</strong>
+        <small>lancement progressif</small>
+      </div>
+      <div>
+        <h6>02 · Capital recherché</h6>
+        <b>15 000 000 F</b>
+        <strong>investissement recherché</strong>
+        <small>démarrage et développement</small>
+      </div>
+      <div>
+        <h6>03 · Gouvernance</h6>
+        <b>60 / 40</b>
+        <strong>fondateur / investisseur</strong>
+        <small>répartition proposée</small>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div>
+      <strong>Tam Logistics</strong> — société à responsabilité limitée à constituer<br>
+      Document établi le 1er octobre 2026.
+    </div>
+    <div class="lieu"><strong>COTONOU</strong><br>République du Bénin</div>
+  </footer>
+</section>
+
+<!-- ============================================================ 2 · LE PROJET -->
+<section class="page" data-filigrane="TamCar">
+  <div class="sec-head"><span class="num">01</span><h1>Le projet</h1></div>
+
+  <div class="row c-6-4 stretch">
+    <div class="hero">
+      <span class="pill">En une phrase</span>
+      <h2>Un transport urbain <em>au prix annoncé</em>, où le conducteur peut devenir propriétaire.</h2>
+      <p>
+        TamCar met en relation des <strong>passagers</strong> et des <strong>conducteurs partenaires</strong>
+        à Cotonou, dans le Grand Nokoué et à Parakou, avec cinq catégories de véhicules : moto, tricycle
+        et voitures Essentiel, Confort et VIP.
+      </p>
+      <p>
+        Le prix est <strong>annoncé avant la course</strong> (grille base, kilomètres, minutes, sans majoration
+        dynamique) et la part du conducteur est affichée avant qu’il accepte. Une épargne,
+        <strong>TamAssur</strong>, et une <strong>cession progressive du véhicule</strong> inscrivent la relation dans la durée.
+      </p>
+    </div>
+
+    <div class="card">
+      <div class="eyebrow">{{ico:layers}} Une plateforme déjà conçue</div>
+      <div class="mini-kpi">
+        <div class="kpi"><b>92</b><span>écrans</span></div>
+        <div class="kpi"><b>4</b><span>applications web</span></div>
+        <div class="kpi"><b>60</b><span>tables de données</span></div>
+        <div class="kpi"><b>2</b><span>coques Android</span></div>
+      </div>
+      <p style="margin-top:9px">
+        Conçue et financée à hauteur de <strong>4 000 000 F</strong> par la structure du fondateur, qui en détient
+        les droits ; elle est apportée en nature à la société d’exploitation.
+      </p>
+    </div>
+  </div>
+
+  <div class="h-serif">Le constat de départ</div>
+  <p class="intro" style="margin-top:6px">
+    TamCar est porté par <strong>Térence Quenum</strong>, juriste d’affaires et passionné de solutions numériques.
+    Le projet est né de près de quatre ans d’usage de Yango et de Gozem, et d’échanges réguliers avec des passagers
+    et des conducteurs.
+  </p>
+
+  <div class="trio3">
+    <div class="tile rouille">
+      <div class="ico" style="background:var(--fond-rouille);color:var(--rouille)">{{ico:alert}}</div>
+      <h4>Des prix instables</h4>
+      <p>Sur le relevé du 30 septembre 2026, Yango affiche 800 F puis 900 F pour la même course. Une même course a été payée 1 900 F un jour et 500 F un autre.</p>
+    </div>
+    <div class="tile rouille">
+      <div class="ico" style="background:var(--fond-rouille);color:var(--rouille)">{{ico:coins}}</div>
+      <h4>Une commission lourde</h4>
+      <p>Environ 40 % sur les voitures et 13 % sur les motos, selon les conducteurs, payée depuis un portefeuille prépayé : leur trésorerie est pressée des deux côtés.</p>
+    </div>
+    <div class="tile rouille">
+      <div class="ico" style="background:var(--fond-rouille);color:var(--rouille)">{{ico:flag}}</div>
+      <h4>Aucune perspective</h4>
+      <p>Ni épargne, ni accès à la propriété. Un véhicule loué se paie de l’ordre de 10 000 F par jour, six jours sur sept, quel que soit le gain ; les conducteurs sont rarement assurés.</p>
+    </div>
+  </div>
+
+  <div class="h-serif">La réponse de TamCar</div>
+  <div class="trio3">
+    <div class="tile">
+      <div class="ico">{{ico:target}}</div>
+      <h4>Un prix annoncé et stable</h4>
+      <p>Grille connue, sans majoration dynamique. Le conducteur voit le prix total et sa part avant d’accepter.</p>
+    </div>
+    <div class="tile vert">
+      <div class="ico">{{ico:shield}}</div>
+      <h4>TamAssur · épargne</h4>
+      <p>1 000 F par jour de travail (26 jours par mois au plus) : <strong>300 000 F</strong> après une année complète. Conçu avec NSIA Assurances.</p>
+    </div>
+    <div class="tile violet">
+      <div class="ico">{{ico:car}}</div>
+      <h4>Devenir propriétaire</h4>
+      <p>Une part de chaque course alimente un fonds de rachat : cession du véhicule après 24 mois (moto) ou 36 mois (tricycle).</p>
+    </div>
+  </div>
+  <div class="trio3">
+    <div class="tile or">
+      <div class="ico">{{ico:users}}</div>
+      <h4>Entrer sans capital</h4>
+      <p>Grâce aux véhicules des concessionnaires partenaires, un conducteur sans véhicule rejoint la plateforme.</p>
+    </div>
+    <div class="tile">
+      <div class="ico">{{ico:calendar}}</div>
+      <h4>TamPass et commande à l’avance</h4>
+      <p>Courses récurrentes programmées, réservation 30 minutes à l’avance, rappels et annulation gratuite jusqu’à 10 minutes avant le départ.</p>
+    </div>
+    <div class="tile vert">
+      <div class="ico">{{ico:message}}</div>
+      <h4>Commande par WhatsApp</h4>
+      <p>Tout le processus de commande, du départ au suivi, passe par WhatsApp, déjà utilisé par toute la population connectée.</p>
+    </div>
+  </div>
+
+  <div class="pn"><b><!--PN--></b> sur <!--TOTAL--></div>
+</section>
+
+<!-- ============================================================ 3 · MARCHÉ -->
+<section class="page" data-filigrane="TamCar">
+  <div class="sec-head"><span class="num">02</span><h1>Marché et concurrence</h1></div>
+
+  <div class="row c-6-4 stretch">
+    <div class="hero">
+      <span class="pill">Contexte</span>
+      <h2>Un marché porté par les <em>grands programmes de mobilité</em> du Grand Nokoué.</h2>
+      <p>
+        La Banque mondiale (200 M$, approuvés le 20 mai 2025) et la BAII (200 M$, approuvés en septembre 2025)
+        financent la mobilité urbaine de cinq communes : Cotonou, Porto-Novo, Sèmè-Podji, Abomey-Calavi et Ouidah.
+        Le programme vise les bus, les bateaux et la professionnalisation des opérateurs informels.
+      </p>
+      <p>
+        Les plateformes de réservation n’en font pas partie : TamCar se place sur le <strong>dernier kilomètre</strong>
+        et sur les déplacements que le transport collectif ne couvre pas.
+      </p>
+    </div>
+    <div class="card">
+      <div class="eyebrow">{{ico:chart}} Repères</div>
+      <div class="mini-kpi">
+        <div class="kpi"><b>65 000</b><span>zémidjans visés</span></div>
+        <div class="kpi"><b>≈ 3 M</b><span>habitants en 2030</span></div>
+        <div class="kpi"><b>≈ 11 %</b><span>du budget des ménages</span></div>
+        <div class="kpi"><b>10,6 M</b><span>abonnements Internet mobile</span></div>
+      </div>
+      <p class="src">Banque mondiale, BAII ; INStaD (indice des prix, base 2014) ; ARCEP Bénin, T3 2025 : abonnements, non personnes distinctes.</p>
+    </div>
+  </div>
+
+  <div class="duo">
+    <div class="tile">
+      <div class="ico">{{ico:map-pin}}</div>
+      <h4>Cotonou et le Grand Nokoué · premier marché</h4>
+      <p>Densité de courses la plus forte. La plateforme est déjà paramétrée sur des zones de service de 15 km de rayon qui couvrent les centres des cinq communes : l’extension demande du recrutement, pas du développement.</p>
+    </div>
+    <div class="tile violet">
+      <div class="ico">{{ico:map}}</div>
+      <h4>Parakou · second marché</h4>
+      <p>Étude de marché terminée : population jeune, bonne bancarisation, smartphones répandus. Aucune plateforme n’y opère ; Gozem s’est retiré faute de conducteurs. TamCar lève cette contrainte avec les véhicules de concessionnaires.</p>
+    </div>
+  </div>
+
+  <div class="h-serif">Prix comparés · relevé du 30 septembre 2026</div>
+  <p class="intro" style="margin-top:6px">
+    Un trajet de 6,1 km, relevé sur les trois applications, avec une correspondance de catégories établie par le fondateur. Prix en FCFA.
+  </p>
+  <table class="tbl serre" style="margin-top:8px">
+    <thead>
+      <tr><th>Catégorie</th><th>Yango</th><th>Gozem</th><th class="tam">TamCar</th><th>TamCar vs Yango</th><th>TamCar vs Gozem</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Moto</td><td>300</td><td>721</td><td class="tam">450</td><td class="plus">+50 %</td><td class="moins">−38 %</td></tr>
+      <tr><td>Voiture ordinaire<small>TamCar : Essentiel</small></td><td>800 puis 900</td><td>1 400</td><td class="tam">1 000</td><td class="plus">+11 à +25 %</td><td class="moins">−29 %</td></tr>
+      <tr><td>Voiture climatisée<small>TamCar : Confort</small></td><td>1 000</td><td>1 025 et 1 625</td><td class="tam">1 350</td><td class="plus">+35 %</td><td>−17 % à +32 %</td></tr>
+      <tr><td>Voiture confort<small>TamCar : VIP</small></td><td>1 100</td><td>1 875</td><td class="tam">1 800</td><td class="plus">+64 %</td><td class="moins">−4 %</td></tr>
+      <tr><td>Tricycle<small>TamCar : Tricycle</small></td><td>500, puis indisponible</td><td>925</td><td class="tam">850</td><td class="plus">+70 %</td><td class="moins">−8 %</td></tr>
+    </tbody>
+  </table>
+  <p class="note">Zémidjan traditionnel : 300, 350 et 400 F selon les offres relevées.</p>
+
+  <div class="trio3">
+    <div class="tile">
+      <div class="ico">{{ico:target}}</div>
+      <h4>Pas le moins cher, volontairement</h4>
+      <p>TamCar construit ses tarifs à partir des coûts et du revenu nécessaire au conducteur. Face à Yango il est plus cher de 11 à 25 % sur la voiture ordinaire ; face à Gozem, moins cher de 8 à 38 %.</p>
+    </div>
+    <div class="tile vert">
+      <div class="ico">{{ico:lock}}</div>
+      <h4>La stabilité se lit dans le relevé</h4>
+      <p>Pendant le relevé, Yango est passé de 800 F à 900 F pour la même course. Les prix de TamCar sortent d’une grille connue : base, kilomètres, minutes.</p>
+    </div>
+    <div class="tile violet">
+      <div class="ico">{{ico:users}}</div>
+      <h4>Trois axes de différenciation</h4>
+      <p>Transparence tarifaire, prévisibilité de la relation avec les conducteurs, fidélisation économique (TamAssur, cession du véhicule, TamPass).</p>
+    </div>
+  </div>
+
+  <div class="pn"><b><!--PN--></b> sur <!--TOTAL--></div>
+</section>
+
+<!-- ============================================================ 4 · MODÈLE ÉCONOMIQUE -->
+<section class="page" data-filigrane="TamCar">
+  <div class="sec-head"><span class="num">03</span><h1>Modèle économique</h1></div>
+
+  <p class="intro">
+    Chaque course est répartie entre les acteurs selon une clé unique, intégrée aux règles de calcul de la plateforme.
+    TamCar perçoit <strong>20 % du prix payé par le client, quel que soit le véhicule</strong> ; sur les véhicules qu’elle possède,
+    elle perçoit en plus la part propriétaire.
+  </p>
+
+  <div class="h-serif">Sur 1 000 F payés par le client</div>
+  <p class="bar-label" style="margin-top:8px">Véhicule fourni (concessionnaire ou flotte TamCar)</p>
+  <div class="bar4">
+    <div class="c1" style="width:40%">Conducteur 400 F</div>
+    <div class="c2" style="width:10%">Rachat 100</div>
+    <div class="c3" style="width:30%">Propriétaire 300 F</div>
+    <div class="c4" style="width:20%">TamCar 200 F</div>
+  </div>
+  <p class="bar-label">Véhicule du conducteur</p>
+  <div class="bar4">
+    <div class="c1" style="width:80%">Conducteur 800 F</div>
+    <div class="c4" style="width:20%">TamCar 200 F</div>
+  </div>
+  <p class="note">Le carburant, l’entretien et les réparations sont à la charge du conducteur. Sur les 100 F du fonds de rachat, 70 F reviennent au conducteur et TamCar en gère 30 F la première année, puis 20 F.</p>
+
+  <div class="h-serif">Ce qui revient à TamCar</div>
+  <table class="tbl serre" style="margin-top:8px">
+    <thead>
+      <tr><th>Pour 1 000 F payés (année 1)</th><th>Véhicule d’un concessionnaire</th><th>Véhicule de la flotte TamCar</th><th>Véhicule du conducteur</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Part de la plateforme</td><td>200</td><td>200</td><td>200</td></tr>
+      <tr><td>Part propriétaire</td><td>0</td><td>300</td><td>0</td></tr>
+      <tr><td>Gestion du fonds de rachat</td><td>30</td><td>30</td><td>0</td></tr>
+      <tr class="cle"><td>Total pour TamCar</td><td><strong>230</strong></td><td><strong>530</strong></td><td><strong>200</strong></td></tr>
+      <tr><td>Tricycle à l’objectif <small>234 000 F de courses par mois</small></td><td>53 800 F par mois</td><td>124 000 F par mois</td><td>46 800 F par mois</td></tr>
+    </tbody>
+  </table>
+
+  <div class="duo">
+    <div>
+      <div class="rule-label" style="margin-top:0">Grille de prix · FCFA</div>
+      <table class="tbl serre" style="margin-top:7px">
+        <thead><tr><th>Catégorie</th><th>Minimum</th><th>3 km</th><th>6,1 km</th><th>12 km</th></tr></thead>
+        <tbody>
+          <tr><td>Moto</td><td>200</td><td>200</td><td>450</td><td>800</td></tr>
+          <tr><td>Tricycle</td><td>350</td><td>550</td><td>850</td><td>1 400</td></tr>
+          <tr><td>Essentiel</td><td>500</td><td>700</td><td>1 000</td><td>1 950</td></tr>
+          <tr><td>Confort</td><td>700</td><td>950</td><td>1 350</td><td>2 600</td></tr>
+          <tr><td>VIP</td><td>950</td><td>1 250</td><td>1 800</td><td>3 400</td></tr>
+        </tbody>
+      </table>
+      <p class="note">Arrondis au 50 F supérieur, hors climatisation en option.</p>
+    </div>
+    <div>
+      <div class="rule-label" style="margin-top:0">Objectif de volume par véhicule · FCFA</div>
+      <table class="tbl serre" style="margin-top:7px">
+        <thead><tr><th>Par véhicule</th><th>Voiture</th><th>Tricycle</th><th>Moto</th></tr></thead>
+        <tbody>
+          <tr><td>Par jour</td><td>15 000</td><td>9 000</td><td>4 500</td></tr>
+          <tr><td>Par mois (26 jours)</td><td>390 000</td><td>234 000</td><td>117 000</td></tr>
+        </tbody>
+      </table>
+      <p class="note">L’objectif est un montant de courses réalisées, avant carburant et avant la part de TamCar ; il est du même ordre que les recettes d’un zémidjan (2 000 à 6 000 F par jour avant carburant).</p>
+    </div>
+  </div>
+
+  <div class="h-serif">Quatre sources de revenus</div>
+  <div class="row c-4" style="margin-top:9px">
+    <div class="dom"><b>La part de chaque course <em>20 %</em></b><p>Sur toutes les courses réalisées avec la plateforme, quel que soit le véhicule : la source de base.</p></div>
+    <div class="dom v"><b>La part propriétaire <em>30 %</em></b><p>Sur les véhicules que TamCar possède. Elle sert d’abord à rembourser leur achat.</p></div>
+    <div class="dom g"><b>Le fonds de rachat <em>3 %, puis 2 %</em></b><p>Quote-part de gestion du prix, retracée ligne par ligne, sur la poche mise de côté pour le conducteur.</p></div>
+    <div class="dom o"><b>Les services <em>en plus</em></b><p>TamPass et services complémentaires : ils s’ajoutent au plan et ne figurent pas dans la trésorerie.</p></div>
+  </div>
+
+  <div class="pn"><b><!--PN--></b> sur <!--TOTAL--></div>
+</section>
+
+<!-- ============================================================ 5 · FLOTTE -->
+<section class="page" data-filigrane="TamCar">
+  <div class="sec-head"><span class="num">04</span><h1>Flotte, concessionnaires et cession</h1></div>
+
+  <div class="row c-6-4 stretch">
+    <div class="hero">
+      <span class="pill">La flotte de TamCar</span>
+      <h2>Dix tricycles en deux lots, <em>cinq motos en test.</em></h2>
+      <p>
+        <strong>Cas A :</strong> 10 tricycles neufs à 1 500 000 F, livrés en deux lots de cinq (Cotonou au mois 1, Parakou au mois 7),
+        soit 15 000 000 F. <strong>Cas B :</strong> le cas A et 5 motos neuves à 550 000 F à Cotonou dès le mois 1, soit 17 750 000 F,
+        avec un bilan à trois mois.
+      </p>
+      <p>
+        Le fournisseur accorde <strong>30 % à la commande</strong> de chaque lot et le <strong>solde sur 18 mois, sans intérêts</strong>.
+        Les véhicules sont neufs et vendus avec la garantie du fournisseur.
+      </p>
+    </div>
+    <div class="card">
+      <div class="eyebrow violet">{{ico:car}} Le choix : le cas B</div>
+      <p>
+        Le plan retient le cas B pour la levée de 15 M : pour 2,75 M de plus, il rapporte 9,7 M de revenus supplémentaires sur 36 mois
+        et supprime les 13 mois de trésorerie négative du cas A.
+      </p>
+    </div>
+  </div>
+
+  <div class="h-serif">L’achat des véhicules</div>
+  <table class="tbl serre" style="margin-top:8px">
+    <thead><tr><th>Montants en FCFA</th><th>Un tricycle</th><th>Un lot de 5</th><th>Les 10 tricycles</th><th>5 motos (cas B)</th></tr></thead>
+    <tbody>
+      <tr><td>Prix d’achat</td><td>1 500 000</td><td>7 500 000</td><td>15 000 000</td><td>2 750 000</td></tr>
+      <tr><td>À la commande (30 %)</td><td>450 000</td><td>2 250 000</td><td>4 500 000</td><td>825 000</td></tr>
+      <tr><td>Solde (70 %) sur 18 mois</td><td>1 050 000</td><td>5 250 000</td><td>10 500 000</td><td>1 925 000</td></tr>
+      <tr class="cle"><td>Mensualité pendant 18 mois</td><td>58 333</td><td>291 667</td><td>583 333</td><td>106 944</td></tr>
+    </tbody>
+  </table>
+
+  <div class="h-serif">Un tricycle qui atteint l’objectif</div>
+  <div class="row c-4" style="margin-top:9px">
+    <div class="kpi"><b>234 000 F</b><span>de courses par mois</span><small>9 000 F par jour, 26 jours</small></div>
+    <div class="kpi"><b>124 000 F</b><span>reviennent à TamCar</span><small>53 % : plateforme, propriétaire, rachat</small></div>
+    <div class="kpi"><b>58 333 F</b><span>de mensualité d’achat</span><small>payée par le véhicule lui-même</small></div>
+    <div class="kpi"><b>4 233 F</b><span>par jour couvrent la mensualité</span><small>47 % de l’objectif</small></div>
+  </div>
+  <p class="note">Pour une moto : 117 000 F de courses par mois, 62 010 F à TamCar, mensualité de 21 389 F couverte dès 1 552 F par jour (34 % de l’objectif).</p>
+
+  <div class="duo">
+    <div class="tile vert">
+      <div class="ico">{{ico:check}}</div>
+      <h4>La cession au conducteur</h4>
+      <p>Le tricycle est cédé après <strong>36 mois</strong>, la moto après <strong>24 mois</strong>. Le fonds de rachat du conducteur en est le prix (valeur résiduelle). TamCar ne garde alors que ses 20 % : environ 468 000 F par mois pour les 10 tricycles, plus 117 000 F pour les 5 motos.</p>
+    </div>
+    <div class="tile rouille">
+      <div class="ico" style="background:var(--fond-rouille);color:var(--rouille)">{{ico:lock}}</div>
+      <h4>L’actif est protégé</h4>
+      <p>Réserve de propriété écrite et publiée au RCCM, assurance, inspections et <strong>tracker GPS certifié ANATT</strong> payé par TamCar jusqu’à la cession. TamCar possède 15 à 17,75 M F de véhicules.</p>
+    </div>
+  </div>
+
+  <div class="h-serif">Les véhicules de concessionnaires : croître sans capital</div>
+  <table class="tbl serre" style="margin-top:8px">
+    <thead><tr><th>Un véhicule de plus, sur 36 mois (FCFA)</th><th>Tricycle de TamCar</th><th>Tricycle de concessionnaire</th></tr></thead>
+    <tbody>
+      <tr><td>Recettes de TamCar</td><td>4 346 550</td><td>1 854 450</td></tr>
+      <tr><td>Charges liées au véhicule</td><td>791 210</td><td>249 210</td></tr>
+      <tr><td>Achat du véhicule</td><td>1 500 000</td><td>—</td></tr>
+      <tr class="cle"><td>Résultat sur 36 mois</td><td>2 055 340</td><td>1 530 240</td></tr>
+      <tr><td>Recettes pour 1 F de charges, achat compris</td><td>1,9</td><td>5,7</td></tr>
+      <tr><td>Capital à engager</td><td>450 000 puis 18 mensualités</td><td>0</td></tr>
+    </tbody>
+  </table>
+  <p class="note">Deux tricycles de concessionnaires dès le mois 1 font passer le point bas du cas A de −1,18 M à +0,37 M, sans mois de trésorerie négative. Le tracker est à la charge du concessionnaire.</p>
+
+  <div class="pn"><b><!--PN--></b> sur <!--TOTAL--></div>
+</section>
+
+<!-- ============================================================ 6 · COMMERCIAL ET ORGANISATION -->
+<section class="page" data-filigrane="TamCar">
+  <div class="sec-head"><span class="num">05</span><h1>Lancement, commercial et organisation</h1></div>
+
+  <div class="h-serif" style="margin-top:12px">Un lancement progressif</div>
+  <div class="flow" style="margin-top:9px">
+    <div class="st"><i>Mois 0 · décembre 2026</i><b>Levée et commande</b>Constitution de la société, levée de 15 M, commande du premier lot.</div>
+    <div class="st"><i>Mois 1 · janvier 2027</i><b>Cotonou</b>Cinq tricycles (cas B : et cinq motos), trackers posés, lancement.</div>
+    <div class="st"><i>Mois 7 · juillet 2027</i><b>Parakou</b>Second lot, après des chauffeurs engagés en nombre suffisant.</div>
+    <div class="st"><i>Mois 13 · janvier 2028</i><b>Bilan de Parakou</b>Maintien, ajustement ou redéploiement vers le Sud.</div>
+  </div>
+
+  <div class="duo">
+    <div class="card">
+      <div class="eyebrow">{{ico:car}} Acquérir les conducteurs</div>
+      <ul class="liste">
+        <li>Prospection directe, réseaux de conducteurs, recommandations, partenaires locaux.</li>
+        <li>Concessionnaires partenaires : un véhicule mis à disposition, 30 % du prix de chaque course.</li>
+        <li>Conducteurs aux couleurs de TamCar : casque, gilet et capote personnalisés.</li>
+        <li>Aucune promesse de revenu minimum : le conducteur est rémunéré à la course, sur des prix annoncés.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="eyebrow violet">{{ico:smartphone}} Acquérir les passagers</div>
+      <ul class="liste">
+        <li>Commande par WhatsApp, installable sans boutique d’applications.</li>
+        <li>Réseaux sociaux, démonstrations, opérations de lancement dans les zones d’activité.</li>
+        <li>Code promo sur la première course des nouveaux clients, plafonné et suivi.</li>
+        <li>Parrainage, TamPass et notation du conducteur pour la récurrence.</li>
+      </ul>
+    </div>
+  </div>
+
+  <p class="note" style="margin-top:8px">
+    Budget de lancement : 1 000 000 F de marketing (photo, vidéo, sponsoring) et 150 000 F de graphisme au mois 0. Le plan ne budgète ni publicité payante, ni marketing de rue, ni radio.
+  </p>
+
+  <div class="h-serif">Une équipe légère</div>
+  <div class="card profil" style="margin-top:9px; padding:13px 16px">
+    <figure class="portrait">
+      <img src="assets/terence-quenum.jpg" alt="Térence Quenum">
+      <figcaption><strong>Térence Quenum</strong><span>Fondateur et gérant</span></figcaption>
+    </figure>
+    <div class="profil-texte">
+      <p>
+        Juriste d’affaires, il a conçu et développé la plateforme : <strong>quatre applications, 60 tables, 225 fonctions métier</strong>
+        et environ 44 000 lignes de code TypeScript et 44 000 lignes de SQL. Il assure la direction générale, la stratégie, les relations avec
+        les investisseurs et les partenaires, ainsi que la maintenance technique la première année.
+      </p>
+      <p>
+        Il ne perçoit <strong>aucun salaire en première phase</strong> d’exploitation : sa contribution est apportée au développement de l’entreprise,
+        pour préserver la trésorerie de lancement.
+      </p>
+    </div>
+  </div>
+
+  <table class="tbl serre" style="margin-top:10px">
+    <thead><tr><th>Fonction</th><th>Rémunération (brut)</th><th>Début</th></tr></thead>
+    <tbody>
+      <tr><td>Responsable Opérations · Cotonou</td><td>3 % du volume local, plafonné à 150 000 F par mois</td><td>Mois 1</td></tr>
+      <tr><td>Responsable Opérations · Parakou</td><td>3 % du volume local, plafonné à 150 000 F par mois</td><td>Mois 7</td></tr>
+      <tr><td>Secrétaire-comptable</td><td>100 000 F par mois (comptabilité formelle confiée à un professionnel externe)</td><td>Mois 1</td></tr>
+      <tr><td>Développeur</td><td>200 000 F par mois, en prestation ou en recrutement</td><td>Mois 13</td></tr>
+      <tr><td>Infrastructure technique</td><td>75 000 F par mois (base de données, hébergement, cartes, notifications)</td><td>Mois 1</td></tr>
+    </tbody>
+  </table>
+  <p class="note">Les rémunérations des responsables d’opérations sont variables : elles suivent le volume de leur ville. Au scénario de base, elles représentent environ 70 200 F par mois pour les deux.</p>
+
+  <div class="pn"><b><!--PN--></b> sur <!--TOTAL--></div>
+</section>
+
+<!-- ============================================================ 7 · PRÉVISIONS FINANCIÈRES -->
+<section class="page" data-filigrane="TamCar">
+  <div class="sec-head"><span class="num">06</span><h1>Prévisions financières</h1></div>
+
+  <p class="intro">
+    Le modèle chiffre la trésorerie de TamCar sur <strong>36 mois</strong> à partir d’une levée de 15 M F encaissée avant le mois 1.
+    Trois scénarios d’activité (volume de courses par véhicule) et deux cas de flotte (A : dix tricycles ; B : dix tricycles et cinq motos).
+  </p>
+
+  <table class="tbl serre" style="margin-top:9px">
+    <thead><tr><th>Scénario de base · 36 mois (FCFA)</th><th>Cas A · 10 tricycles</th><th>Cas B · A + 5 motos</th></tr></thead>
+    <tbody>
+      <tr><td>Levée de fonds</td><td>15 000 000</td><td>15 000 000</td></tr>
+      <tr><td>Revenus générés par la flotte pour TamCar</td><td>39 815 100</td><td>48 435 075</td></tr>
+      <tr><td>Fonds de rachat encaissés à la cession des motos</td><td>—</td><td>1 032 525</td></tr>
+      <tr><td>Achat de la flotte (avances et mensualités)</td><td>15 000 000</td><td>17 750 000</td></tr>
+      <tr><td>Investissements de démarrage hors flotte</td><td>5 050 000</td><td>5 050 000</td></tr>
+      <tr><td>Charges d’exploitation cumulées</td><td>32 166 000</td><td>34 229 025</td></tr>
+      <tr class="cle"><td>Trésorerie à 36 mois</td><td><strong>+ 2 599 100</strong></td><td><strong>+ 7 438 575</strong></td></tr>
+      <tr><td>Point bas de trésorerie</td><td>− 1 181 267 (mois 19)</td><td>+ 103 200 (mois 19)</td></tr>
+      <tr><td>Mois de trésorerie négative</td><td>13</td><td>0</td></tr>
+      <tr><td>Volume nécessaire pour ne jamais passer sous zéro</td><td>107 % de l’objectif</td><td>100 % de l’objectif</td></tr>
+    </tbody>
+  </table>
+
+  <div class="h-serif">Trésorerie cumulée, mois par mois</div>
+  <div class="schema" style="margin-top:8px; padding:8px 10px">{{chart:tresorerie}}</div>
+  <p class="note">Trait plein : scénario de base (9 000 F par tricycle et par jour). Pointillé : scénario prudent (7 000 F). Cas A en bleu et rouille, cas B en vert et or.</p>
+
+  <div class="h-serif">Trois scénarios d’activité</div>
+  <table class="tbl serre" style="margin-top:8px">
+    <thead>
+      <tr><th>Scénario (volume par jour)</th><th>Revenus mensuels de TamCar, an 1 (A · B)</th><th>Point bas · A</th><th>Mois 36 · A</th><th>Point bas · B</th><th>Mois 36 · B</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Prudent<small>7 000 F tricycle · 3 500 F moto</small></td><td>964 600 · 1 205 750</td><td>− 6 570 000</td><td>− 5 741 700</td><td>− 5 099 400</td><td>− 2 908 775</td></tr>
+      <tr class="cle"><td>De base<small>9 000 F tricycle · 4 500 F moto</small></td><td>1 240 200 · 1 550 250</td><td>− 1 181 267</td><td>+ 2 599 100</td><td>+ 103 200</td><td>+ 7 438 575</td></tr>
+      <tr><td>Ambitieux<small>12 000 F tricycle · 6 000 F moto</small></td><td>1 653 600 · 2 067 000</td><td>+ 2 886 667</td><td>+ 15 110 300</td><td>+ 3 007 222</td><td>+ 22 959 600</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout" style="margin-top:9px">
+    <strong>Lecture.</strong> Ces montants sont les résultats du modèle, à hypothèses données : ils ne sont ni des revenus garantis ni une promesse de rendement.
+    Le cas B garde une trésorerie positive chaque mois ; le cas A montre un creux de 1,2 M F, assumé, que des véhicules de concessionnaires suppriment.
+    Le scénario prudent n’est couvert par la levée dans aucun des deux cas : le pilotage par seuils (page 9) y répond.
+  </div>
+
+  <div class="pn"><b><!--PN--></b> sur <!--TOTAL--></div>
+</section>
+
+<!-- ============================================================ 8 · CHARGES ET FONDS -->
+<section class="page" data-filigrane="TamCar">
+  <div class="sec-head"><span class="num">07</span><h1>Charges et utilisation des fonds</h1></div>
+
+  <div class="row c-1-1 stretch">
+    <div>
+      <div class="rule-label" style="margin-top:0">Investissements de démarrage · 5 050 000 F</div>
+      <table class="tbl serre" style="margin-top:7px">
+        <thead><tr><th>Poste</th><th>Montant (FCFA)</th><th>Quand</th></tr></thead>
+        <tbody>
+          <tr><td>Formalisation de la société</td><td>1 500 000</td><td>Mois 0</td></tr>
+          <tr><td>ANATT : autorisation</td><td>300 000</td><td>Mois 0</td></tr>
+          <tr><td>Juriste : contrats</td><td>100 000</td><td>Mois 0</td></tr>
+          <tr><td>Bureau de Cotonou</td><td>500 000</td><td>Mois 0</td></tr>
+          <tr><td>Bureau de Parakou</td><td>500 000</td><td>Mois 6</td></tr>
+          <tr><td>Informatique et mobilier</td><td>1 000 000</td><td>Mois 0</td></tr>
+          <tr><td>Marketing de lancement</td><td>1 000 000</td><td>Mois 0</td></tr>
+          <tr><td>Graphisme</td><td>150 000</td><td>Mois 0</td></tr>
+        </tbody>
+      </table>
+      <p class="note">L’apport en nature de la plateforme (4 M F de dépenses documentées) n’est pas un décaissement.</p>
+    </div>
+    <div>
+      <div class="rule-label" style="margin-top:0">Charges d’exploitation · 36 mois, cas A</div>
+      <table class="tbl serre" style="margin-top:7px">
+        <thead><tr><th>Poste</th><th>FCFA</th><th>Part</th></tr></thead>
+        <tbody>
+          <tr><td>Équipe et outils techniques</td><td>14 281 500</td><td>44,4 %</td></tr>
+          <tr><td>Locaux : bureaux, électricité, eau</td><td>6 900 000</td><td>21,5 %</td></tr>
+          <tr><td>Assurances</td><td>3 862 500</td><td>12,0 %</td></tr>
+          <tr><td>Trackers GPS certifiés ANATT</td><td>3 170 000</td><td>9,9 %</td></tr>
+          <tr><td>Prestataires et promotions</td><td>2 100 000</td><td>6,5 %</td></tr>
+          <tr><td>Impôts et taxes</td><td>1 292 000</td><td>4,0 %</td></tr>
+          <tr><td>Autorisation ANATT (renouvelée)</td><td>560 000</td><td>1,7 %</td></tr>
+        </tbody>
+      </table>
+      <p class="note">Soit environ 950 700 F par mois à régime établi, dont la moitié pour l’équipe.</p>
+    </div>
+  </div>
+
+  <div class="callout vert" style="margin-top:9px">
+    <strong>Ce que TamCar ne paie pas :</strong> le carburant, l’entretien et les réparations (au conducteur) ; les frais de paiement Mobile Money (au client).
+    Les rémunérations sont indiquées en brut. Aucune exonération fiscale n’est comptée : l’impôt minimum (254 000 F par an) et la patente sont chiffrés.
+  </div>
+
+  <div class="h-serif">Comment les 15 M F sont utilisés</div>
+  <p class="intro" style="margin-top:6px">Utilisation de la levée jusqu’au point bas de trésorerie (mois 19), scénario de base.</p>
+
+  <p class="bar-label" style="margin-top:8px">Cas B <small>· réserve restante : 0,1 M F</small></p>
+  <div class="stack">
+    <div class="s1" style="width:33.3%">Investissements 5,0 M</div>
+    <div class="s2" style="width:35.3%">Avances véhicules 5,3 M</div>
+    <div class="s3" style="width:30%">Déficit d’exploitation 4,5 M</div>
+    <div class="s4" style="width:1.4%"></div>
+  </div>
+  <p class="bar-label">Cas A <small>· creux de 1,2 M F au-delà de la levée</small></p>
+  <div class="stack">
+    <div class="s1" style="width:30.5%">Investissements 5,0 M</div>
+    <div class="s2" style="width:27.4%">Avances véhicules 4,5 M</div>
+    <div class="s3" style="width:40.2%">Déficit d’exploitation 6,6 M</div>
+    <div class="s4" style="width:1.9%"></div>
+  </div>
+  <div class="legend">
+    <span><i style="background:#14B8A6"></i>Investissements de démarrage</span>
+    <span><i style="background:#F59E0B"></i>Avances sur véhicules (30 %)</span>
+    <span><i style="background:#8B5CF6"></i>Déficit net d’exploitation (charges et mensualités moins revenus)</span>
+  </div>
+
+  <div class="h-serif">Si la levée est inférieure à 15 M F</div>
+  <p class="intro" style="margin-top:6px">
+    Les charges restent les mêmes, les achats de véhicules sont réduits et des véhicules de concessionnaires les remplacent : le plus petit nombre qui évite tout mois de trésorerie négative.
+  </p>
+  <table class="tbl serre" style="margin-top:8px">
+    <thead><tr><th></th><th>15 M · cas B</th><th>10 M</th><th>5 M</th></tr></thead>
+    <tbody>
+      <tr><td>Flotte achetée par TamCar</td><td>10 tricycles et 5 motos</td><td>5 tricycles à Cotonou</td><td>Aucun véhicule</td></tr>
+      <tr><td>Véhicules de concessionnaires</td><td>—</td><td>7 tricycles dès le mois 1</td><td>15 tricycles dès le mois 1</td></tr>
+      <tr><td>Parakou</td><td>Ouverte au mois 7</td><td>Non ouverte</td><td>Non ouverte</td></tr>
+      <tr class="cle"><td>Point bas · trésorerie au mois 36</td><td>+0,1 M · +7,4 M</td><td>+0,6 M · +3,7 M</td><td>+0,3 M · +0,7 M</td></tr>
+    </tbody>
+  </table>
+
+  <div class="pn"><b><!--PN--></b> sur <!--TOTAL--></div>
+</section>
+
+<!-- ============================================================ 9 · RISQUES -->
+<section class="page" data-filigrane="TamCar">
+  <div class="sec-head"><span class="num">08</span><h1>Risques et pilotage</h1></div>
+
+  <p class="intro">
+    Une étude juridique des risques a été réalisée, une cartographie établie et une stratégie de réduction élaborée pour chacun.
+    Elles se traduisent en procédures, en clauses contractuelles et en indicateurs de suivi.
+  </p>
+
+  <table class="tbl txt serre" style="margin-top:9px">
+    <thead><tr><th style="width:24%">Risque</th><th style="width:76%">Mesures prévues</th></tr></thead>
+    <tbody>
+      <tr><td>Adoption à Parakou</td><td>Lancement pilote avec cinq unités, responsable local rémunéré à la performance, ouverture conditionnée à un nombre suffisant de conducteurs engagés, redéploiement possible vers le Sud après six mois.</td></tr>
+      <tr><td>Activité d’un conducteur</td><td>Plancher contractuel de 9 000 F par jour (moyenne glissante), avertissement puis réaffectation du véhicule.</td></tr>
+      <tr><td>Commissions en espèces</td><td>Commission débitée automatiquement du compte du conducteur ; mise en ligne bloquée au-delà de 5 000 F de dette jusqu’à la recharge Mobile Money.</td></tr>
+      <tr><td>Casse, vol, détournement</td><td>Assurance, inspections, tracker GPS certifié ANATT, réserve de propriété écrite et publiée au RCCM.</td></tr>
+      <tr><td>Concurrence sur les prix</td><td>Prix annoncé, sans hausse dynamique, TamAssur et cession du véhicule ; toute réponse est évaluée sur ses effets sur les marges, pas par une baisse automatique.</td></tr>
+      <tr><td>Réglementation et fiscalité</td><td>Autorisation de transporteur et trackers de l’ANATT, conformité OHADA des actes, validation juridique des conditions d’utilisation, fiscalité chiffrée sans exonération.</td></tr>
+      <tr><td>Test des motos (cas B)</td><td>Bilan à trois mois sans arrêt automatique : extension dès 50 % de l’objectif, poursuite entre 34 et 50 %, plan correctif en dessous.</td></tr>
+      <tr><td>Panne de la plateforme</td><td>Suivi de disponibilité, paiement en espèces maintenu en secours, développeur rémunéré dès le mois 13.</td></tr>
+      <tr><td>Équipe restreinte</td><td>Secrétaire-comptable dès le lancement, responsable des opérations dans chaque ville, procédures documentées.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="h-serif">Ce que coûtent les principaux risques</div>
+  <p class="intro" style="margin-top:6px">Point bas de trésorerie avec 15 M F de levée ; un point bas négatif se lit comme un besoin de financement en plus de la levée.</p>
+  <table class="tbl serre" style="margin-top:8px">
+    <thead><tr><th>Événement</th><th>Point bas · cas A</th><th>Point bas · cas B</th></tr></thead>
+    <tbody>
+      <tr class="cle"><td>Scénario de base</td><td>−1,2 M (mois 19)</td><td>+0,1 M (mois 19)</td></tr>
+      <tr><td>Tricycles à 7 000 F par jour au lieu de 9 000 F</td><td>−6,6 M (mois 25)</td><td>−5,1 M (mois 19)</td></tr>
+      <tr><td>Parakou à 50 % de l’objectif, sans redéploiement</td><td>−6,5 M (mois 31)</td><td>−3,5 M (mois 19)</td></tr>
+      <tr><td>Parakou à 50 % pendant 6 mois, puis redéploiement au Sud</td><td>−2,8 M (mois 19)</td><td>−1,5 M (mois 19)</td></tr>
+      <tr><td>Les cinq motos ne font aucune course</td><td>—</td><td>−5,3 M (mois 19)</td></tr>
+    </tbody>
+  </table>
+
+  <div class="h-serif">Un pilotage par seuils</div>
+  <div class="trio3">
+    <div class="tile">
+      <div class="ico">{{ico:target}}</div>
+      <h4>L’activité décide</h4>
+      <p>Tout se joue sur le volume par véhicule : <strong>107 %</strong> de l’objectif dans le cas A, <strong>100 %</strong> dans le cas B pour ne jamais passer sous zéro. Sous ce niveau deux mois de suite, un plan correctif est déclenché.</p>
+    </div>
+    <div class="tile vert">
+      <div class="ico">{{ico:map-pin}}</div>
+      <h4>Parakou se décide au mois 13</h4>
+      <p>Maintien au-dessus de 9 000 F par jour et par tricycle ; ajustement entre 4 233 et 9 000 F ; redéploiement à examiner en dessous de 4 233 F. La décision vaut environ 3,7 M F.</p>
+    </div>
+    <div class="tile violet">
+      <div class="ico">{{ico:users}}</div>
+      <h4>Les concessionnaires comblent les creux</h4>
+      <p>Chaque tricycle de concessionnaire rapporte 53 800 F par mois à TamCar pour 7 000 F de charges. Avec 9 tricycles dès le mois 1, même le scénario prudent du cas A est couvert.</p>
+    </div>
+  </div>
+
+  <div class="pn"><b><!--PN--></b> sur <!--TOTAL--></div>
+</section>
+
+<!-- ============================================================ 10 · CALENDRIER ET OPÉRATION -->
+<section class="page" data-filigrane="TamCar">
+  <div class="sec-head"><span class="num">09</span><h1>Calendrier et opération proposée</h1></div>
+
+  <div class="h-serif" style="margin-top:12px">Les jalons du plan</div>
+  <div class="flow" style="margin-top:9px">
+    <div class="st"><i>Décembre 2026</i><b>Levée et commande</b>Constitution, apport de la plateforme, avance de 30 % sur le premier lot.</div>
+    <div class="st"><i>Janvier 2027</i><b>Lancement</b>Livraison à Cotonou, trackers posés, premières courses.</div>
+    <div class="st"><i>Mars 2027</i><b>Bilan des motos</b>Cas B : extension dès 50 % de l’objectif.</div>
+    <div class="st"><i>Juillet 2027</i><b>Parakou</b>Second lot de cinq tricycles et bureau.</div>
+    <div class="st"><i>Janvier 2028</i><b>Bilan de Parakou</b>Maintien ou redéploiement ; développeur dès ce mois.</div>
+  </div>
+  <div class="flow vert" style="margin-top:12px">
+    <div class="st"><i>Juin 2028</i><b>Premier lot payé</b>Dernière mensualité du lot 1.</div>
+    <div class="st"><i>Décembre 2028</i><b>Flotte remboursée</b>Dernière mensualité du lot 2.</div>
+    <div class="st"><i>Janvier 2029</i><b>Cession des motos</b>TamCar encaisse le fonds de rachat, puis garde 20 %.</div>
+    <div class="st"><i>2030</i><b>Cession des tricycles</b>Janvier et juillet 2030 ; deuxième cycle de flotte.</div>
+  </div>
+
+  <div class="h-serif">Où en est TamCar au 30 septembre 2026</div>
+  <div class="duo">
+    <div class="card" style="border-top:3px solid var(--vert)">
+      <div class="eyebrow vert">{{ico:check}} Déjà en place</div>
+      <ul class="liste">
+        <li>La plateforme : passagers (web installable, APK Android), conducteurs, back-office.</li>
+        <li>Une grille de prix sans majoration dynamique, relevée le 30 septembre 2026.</li>
+        <li>Les conditions d’utilisation et la politique de confidentialité.</li>
+        <li>Un forfait de 1 500 000 F avec l’expert-comptable, commissaire aux apports.</li>
+        <li>La dénomination Tam Logistics, disponible.</li>
+        <li>Prix, paiement échelonné, garantie et livraison des véhicules, confirmés avec le fournisseur.</li>
+      </ul>
+    </div>
+    <div class="card" style="border-top:3px solid var(--bleu)">
+      <div class="eyebrow">{{ico:clipboard}} Avant le mois 1</div>
+      <ul class="liste">
+        <li>Constituer la SARL et formaliser l’apport de la plateforme.</li>
+        <li>Boucler la levée et commander le premier lot au plus tard début décembre 2026.</li>
+        <li>Obtenir l’autorisation ANATT et les trackers certifiés.</li>
+        <li>Mettre en service le paiement automatique par Mobile Money (FeexPay).</li>
+        <li>Intégrer la commande de bout en bout par WhatsApp.</li>
+        <li>Aménager le bureau de Cotonou ; recruter la secrétaire-comptable et le responsable des opérations.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="h-serif">L’opération proposée</div>
+  <div class="row c-6-4 stretch" style="margin-top:9px">
+    <div class="hero" style="padding:15px 18px">
+      <span class="pill">15 000 000 FCFA</span>
+      <h2 style="font-size:19px; margin:8px 0 6px">Un investissement en numéraire, <em>pour 40 % du capital.</em></h2>
+      <p style="font-size:10.4px; margin-top:6px">
+        L’investisseur verse 15 000 000 F pour <strong>40 %</strong> ; la structure du fondateur détient <strong>60 %</strong> par l’apport en nature de la plateforme.
+        Cette répartition suppose une plateforme évaluée à 22 500 000 F : la valeur totale des apports est de 37 500 000 F.
+      </p>
+      <p style="font-size:10.4px">
+        L’investissement finance le démarrage et le développement ; il ne rémunère pas l’apport de la plateforme.
+      </p>
+    </div>
+    <div class="card" style="padding:13px 15px">
+      <div class="eyebrow violet">{{ico:landmark}} Évaluation de l’apport</div>
+      <p>Un <strong>commissaire aux apports</strong> arrête la valeur (forfait de 1 500 000 F).</p>
+      <p style="margin-top:6px">Trois méthodes la situent : coût historique <strong>50 M</strong> (2 000 heures), coût de reproduction <strong>20 M</strong>, valeur d’usage <strong>29,7 M</strong>.</p>
+    </div>
+  </div>
+
+  <div class="callout" style="margin-top:9px">
+    <strong>Gouvernance.</strong> La répartition du capital, les droits des associés, les pouvoirs du gérant, les décisions soumises à approbation collective et les mécanismes de protection des associés
+    sont formalisés dans les statuts de Tam Logistics (SARL à constituer) et dans un pacte d’associés. Le plan d’affaires complet (86 pages), le dossier d’évaluation de l’apport et le modèle de trésorerie
+    sont remis à l’investisseur.
+  </div>
+
+  <div class="pn"><b><!--PN--></b> sur <!--TOTAL--></div>
+</section>
+
+</body>
+</html>
