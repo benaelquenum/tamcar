@@ -6,5 +6,6 @@ Rien n'est écrasé : chaque version remplacée est rangée ici, la nouvelle ver
 |---|---|---|
 | `2026-10-03_plan_affaires_v5/` | Plan d'affaires v5 (html, pdf, version de révision), résumé v5, `sources_v5.zip` (générateurs, parties, modèle de trésorerie) | `plan-affaires/TamCar_plan_affaires_v6*.{html,pdf}` |
 | `2026-10-11_classeur_resultat_complet_v1/` | Classeur de projections v1 (cas A / cas B, dix tricycles) | `TamCar_resultat_complet_v2.xlsx` (racine) |
+| `2026-10-11_contrat_partenaire_vehicule/` | Projet de contrat de partenariat du 11 octobre (docx, pdf, générateur) : fonds de rachat 7 % puis 8 %, maintien en flotte de 3 points | `TamCar_contrat_partenariat_vehicule.{docx,pdf}` (racine), générateur `plan-affaires/build_contrat_partenariat.js` |
 
 Le résumé v5 sert de gabarit aux pages 1 à 3 du résumé v6 : `plan-affaires/resume_base_v5.html`.
