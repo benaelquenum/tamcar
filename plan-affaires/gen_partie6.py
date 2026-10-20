@@ -143,7 +143,7 @@ pages.append(f'''<!-- ==========================================================
   <div class="row c-1-1 stretch ajout" style="margin-top:14px">
     <div class="callout">
       <strong>Dans le premier cas,</strong> le conducteur paie lui-même son carburant sur ses 400 F. À la fin du contrat (36 mois pour une voiture
-      Essentiel, 48 pour un Confort, 36 pour un tricycle, 12 pour une moto), le véhicule lui revient <strong>sans paiement supplémentaire</strong>.
+      Essentiel, 48 pour un Confort, 24 pour un tricycle, 12 pour une moto), le véhicule lui revient <strong>sans paiement supplémentaire</strong>.
     </div>
     <div class="callout vert">
       <strong>Dans le second cas,</strong> il n’y a ni propriétaire à rémunérer, ni fonds de

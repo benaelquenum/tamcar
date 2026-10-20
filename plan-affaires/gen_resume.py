@@ -72,7 +72,7 @@ remp('<div class="kpi"><b>60</b><span>tables de données</span></div>', f'<div c
 remp("""1 000 F par jour de travail (26 jours par mois au plus) : <strong>300 000 F</strong> après une année complète. Conçu avec NSIA Assurances.""",
      """1 000 F par jour de travail : TamCar garantit au conducteur <strong>250 000 F</strong> par année de cotisation. Conçu avec NSIA Assurances.""")
 remp("""Une part de chaque course alimente un fonds de rachat : cession du véhicule après 24 mois (moto) ou 36 mois (tricycle).""",
-     """À la fin du contrat, le véhicule revient au conducteur sans paiement supplémentaire : 12 mois (moto), 36 mois (tricycle, Essentiel) ou 48 mois (Confort).""")
+     """À la fin du contrat, le véhicule revient au conducteur sans paiement supplémentaire : 12 mois (moto), 24 mois (tricycle), 36 mois (Essentiel) ou 48 mois (Confort).""")
 remp("""Grâce aux véhicules des concessionnaires partenaires, un conducteur sans véhicule rejoint la plateforme.""",
      """Grâce aux véhicules des propriétaires partenaires, un conducteur sans véhicule rejoint la plateforme.""")
 remp("""<h4>Parakou · second marché</h4>
@@ -201,7 +201,7 @@ p5 = f'''<!-- ============================================================ 5 · 
     <thead><tr><th>Véhicule</th><th>Plancher par jour</th><th>Objectif par jour</th><th>Part nette de TamCar par mois</th><th>Capital engagé</th><th>Récupération</th></tr></thead>
     <tbody>
       {ligne_veh('Moto', 'de TamCar · cédée à 12 mois', VM, M.OBJ_MOTO, PART['moto'], f'{n(M.PRIX_MOTO)} comptant', f'{D1(M.PRIX_MOTO / PART["moto"])} mois')}
-      {ligne_veh('Tricycle', 'de TamCar · cédé à 36 mois', VT, M.OBJ_TRI, PART['tri'], f'{n(M.PRIX_TRICYCLE)} (30 % + {M.MENS_TRICYCLE} mois)', f'{D1(M.PRIX_TRICYCLE / PART["tri"])} mois')}
+      {ligne_veh('Tricycle', 'de TamCar · cédé à 24 mois', VT, M.OBJ_TRI, PART['tri'], f'{n(M.PRIX_TRICYCLE)} (30 % + {M.MENS_TRICYCLE} mois)', f'{D1(M.PRIX_TRICYCLE / PART["tri"])} mois')}
       {ligne_veh('Voiture Essentiel', 'Afrik Group ou tiers · 36 mois', E, M.OBJ_ESS, PART['ess'], 'aucun', f'{n(M.FRAIS_ENTREE)} F d’entrée')}
       {ligne_veh('Voiture Confort', 'Afrik Group ou tiers · 48 mois', C, M.OBJ_CONF, PART['conf'], 'aucun', f'{n(M.FRAIS_ENTREE)} F d’entrée')}
     </tbody>
@@ -213,7 +213,7 @@ p5 = f'''<!-- ============================================================ 5 · 
     <div class="tile vert">
       <div class="ico">{{{{ico:check}}}}</div>
       <h4>La cession au conducteur</h4>
-      <p>Le véhicule revient au conducteur <strong>sans paiement supplémentaire</strong> : à 12 mois pour une moto, 36 mois pour un tricycle ou une Essentiel, 48 mois pour une Confort. TamCar garde alors 20 % du volume, contre 25 % à 55 % pendant le contrat. L’équilibre du plan repose donc sur les voitures, pas sur les motos.</p>
+      <p>Le véhicule revient au conducteur <strong>sans paiement supplémentaire</strong> : à 12 mois pour une moto, 24 mois pour un tricycle, 36 mois pour une Essentiel, 48 mois pour une Confort. TamCar garde alors 20 % du volume, contre 25 % à 55 % pendant le contrat. L’équilibre du plan repose donc sur les voitures, pas sur les motos.</p>
     </div>
     <div class="tile rouille">
       <div class="ico" style="background:var(--fond-rouille);color:var(--rouille)">{{{{ico:lock}}}}</div>
@@ -534,8 +534,8 @@ p10 = f'''<!-- ============================================================ 10 �
   </div>
   <div class="flow vert" style="margin-top:12px">
     <div class="st"><i>Avril 2028</i><b>Impôt minimum</b>254 000 F.</div>
-    <div class="st"><i>Janvier 2029</i><b>Renouvellement ANATT</b>280 000 F et patente.</div>
-    <div class="st"><i>Janvier 2030</i><b>Cession du tricycle</b>Et des Essentiel d’Afrik Group (36 mois).</div>
+    <div class="st"><i>Janvier 2029</i><b>Renouvellement ANATT</b>280 000 F et patente ; cession du tricycle (24 mois).</div>
+    <div class="st"><i>Janvier 2030</i><b>Cession des Essentiel</b>D’Afrik Group (36 mois).</div>
     <div class="st"><i>Janvier 2031</i><b>Cession des Confort</b>Fin du premier cycle de la flotte.</div>
   </div>
 

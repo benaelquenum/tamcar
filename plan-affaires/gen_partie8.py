@@ -236,7 +236,7 @@ pages.append(f'''<!-- ==========================================================
     <colgroup><col style="width:30%"><col style="width:20%"><col style="width:20%"><col style="width:30%"></colgroup>
     <thead><tr><th>Par véhicule de TamCar, en FCFA</th><th>Année 1</th><th>Années suivantes</th><th>Sur la détention par TamCar</th></tr></thead>
     <tbody>
-      {tr('Tricycle', n(M.h('B17')), n(M.h('B18')), f'{n(M.h("B17") + 2 * M.h("B18"))}<small>36 mois</small>')}
+      {tr('Tricycle', n(M.h('B17')), n(M.h('B18')), f'{n(M.h("B17") + M.h("B18"))}<small>24 mois</small>')}
       {tr('Moto', n(M.h('B19')), '—', f'{n(M.h("B19"))}<small>12 mois, puis cédée</small>')}
     </tbody>
   </table>
@@ -377,7 +377,7 @@ pages.append(f'''<!-- ==========================================================
       comptant, rapportent {n(M.VERS_MOTO * M.JOURS)} F par mois chacune : leur prix est remboursé en {D1(M.PRIX_MOTO / (M.VERS_MOTO * M.JOURS))} mois.
     </div>
     <div class="callout rouille">
-      <strong>Durée de cession.</strong> La moto est cédée au conducteur après 12 mois, le tricycle après 36 mois, la voiture Essentiel après 36 mois
+      <strong>Durée de cession.</strong> La moto est cédée au conducteur après 12 mois, le tricycle après 24 mois, la voiture Essentiel après 36 mois
       et le Confort après 48 mois, sans paiement supplémentaire. À la cession, TamCar ne garde que ses 20 % de plateforme et cesse de payer l’assurance.
     </div>
   </div>
@@ -552,7 +552,7 @@ pages.append(f'''<!-- ==========================================================
       <div class="ico">{{{{ico:landmark}}}}</div>
       <h4>Cession, partenaires et fiscalité</h4>
       <ul class="liste" style="margin-top:0">
-        <li>cession : 12 mois pour la moto, 36 mois pour le tricycle et l’Essentiel, 48 mois pour le Confort, sans paiement supplémentaire ;</li>
+        <li>cession : 12 mois pour la moto, 24 mois pour le tricycle, 36 mois pour l’Essentiel, 48 mois pour le Confort, sans paiement supplémentaire ;</li>
         <li>voitures d’Afrik Group : mise à disposition formalisée dans le contrat partenaire ; assurance, tracker et entretien à leur charge ;</li>
         <li>impôt minimum ({n(M.h('B49'))} F par an) et patente chiffrés en 8.3, sans aucune exonération : {n(M.cat_total('impots'))} F sur 36 mois ;</li>
         <li>au minimum six voitures de tiers recrutées du mois 4 au mois 12 ; frais d’entrée de {n(M.FRAIS_ENTREE)} F par véhicule.</li>

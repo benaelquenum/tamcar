@@ -18,6 +18,7 @@ import { createServerSupabase } from '@/lib/supabase-server';
 import { logout } from '@/app/login/actions';
 import { BannerCarousel, type BannerItem } from '@/components/BannerCarousel';
 import { TamAssurCard } from './TamAssurCard';
+import { TamAssurOptin } from './TamAssurOptin';
 
 type WalletRow = { kind: 'tamcar_credit' | 'tamcar_revenus' | 'tamcar_rachat' | 'tamcar_epargne' | 'tamcar_ops'; balance_fcfa: number };
 type RideRow = {
@@ -127,8 +128,10 @@ export default async function DriverDashboardPage() {
 
   type InsuranceRow = { period: string; amount_fcfa: number; collected_fcfa: number; status: string };
   const insurance = (insuranceData ?? []) as InsuranceRow[];
-  type TamAssurPlan = { min_amount: number; amount: number; fund_pct: number; goal_fcfa: number };
+  type TamAssurPlan = { min_amount: number; amount: number; fund_pct: number; goal_fcfa: number; optional?: boolean; enrolled?: boolean };
   const plan = ((planData ?? []) as TamAssurPlan[])[0] ?? { min_amount: 1000, amount: 1000, fund_pct: 50, goal_fcfa: 500000 };
+  // Facultatif pour un chauffeur propriétaire (obligatoire en Cession) : invitation tant qu'il n'a pas adhéré
+  const tamassurInvite = !!plan.optional && !plan.enrolled;
   // Date « aujourd'hui » côté Porto-Novo (UTC+1, pas de DST au Bénin)
   const pnToday = new Date(Date.now() + 3_600_000).toISOString().slice(0, 10);
   const insuranceToday = insurance.find((r) => r.period.slice(0, 10) === pnToday) ?? null;
@@ -261,7 +264,10 @@ export default async function DriverDashboardPage() {
           </div>
         </section>
 
-        {/* TamAssur — assurance épargne récupérable (cotisation quotidienne configurable) */}
+        {/* TamAssur — épargne garantie (cotisation quotidienne configurable) ; facultatif pour un chauffeur propriétaire */}
+        {tamassurInvite ? (
+          <TamAssurOptin amount={plan.min_amount} goal={plan.goal_fcfa} mode="invite" />
+        ) : (
         <TamAssurCard
           amount={plan.amount}
           minAmount={plan.min_amount}
@@ -283,6 +289,8 @@ export default async function DriverDashboardPage() {
               : null
           }
         />
+        )}
+        {plan.optional && plan.enrolled && <TamAssurOptin amount={plan.amount} goal={plan.goal_fcfa} mode="leave" />}
 
         {/* Véhicule */}
         {vehicleInfo && (

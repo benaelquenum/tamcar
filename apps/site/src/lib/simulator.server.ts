@@ -18,7 +18,7 @@ type Category = { label: string; floor: number; months: number; note?: string };
 
 const CATEGORIES: Record<CategoryId, Category> = {
   moto: { label: 'Moto', floor: 5_850, months: 12 },
-  tricycle: { label: 'Tricycle', floor: 10_000, months: 36 },
+  tricycle: { label: 'Tricycle', floor: 10_000, months: 24 },
   essentiel: { label: 'Voiture Essentiel', floor: 13_700, months: 36 },
   confort: { label: 'Voiture Confort', floor: 16_700, months: 48 },
   vip: {

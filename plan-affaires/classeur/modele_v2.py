@@ -65,6 +65,10 @@ def construire(dest=V2, surcharges=None, source=V1):
     note(71, "30 % propriétaire (TamCar) + 20 % plateforme + 5 % fonds de rachat qui revient à TamCar ; l'autre moitié du fonds (5 %) est le fonds du conducteur")
     note(72, "Idem : 55 %")
 
+    # ------------------------------------------------------------------ Hypothèses : tricycle cédé à 24 mois (décision du 2026-10-21)
+    H["B74"] = 24
+    note(74, "Terence (2026-10-21) : 2 ans pour le tricycle (garantie TamAssur de 500 000 F à 24 mois, qui est aussi le terme) ; assurance et tracker payés à l'achat puis au 1er anniversaire seulement ; 20 % de commission ensuite")
+
     # ------------------------------------------------------------------ Hypothèses : planchers corrigés (2026-10-20)
     H["B45"], H["B46"], H["B60"], H["B61"] = 10000, 5850, 13700, 16700
     note(45, "Objectif du jour du tricycle 6 000 F (versement 5 000 F + TamAssur 1 000 F) = 60 % du volume : 10 000 F (décision du 2026-10-20) ; sert au responsable des opérations")
@@ -196,6 +200,11 @@ def construire(dest=V2, surcharges=None, source=V1):
             fin_somme = f"IF({k}$4>={HY}$B$59,{HY}$B$57*{HY}$B$60+{HY}$B$58*{HY}$B$61,0))"
             v = _remplacer(v, fin_somme, fin_somme[:-1] + f"+{k}87*{HY}$B$60+{k}88*{HY}$B$61+{k}89*{HY}$B$45+{k}90*{HY}$B$46)", f"M33b {k}")
             M.cell(33, c).value = v
+        # tricycle cédé à 24 mois : plus d'assurance ni de tracker au 2e anniversaire (mois 25)
+        for r_ in (48, 50):
+            v = M.cell(r_, c).value
+            if isinstance(v, str) and "-24)*$G$7:$AQ$7)" in v:
+                M.cell(r_, c).value = _remplacer(v, f"+SUMPRODUCT(($G$4:$AQ$4={k}$4-24)*$G$7:$AQ$7)", "", f"M{r_} {k}")
         # frais d'entrée (remplace l'avance remboursée)
         M.cell(37, c).value = (f"={ENTREE}*(N({k}7)+N({k}8)+IF({k}$4={HY}$B$59,{HY}$B$57+{HY}$B$58,0)+{k}91)"
                                if c > 7 else "=0")

@@ -308,7 +308,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
         items: [
           '**L’en-tête** : statut, formule, téléphone, date d’enrôlement, permis, pièce d’identité, état de la vérification (KYC), véhicule affecté.',
           '**La photo officielle** : téléverser la photo du chauffeur ; elle est traitée automatiquement (détourage, cadrage) avant d’être affichée aux clients.',
-          '**Contrat de cession et versement** (formule Cession) : versement quotidien et objectif du jour, versements reçus hors application, date de début, jours non travaillés, fin prévue du contrat (durée propre au véhicule : moto 12 mois, tricycle 3 ans, Essentiel 3 ans, Confort 4 ans, VIP 5 ans) et fonds de rachat à régler en fin de contrat.',
+          '**Contrat de cession et versement** (formule Cession) : versement quotidien et objectif du jour, versements reçus hors application, date de début, jours non travaillés, fin prévue du contrat (durée propre au véhicule : moto 12 mois, tricycle 2 ans, Essentiel 3 ans, Confort 4 ans, VIP 5 ans) et fonds de rachat à régler en fin de contrat.',
           '**Depuis l’enrôlement** : courses terminées et annulées, volume, argent gagné, fonds de rachat, note, avertissements, épargne TamAssur nette.',
           '**Chronologie complète** : tout ce qui s’est passé (courses, mouvements d’argent, avertissements, SOS…), filtrable par type.',
         ],
@@ -754,6 +754,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
         items: [
           'Le chauffeur n’a pu demander son retrait qu’à un **palier** : **12 mois pour la moto (250 000 F)**, **24 mois pour le tricycle et les voitures (500 000 F)**, puis **250 000 F de plus à chaque année de contrat accomplie** jusqu’au terme (36 mois : 750 000 F ; 48 : 1 000 000 F ; 60 : 1 250 000 F). Il retire à chaque palier ou attend le terme pour tout retirer. Il faut l’épargne garantie du palier (retraits déjà faits déduits) et un **compte à jour** (aucune dette). Un véhicule dont la durée de contrat sort du cadre de sa catégorie ne se retire qu’au terme du contrat, au prorata.',
           'Le montant est déjà réservé sur son épargne. **Rien n’est viré automatiquement.**',
+          '**TamAssur est obligatoire en formule Cession et facultatif pour un chauffeur propriétaire** : il y adhère (ou s’en retire) depuis son tableau de bord. S’il s’en retire alors qu’il a de l’épargne, une alerte « Sortie TamAssur » arrive ici : l’épargne constituée lui est restituée sous 90 jours, comme un retrait.',
           'Sur chaque cotisation de 1 000 F, **834 F** vont dans l’épargne ; les 166 F restants couvrent les frais du contrat et la garantie de TamCar.',
         ],
       },
@@ -883,7 +884,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
         type: 'table',
         head: ['Quand', 'Ce qui se passe'],
         rows: [
-          ['Chaque soir, 22 h (lundi–samedi)', 'Prélèvement de la cotisation **TamAssur** sur le portefeuille Revenus de chaque chauffeur actif (jamais le dimanche, ni un jour non travaillé déclaré).'],
+          ['Chaque soir, 22 h (lundi–samedi)', 'Prélèvement de la cotisation **TamAssur** sur le portefeuille Revenus des chauffeurs en Cession hors objectif quotidien et des chauffeurs **propriétaires adhérents** (jamais le dimanche, ni un jour non travaillé déclaré).'],
           ['Chaque soir, 23 h 55 (lundi–samedi)', 'Calcul et crédit du **bonus de performance** des chauffeurs qui ont dépassé leur objectif.'],
           ['Chaque nuit, 00 h 10 (lundi–samedi, pour la veille)', 'Clôture du **versement quotidien** des chauffeurs en formule Cession : le manque éventuel sur l’objectif est prélevé sur leur portefeuille Revenus, et l’épargne du jour est créditée (versements hors application compris).'],
           ['Chaque jour, 5 h', '**Sauvegarde** des données, puis contrôle de la **conformité des véhicules** : suspension de ceux dont l’assurance ou la visite technique a expiré, remise en service de ceux régularisés, rappels aux partenaires à 30 et 7 jours de l’échéance.'],

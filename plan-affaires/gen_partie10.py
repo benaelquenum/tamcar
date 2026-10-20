@@ -14,7 +14,7 @@ MIN = M.MIN
 NT = M.N_ESS_T + M.N_CONF_T
 M_CESS_MOTO = 13                     # motos achetées au mois 1, cédées après 12 mois
 M_FIN_MENS = 13                      # dernière mensualité du tricycle (mois 2 à 13)
-M_CESS_TRI = 37
+M_CESS_TRI = 25                      # tricycle acheté au mois 1, cédé après 24 mois
 M_CESS_ESS = 37
 M_CESS_CONF = 49
 M_RECRUT_FIN = next(m for m in range(1, 37) if M.ligne(87)[m] + M.ligne(88)[m] >= NT)
@@ -256,7 +256,7 @@ pages.append(f'''<!-- ==========================================================
       <tr><td>Phase 1</td><td>T3 2026</td><td>Constitution, financement, préparation du bureau, recrutement et préparation technique</td><td class="ajout-col">Octobre à décembre 2026, avant le mois 1 (mois 0 : levée, commandes)</td></tr>
       <tr><td>Phase 2</td><td>T4 2026</td><td>Lancement commercial, mise en circulation de <span class="modif">la flotte de départ ({M.N_VEHICULES_MOIS1} véhicules)</span>, début du recrutement des voitures de tiers et activation des outils opérationnels</td><td class="ajout-col">{Date(1)} à {date(6)} (mois 1 à 6)</td></tr>
       <tr><td>Phase 3</td><td>2027</td><td>Suivi des performances, fin du recrutement des voitures de tiers, décision sur l’extension et consolidation financière</td><td class="ajout-col">{Date(7)} à {date(24)} (mois 7 à 24), dont la décision d’extension en {date(13)}</td></tr>
-      <tr><td>Phase 4</td><td>2028-2029</td><td>Cession des véhicules, évaluation du modèle et préparation de l’expansion</td><td class="ajout-col">{Date(25)} à {date(48)} (mois 25 à 48) : tricycle et Essentiel en {date(M_CESS_TRI)}, Confort en {date(M_CESS_CONF)}</td></tr>
+      <tr><td>Phase 4</td><td>2028-2029</td><td>Cession des véhicules, évaluation du modèle et préparation de l’expansion</td><td class="ajout-col">{Date(25)} à {date(48)} (mois 25 à 48) : tricycle en {date(M_CESS_TRI)}, Essentiel en {date(M_CESS_ESS)}, Confort en {date(M_CESS_CONF)}</td></tr>
     </tbody>
   </table>
 
@@ -274,8 +274,8 @@ jalons = [
     (f'Mois {M_RECRUT_FIN}', 'Six voitures de tiers en service', f'Excédent d’exploitation positif dès {pct(100 * SEUIL_T["ebe"], 0)} des planchers'),
     ('Mois 13', 'Cession des cinq motos ; dernière mensualité du tricycle ; développeur ; renouvellement de l’autorisation ANATT, patente ; décision d’extension (Parakou)', f'{n(DEV)} F par mois ; {n(M.h("B48"))} F de renouvellement ANATT'),
     ('Mois 16', 'Impôt minimum sur les sociétés', f'{n(M.h("B49"))} F'),
-    ('Mois 25', 'Second renouvellement ANATT et patente', f'{n(M.h("B48"))} F + patente'),
-    (f'Mois {M_CESS_TRI}', 'Cession du tricycle et des voitures Essentiel d’Afrik Group (36 mois)', 'TamCar ne garde que 20 % du volume'),
+    ('Mois 25', 'Second renouvellement ANATT et patente ; cession du tricycle (24 mois)', f'{n(M.h("B48"))} F + patente ; TamCar ne garde que 20 % du volume du tricycle'),
+    (f'Mois {M_CESS_ESS}', 'Cession des voitures Essentiel d’Afrik Group (36 mois)', 'TamCar ne garde que 20 % du volume'),
     (f'Mois {M_CESS_CONF}', 'Cession des voitures Confort d’Afrik Group (48 mois)', 'Fin du premier cycle de la flotte'),
 ]
 
@@ -396,7 +396,7 @@ pages.append(f'''<!-- ==========================================================
 
   <div class="callout ajout" style="margin-top:12px">
     <strong>Calendrier retenu : lancement en {date(1)}.</strong> Flotte de départ en {date(1)}, voitures de tiers de {date(4)} à {date(M_RECRUT_FIN)}, cession des motos et dernière mensualité du tricycle en {date(M_CESS_MOTO)},
-    cession du tricycle et des voitures Essentiel en {date(M_CESS_TRI)}, des Confort en {date(M_CESS_CONF)}.
+    cession du tricycle en {date(M_CESS_TRI)}, des voitures Essentiel en {date(M_CESS_ESS)}, des Confort en {date(M_CESS_CONF)}.
   </div>
 
   <div class="pn"><b><!--PN--></b> sur <!--TOTAL--></div>

@@ -216,7 +216,8 @@ export default function CguPage() {
             (moto, tricycle, voiture, toutes catégories) est{' '}
             <strong>prélevée sur le portefeuille « Revenus » du Chauffeur</strong> ;
             le Chauffeur peut choisir un montant supérieur. Aucun prélèvement
-            n’est opéré le dimanche.{' '}
+            n’est opéré le dimanche. <strong>Elle est obligatoire pour le Chauffeur en formule
+            Cession et facultative pour le Chauffeur propriétaire de son véhicule.</strong>{' '}
             <strong>En contrepartie, TamCar garantit au Chauffeur 250 000 FCFA par
             année de cotisation complète</strong>, jusqu’au terme du contrat du
             véhicule : 250 000 FCFA après douze (12) mois pour une moto (durée de
@@ -246,6 +247,16 @@ export default function CguPage() {
             du lundi au samedi, l’objectif est atteint par la part de TamCar sur
             les courses ou complété à minuit par un prélèvement, et les 834 FCFA
             sont placés dans la poche « Épargne TamAssur ».
+          </p>
+                    <p className="mt-sm">
+            <strong>Chauffeur propriétaire de son véhicule.</strong> TamAssur est{' '}
+            <strong>facultatif</strong> : le Chauffeur y adhère depuis l’Application,
+            sans engagement de durée. La cotisation de 1 000 FCFA par jour (du lundi au
+            samedi) est prélevée sur son portefeuille « Revenus » à compter de l’adhésion,
+            et les règles de garantie et de retrait décrites ici s’appliquent selon la
+            catégorie de son véhicule. Il peut arrêter à tout moment : les prélèvements
+            cessent et TamCar lui restitue l’épargne constituée dans un délai maximal de
+            quatre-vingt-dix (90) jours.
           </p>
           <p className="mt-sm">
             <strong>Montage et responsabilités.</strong> TamCar a souscrit, en

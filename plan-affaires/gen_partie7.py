@@ -85,7 +85,7 @@ pages.append(f'''<!-- ==========================================================
       {tr('Véhicules de tiers', f'<span class="ajout">Au minimum <strong>{M.N_ESS_T} Essentiel et {M.N_CONF_T} Confort</strong> de propriétaires tiers, recrutés régulièrement du mois 4 au mois 12. Ils ne demandent aucun capital à TamCar.</span>')}
       {tr('Planchers de recettes', f'<span class="modif">Recettes minimales par véhicule et par jour (objectif du jour « tout compris » ÷ 60 %) : Essentiel {n(M.PLANCHER_ESS)} F, Confort {n(M.PLANCHER_CONF)} F, tricycle {n(M.VOL_TRI)} F, moto {n(M.VOL_MOTO)} F. Le conducteur a déjà pris ses 40 % ; son objectif du jour, cotisation TamAssur de {n(M.COTIS)} F comprise, est de {n(M.OBJ_ESS)} F, {n(M.OBJ_CONF)} F, {n(M.OBJ_TRI)} F et {n(M.OBJ_MOTO)} F (versement : {n(M.VERS_ESS)} F, {n(M.VERS_CONF)} F, {n(M.VERS_TRI)} F et {n(M.VERS_MOTO)} F).</span>')}
       {tr('Part de TamCar', f'<span class="modif"><strong>{pct(100 * M.PART_VOITURE)} du volume</strong> sur les voitures (20 % de plateforme et 5 % : le fonds de rachat est ramené de 10 % à 5 % et ces 5 points reviennent à TamCar), <strong>{pct(100 * M.PART_TRICYCLE)}</strong> sur le tricycle de TamCar (part de propriétaire comprise), objectif de <strong>{n(M.OBJ_MOTO)} F par jour</strong> sur chaque moto de TamCar ({n(M.VERS_MOTO)} F nets). Ces parts sont <strong>nettes de la cotisation TamAssur</strong> : elle est comprise dans l’objectif du conducteur, donc dans les 60 % du volume que se partagent le propriétaire (30 %), le fonds de rachat (5 %) et TamCar (25 %) ; TamCar la règle à NSIA sur sa part. Après la cession : 20 % (commission de plateforme).</span>')}
-      {tr('Durée des contrats', '<span class="modif">Voiture Essentiel : 36 mois. Confort : 48 mois (VIP : 60 mois, non compté). Tricycle : 36 mois. Moto : 12 mois. Le véhicule est cédé au conducteur à l’issue du contrat, sans paiement supplémentaire.</span>')}
+      {tr('Durée des contrats', '<span class="modif">Voiture Essentiel : 36 mois. Confort : 48 mois (VIP : 60 mois, non compté). Tricycle : 24 mois. Moto : 12 mois. Le véhicule est cédé au conducteur à l’issue du contrat, sans paiement supplémentaire.</span>')}
       {tr('Achat des véhicules de TamCar', f'<span class="modif">Tricycle : {n(M.PRIX_TRICYCLE)} F, avance de 30 % ({n(M.ACOMPTE_TRICYCLE)} F) puis {M.MENS_TRICYCLE} mensualités de {n(TRI_MENS)} F sans intérêt (conditions à confirmer par le fournisseur). Motos : {n(M.PRIX_MOTO)} F l’unité, payées comptant.</span>')}
       {tr('Frais d’entrée', f'<span class="modif">{n(M.FRAIS_ENTREE)} F par véhicule déployé (inspection, habillage, kit du conducteur), à la charge de TamCar : {n(M.N_VEHICULES_MOIS1 * M.FRAIS_ENTREE)} F au mois 1, puis chaque véhicule de tiers. Plus d’avance de démarrage remboursable. Assurance, GPS et entretien des voitures : à la charge de leur propriétaire.</span>')}
       {tr('Horizon, cadence, financement', '36 mois ; 26 jours travaillés par mois ; le mois de lancement et le mois d’arrivée d’un véhicule comptent pour moitié. Levée de 15 000 000 FCFA, encaissée avant le mois 1.')}
@@ -209,7 +209,7 @@ pages.append(f'''<!-- ==========================================================
     <thead><tr><th>Véhicule</th><th>Plancher de recettes par jour (F)</th><th>Objectif du conducteur par jour, TamAssur compris (F)</th><th>Part nette de TamCar par mois (F)</th><th>Capital engagé par TamCar</th></tr></thead>
     <tbody>
       {ligne_veh('Moto', 'de TamCar · cédée au bout de 12 mois', M.VOL_MOTO, M.OBJ_MOTO, PART_JOUR['moto'], f'{n(M.PRIX_MOTO)} F comptant')}
-      {ligne_veh('Tricycle', 'de TamCar · cédé au bout de 36 mois', M.VOL_TRI, M.OBJ_TRI, PART_JOUR['tri'], f'{n(M.PRIX_TRICYCLE)} F (30 % + {M.MENS_TRICYCLE} mois)')}
+      {ligne_veh('Tricycle', 'de TamCar · cédé au bout de 24 mois', M.VOL_TRI, M.OBJ_TRI, PART_JOUR['tri'], f'{n(M.PRIX_TRICYCLE)} F (30 % + {M.MENS_TRICYCLE} mois)')}
       {ligne_veh('Voiture Essentiel', 'Afrik Group ou tiers · 36 mois', M.PLANCHER_ESS, M.OBJ_ESS, PART_JOUR['ess'], f'aucun · {n(M.FRAIS_ENTREE)} F d’entrée')}
       {ligne_veh('Voiture Confort', 'Afrik Group ou tiers · 48 mois', M.PLANCHER_CONF, M.OBJ_CONF, PART_JOUR['conf'], f'aucun · {n(M.FRAIS_ENTREE)} F d’entrée')}
     </tbody>
@@ -504,7 +504,7 @@ pages.append(f'''<!-- ==========================================================
       <p>
         À l’issue de la période prévue, les <strong>véhicules de TamCar sont intégralement financés</strong> et les
         conducteurs en deviennent propriétaires conformément aux contrats de cession.
-        <span class="modif">Les motos sont cédées au mois 13, après 12 mois ; le tricycle après 36 mois, au mois 37 ; les voitures après 36 mois
+        <span class="modif">Les motos sont cédées au mois 13, après 12 mois ; le tricycle après 24 mois, au mois 25 ; les voitures après 36 mois
         (Essentiel) ou 48 mois (Confort) de contrat.</span>
       </p>
       <p>
