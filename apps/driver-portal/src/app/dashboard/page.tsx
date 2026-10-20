@@ -138,7 +138,7 @@ export default async function DriverDashboardPage() {
   const wState = ((withdrawalData ?? []) as WithdrawalState[])[0] ?? null;
   const withdrawalHint =
     wState?.eligible_on
-      ? `Retrait dès ${formatFcfa(plan.goal_fcfa)} F, à partir du ${new Date(`${wState.eligible_on}T12:00:00`).toLocaleDateString('fr-FR', { timeZone: 'Africa/Porto-Novo', day: 'numeric', month: 'long', year: 'numeric' })}`
+      ? `Retrait dès ${formatFcfa(wState.goal_fcfa || plan.goal_fcfa)} F, à partir du ${new Date(`${wState.eligible_on}T12:00:00`).toLocaleDateString('fr-FR', { timeZone: 'Africa/Porto-Novo', day: 'numeric', month: 'long', year: 'numeric' })}`
       : `Retrait dès ${formatFcfa(plan.goal_fcfa)} F, ${(wState?.months ?? 24) % 12 === 0 ? `${(wState?.months ?? 24) / 12} an${(wState?.months ?? 24) / 12 > 1 ? 's' : ''}` : `${wState?.months} mois`} après le démarrage`;
 
   type ProgressRow = {

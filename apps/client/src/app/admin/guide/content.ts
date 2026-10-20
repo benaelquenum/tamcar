@@ -613,7 +613,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
           ['Annulation par le client', 'Les frais appliqués quand le client annule alors que le chauffeur est arrivé ou tout proche.'],
           ['TamAssur : cotisation quotidienne', 'Le montant prélevé chaque jour ouvré sur le chauffeur pour son épargne (1 000 F pour tous les véhicules).'],
           ['TamAssur : durée avant retrait', 'Le nombre de mois de cotisation avant que le chauffeur puisse demander son épargne (moto 12, tricycle et voitures 24).'],
-          ['TamAssur : épargne garantie', 'Le montant que TamCar garantit par année de cotisation (250 000 F). La part épargnée de chaque cotisation en découle (834 F sur 1 000 F).'],
+          ['TamAssur : épargne garantie', 'Le montant que TamCar garantit par année de cotisation (250 000 F), par paliers annuels jusqu’au terme du contrat du véhicule. La part épargnée de chaque cotisation en découle (834 F sur 1 000 F).'],
           ['Décès ou invalidité', 'Les taux (50 % avant 12 mois, 100 % ensuite) et la durée de 12 mois appliqués aux cotisations réellement prélevées.'],
           ['Réservations : pénalité d’annulation tardive', 'Le montant (200 F) prélevé à celui qui annule à moins de 10 minutes du départ et reversé en entier à l’autre partie (client ou chauffeur). Gratuit avant. Un désistement du chauffeur relance toujours la recherche et ne le repropose plus pour cette course.'],
           ['Rendez-vous des candidats chauffeurs', 'Le nombre maximal de candidats par créneau de 30 minutes (3 aujourd’hui).'],
@@ -752,7 +752,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
       {
         type: 'ul',
         items: [
-          'Le chauffeur n’a pu demander son retrait qu’après la durée de son véhicule (**12 mois pour la moto, 24 mois pour le tricycle et les voitures**), avec l’épargne garantie atteinte : **250 000 F (moto)** ou **500 000 F (tricycle et voitures)**, et un **compte à jour**.',
+          'Le chauffeur n’a pu demander son retrait qu’à un **palier** : **12 mois pour la moto (250 000 F)**, **24 mois pour le tricycle et les voitures (500 000 F)**, puis **250 000 F de plus à chaque année de contrat accomplie** jusqu’au terme (36 mois : 750 000 F ; 48 : 1 000 000 F ; 60 : 1 250 000 F). Il retire à chaque palier ou attend le terme pour tout retirer. Il faut l’épargne garantie du palier (retraits déjà faits déduits) et un **compte à jour** (aucune dette). Un véhicule dont la durée de contrat sort du cadre de sa catégorie ne se retire qu’au terme du contrat, au prorata.',
           'Le montant est déjà réservé sur son épargne. **Rien n’est viré automatiquement.**',
           'Sur chaque cotisation de 1 000 F, **834 F** vont dans l’épargne ; les 166 F restants couvrent les frais du contrat et la garantie de TamCar.',
         ],

@@ -28,8 +28,18 @@ export type TamassurStatus = {
   debt_fcfa: number;
   late_days: number;
   can_withdraw: boolean;
-  reason: 'pending' | 'not_started' | 'too_early' | 'below_goal' | 'in_arrears' | 'ok';
+  reason: 'pending' | 'not_started' | 'too_early' | 'below_goal' | 'in_arrears' | 'completed' | 'ok';
+  // Épargne garantie par paliers annuels, jusqu'au terme du contrat du véhicule
+  term_months: number;
+  term_goal_fcfa: number;
+  withdrawn_fcfa: number;
 };
+
+/** Suite des paliers : « Puis 250 000 F de plus à chaque année accomplie, jusqu'à 750 000 F à 3 ans. » */
+function ladderTail(st: TamassurStatus): string {
+  if (!st.term_months || st.term_months <= st.months || st.term_goal_fcfa <= 0) return '';
+  return ` Ensuite, chaque année accomplie ajoute un palier, jusqu'à ${formatFcfa(st.term_goal_fcfa)} F au terme de votre contrat (${fmtDuration(st.term_months)}) : vous pouvez retirer à chaque palier ou attendre le terme.`;
+}
 
 function fmtDuration(months: number): string {
   return months % 12 === 0 ? `${months / 12} an${months / 12 > 1 ? 's' : ''}` : `${months} mois`;
@@ -131,7 +141,15 @@ export function WalletView({
                   wallet={epargneWallet}
                   actionLabel="Demander mon retrait"
                   onAction={() => setModal('epargne')}
-                  note="Votre demande est transmise à l'équipe TamCar, qui effectue le virement : jusqu'à 60 jours."
+                  note={`Votre demande est transmise à l'équipe TamCar, qui effectue le virement : jusqu'à 60 jours.${ladderTail(st)}`}
+                />
+              );
+            }
+            if (st?.reason === 'completed') {
+              return (
+                <BigWalletCard
+                  wallet={epargneWallet}
+                  note={`Toute votre épargne garantie (${formatFcfa(st.term_goal_fcfa)} F) a été versée. Merci de votre fidélité.`}
                 />
               );
             }
@@ -159,7 +177,7 @@ export function WalletView({
               return (
                 <BigWalletCard
                   wallet={epargneWallet}
-                  note={`Retrait possible à partir du ${fmtLongDate(st.eligible_on)} (${fmtDuration(st.months)} après le démarrage), dès ${formatFcfa(st.goal_fcfa)} F d'épargne et si votre compte est à jour. Paiement jusqu'à 60 jours après la demande.`}
+                  note={`Retrait possible à partir du ${fmtLongDate(st.eligible_on)} (${fmtDuration(st.months)} après le démarrage), dès ${formatFcfa(st.goal_fcfa)} F d'épargne et si votre compte est à jour. Paiement jusqu'à 60 jours après la demande.${ladderTail(st)}`}
                 />
               );
             }

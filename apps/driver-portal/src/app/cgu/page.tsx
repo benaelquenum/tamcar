@@ -218,9 +218,13 @@ export default function CguPage() {
             le Chauffeur peut choisir un montant supérieur. Aucun prélèvement
             n’est opéré le dimanche.{' '}
             <strong>En contrepartie, TamCar garantit au Chauffeur 250 000 FCFA par
-            année de cotisation complète</strong> : 250 000 FCFA après douze (12)
-            mois pour une moto, 500 000 FCFA après vingt-quatre (24) mois pour un
-            tricycle ou une voiture. Cette garantie est due même si le rendement
+            année de cotisation complète</strong>, jusqu’au terme du contrat du
+            véhicule : 250 000 FCFA après douze (12) mois pour une moto (durée de
+            son contrat) ; pour un tricycle ou une voiture, 500 000 FCFA après
+            vingt-quatre (24) mois, puis 250 000 FCFA de plus à chaque année
+            accomplie jusqu’au terme du contrat (par exemple 750 000 FCFA à trente-six
+            (36) mois, 1 000 000 FCFA à quarante-huit (48) mois, 1 250 000 FCFA à
+            soixante (60) mois). Cette garantie est due même si le rendement
             du contrat d’assurance-épargne ci-dessous est inférieur : TamCar en
             supporte le risque.
           </p>
@@ -253,15 +257,19 @@ export default function CguPage() {
             sur le portefeuille « Revenus » du Chauffeur.
           </p>
           <p className="mt-sm">
-            <strong>Retrait à l’échéance de la durée du véhicule.</strong> Le
-            retrait ne peut être demandé que si <strong>trois conditions</strong>{' '}
-            sont réunies : (i) la durée applicable au véhicule du Chauffeur,
-            soit <strong>douze (12) mois pour une moto et vingt-quatre (24) mois
-            pour un tricycle ou une voiture</strong>, s’est écoulée depuis le
+            <strong>Retrait par paliers annuels.</strong> Le retrait ne peut être
+            demandé que si <strong>trois conditions</strong>{' '}
+            sont réunies : (i) un palier est atteint, c’est-à-dire que la durée
+            applicable au véhicule du Chauffeur, soit{' '}
+            <strong>douze (12) mois pour une moto et vingt-quatre (24) mois
+            pour un tricycle ou une voiture</strong>, puis chaque année accomplie
+            jusqu’au terme du contrat du véhicule, s’est écoulée depuis le
             premier prélèvement de la cotisation ; (ii) l’épargne a atteint{' '}
-            <strong>le montant garanti pour la durée de son véhicule</strong>,
-            soit 250 000 FCFA pour une moto et 500 000 FCFA
-            pour un tricycle ou une voiture ; (iii) le compte du
+            <strong>le montant garanti à ce palier</strong>, sous déduction des
+            retraits déjà effectués, soit 250 000 FCFA par année accomplie
+            (500 000 FCFA à vingt-quatre mois pour un tricycle ou une voiture) ;
+            le Chauffeur retire à chaque palier ou attend le terme de son
+            contrat pour tout retirer en une fois ; (iii) le compte du
             Chauffeur est{' '}
             <strong>à jour</strong>, c’est-à-dire que son portefeuille «
             Revenus » ne présente aucune dette envers TamCar. Si le Chauffeur
@@ -269,7 +277,11 @@ export default function CguPage() {
             retard (dimanches exclus) et le montant à régler : il doit
             rattraper ce retard avant de pouvoir demander le retrait. Le
             Chauffeur peut alors demander le retrait de la totalité de son
-            épargne, qui ne peut être inférieure au montant garanti. La demande est transmise à TamCar, qui effectue le virement
+            épargne, qui ne peut être inférieure au montant garanti au palier. Lorsque le
+            contrat d’un véhicule a une durée différente de celle de sa catégorie
+            en raison de son état, le retrait n’est possible qu’au terme de ce
+            contrat, pour un montant proportionnel à sa durée (250 000 FCFA par
+            année, au prorata des mois). La demande est transmise à TamCar, qui effectue le virement
             manuellement : aucun versement n’est automatique, et TamCar règle le
             retrait au plus tard sous soixante (60) jours à compter de la
             demande.
@@ -300,7 +312,7 @@ export default function CguPage() {
             constituée à la date de fin de la relation (les 834 FCFA placés sur
             chaque cotisation), dans un délai maximal de 90 jours à compter de la
             fin de la relation. Le montant garanti de 250 000 FCFA par année est
-            acquis à l’échéance de la durée du véhicule ; avant cette échéance,
+            acquis à chaque palier annuel atteint ; avant le palier suivant,
             seule l’épargne constituée est restituée. La
             restitution est faite sous déduction des seules sommes que le
             Chauffeur doit à TamCar et, le cas échéant, de la réparation prévue

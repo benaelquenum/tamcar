@@ -113,7 +113,9 @@ export function ContractCard({
 
       {info.tamassur_months ? (
         <p className="mt-sm text-[11px] text-neutral-500">
-          Le retrait de l&apos;épargne TamAssur reste ouvert à {duration(info.tamassur_months)} : c&apos;est une règle distincte de la durée du contrat.
+          Épargne garantie TamAssur : premier retrait à {duration(info.tamassur_months)}
+          {info.months > info.tamassur_months ? `, puis un palier de 250 000 F par année de contrat accomplie jusqu’au terme (${duration(info.months)})` : ''}.
+          Un véhicule dont la durée de contrat sort du cadre de sa catégorie ne se retire qu’au terme, au prorata.
         </p>
       ) : null}
 
