@@ -111,6 +111,31 @@ export async function cancelOfflinePayment(_prev: State, formData: FormData): Pr
   };
 }
 
+/**
+ * Sort du fonds de rachat à la fin du contrat du chauffeur (article 12 du contrat de partenariat) :
+ * restitué au chauffeur (sur ses revenus), sauf faute motivée du chauffeur, auquel cas TamCar le conserve.
+ */
+export async function settleDriverFund(_prev: State, formData: FormData): Promise<State> {
+  const driverId = String(formData.get('driver_id') || '');
+  const fault = String(formData.get('fault') || '') === '1';
+  const note = String(formData.get('note') || '').trim();
+  if (!driverId) return { error: 'Chauffeur introuvable.' };
+  if (fault && !note) return { error: 'Une faute du chauffeur doit être motivée (preuves, observations recueillies sous 8 jours).' };
+  const supabase = createServerSupabase();
+  const { data, error } = await supabase.rpc('admin_settle_driver_fund', { p_driver: driverId, p_fault: fault, p_note: note || null });
+  if (error) return { error: error.message };
+  revalidatePath(`/admin/drivers/${driverId}`);
+  const r = (data ?? {}) as { settled_fcfa?: number; outcome?: string | null };
+  const amount = (r.settled_fcfa ?? 0).toLocaleString('fr-FR');
+  if (!r.settled_fcfa) return { ok: 'Aucun fonds à régler pour ce chauffeur.' };
+  return {
+    ok:
+      r.outcome === 'kept'
+        ? `${amount} F conservés par TamCar (faute du chauffeur). Le motif est enregistré.`
+        : `${amount} F restitués au chauffeur, versés sur ses revenus (une dette éventuelle est ainsi apurée).`,
+  };
+}
+
 /** Date de début de la cession (remise du véhicule). À défaut, le premier prélèvement TamAssur sert de repère. */
 export async function setCessionStart(_prev: State, formData: FormData): Promise<State> {
   const driverId = String(formData.get('driver_id') || '');

@@ -7,10 +7,11 @@ Tous les chiffres viennent du modèle ci-dessous (aux planchers de recettes, 26 
   - part course du propriétaire : 30 % du volume, versée chaque mois ;
   - fonds de rachat : 5 % du volume, versé à la cession du véhicule au chauffeur, sans aucun prélèvement ;
   - frais d'entrée de 30 000 F, senteurs, gadgets et forfaits internet : financés par TamCar sur sa propre part ; plus aucune avance de
-    démarrage demandée (clé du plan d'affaires v6, 19/10/2026 ; la version du 11/10/2026 est archivée) ;
+    démarrage demandée (clé du plan d'affaires v6, 19/10/2026 ; la version du 11/10/2026 est archivée)
+  - planchers de recettes = objectif du jour tout compris ÷ 60 % (décision du 20/10/2026) : Essentiel 13 700 F, Confort 16 700 F. ;
   - les charges du propriétaire (assurance, entretien, visite technique…) ne sont PAS modélisées : elles
     lui appartiennent ; le « coût de revient » conseillé les englobe avec le prix d'achat.
-  - VIP : mêmes prévisions de recettes que le Confort (15 000 F par jour), durée de 5 ans.
+  - VIP : mêmes prévisions de recettes que le Confort (16 700 F par jour), durée de 5 ans.
 """
 import base64
 import io
@@ -25,7 +26,7 @@ CHROME = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
 # ----- À ajuster ici -----------------------------------------------------------------------------
 SOCIETE = "Afric Group Consulting"
 DESTINATAIRE = "M. Ouedraogo"
-DATE = "19 octobre 2026"
+DATE = "20 octobre 2026"
 SIGNATAIRE = "Térence Quenum"
 EMAIL = "terencebeniraphael@gmail.com"   # pas encore d'adresse TamCar
 
@@ -36,9 +37,9 @@ FRAIS_ENTREE = 30_000     # inspection 10 000 + habillage 10 000 + kit chauffeur
 
 # nom, nombre, plancher de recettes/jour, durée (ans), coût de revient conseillé (achat + charges du propriétaire)
 CATS = [
-    dict(nom="Essentiel", n=6, plancher=12_000, ans=3, budget=3_400_000),
-    dict(nom="Confort", n=3, plancher=15_000, ans=4, budget=5_700_000),
-    dict(nom="VIP", n=1, plancher=15_000, ans=5, budget=7_200_000),
+    dict(nom="Essentiel", n=6, plancher=13_700, ans=3, budget=3_400_000),
+    dict(nom="Confort", n=3, plancher=16_700, ans=4, budget=5_700_000),
+    dict(nom="VIP", n=1, plancher=16_700, ans=5, budget=7_200_000),
 ]
 
 

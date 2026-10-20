@@ -1,6 +1,6 @@
 import { ActionForm } from '@/components/ActionForm';
 import { ConfirmSubmit } from '@/components/ConfirmSubmit';
-import { cancelOfflinePayment, declareOfflinePayment, excuseDays, removeExcusedDay, setCessionStart } from './contractActions';
+import { cancelOfflinePayment, declareOfflinePayment, excuseDays, removeExcusedDay, setCessionStart, settleDriverFund } from './contractActions';
 
 export type ContractInfo = {
   application_type: string;
@@ -11,9 +11,15 @@ export type ContractInfo = {
   start_on: string | null;
   manual_start: boolean;
   months: number;
+  tamassur_months?: number;
   extension_days: number;
   end_on: string | null;
   days: Array<{ id: string; day: string; reason: string; note: string | null; closed: boolean }>;
+};
+
+export type DriverFund = {
+  balance_fcfa: number;
+  settlements: Array<{ amount_fcfa: number; outcome: 'returned' | 'kept'; note: string | null; at: string }>;
 };
 
 export type OfflinePayment = {
@@ -55,11 +61,13 @@ export function ContractCard({
   info,
   offline = [],
   today,
+  fund = null,
 }: {
   driverId: string;
   info: ContractInfo;
   offline?: OfflinePayment[];
   today: string;
+  fund?: DriverFund | null;
 }) {
   if (info.application_type !== 'cession') {
     return (
@@ -99,9 +107,15 @@ export function ContractCard({
         <div className="rounded-xl bg-neutral-100 p-md">
           <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">Fin prévue</p>
           <p className="mt-xs text-lg font-extrabold text-neutral-900">{info.end_on ? frDate(info.end_on) : '—'}</p>
-          <p className="text-[11px] text-neutral-500">durée {duration(info.months)} + jours non travaillés</p>
+          <p className="text-[11px] text-neutral-500">durée {duration(info.months)} (selon le véhicule) + jours non travaillés</p>
         </div>
       </div>
+
+      {info.tamassur_months ? (
+        <p className="mt-sm text-[11px] text-neutral-500">
+          Le retrait de l&apos;épargne TamAssur reste ouvert à {duration(info.tamassur_months)} : c&apos;est une règle distincte de la durée du contrat.
+        </p>
+      ) : null}
 
       <ActionForm action={setCessionStart} className="mt-md flex flex-wrap items-center gap-sm">
         <input type="hidden" name="driver_id" value={driverId} />
@@ -113,6 +127,62 @@ export function ContractCard({
           Enregistrer
         </button>
       </ActionForm>
+
+      {fund && (
+        <>
+          <h3 className="mt-lg text-xs font-bold uppercase tracking-wider text-neutral-500">Fonds de rachat à la fin du contrat</h3>
+          <p className="mt-xs text-[12px] text-neutral-600">
+            Fonds constitué à chaque course (5 % du prix) : <strong className="text-neutral-900">{fmt(fund.balance_fcfa)} F</strong>. À la fin du contrat,
+            quelle qu&apos;en soit la cause (fin de Durée, retrait du Partenaire, résiliation, vol, perte totale), il est restitué au chauffeur, après imputation
+            des sommes qu&apos;il doit. Sauf faute du chauffeur : TamCar le conserve alors, après avoir recueilli ses observations sous 8 jours. Le Partenaire ne
+            peut ni déclarer ni provoquer cette faute.
+          </p>
+          {fund.balance_fcfa > 0 && (
+            <div className="mt-sm grid gap-md md:grid-cols-2">
+              <ActionForm action={settleDriverFund} className="rounded-xl bg-neutral-100 p-md">
+                <input type="hidden" name="driver_id" value={driverId} />
+                <input type="hidden" name="fault" value="0" />
+                <p className="text-xs font-bold text-neutral-700">Pas de faute : restituer au chauffeur</p>
+                <input name="note" placeholder="Précision (facultatif)" className={`${inputCls} mt-sm w-full`} aria-label="Précision" />
+                <ConfirmSubmit
+                  message={`Restituer ${fmt(fund.balance_fcfa)} F au chauffeur ? La somme est versée sur ses revenus.`}
+                  className="mt-sm rounded-md bg-primary-700 px-md py-sm text-sm font-bold text-white hover:bg-primary-800"
+                  pendingLabel="Restitution…"
+                >
+                  Restituer le fonds
+                </ConfirmSubmit>
+              </ActionForm>
+              <ActionForm action={settleDriverFund} className="rounded-xl bg-neutral-100 p-md">
+                <input type="hidden" name="driver_id" value={driverId} />
+                <input type="hidden" name="fault" value="1" />
+                <p className="text-xs font-bold text-neutral-700">Faute du chauffeur : TamCar conserve le fonds</p>
+                <input name="note" required placeholder="Motif détaillé (obligatoire)" className={`${inputCls} mt-sm w-full`} aria-label="Motif de la faute" />
+                <ConfirmSubmit
+                  message={`Conserver ${fmt(fund.balance_fcfa)} F pour faute du chauffeur ? Le motif saisi sera enregistré.`}
+                  className="mt-sm rounded-md bg-error px-md py-sm text-sm font-bold text-white hover:brightness-110"
+                  pendingLabel="Enregistrement…"
+                >
+                  Conserver le fonds
+                </ConfirmSubmit>
+              </ActionForm>
+            </div>
+          )}
+          {fund.settlements.length > 0 && (
+            <ul className="mt-sm divide-y divide-neutral-100 rounded-xl ring-1 ring-neutral-200">
+              {fund.settlements.map((x, i) => (
+                <li key={i} className="flex flex-wrap items-center gap-sm px-md py-sm text-sm">
+                  <span className="font-semibold text-neutral-900">{frDate(x.at)}</span>
+                  <span className="font-bold text-neutral-900">{fmt(x.amount_fcfa)} F</span>
+                  <span className={`rounded-full px-sm py-0.5 text-[11px] font-bold ${x.outcome === 'kept' ? 'bg-warning/15 text-warning' : 'bg-success/15 text-success'}`}>
+                    {x.outcome === 'kept' ? 'conservé par TamCar' : 'restitué au chauffeur'}
+                  </span>
+                  {x.note && <span className="min-w-0 flex-1 truncate text-xs text-neutral-500">{x.note}</span>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      )}
 
       <h3 className="mt-lg text-xs font-bold uppercase tracking-wider text-neutral-500">
         Déclarer un versement hors application

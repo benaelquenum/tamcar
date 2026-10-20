@@ -308,7 +308,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
         items: [
           '**L’en-tête** : statut, formule, téléphone, date d’enrôlement, permis, pièce d’identité, état de la vérification (KYC), véhicule affecté.',
           '**La photo officielle** : téléverser la photo du chauffeur ; elle est traitée automatiquement (détourage, cadrage) avant d’être affichée aux clients.',
-          '**Contrat de cession et versement** (formule Cession) : versement quotidien et objectif du jour, versements reçus hors application, date de début, jours non travaillés et fin prévue du contrat.',
+          '**Contrat de cession et versement** (formule Cession) : versement quotidien et objectif du jour, versements reçus hors application, date de début, jours non travaillés, fin prévue du contrat (durée propre au véhicule : moto 12 mois, tricycle 3 ans, Essentiel 3 ans, Confort 4 ans, VIP 5 ans) et fonds de rachat à régler en fin de contrat.',
           '**Depuis l’enrôlement** : courses terminées et annulées, volume, argent gagné, fonds de rachat, note, avertissements, épargne TamAssur nette.',
           '**Chronologie complète** : tout ce qui s’est passé (courses, mouvements d’argent, avertissements, SOS…), filtrable par type.',
         ],
@@ -337,6 +337,20 @@ export const GUIDE_SECTIONS: GuideSection[] = [
         tone: 'info',
         title: 'Limites',
         text: 'On peut déclarer un jour jusqu’à 30 jours en arrière, jamais dans le futur, jamais un dimanche, ni un jour déclaré non travaillé.',
+      },
+      { type: 'h3', text: 'Régler le fonds de rachat à la fin du contrat' },
+      {
+        type: 'p',
+        text: 'Le fonds de rachat se constitue à chaque course (5 % du prix). À la fin du contrat du chauffeur, **quelle qu’en soit la cause** (fin de la durée, retrait du partenaire, résiliation, vol, perte totale du véhicule), il est **restitué au chauffeur**, après imputation de ce qu’il doit à TamCar. **Sauf faute du chauffeur** : TamCar le conserve alors, après avoir recueilli ses observations sous 8 jours. Le partenaire ne peut ni déclarer ni provoquer cette faute.',
+      },
+      {
+        type: 'steps',
+        items: [
+          'Ouvrir la fiche du chauffeur, carte « Contrat de cession et versement », section **Fonds de rachat à la fin du contrat** : le solde s’affiche.',
+          '**Pas de faute** : cliquer sur **Restituer le fonds**. La somme est versée sur les revenus du chauffeur (une dette éventuelle est ainsi apurée) et il est prévenu.',
+          '**Faute du chauffeur** : saisir le **motif détaillé** (obligatoire : preuves et observations recueillies), puis **Conserver le fonds**. Le solde passe à TamCar et le motif est enregistré.',
+          'La liste sous les boutons garde la trace de chaque règlement (date, montant, restitué ou conservé, motif).',
+        ],
       },
       { type: 'h3', text: 'Déclarer des jours non travaillés (panne, maladie)' },
       {
@@ -376,6 +390,21 @@ export const GUIDE_SECTIONS: GuideSection[] = [
           'Cliquer sur **Enregistrer** : le véhicule apparaît dans « En attente d’activation ».',
           'Une fois les contrôles faits, cliquer sur **Activer** : il passe dans « Véhicules actifs ».',
           'Dans « Véhicules actifs », choisir un chauffeur dans la liste de la ligne et cliquer sur **Affecter**. Si la formule du chauffeur est différente de celle du véhicule, la liste l’indique (« basculera en … ») et son compte est mis à jour.',
+        ],
+      },
+      { type: 'h3', text: 'Fiche du véhicule : assurance, visite technique, papiers' },
+      {
+        type: 'p',
+        text: 'Sous chaque véhicule, le bandeau **Fiche du véhicule** (cliquer pour l’ouvrir) regroupe les pièces du dossier : numéro de châssis, kilométrage à l’entrée, motorisation, **assureur, police et date de fin de l’assurance**, **date de fin de la visite technique**, identifiant du traceur (facultatif, aux risques du partenaire), **date de dépôt des papiers originaux** avec la référence du reçu, et la **durée du contrat** (vide = durée de la catégorie).',
+      },
+      {
+        type: 'steps',
+        items: [
+          'Ouvrir la fiche, renseigner les champs connus, puis **Enregistrer la fiche**.',
+          'Un badge indique en direct les échéances : vert (plus de 30 jours), orange (30 jours ou moins), rouge (expirée).',
+          '**Assurance ou visite technique expirée : le véhicule est suspendu automatiquement** (statut Maintenance, chauffeur passé hors ligne, impossible de repasser en ligne, aucune part due). Le motif s’affiche dans la fiche et une alerte critique est envoyée à l’équipe, au partenaire et au chauffeur.',
+          'Dès que la nouvelle échéance est saisie, le véhicule **repart tout seul** (statut Actif) ; l’équipe en est informée.',
+          'Le partenaire reçoit un rappel **30 jours puis 7 jours** avant chaque échéance, et voit la fiche en lecture seule dans son espace.',
         ],
       },
       {
@@ -857,7 +886,8 @@ export const GUIDE_SECTIONS: GuideSection[] = [
           ['Chaque soir, 22 h (lundi–samedi)', 'Prélèvement de la cotisation **TamAssur** sur le portefeuille Revenus de chaque chauffeur actif (jamais le dimanche, ni un jour non travaillé déclaré).'],
           ['Chaque soir, 23 h 55 (lundi–samedi)', 'Calcul et crédit du **bonus de performance** des chauffeurs qui ont dépassé leur objectif.'],
           ['Chaque nuit, 00 h 10 (lundi–samedi, pour la veille)', 'Clôture du **versement quotidien** des chauffeurs en formule Cession : le manque éventuel sur l’objectif est prélevé sur leur portefeuille Revenus, et l’épargne du jour est créditée (versements hors application compris).'],
-          ['Chaque jour, 5 h', '**Sauvegarde** des données.'],
+          ['Chaque jour, 5 h', '**Sauvegarde** des données, puis contrôle de la **conformité des véhicules** : suspension de ceux dont l’assurance ou la visite technique a expiré, remise en service de ceux régularisés, rappels aux partenaires à 30 et 7 jours de l’échéance.'],
+          ['Chaque jour, 5 h 30', '**Avis de fin de contrat** : 15 jours avant la fin de la durée d’un chauffeur en Cession, le chauffeur, le partenaire et l’équipe sont prévenus (le transfert des papiers se prépare alors).'],
           ['Chaque soir, 20 h', '**TamPass** : création des courses du lendemain, déjà affectées au chauffeur titulaire de chaque abonnement.'],
           ['Toutes les 2 minutes', 'Vérification des **retraits chauffeur** partis chez FeexPay : confirmés → payés ; échoués → chauffeur recrédité ; sans réponse après 30 minutes → signalés à l’équipe.'],
           ['En continu', 'Le **classement des gadgets** (meilleurs chauffeurs et clients du semestre) se recalcule à chaque ouverture de la page Gadgets ; seule la validation est manuelle.'],

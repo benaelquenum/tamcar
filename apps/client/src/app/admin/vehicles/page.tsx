@@ -1,6 +1,9 @@
+import { Fragment } from 'react';
 import { createServerSupabase } from '@/lib/supabase-server';
+import { createAdminSupabase } from '@/lib/supabase-admin';
 import { createVehicle, activateVehicle, assignVehicle } from './actions';
 import { VehicleFormFields } from './VehicleFormFields';
+import { VehicleSheetForm, type VehicleSheet } from './VehicleSheetForm';
 
 type VehicleRow = {
   vehicle_id: string;
@@ -46,6 +49,15 @@ const STATUS_LABEL: Record<VehicleRow['status'], string> = {
 
 export default async function AdminVehiclesPage() {
   const supabase = createServerSupabase();
+  const [{ data: sheetData }] = await Promise.all([
+    createAdminSupabase()
+      .from('vehicles')
+      .select(
+        'id, vin, entry_km, engine, contract_months, insurance_company, insurance_policy, insurance_expires_on, technical_visit_expires_on, tracker_id, papers_deposited_on, papers_receipt, suspension_reason',
+      ),
+  ]);
+  const sheets = new Map(((sheetData ?? []) as VehicleSheet[]).map((x) => [x.id, x]));
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Porto-Novo' });
   const [{ data: vehicles }, { data: dealers }, { data: drivers }] = await Promise.all([
     supabase.from('vehicle_admin_view').select('*').order('created_at', { ascending: false }),
     supabase.from('dealer_admin_view').select('dealer_id, company_name').is('archived_at', null),
@@ -120,17 +132,17 @@ export default async function AdminVehiclesPage() {
 
       {pending.length > 0 && (
         <Section title="En attente d'activation">
-          <VehicleTable list={pending} drivers={DR} showActivate showAssign={false} />
+          <VehicleTable list={pending} drivers={DR} showActivate showAssign={false} sheets={sheets} today={today} />
         </Section>
       )}
 
       <Section title="Véhicules actifs">
-        <VehicleTable list={active} drivers={DR} showActivate={false} showAssign />
+        <VehicleTable list={active} drivers={DR} showActivate={false} showAssign sheets={sheets} today={today} />
       </Section>
 
       {other.length > 0 && (
         <Section title="Autres">
-          <VehicleTable list={other} drivers={DR} showActivate={false} showAssign={false} />
+          <VehicleTable list={other} drivers={DR} showActivate={false} showAssign={false} sheets={sheets} today={today} />
         </Section>
       )}
     </div>
@@ -138,10 +150,11 @@ export default async function AdminVehiclesPage() {
 }
 
 function VehicleTable({
-  list, drivers, showActivate, showAssign,
+  list, drivers, showActivate, showAssign, sheets, today,
 }: {
   list: VehicleRow[]; drivers: DriverOption[];
   showActivate: boolean; showAssign: boolean;
+  sheets: Map<string, VehicleSheet>; today: string;
 }) {
   if (list.length === 0) {
     return (
@@ -164,7 +177,8 @@ function VehicleTable({
         </thead>
         <tbody>
           {list.map((v) => (
-            <tr key={v.vehicle_id} className="border-b border-neutral-100 last:border-0">
+            <Fragment key={v.vehicle_id}>
+            <tr className="border-b border-neutral-100 last:border-0">
               <td className="px-md py-md">
                 <p className="font-semibold text-neutral-900">{v.brand} {v.model}</p>
                 <p className="text-[10px] text-neutral-500" style={{ fontVariantNumeric: 'tabular-nums' }}>
@@ -231,6 +245,12 @@ function VehicleTable({
                 </div>
               </td>
             </tr>
+            <tr className="border-b border-neutral-100 last:border-0">
+              <td colSpan={5} className="px-md pb-md">
+                <VehicleSheetForm vehicleId={v.vehicle_id} sheet={sheets.get(v.vehicle_id)} today={today} />
+              </td>
+            </tr>
+            </Fragment>
           ))}
         </tbody>
       </table>

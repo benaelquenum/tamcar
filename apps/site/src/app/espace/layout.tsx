@@ -47,8 +47,8 @@ export default async function EspaceLayout({ children }: { children: React.React
   }
 
   return (
-    <div className="min-h-dvh bg-neutral-100">
-      <header className="border-b border-neutral-200 bg-white">
+    <div className="min-h-dvh bg-neutral-100 print:bg-white">
+      <header className="border-b border-neutral-200 bg-white print:hidden">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-lg gap-y-sm px-lg py-md">
           <div className="flex items-center gap-md">
             <Link href="/espace" aria-label="Espace partenaire, accueil">

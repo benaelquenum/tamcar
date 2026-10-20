@@ -347,8 +347,8 @@ export default function CguPage() {
         <Section n="13 ter" title="Bonus de performance du Chauffeur">
           <p>
             Chaque véhicule de la flotte TamCar a un objectif quotidien de
-            volume de courses : 4 500 FCFA pour une moto, 8 500 FCFA pour un
-            tricycle, 12 000 FCFA pour une voiture Essentiel et 15 000 FCFA pour
+            volume de courses : 5 850 FCFA pour une moto, 10 000 FCFA pour un
+            tricycle, 13 700 FCFA pour une voiture Essentiel et 16 700 FCFA pour
             une voiture Confort. Lorsque le volume des courses terminées par le
             Chauffeur dans l’Application dépasse cet objectif,{' '}
             <strong>TamCar lui reverse la moitié de la part qu’elle perçoit sur
@@ -357,9 +357,9 @@ export default function CguPage() {
           </p>
           <p className="mt-sm">
             Exemple : une voiture Essentiel dont la part de TamCar est de 23 %
-            fait 18 000 FCFA de courses dans la journée. Le volume excédentaire
-            est de 6 000 FCFA, sur lesquels TamCar perçoit 1 380 FCFA ; elle
-            reverse la moitié, soit 690 FCFA, au Chauffeur.
+            fait 18 700 FCFA de courses dans la journée. Le volume excédentaire
+            est de 5 000 FCFA, sur lesquels TamCar perçoit 1 150 FCFA ; elle
+            reverse la moitié, soit 575 FCFA, au Chauffeur.
           </p>
           <p className="mt-sm">
             Seules les courses terminées dans l’Application sont comptées, du

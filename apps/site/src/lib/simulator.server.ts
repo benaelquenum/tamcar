@@ -5,7 +5,8 @@ import { type CategoryId, type SimLine, type SimOutput, type SimRequest } from '
 // (le mot-clé « server-only » ci-dessus fait échouer le build si cela arrive). Elles ne sont accessibles qu'à
 // un partenaire ou à un administrateur connecté, via l'action serveur de /espace/simulateur.
 //
-// Aux recettes minimales prévues au contrat, 26 jours actifs par mois :
+// Aux recettes minimales prévues au contrat (objectif du jour tout compris ÷ 60 % : moto 5 850 F, tricycle 10 000 F, Essentiel 13 700 F,
+// Confort 16 700 F par jour, décision du 20/10/2026), 26 jours actifs par mois :
 //   - part course : 30 % du volume, versée chaque mois ;
 //   - fonds de rachat : 5 % du volume, versé à la cession du véhicule au chauffeur, sans aucun prélèvement ;
 //   - les frais d'entrée de 30 000 F, les senteurs, les gadgets et les forfaits internet sont financés par TamCar sur sa
@@ -16,13 +17,13 @@ import { type CategoryId, type SimLine, type SimOutput, type SimRequest } from '
 type Category = { label: string; floor: number; months: number; note?: string };
 
 const CATEGORIES: Record<CategoryId, Category> = {
-  moto: { label: 'Moto', floor: 4_167, months: 12 },
-  tricycle: { label: 'Tricycle', floor: 8_333, months: 36 },
-  essentiel: { label: 'Voiture Essentiel', floor: 12_000, months: 36 },
-  confort: { label: 'Voiture Confort', floor: 15_000, months: 48 },
+  moto: { label: 'Moto', floor: 5_850, months: 12 },
+  tricycle: { label: 'Tricycle', floor: 10_000, months: 36 },
+  essentiel: { label: 'Voiture Essentiel', floor: 13_700, months: 36 },
+  confort: { label: 'Voiture Confort', floor: 16_700, months: 48 },
   vip: {
     label: 'Voiture VIP',
-    floor: 15_000,
+    floor: 16_700,
     months: 60,
     note: 'VIP : recettes minimales à convenir ensemble ; simulation alignée sur le Confort.',
   },

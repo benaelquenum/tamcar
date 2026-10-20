@@ -2,11 +2,30 @@ import { createServerSupabase } from '@/lib/supabase-server';
 import { LiveAmount } from '../LiveAmount';
 import {
   CAT_LABEL,
+  ENGINE_LABEL,
   VEHICLE_STATUS_LABEL,
+  daysUntil,
+  durationLabel,
   fmt,
+  frDate,
   previewParam,
+  type DealerContractEnd,
   type DealerVehicle,
+  type DealerVehicleSheet,
 } from '../lib';
+
+/** Étiquette d'échéance : rouge si dépassée, orange à 30 jours ou moins. */
+function Expiry({ iso }: { iso: string | null }) {
+  const d = daysUntil(iso);
+  if (d === null || !iso) return <span className="text-neutral-400">non renseignée</span>;
+  const tone = d < 0 ? 'text-error' : d <= 30 ? 'text-warning' : 'text-neutral-900';
+  return (
+    <span className={`font-semibold ${tone}`}>
+      {frDate(iso)}
+      <span className="ml-xs font-normal">{d < 0 ? `· expirée depuis ${-d} j` : d === 0 ? '· expire aujourd’hui' : d <= 30 ? `· dans ${d} j` : ''}</span>
+    </span>
+  );
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -16,8 +35,15 @@ export default async function DealerVehiclesPage({
   searchParams: { as?: string | string[] };
 }) {
   const supabase = createServerSupabase();
-  const { data } = await supabase.rpc('dealer_my_vehicles', { p_dealer_id: previewParam(searchParams.as) });
+  const who = { p_dealer_id: previewParam(searchParams.as) };
+  const [{ data }, { data: sheetData }, { data: endData }] = await Promise.all([
+    supabase.rpc('dealer_my_vehicles', who),
+    supabase.rpc('dealer_my_vehicle_sheets', who),
+    supabase.rpc('dealer_my_contract_ends', who),
+  ]);
   const list = (data ?? []) as DealerVehicle[];
+  const sheets = new Map(((sheetData ?? []) as DealerVehicleSheet[]).map((x) => [x.vehicle_id, x]));
+  const ends = new Map(((endData ?? []) as DealerContractEnd[]).map((x) => [x.vehicle_id, x]));
 
   const monthTotal = list.reduce((s, v) => s + v.month_fcfa, 0);
 
@@ -44,7 +70,10 @@ export default async function DealerVehiclesPage({
         </div>
       ) : (
         <ul className="grid gap-md sm:grid-cols-2">
-          {list.map((v) => (
+          {list.map((v) => {
+            const sheet = sheets.get(v.vehicle_id);
+            const end = ends.get(v.vehicle_id);
+            return (
             <li key={v.vehicle_id} className="rounded-xl bg-white p-lg shadow-sm ring-1 ring-neutral-200">
               <div className="flex items-start justify-between gap-md">
                 <div className="min-w-0">
@@ -97,8 +126,56 @@ export default async function DealerVehiclesPage({
                   </dd>
                 </div>
               </dl>
+
+              {sheet?.suspension_reason && (
+                <p className="mt-md rounded-lg bg-error/10 p-sm text-xs font-semibold text-error">
+                  Véhicule suspendu : {sheet.suspension_reason}. Il reste hors service, sans part due, jusqu’à la régularisation des papiers.
+                </p>
+              )}
+
+              {sheet && (
+                <details className="mt-md rounded-lg ring-1 ring-neutral-200">
+                  <summary className="cursor-pointer px-md py-sm text-xs font-bold text-neutral-700">Fiche du véhicule</summary>
+                  <dl className="grid grid-cols-2 gap-sm border-t border-neutral-200 p-md text-xs">
+                    <div>
+                      <dt className="text-neutral-500">Assurance{sheet.insurance_company ? ` (${sheet.insurance_company})` : ''}</dt>
+                      <dd><Expiry iso={sheet.insurance_expires_on} /></dd>
+                    </div>
+                    <div>
+                      <dt className="text-neutral-500">Visite technique</dt>
+                      <dd><Expiry iso={sheet.technical_visit_expires_on} /></dd>
+                    </div>
+                    <div>
+                      <dt className="text-neutral-500">Traceur</dt>
+                      <dd className="font-semibold text-neutral-900">{sheet.tracker_id ?? 'non installé'}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-neutral-500">Motorisation</dt>
+                      <dd className="font-semibold text-neutral-900">{sheet.engine ? ENGINE_LABEL[sheet.engine] ?? sheet.engine : '—'}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-neutral-500">Papiers originaux déposés</dt>
+                      <dd className="font-semibold text-neutral-900">{sheet.papers_deposited_on ? frDate(sheet.papers_deposited_on) : 'pas encore'}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-neutral-500">Durée du contrat</dt>
+                      <dd className="font-semibold text-neutral-900">{durationLabel(sheet.contract_months)}</dd>
+                    </div>
+                    {end?.end_on && (
+                      <div className="col-span-2">
+                        <dt className="text-neutral-500">Fin de la Durée</dt>
+                        <dd className="font-semibold text-neutral-900">
+                          {frDate(end.end_on)}
+                          {end.notified_on && <span className="ml-xs font-normal text-neutral-500">· avis écrit envoyé le {frDate(end.notified_on)}</span>}
+                        </dd>
+                      </div>
+                    )}
+                  </dl>
+                </details>
+              )}
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
     </div>

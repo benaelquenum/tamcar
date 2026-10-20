@@ -116,6 +116,75 @@ export type DealerPayoutRequest = {
   decided_at: string | null;
 };
 
+/** Fiche numérique d'un véhicule (annexe 1 du contrat) : conformité, durée, papiers déposés, fin de Durée. */
+export type DealerVehicleSheet = {
+  vehicle_id: string;
+  plate_number: string;
+  engine: string | null;
+  contract_months: number;
+  insurance_company: string | null;
+  insurance_expires_on: string | null;
+  technical_visit_expires_on: string | null;
+  tracker_id: string | null;
+  papers_deposited_on: string | null;
+  suspension_reason: string | null;
+  driver_name: string | null;
+  contract_end: string | null;
+};
+
+/** Fin de Durée à venir, avec la date de l'avis écrit envoyé 15 jours avant (article 5.3 ter). */
+export type DealerContractEnd = {
+  vehicle_id: string;
+  plate_number: string;
+  brand: string;
+  model: string;
+  driver_name: string | null;
+  end_on: string | null;
+  notified_on: string | null;
+};
+
+/** Relevé mensuel par véhicule (article 9.8) : jours actifs, Part du Partenaire, solde du Fonds. Jamais le prix des courses. */
+export type DealerStatementRow = {
+  vehicle_id: string;
+  plate_number: string;
+  brand: string;
+  model: string;
+  category: string;
+  rides: number;
+  active_days: number;
+  share_fcfa: number;
+  fund_total_fcfa: number;
+};
+
+export type DealerStatementPayout = {
+  decided_at: string;
+  amount_fcfa: number;
+  aib_fcfa: number;
+  fee_fcfa: number;
+  net_fcfa: number;
+  invoice_number: string | null;
+  reference: string | null;
+};
+
+export const ENGINE_LABEL: Record<string, string> = { essence: 'Essence', diesel: 'Diesel', hybride: 'Hybride', electrique: 'Électrique' };
+
+/** Jours avant une échéance (négatif = dépassée), à la date de Porto-Novo. */
+export function daysUntil(iso: string | null): number | null {
+  if (!iso) return null;
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Porto-Novo' });
+  return Math.round((Date.parse(`${iso.slice(0, 10)}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86_400_000);
+}
+
+/** « 3 ans », « 18 mois ». */
+export function durationLabel(months: number): string {
+  return months % 12 === 0 ? `${months / 12} an${months / 12 > 1 ? 's' : ''}` : `${months} mois`;
+}
+
+/** « 20 octobre 2026 » à partir de « 2026-10-20 ». */
+export function frDate(iso: string): string {
+  return new Date(`${iso.slice(0, 10)}T12:00:00Z`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+}
+
 export const PAYOUT_STATUS_LABEL: Record<DealerPayoutRequest['status'], string> = {
   requested: 'En attente',
   paid: 'Versé',

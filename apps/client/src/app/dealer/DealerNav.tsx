@@ -7,6 +7,7 @@ const ITEMS = [
   { href: '/dealer', label: 'Tableau de bord' },
   { href: '/dealer/vehicles', label: 'Mes véhicules' },
   { href: '/dealer/transactions', label: 'Historique' },
+  { href: '/dealer/releves', label: 'Relevés' },
 ];
 
 /** Navigation de l'espace partenaire ; garde le paramètre d'aperçu admin (?as=…) d'une page à l'autre. */

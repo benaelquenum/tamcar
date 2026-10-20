@@ -59,6 +59,58 @@ export async function activateVehicle(formData: FormData) {
   revalidatePath('/admin/vehicles');
 }
 
+type SheetState = { error?: string; ok?: string } | null;
+
+const ENGINES = ['essence', 'diesel', 'hybride', 'electrique'];
+
+/**
+ * Fiche numérique du véhicule (annexe 1 du contrat de partenariat) : assurance, visite technique, traceur, châssis, kilométrage,
+ * motorisation, dépôt des papiers, durée du contrat. Une assurance ou une visite expirée suspend le véhicule (hors ligne),
+ * la régularisation le remet en service.
+ */
+export async function updateVehicleSheet(_prev: SheetState, formData: FormData): Promise<SheetState> {
+  const text = (k: string) => String(formData.get(k) || '').trim() || null;
+  const date = (k: string) => {
+    const v = String(formData.get(k) || '').trim();
+    return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null;
+  };
+  const int = (k: string) => {
+    const v = String(formData.get(k) || '').trim();
+    return v ? Math.floor(Number(v)) : null;
+  };
+  const vehicleId = String(formData.get('vehicle_id') || '');
+  if (!vehicleId) return { error: 'Véhicule introuvable.' };
+  const engine = text('engine');
+  if (engine && !ENGINES.includes(engine)) return { error: 'Motorisation invalide.' };
+  const entryKm = int('entry_km');
+  if (entryKm !== null && (!Number.isFinite(entryKm) || entryKm < 0)) return { error: 'Kilométrage invalide.' };
+  const months = int('contract_months');
+  if (months !== null && (!Number.isFinite(months) || months < 1 || months > 120)) {
+    return { error: 'La durée du contrat doit être comprise entre 1 et 120 mois.' };
+  }
+
+  const supabase = createServerSupabase();
+  const { data, error } = await supabase.rpc('admin_update_vehicle_sheet', {
+    p_vehicle: vehicleId,
+    p_vin: text('vin'),
+    p_entry_km: entryKm,
+    p_engine: engine,
+    p_contract_months: months,
+    p_insurance_company: text('insurance_company'),
+    p_insurance_policy: text('insurance_policy'),
+    p_insurance_expires_on: date('insurance_expires_on'),
+    p_technical_visit_expires_on: date('technical_visit_expires_on'),
+    p_tracker_id: text('tracker_id'),
+    p_papers_deposited_on: date('papers_deposited_on'),
+    p_papers_receipt: text('papers_receipt'),
+  });
+  if (error) return { error: error.message };
+  revalidatePath('/admin/vehicles');
+  if (data === 'suspended') return { ok: 'Fiche enregistrée. Papiers expirés : le véhicule est suspendu et le chauffeur passé hors ligne.' };
+  if (data === 'reactivated') return { ok: 'Fiche enregistrée. Papiers à jour : le véhicule est remis en service.' };
+  return { ok: 'Fiche enregistrée.' };
+}
+
 export async function assignVehicle(formData: FormData) {
   const vehicle_id = String(formData.get('vehicle_id') || '');
   const driver_id = String(formData.get('driver_id') || '');

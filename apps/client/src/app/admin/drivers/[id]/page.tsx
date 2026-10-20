@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createServerSupabase } from '@/lib/supabase-server';
 import { PortraitUploader } from './PortraitUploader';
-import { ContractCard, type ContractInfo, type OfflinePayment } from './ContractCard';
+import { ContractCard, type ContractInfo, type DriverFund, type OfflinePayment } from './ContractCard';
 
 const PAGE_SIZE = 100;
 const TZ = 'Africa/Porto-Novo';
@@ -217,7 +217,7 @@ export default async function AdminDriverDetailPage({
   const type = (searchParams?.type ?? '').trim();
   const page = Math.max(1, parseInt(searchParams?.page ?? '1', 10) || 1);
 
-  const [{ data: summaryData, error: sumErr }, { data: countData }, { data: eventData }, { data: contractData }, { data: offlineData }] = await Promise.all([
+  const [{ data: summaryData, error: sumErr }, { data: countData }, { data: eventData }, { data: contractData }, { data: offlineData }, { data: fundData }] = await Promise.all([
     supabase.rpc('admin_driver_summary', { p_driver_id: params.id }),
     supabase.rpc('admin_driver_history_counts', { p_driver_id: params.id }),
     supabase.rpc('admin_driver_history', {
@@ -228,6 +228,7 @@ export default async function AdminDriverDetailPage({
     }),
     supabase.rpc('admin_driver_contract', { p_driver_id: params.id }),
     supabase.rpc('admin_driver_offline_payments', { p_driver_id: params.id }),
+    supabase.rpc('admin_driver_fund', { p_driver: params.id }),
   ]);
 
   if (sumErr || !summaryData) {
@@ -265,6 +266,7 @@ export default async function AdminDriverDetailPage({
   };
 
   const contract = (contractData ?? null) as ContractInfo | null;
+  const fund = (fundData ?? null) as DriverFund | null;
   const offlinePayments = ((offlineData ?? []) as OfflinePayment[]).map((o) => ({ ...o, day: String(o.day).slice(0, 10) }));
   const pnToday = new Date(Date.now() + 3_600_000).toISOString().slice(0, 10);
   const rachatBalance = s.wallets?.tamcar_rachat ?? 0;
@@ -342,7 +344,7 @@ export default async function AdminDriverDetailPage({
         verifiedAt={avatarVerifiedAt}
       />
 
-      {contract && <ContractCard driverId={s.driver_id} info={contract} offline={offlinePayments} today={pnToday} />}
+      {contract && <ContractCard driverId={s.driver_id} info={contract} offline={offlinePayments} today={pnToday} fund={fund} />}
 
       {/* Chiffres depuis l'enrôlement */}
       <h2 className="mb-sm mt-xl text-sm font-bold uppercase tracking-wider text-neutral-500">Depuis l&apos;enrôlement</h2>
