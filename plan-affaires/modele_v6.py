@@ -72,12 +72,24 @@ N_ESS, N_CONF = h("B57"), h("B58")
 N_ESS_T, N_CONF_T = h("B95"), h("B96")
 PLANCHER_ESS, PLANCHER_CONF = h("B60"), h("B61")
 VOL_TRI, VOL_MOTO = h("B45"), h("B46")
-VERS_TRI = round(0.6 * VOL_TRI)            # 5 000
-VERS_MOTO = h("B75")                       # 2 500
-VERS_ESS, VERS_CONF = round(0.6 * PLANCHER_ESS), round(0.6 * PLANCHER_CONF)
+COTIS = h("B103")                          # cotisation TamAssur : 1 000 F par jour, comprise dans l'objectif du conducteur et financée par la part de TamCar
+# Objectif du jour « tout compris » = 60 % du plancher, arrondi à la centaine (décision du 2026-10-20) ; le versement est l'objectif moins la cotisation TamAssur
+OBJ_ESS, OBJ_CONF = round(0.6 * PLANCHER_ESS, -2), round(0.6 * PLANCHER_CONF, -2)    # 8 200, 10 000
+OBJ_TRI, OBJ_MOTO = round(0.6 * VOL_TRI, -2), h("B75")                               # 6 000, 3 500
+VERS_TRI, VERS_MOTO = OBJ_TRI - COTIS, OBJ_MOTO - COTIS                              # 5 000, 2 500
+VERS_ESS, VERS_CONF = OBJ_ESS - COTIS, OBJ_CONF - COTIS                              # 7 200, 9 000
 JOURS = h("B47")
 PART_VOITURE = h("B62")                    # 25 %
 PART_TRICYCLE = h("B71")                   # 55 %
+# Part de TamCar par mois, nette de la cotisation TamAssur (la moto : le versement, déjà net)
+PART_NETTE_MENS = {"moto": VERS_MOTO * JOURS,
+                   "tri": (VOL_TRI * PART_TRICYCLE - COTIS) * JOURS,
+                   "ess": (PLANCHER_ESS * PART_VOITURE - COTIS) * JOURS,
+                   "conf": (PLANCHER_CONF * PART_VOITURE - COTIS) * JOURS}
+TRI_MENSUALITE = PRIX_TRICYCLE * (1 - ACOMPTE_PCT) / MENS_TRICYCLE
+# taux d'atteinte du plancher à partir duquel la part nette du tricycle (cotisation TamAssur déduite) couvre sa mensualité d'achat
+SEUIL_MENS_TRI = (TRI_MENSUALITE + COTIS * JOURS) / (VOL_TRI * JOURS * PART_TRICYCLE)
+NSIA_12, NSIA_24 = h("B104"), h("B105")    # manque estimé au rachat NSIA à l'ouverture du premier palier (moto à 12 mois, autres à 24 mois)
 FRAIS_ENTREE = h("B101")
 N_VEHICULES_TAMCAR = N_TRI + N_MOTO
 N_VEHICULES_MOIS1 = N_TRI + N_MOTO + N_ESS + N_CONF
@@ -116,7 +128,7 @@ CATS = {
     "assur": ("Assurances", "multirisque professionnelle ; assurance, droit taxi et visite technique des véhicules de TamCar", (29, 48, 49)),
     "presta": ("Prestataires et promotions de lancement", "comptable externe, juriste, promotions", (30, 31, 32)),
     "entree": ("Frais d’entrée des véhicules", "30 000 F par véhicule déployé : inspection, habillage, kit chauffeur", (37,)),
-    "nsia": ("Postes vacants TamAssur", "cotisation avancée à NSIA pendant la vacance d’un poste", (38,)),
+    "nsia": ("Épargne NSIA (TamAssur)", "postes vacants (cotisation avancée à NSIA) et manque au rachat à l’ouverture du premier palier de retrait", (38,)),
     "tracker": ("Trackers GPS certifiés ANATT", "véhicules de TamCar : à la livraison puis à chaque anniversaire", (50, 51)),
     "anatt": ("Autorisation de transporteur ANATT", "renouvellement annuel, 280 000 F (mois 13 et 25)", (34,)),
     "impots": ("Impôts et taxes", "impôt minimum sur les sociétés, patente", (35, 36)),
@@ -207,6 +219,9 @@ HD = T["hors_defaut"]
 MIN = T["minimal"]
 VALEUR = T["valeur_vehicule"]
 COMBOS = T["combos"]
+
+
+BASE_SANS_NSIA = SIM.Base.from_dict(dict(BASE.to_dict(), ch=[c - x for c, x in zip(BASE.ch, BASE.nsia)], nsia=[0] * 37, h=dict(BASE.h, B104=0, B105=0)))   # valeur par vehicule en regime etabli : le manque au rachat NSIA est ponctuel et compte a part
 
 
 def serie(p, tiers=True):
@@ -311,4 +326,4 @@ if __name__ == "__main__":
         print("M", m, {k: round(v) for k, v in plan_financement(m).items()})
     print("valeur d'usage", n(valeur_usage()))
     print("capex", CAPEX, "demarrage", DEMARRAGE, "acompte", ACOMPTE_TRICYCLE, "motos", MOTOS_COMPTANT)
-    print("versements", VERS_TRI, VERS_MOTO, VERS_ESS, VERS_CONF)
+    print("versements", VERS_TRI, VERS_MOTO, VERS_ESS, VERS_CONF, "objectifs", OBJ_TRI, OBJ_MOTO, OBJ_ESS, OBJ_CONF, "part nette", PART_NETTE_MENS)

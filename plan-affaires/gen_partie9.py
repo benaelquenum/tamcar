@@ -113,11 +113,11 @@ pages.append(f'''<!-- ==========================================================
           'Afrik Group Consulting est associé de TamCar ; la mise à disposition des voitures est formalisée dans un contrat partenaire (durée, part du propriétaire, cession, confidentialité). Recrutement de voitures de tiers en parallèle (10.9).',
           cls='ajout-ligne')}
       {tr('Financement et trésorerie',
-          f'Point bas de {mm(POINT_BAS_T, 1, False)} au mois 1 avec 15 M ; avec 10 M, {mm(HD["levee_10M"]["point_bas"], 1, False)} ; avec 5 M, la trésorerie touche zéro au mois 1 (7.9).',
+          f'Point bas de {mm(POINT_BAS_T, 1, False)} au mois 1 avec 15 M ; avec 10 M, {mm(HD["levee_10M"]["point_bas"], 1, False)} ; avec 5 M, la trésorerie devient négative ({mm(HD["levee_5M_sans_vehicule"]["point_bas"], 1)} au mois {HD["levee_5M_sans_vehicule"]["mois_point_bas"]}) (7.9).',
           'Suivi mensuel de la trésorerie ; réserve de 5 M au point bas ; prix et paiement échelonné du tricycle à confirmer avec le fournisseur (8.6) ; plan correctif (réduction des charges, recrutement de voitures).',
           cls='ajout-ligne')}
       {tr('Engagement TamAssur',
-          'TamCar garantit 250 000 F par année de cotisation : l’écart entre cette garantie et la valeur de rachat du contrat NSIA est un risque porté par TamCar, non chiffré dans les projections.',
+          'TamCar garantit 250 000 F par année de contrat, par paliers (moto 12 mois ; autres 24 mois, puis chaque année jusqu’au terme) : l’écart entre cette garantie et la valeur de rachat du contrat NSIA est un risque porté par TamCar, chiffré au premier palier (29 000 F par moto, 48 000 F par autre véhicule, estimations) mais pas aux paliers suivants.',
           'Confirmation écrite de la valeur de rachat avec NSIA avant le lancement ; réserve dédiée ; suivi par conducteur (dates, versements, retards) dans la plateforme.',
           cls='ajout-ligne')}
       {tr('Panne de la plateforme ; dépendance à une équipe restreinte',
@@ -170,15 +170,15 @@ pages.append(f'''<!-- ==========================================================
 
   <div class="row c-1-1 stretch" style="margin-top:14px">
     <div class="callout ajout">
-      <strong>Ce que montre le tableau.</strong> La caisse tient presque partout : la levée absorbe les écarts. Ce qui se dégrade, c’est l’excédent d’exploitation, c’est-à-dire
+      <strong>Ce que montre le tableau.</strong> Avec les voitures de tiers, la caisse tient jusqu’à {pct(100 * SEUIL_T['caisse'], 0)} des planchers : la levée absorbe les écarts. Ce qui se dégrade, c’est l’excédent d’exploitation, c’est-à-dire
       la capacité des versements à couvrir les charges sans consommer la levée.
     </div>
     <div class="callout rouille ajout">
       <strong>Les deux conditions du plan.</strong> Les neuf voitures d’Afrik Group (sans elles, la trésorerie devient négative au mois {HD['sans_voitures']['premier_mois_negatif']})
-      et l’encaissement des versements. Les voitures de tiers abaissent de trente points les seuils d’excédent et de résultat.
+      et l’encaissement des versements. Les voitures de tiers abaissent de {round(100 * (SEUIL_S['ebe'] - SEUIL_T['ebe']))} points le seuil d’excédent et de {round(100 * (SEUIL_S['net'] - SEUIL_T['net']))} points celui du résultat.
     </div>
   </div>
-  <div class="src">Les coûts d’un second responsable des opérations, de la garantie TamAssur et de l’amortissement de l’apport en nature ne sont pas dans ces chiffres.</div>
+  <div class="src">Les coûts d’un second responsable des opérations, de la garantie TamAssur aux paliers de 36 mois et au-delà et de l’amortissement de l’apport en nature ne sont pas dans ces chiffres.</div>
 
   <div class="pn"><b><!--PN--></b> sur <!--TOTAL--></div>
 </section>
@@ -228,7 +228,7 @@ pages.append(f'''<!-- ==========================================================
     <div class="cols2">
       <p>
         <span class="modif">Le modèle de flotte prévoit pour chaque véhicule un plancher contractuel de recettes par jour : {n(M.PLANCHER_ESS)} F pour une Essentiel, {n(M.PLANCHER_CONF)} F pour un Confort,
-        {n(M.VOL_TRI)} F pour un tricycle et {n(M.VOL_MOTO)} F pour une moto, sur une base de 26 jours travaillés par mois. Le conducteur en verse 60 % ; la différence éventuelle est prélevée
+        {n(M.VOL_TRI)} F pour un tricycle et {n(M.VOL_MOTO)} F pour une moto, sur une base de 26 jours travaillés par mois. Le conducteur doit en atteindre 60 % (objectif du jour, cotisation TamAssur comprise) ; la différence éventuelle est prélevée
         chaque nuit sur son portefeuille.</span>
       </p>
       <p>
@@ -420,7 +420,7 @@ pages.append(f'''<!-- ==========================================================
     <colgroup><col style="width:30%"><col style="width:32%"><col style="width:38%"></colgroup>
     <thead><tr><th>Indicateur</th><th>Seuil d’alerte</th><th>Décision</th></tr></thead>
     <tbody>
-      {tr('Taux d’encaissement des planchers<small>moyenne mensuelle</small>', f'Sous 90 %, puis sous {pct(100 * SEUIL_S["ebe"], 0)}', 'Vigilance, puis plan correctif : recouvrement, remplacement de conducteurs, recrutement de voitures (8.8)')}
+      {tr('Taux d’encaissement des planchers<small>moyenne mensuelle</small>', f'Sous 90 %, puis sous 80 % (excédent négatif sous {pct(100 * SEUIL_T["ebe"], 0)})', 'Vigilance, puis plan correctif : recouvrement, remplacement de conducteurs, recrutement de voitures (8.8)')}
       {tr('Voitures de tiers recrutées', f'Moins de {CUM6} au mois 6 ; moins de {NT} au mois 12', 'Intensifier le recrutement ; différer les dépenses non essentielles (10.9)')}
       {tr('Dette d’un chauffeur', 'Plus de 5 000 F', 'Mise en ligne bloquée jusqu’à la recharge (6.3)')}
       {tr('Poste vacant', 'Plus de 21 jours', 'Recrutement prioritaire ; coût de la cotisation avancée suivi (8.3)')}

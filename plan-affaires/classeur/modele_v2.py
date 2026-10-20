@@ -1,11 +1,14 @@
-"""Classeur TamCar « Résultat complet » — version 2 (décisions du 2026-10-11 et du 2026-10-18).
+"""Classeur TamCar « Résultat complet » — version 2 (décisions du 2026-10-11, du 2026-10-18 et du 2026-10-20).
 
 Part du classeur v1 archivé (archives/2026-10-11_classeur_resultat_complet_v1) et applique :
   - fonds de rachat ramené de 10 % à 5 % : les 5 points retirés vont à TamCar -> 25 % du volume sur les voitures (20 % + 5 %), 55 % sur un tricycle de TamCar ;
   - durées de contrat : Essentiel 36 mois, Confort 48 mois (VIP 60 mois, non compté) ;
   - plus d'avance de démarrage remboursable : 30 000 F de frais d'entrée par véhicule déployé (charge) ;
   - GPS / tracker, assurance et entretien des voitures à la charge du propriétaire ;
-  - un taux d'atteinte des planchers (levier de pilotage) et le recrutement de véhicules de tiers (3 Essentiel + 3 Confort au minimum).
+  - un taux d'atteinte des planchers (levier de pilotage) et le recrutement de véhicules de tiers (3 Essentiel + 3 Confort au minimum) ;
+  - (2026-10-20) planchers de recettes corrigés : objectif du jour « tout compris » (versement + TamAssur 1 000 F) ÷ 60 %, soit moto 5 850 F, tricycle 10 000 F,
+    Essentiel 13 700 F, Confort 16 700 F ; la cotisation TamAssur (1 000 F par jour et par véhicule sous contrat) est financée par la part de TamCar, plus par
+    le conducteur en plus de son versement ; manque au rachat NSIA compté à l'ouverture du premier palier de retrait (12 mois pour la moto, 24 mois pour les autres).
 
 Les formules sont celles de v1, complétées : rien n'est figé dans les feuilles de calcul (sauf la feuille « Seuils », qui garde le résultat
 des simulations avec sa date).
@@ -62,6 +65,19 @@ def construire(dest=V2, surcharges=None, source=V1):
     note(71, "30 % propriétaire (TamCar) + 20 % plateforme + 5 % fonds de rachat qui revient à TamCar ; l'autre moitié du fonds (5 %) est le fonds du conducteur")
     note(72, "Idem : 55 %")
 
+    # ------------------------------------------------------------------ Hypothèses : planchers corrigés (2026-10-20)
+    H["B45"], H["B46"], H["B60"], H["B61"] = 10000, 5850, 13700, 16700
+    note(45, "Objectif du jour du tricycle 6 000 F (versement 5 000 F + TamAssur 1 000 F) = 60 % du volume : 10 000 F (décision du 2026-10-20) ; sert au responsable des opérations")
+    note(46, "Objectif du jour de la moto 3 500 F (versement 2 500 F + TamAssur 1 000 F) = 60 % du volume : 5 850 F (décision du 2026-10-20)")
+    note(60, "Objectif du jour 8 200 F (versement 7 200 F + TamAssur 1 000 F) = 60 % du volume : 13 700 F ; le conducteur a déjà pris ses 40 % (décision du 2026-10-20)")
+    note(61, "Objectif du jour 10 000 F (versement 9 000 F + TamAssur 1 000 F) = 60 % du volume : 16 700 F (décision du 2026-10-20)")
+    H["A75"] = "Objectif du jour d'une moto de TamCar, tout compris (versement 2 500 F + TamAssur 1 000 F)"
+    H["B75"] = 3500
+    note(75, "Terence (2026-10-15) : 3 500 F par jour, 26 jours par mois, pendant 12 mois ; la cotisation TamAssur de 1 000 F est déduite plus bas (ligne 103) ; plus si l'app rapporte plus")
+    H["A79"] = "Épargne NSIA (TamAssur) : cotisation, postes vacants, manque au rachat"
+    note(80, "Cotisation payée à NSIA chaque jour par TamCar pour chaque conducteur sous contrat (ligne 103) ; le conducteur ne la verse PAS en plus : elle est comprise dans son objectif du jour, donc dans les 60 % du volume partagés entre propriétaire, fonds de rachat et TamCar")
+    note(82, "Hypothèse de travail à confirmer ; TamCar paie alors la cotisation de sa poche (poste vacant : aucune course, donc aucune part)")
+
     # ------------------------------------------------------------------ Hypothèses : leviers (lignes 93 à 102)
     H["A93"] = "Pilotage et recrutement (ajout du 2026-10-18)"
     for col in "ABC":
@@ -76,6 +92,9 @@ def construire(dest=V2, surcharges=None, source=V1):
         (100, "… jusqu'au mois", 12, "0", "Le dernier véhicule arrive à ce mois"),
         (101, "Frais d'entrée par véhicule déployé (inspection, habillage, kit chauffeur)", 30000, '#,##0;\\(#,##0\\);\\-', "Décision du 2026-10-11 : TamCar dépense 30 000 F par véhicule ; compté à l'arrivée de chaque véhicule (15 au mois 1, puis les véhicules de tiers)"),
         (102, "Part de TamCar sur un tricycle ou une moto de tiers", 0.25, "0%", "Même partage que les voitures : 30 % propriétaire, 20 % plateforme, 5 % fonds du conducteur, 5 % fonds qui revient à TamCar"),
+        (103, "Cotisation TamAssur par jour et par véhicule sous contrat, financée par la part de TamCar (F)", "=B80", '#,##0;\\(#,##0\\);\\-', "Reprend la ligne 80. Décision du 2026-10-20 : planchers « tout compris » ; la cotisation est prise sur la part de TamCar (25 % du volume pour une voiture), pas ajoutée au versement du conducteur. Déduite des recettes, ne varie pas avec le taux d'atteinte"),
+        (104, "Manque au rachat NSIA à 12 mois, par moto (F)", 29000, '#,##0;\\(#,##0\\);\\-', "Estimation du 2026-10-15 : garantie 250 000 F contre un rachat net NSIA d'environ 221 000 F (85 % de l'épargne, pénalité 5 %). À confirmer par une simulation écrite de NSIA ; mettre 0 pour exclure"),
+        (105, "Manque au rachat NSIA à 24 mois, par tricycle ou voiture (F)", 48000, '#,##0;\\(#,##0\\);\\-', "Estimation du 2026-10-15 : garantie 500 000 F contre un rachat net d'environ 452 000 F ; les paliers suivants (36, 48, 60 mois) sont supposés sans manque. À confirmer par NSIA ; mettre 0 pour exclure"),
     ]
     for r, label, val, fmt, nt in lignes:
         H.cell(r, 1, label)._style = copy(H["A31"]._style)
@@ -133,6 +152,41 @@ def construire(dest=V2, surcharges=None, source=V1):
         for c in range(7, 44):
             M.cell(r, c).number_format = '0'
 
+    # section « TamAssur » (décision du 2026-10-20) : véhicules sous contrat, cotisation prise sur la part de TamCar, manque au rachat NSIA
+    for c in range(1, 44):
+        M.cell(97, c)._style = copy(M.cell(79, c)._style)
+    M.cell(97, 1, "TAMASSUR : véhicules sous contrat (équivalents en service), cotisation prise sur la part de TamCar, manque au rachat NSIA")
+    B = lambda n: f"{HY}$B${n}"
+
+    def age(k):
+        return f"({k}$4-$G$4:$AQ$4)"
+
+    ligne(98, "Tricycles sous contrat, équivalents en service (TamCar + tiers)",
+          lambda c, k, j: "=0" if c == 7 else
+          f"=SUMPRODUCT($G$7:$AQ$7*({age(k)}>=0)*(1-0.5*({age(k)}=0))*({age(k)}<{B(74)}))+({k}89-0.5*({k}89-{j}89))")
+    ligne(99, "Motos sous contrat, équivalents en service (TamCar + tiers)",
+          lambda c, k, j: "=0" if c == 7 else
+          f"=SUMPRODUCT($G$8:$AQ$8*({age(k)}>=0)*(1-0.5*({age(k)}=0))*({age(k)}<{B(76)}))+({k}90-0.5*({k}90-{j}90))")
+    ligne(100, "Voitures Essentiel sous contrat, équivalents en service (Afrik Group + tiers)",
+          lambda c, k, j: "=0" if c == 7 else
+          f"=IF({k}$4<{B(59)},0,{B(57)}*IF({k}$4={B(59)},0.5,1)*(({k}$4-{B(59)})<{B(65)}))+({k}87-0.5*({k}87-{j}87))")
+    ligne(101, "Voitures Confort sous contrat, équivalents en service (Afrik Group + tiers)",
+          lambda c, k, j: "=0" if c == 7 else
+          f"=IF({k}$4<{B(59)},0,{B(58)}*IF({k}$4={B(59)},0.5,1)*(({k}$4-{B(59)})<{B(66)}))+({k}88-0.5*({k}88-{j}88))")
+    ligne(102, "Cotisation TamAssur prise sur la part de TamCar (déjà déduite des lignes 58 à 61)",
+          lambda c, k, j: "=0" if c == 7 else f"={B(103)}*{B(47)}*({k}98+{k}99+{k}100+{k}101)")
+    ligne(103, "Motos arrivées ce mois (premier palier de retrait à 12 mois)",
+          lambda c, k, j: "=0" if c == 7 else f"=N({k}8)+({k}90-{j}90)")
+    ligne(104, "Tricycles et voitures arrivés ce mois (premier palier de retrait à 24 mois)",
+          lambda c, k, j: "=0" if c == 7 else
+          f"=N({k}7)+({k}89-{j}89)+IF({k}$4={B(59)},{B(57)}+{B(58)},0)+({k}87-{j}87)+({k}88-{j}88)")
+    ligne(105, "Manque au rachat NSIA à l'ouverture du premier palier (compté dans la ligne 38)",
+          lambda c, k, j: "=0" if c == 7 else
+          f"={B(104)}*SUMPRODUCT($G$103:$AQ$103*($G$4:$AQ$4={k}$4-12))+{B(105)}*SUMPRODUCT($G$104:$AQ$104*($G$4:$AQ$4={k}$4-24))")
+    for r in (98, 99, 100, 101):
+        for c in range(7, 44):
+            M.cell(r, c).number_format = '0.0'
+
     for c in cols:
         k = L(c)
         # responsable des opérations : taux d'atteinte et véhicules de tiers
@@ -145,15 +199,16 @@ def construire(dest=V2, surcharges=None, source=V1):
         # frais d'entrée (remplace l'avance remboursée)
         M.cell(37, c).value = (f"={ENTREE}*(N({k}7)+N({k}8)+IF({k}$4={HY}$B$59,{HY}$B$57+{HY}$B$58,0)+{k}91)"
                                if c > 7 else "=0")
-        # postes vacants NSIA : + véhicules de tiers
+        # postes vacants NSIA : + véhicules de tiers ; + manque au rachat NSIA (ligne 105)
         v = M.cell(38, c).value
         if isinstance(v, str) and v.startswith("=("):
             prem = f"IF({k}$4>={HY}$B$59,{HY}$B$57+{HY}$B$58,0))"
             v = _remplacer(v, prem, prem[:-1] + f"+{k}87+{k}88+{k}89+{k}90)", f"M38 {k}")
-            M.cell(38, c).value = v
+            M.cell(38, c).value = v + f"+{k}105"
         # recettes : taux d'atteinte + véhicules de tiers
-        for r, extra in ((58, f"+{k}94*{PART_TM}"), (59, f"+{k}95*{PART_TM}"),
-                         (60, f"+{k}92*{HY}$B$63"), (61, f"+{k}93*{HY}$B$63")):
+        tam = lambda ligne_eq: f"-{HY}$B$103*{HY}$B$47*{k}{ligne_eq}"      # cotisation TamAssur prise sur la part de TamCar (fixe, hors taux d'atteinte)
+        for r, extra in ((58, f"+{k}94*{PART_TM}{tam(98)}"), (59, f"+{k}95*{PART_TM}{tam(99)}"),
+                         (60, f"+{k}92*{HY}$B$63{tam(100)}"), (61, f"+{k}93*{HY}$B$63{tam(101)}")):
             v = M.cell(r, c).value
             if isinstance(v, str) and v.startswith("="):
                 M.cell(r, c).value = f"=({v[1:]})*{P}{extra}"
@@ -165,16 +220,17 @@ def construire(dest=V2, surcharges=None, source=V1):
 
     # libellés
     M["A37"] = "Frais d'entrée des véhicules déployés (inspection, habillage, kit : 30 000 F par véhicule)"
+    M["A38"] = "Épargne NSIA (TamAssur) : postes vacants et manque au rachat à l'ouverture du premier palier"
     M["A33"] = "Responsable des opérations (3 % du volume, plafonné)"
     M["A80"] = "Volume des tricycles (TamCar + tiers)"
     M["A81"] = "Volume des motos (TamCar + tiers)"
     M["A82"] = "Volume des voitures Essentiel (Afrik Group + tiers)"
     M["A83"] = "Volume des voitures Confort (Afrik Group + tiers)"
     M["A79"] = "VOLUME DE COURSES (au taux d'atteinte retenu ; sert à répartir le responsable des opérations ; mois de lancement compté pour moitié)"
-    for r, t in ((58, "Tricycles : part de TamCar sur le volume (TamCar + tiers)"),
-                 (59, "Motos : versement minimum, puis commission après cession (TamCar + tiers)"),
-                 (60, "Voitures Essentiel : part de TamCar sur le volume (Afrik Group + tiers)"),
-                 (61, "Voitures Confort : part de TamCar sur le volume (Afrik Group + tiers)")):
+    for r, t in ((58, "Tricycles : part de TamCar sur le volume, nette de la cotisation TamAssur (TamCar + tiers)"),
+                 (59, "Motos : objectif du jour puis commission après cession, net de la cotisation TamAssur (TamCar + tiers)"),
+                 (60, "Voitures Essentiel : part de TamCar sur le volume, nette de la cotisation TamAssur (Afrik Group + tiers)"),
+                 (61, "Voitures Confort : part de TamCar sur le volume, nette de la cotisation TamAssur (Afrik Group + tiers)")):
         M.cell(r, 1).value = t
 
     # ------------------------------------------------------------------ autres feuilles : libellés et notes
@@ -190,6 +246,13 @@ def construire(dest=V2, surcharges=None, source=V1):
                         if cell.value == a:
                             cell.value = b
     wb["Synthèse"]["A30"] = "Frais d'entrée des véhicules déployés (30 000 F par véhicule)"
+    wb["Synthèse"]["A31"] = "Épargne NSIA (TamAssur) : postes vacants et manque au rachat"
+    wb["Synthèse"]["A73"] = ("Épargne NSIA (TamAssur) : la cotisation de 1 000 F par jour est comprise dans l'objectif du jour du conducteur, donc dans les 60 % du volume qui reviennent "
+                             "au propriétaire, au fonds de rachat et à TamCar : TamCar la finance sur sa part (déduite des recettes). S'y ajoutent le coût des postes vacants et le manque au "
+                             "rachat NSIA à l'ouverture du premier palier de retrait (estimations des lignes 104 et 105 des Hypothèses, à confirmer par NSIA).")
+    wb["Charges"]["A58"] = ("Non inclus : frais FeexPay (1,7 % payés par le client), frais Mobile Money des retraits chauffeur, forfait internet des chauffeurs, charges sociales, entretien (conducteur). "
+                            "La cotisation TamAssur est déduite des recettes ; le manque au rachat NSIA est compté dans l'épargne NSIA (estimation).")
+    wb["Recettes"]["A26"] = "Moto : objectif du jour (dont TamAssur 1 000 F)"
 
     Mg = wb["Marge"]
     for bloc in (15, 30, 45):
@@ -211,7 +274,10 @@ def construire(dest=V2, surcharges=None, source=V1):
                "recrutées entre le mois 4 et le mois 12. Recettes aux planchers de Mayeul, au taux d'atteinte de la feuille Hypothèses (ligne 94). Levée de 15 M. Lancement en janvier 2027 (mois 1).")
     S["A27"] = ("Recettes aux planchers : seules les courses jusqu'au plancher de Mayeul sont comptées. Tout volume au-dessus du plancher s'ajoute aux recettes. "
                 "Le premier mois de lancement (et le mois d'arrivée d'un véhicule) compte pour moitié. Part de TamCar : 25 % sur les voitures, 55 % sur le tricycle de TamCar, "
-                "versement minimum de 2 500 F par jour sur les motos de TamCar (décision du 2026-10-18).")
+                "objectif du jour de 3 500 F sur les motos de TamCar (décision du 2026-10-18). Planchers corrigés le 2026-10-20 : volume = objectif ÷ 60 % ; la cotisation TamAssur "
+                "(1 000 F par jour et par véhicule sous contrat) est déduite des recettes : elle est financée par la part de TamCar.")
+    S["A29"] = ("Non inclus : frais FeexPay (1,7 % payés par le client en plus), frais Mobile Money des retraits chauffeur (à décider), forfait internet des chauffeurs (idée non décidée), "
+                "charges sociales, entretien (à la charge du conducteur), bonus de performance (neutre aux planchers). Le manque au rachat NSIA est compté (estimation à confirmer).")
     S["A30"] = ("Cellules en bleu sur fond jaune (feuille Hypothèses) : à modifier ; tout le reste se recalcule. Le taux d'atteinte des planchers et les véhicules de tiers "
                 "se règlent aux lignes 94 à 102. La feuille Seuils garde le résultat de simulations (valeurs figées, avec leur date).")
     wb.save(dest)

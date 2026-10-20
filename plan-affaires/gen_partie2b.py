@@ -108,7 +108,7 @@ html = f'''<!-- ============================================================ 02 
     Elle dépasse le coût de reproduction ({n(B)} F) et reste sous la valeur d’usage ({n(CVAL)} F).
   </div>
 
-  <div class="rule-label" style="margin-top:16px">Ce que la plateforme contient au 18 octobre 2026</div>
+  <div class="rule-label" style="margin-top:16px">Ce que la plateforme contient au 20 octobre 2026</div>
   <table class="tbl txt" style="margin-top:8px">
     <colgroup><col style="width:24%"><col style="width:76%"></colgroup>
     <thead><tr><th>Périmètre</th><th>Contenu</th></tr></thead>

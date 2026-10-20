@@ -14,6 +14,7 @@ def D1(v):
 
 TAUX = M.TAUX
 R_T, R_S = M.res(1.0, True), M.res(1.0, False)
+R70_S = M.res(0.7, False)
 SEUIL_S, SEUIL_T = M.seuils('flotte_actuelle'), M.seuils('avec_tiers')
 NT = M.N_ESS_T + M.N_CONF_T
 CUM6 = M.ligne(87)[6] + M.ligne(88)[6]
@@ -196,7 +197,9 @@ pages.append(f'''<!-- ==========================================================
       {tr('Frais d’entrée par véhicule déployé', f'{n(M.FRAIS_ENTREE)} par véhicule', 'Une fois', f'{M.N_VEHICULES_MOIS1} véhicules au mois 1 ; chaque voiture de tiers à son arrivée')}
       {tr('Assurance, droit taxi, visite technique de TamCar', f'75 000 par an par tricycle ; 50 000 par an par moto', 'Fixe', 'Jusqu’à la cession du véhicule au conducteur')}
       {tr('Tracker GPS certifié ANATT de TamCar', '139 000 en année 1, puis 89 000 par an (tricycle)', 'Fixe', 'À la mise en service puis chaque anniversaire (8.4) ; motos cédées à 12 mois : pas de renouvellement')}
-      {tr('Postes vacants TamAssur', f'environ {n(VAC_AN)} par an', 'Variable', 'Cotisation NSIA avancée pendant la vacance d’un poste (25 % de départs, 21 jours)')}
+      {tr('Épargne NSIA (TamAssur) : postes vacants', f'environ {n(VAC_AN)} par an', 'Variable', 'Cotisation NSIA avancée pendant la vacance d’un poste (25 % de départs, 21 jours)')}
+      {tr('Épargne NSIA (TamAssur) : manque au rachat', f'{n(M.NSIA_12)} par moto ; {n(M.NSIA_24)} par autre véhicule', 'Une fois par véhicule', 'À l’ouverture du premier palier de retrait (12 mois pour une moto, 24 mois pour les autres) : estimations à confirmer par une simulation écrite de NSIA')}
+      {tr('Cotisation TamAssur des véhicules sous contrat', f'{n(M.COTIS)} par jour et par véhicule', 'Déduite des recettes', 'Comprise dans l’objectif du conducteur, versée à NSIA par TamCar et financée sur sa part : elle n’est pas dans les charges ci-dessus mais déduite des revenus (7.2)')}
     </tbody>
   </table>
 
@@ -330,7 +333,7 @@ pages.append(f'''<!-- ==========================================================
       flotte de départ, et à {n(M.phase_gen(25, 36, True)['rec'])} F avec les voitures de tiers. Le flux devient positif dès la deuxième phase (mois 7 à 12).
     </div>
   </div>
-  <div class="src ajout">Le flux de la première phase est négatif en moyenne parce qu’il contient l’achat des véhicules de TamCar, le mois du lancement (compté pour moitié) et la montée progressive des véhicules ; il est positif dès le mois 2.</div>
+  <div class="src ajout">Le flux de la première phase est négatif en moyenne parce qu’il contient l’achat des véhicules de TamCar, le mois du lancement (compté pour moitié) et la montée progressive des véhicules ; il est positif dès le mois 2, hors charges annuelles et manque au rachat NSIA (7.5).</div>
 
   <div class="pn"><b><!--PN--></b> sur <!--TOTAL--></div>
 </section>
@@ -369,8 +372,8 @@ pages.append(f'''<!-- ==========================================================
 
   <div class="row c-1-1 stretch" style="margin-top:12px">
     <div class="callout vert">
-      <strong>Qui rembourse ?</strong> Les véhicules eux-mêmes. Aux planchers, la part de TamCar sur le tricycle est de {n(M.VOL_TRI * M.JOURS * M.PART_TRICYCLE)} F par mois
-      pour une mensualité de {n(TRI_MENS)} F : elle est couverte dès {pct(100 * TRI_MENS / (M.VOL_TRI * M.JOURS * M.PART_TRICYCLE), 0)} du plancher. Les motos, payées
+      <strong>Qui rembourse ?</strong> Les véhicules eux-mêmes. Aux planchers, la part de TamCar sur le tricycle est de {n(M.PART_NETTE_MENS['tri'])} F par mois
+      (nette de la cotisation TamAssur) pour une mensualité de {n(TRI_MENS)} F : elle est couverte dès {pct(100 * M.SEUIL_MENS_TRI, 0)} du plancher. Les motos, payées
       comptant, rapportent {n(M.VERS_MOTO * M.JOURS)} F par mois chacune : leur prix est remboursé en {D1(M.PRIX_MOTO / (M.VERS_MOTO * M.JOURS))} mois.
     </div>
     <div class="callout rouille">
@@ -483,11 +486,11 @@ pages.append(f'''<!-- ==========================================================
   <div class="row c-1-1 stretch" style="margin-top:12px">
     <div class="callout rouille">
       <strong>Marge de sécurité, flotte de départ.</strong> Excédent d’exploitation positif dès {pct(100 * SEUIL_S['ebe'], 0)} des planchers, résultat net positif dès
-      {pct(100 * SEUIL_S['net'], 0)}, trésorerie positive sur 36 mois jusqu’à {pct(100 * SEUIL_S['caisse'], 0)}. À 70 %, la caisse tient mais l’entreprise consomme la levée.
+      {pct(100 * SEUIL_S['net'], 0)}, trésorerie positive sur 36 mois jusqu’à {pct(100 * SEUIL_S['caisse'], 0)}. À 70 %, la caisse ne tient pas ({mm(R70_S['point_bas'], 1)} au point bas) : l’entreprise consomme la levée.
     </div>
     <div class="callout vert">
       <strong>Marge de sécurité, flotte recrutée.</strong> {pct(100 * SEUIL_T['ebe'], 0)} pour l’excédent d’exploitation, {pct(100 * SEUIL_T['net'], 0)} pour le résultat net,
-      {pct(100 * SEUIL_T['caisse'], 0)} pour la trésorerie : les voitures de tiers abaissent d’environ trente points les seuils d’excédent et de résultat, et de quinze points celui de la trésorerie.
+      {pct(100 * SEUIL_T['caisse'], 0)} pour la trésorerie : les voitures de tiers abaissent d’environ {round(100 * (SEUIL_S['ebe'] - SEUIL_T['ebe']))} points le seuil d’excédent, de {round(100 * (SEUIL_S['net'] - SEUIL_T['net']))} points celui du résultat et de {round(100 * (SEUIL_S['caisse'] - SEUIL_T['caisse']))} points celui de la trésorerie.
     </div>
   </div>
 
@@ -497,7 +500,7 @@ pages.append(f'''<!-- ==========================================================
     <colgroup><col style="width:30%"><col style="width:30%"><col style="width:40%"></colgroup>
     <thead><tr><th>Indicateur</th><th>Seuil d’alerte</th><th>Décision</th></tr></thead>
     <tbody>
-      {tr('Taux d’encaissement des planchers<small>moyenne mensuelle</small>', f'Sous 90 %, puis sous {pct(100 * SEUIL_S["ebe"], 0)}', 'Vigilance, puis plan correctif : recouvrement, remplacement de conducteurs, recrutement de voitures de tiers (10.9)')}
+      {tr('Taux d’encaissement des planchers<small>moyenne mensuelle</small>', f'Sous 90 %, puis sous 80 % (excédent négatif sous {pct(100 * SEUIL_T["ebe"], 0)})', 'Vigilance, puis plan correctif : recouvrement, remplacement de conducteurs, recrutement de voitures de tiers (10.9)')}
       {tr('Voitures de tiers recrutées', f'Moins de {CUM6} au mois 6 ; moins de {NT} au mois 12', 'Intensifier le recrutement ; différer les dépenses non essentielles')}
       {tr('Dette d’un conducteur', 'Plus de 5 000 F', 'Mise en ligne bloquée jusqu’à la recharge (6.3)')}
       {tr('Poste vacant', 'Plus de 21 jours', 'Recrutement prioritaire ; coût de la cotisation avancée suivi (8.3)')}
@@ -558,8 +561,7 @@ pages.append(f'''<!-- ==========================================================
   </div>
 
   <div class="callout ajout" style="margin-top:14px">
-    <strong>Ce que le plan ne chiffre pas.</strong> L’écart éventuel entre la garantie TamAssur (250 000 F par année de cotisation) et la valeur de rachat du contrat
-    NSIA, le coût d’un second responsable des opérations au-delà de 5 M F de volume mensuel, l’amortissement comptable de l’apport en nature de la
+    <strong>Ce que le plan ne chiffre pas.</strong> L’écart entre la garantie TamAssur et la valeur de rachat du contrat NSIA aux paliers de 36 mois et au-delà (le plan chiffre le premier palier, 12 ou 24 mois), le coût d’un second responsable des opérations au-delà de 5 M F de volume mensuel, l’amortissement comptable de l’apport en nature de la
     plateforme, les frais FeexPay et les revenus de services complémentaires (TamPass), qui s’ajouteraient aux revenus du plan. L’engagement TamAssur sera
     confirmé par écrit avec NSIA avant le lancement.
   </div>

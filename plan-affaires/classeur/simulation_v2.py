@@ -43,18 +43,22 @@ class Base:
         wb = openpyxl.load_workbook(f, data_only=True)
         M, H = wb["Mensuel"], wb["Hypothèses"]
         g = lambda r: lire_mois(M, r)
-        self.rec = g(62)
+        # recettes BRUTES de la cotisation TamAssur (ligne 62 + ligne 102) : la cotisation est fixe, elle ne suit pas le taux d'atteinte
+        self.occ = g(102)
+        self.rec = [a + b for a, b in zip(g(62), self.occ)]
         self.ch = g(54)
         self.achat = g(45)
         self.ops = g(33)
-        self.vac = g(38)
+        # ligne 38 = postes vacants + manque au rachat NSIA (ligne 105)
+        self.nsia = g(105)
+        self.vac = [a - b for a, b in zip(g(38), self.nsia)]
         self.entree = g(37)
         self.anatt, self.imf, self.patente = g(34), g(35), g(36)
         self.amort = [M.cell(73, c).value for c in (3, 4, 5)]
         self.frais_demarrage = M.cell(74, 2).value + M.cell(74, 3).value
         self.gadgets_gestes = [M.cell(77, c).value for c in (3, 4, 5)]
         self.demarrage = M["B20"].value
-        self.h = {k: H[k].value for k in ("B45", "B46", "B60", "B61", "B63", "B43", "B44", "B47", "B80", "B81", "B82", "B101", "B54")}
+        self.h = {k: H[k].value for k in ("B45", "B46", "B57", "B58", "B59", "B60", "B61", "B63", "B43", "B44", "B47", "B80", "B81", "B82", "B101", "B54", "B103", "B104", "B105")}
         self.is_taux, self.is_exo = H["B88"].value, H["B89"].value
         wb.close()
 
@@ -68,8 +72,8 @@ class Base:
         return o
 
 
-def simuler(base, p=1.0, ess=0, conf=0, tri=0, moto=0, debut=4, fin=12, part_tm=0.25):
-    """Séries mensuelles (mois 0..36) : recettes, charges, ebe, flux, caisse."""
+def simuler(base, p=1.0, ess=0, conf=0, tri=0, moto=0, debut=4, fin=12, part_tm=0.25, delta_part=0.0):
+    """Séries mensuelles (mois 0..36) : recettes, charges, ebe, flux, caisse. `delta_part` : points de part de TamCar en plus sur les voitures (Afrik Group et tiers)."""
     h = base.h
     jours, plan = h["B47"], dict(ess=h["B60"], conf=h["B61"], tri=h["B45"], moto=h["B46"])
     n_tiers = dict(ess=ess, conf=conf, tri=tri, moto=moto)
@@ -79,7 +83,7 @@ def simuler(base, p=1.0, ess=0, conf=0, tri=0, moto=0, debut=4, fin=12, part_tm=
             cum[k][m] = arrondi(n * max(0.0, min(1.0, (m - debut + 1) / (fin - debut + 1))))
     vacance_unit = h["B81"] / 12 * h["B82"] * h["B80"]
     cap_ops = h["B44"]
-    out = dict(rec=[0.0] * 37, ch=[0.0] * 37, ebe=[0.0] * 37, flux=[0.0] * 37, caisse=[0.0] * 37)
+    out = dict(rec=[0.0] * 37, ch=[0.0] * 37, ebe=[0.0] * 37, flux=[0.0] * 37, caisse=[0.0] * 37, nsia=[0.0] * 37)
     caisse = LEVEE
     # mois 0
     out["ch"][0] = base.ch[0]
@@ -87,22 +91,30 @@ def simuler(base, p=1.0, ess=0, conf=0, tri=0, moto=0, debut=4, fin=12, part_tm=
     out["flux"][0] = -base.ch[0]
     out["caisse"][0] = caisse
     for m in range(1, 37):
-        rec = p * base.rec[m]
+        rec = p * base.rec[m] - base.occ[m]
+        if delta_part and m >= h["B59"]:
+            rec += p * jours * delta_part * (h["B57"] * plan["ess"] + h["B58"] * plan["conf"]) * (0.5 if m == h["B59"] else 1.0)
         vol_tiers_jour = 0.0
+        nsia_tiers = 0.0
         for k in n_tiers:
             c, c0 = cum[k][m], cum[k][m - 1]
             eff = c - 0.5 * (c - c0)
-            part = h["B63"] if k in ("ess", "conf") else part_tm
-            rec += p * jours * plan[k] * eff * part
+            part = (h["B63"] + delta_part) if k in ("ess", "conf") else part_tm
+            rec += p * jours * plan[k] * eff * part - h["B103"] * jours * eff      # part de TamCar, moins la cotisation TamAssur (fixe)
             vol_tiers_jour += cum[k][m] * plan[k]
+            # manque au rachat NSIA à l'ouverture du premier palier : 12 mois pour une moto, 24 mois pour les autres
+            fenetre, manque = (12, h["B104"]) if k == "moto" else (24, h["B105"])
+            if m - fenetre >= 1:
+                nsia_tiers += manque * (cum[k][m - fenetre] - cum[k][m - fenetre - 1])
         d0 = base.ops[m] / (h["B43"] * jours)                 # volume journalier de base (plafond non atteint)
         ops = min(h["B43"] * p * (d0 + vol_tiers_jour) * jours, cap_ops)
         nb0 = base.vac[m] / vacance_unit
         vac = (nb0 + sum(cum[k][m] for k in cum)) * vacance_unit
         arrivees = sum(cum[k][m] - cum[k][m - 1] for k in cum)
         entree = h["B101"] * (base.entree[m] / h["B101"] + arrivees)
-        ch = base.ch[m] - base.ops[m] + ops - base.vac[m] + vac - base.entree[m] + entree
+        ch = base.ch[m] - base.ops[m] + ops - base.vac[m] + vac - base.entree[m] + entree + nsia_tiers
         out["rec"][m] = rec
+        out["nsia"][m] = base.nsia[m] + nsia_tiers
         out["ch"][m] = ch
         out["ebe"][m] = rec - (ch - base.achat[m])
         out["flux"][m] = rec - ch
@@ -136,9 +148,10 @@ def resultats(base, s):
 def chaque_mois(base, s, a_partir=13):
     """Excédent d'exploitation ET flux de caisse >= 0 chaque mois à partir du mois indiqué, charges annuelles (ANATT, impôt minimum,
     patente) lissées en réserve mensuelle."""
-    lissage = (sum(base.anatt) + sum(base.imf) + sum(base.patente)) / 24   # réserve mensuelle sur les 24 mois où ces charges tombent (mois 13 à 36)
+    # le manque au rachat NSIA (ponctuel, à l'ouverture du premier palier de retrait) est mis en réserve comme les charges annuelles
+    lissage = (sum(base.anatt) + sum(base.imf) + sum(base.patente) + sum(s["nsia"][13:])) / 24   # réserve mensuelle sur les 24 mois où ces charges tombent (mois 13 à 36)
     for m in range(a_partir, 37):
-        reserve = (base.anatt[m] + base.imf[m] + base.patente[m]) - lissage   # on remet la charge réelle du mois et on retire la réserve mensuelle
+        reserve = (base.anatt[m] + base.imf[m] + base.patente[m] + s["nsia"][m]) - lissage   # on remet la charge réelle du mois et on retire la réserve mensuelle
         if s["ebe"][m] + reserve < -0.5 or s["flux"][m] + reserve < -0.5:
             return False
     return True

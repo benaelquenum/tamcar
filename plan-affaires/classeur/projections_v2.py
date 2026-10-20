@@ -15,7 +15,7 @@ import modele_v2 as MV
 import simulation_v2 as SIM
 
 ICI = pathlib.Path(__file__).resolve().parent
-DATE = "2026-10-18"
+DATE = "2026-10-20"
 NAVY, SEC, TOT = "FF071B3A", "FFDDE5F4", "FFC9D6F2"
 NF = '#,##0;\\(#,##0\\);\\-'
 f_norm = Font(name="Arial", size=10)
@@ -107,12 +107,16 @@ def tableaux(base):
             point_bas=SIM.seuil(base, lambda r: r["point_bas"], **kw),
         )
         out[nom] = dict(rows=rows, seuils=seuils)
-    # valeur mensuelle d'un véhicule de tiers (régime établi : mois 20)
+    # valeur mensuelle d'un véhicule de tiers (régime établi : mois 20), hors manque ponctuel au rachat NSIA (compté à part)
+    b3 = SIM.Base.from_dict(base.to_dict())
+    b3.ch = [c - n_ for c, n_ in zip(b3.ch, b3.nsia)]
+    b3.nsia = [0] * 37
+    b3.h = dict(b3.h, B104=0, B105=0)
     val = {}
     for p in (0.7, 1.0):
-        zero = SIM.simuler(base, p)
+        zero = SIM.simuler(b3, p)
         for g, _ in GENRES:
-            un = SIM.simuler(base, p, **{g: 1})
+            un = SIM.simuler(b3, p, **{g: 1})
             val[f"{g}@{int(p * 100)}"] = un["flux"][20] - zero["flux"][20]
     out["valeur_vehicule"] = val
     # nombre de véhicules de tiers d'un seul type pour un excédent ET un flux positifs chaque mois dès le mois 13
@@ -132,6 +136,36 @@ def tableaux(base):
             r["chaque_mois"] = SIM.chaque_mois(base, s)
             combos[f"{nom}@{int(p * 100)}"] = r
     out["combos"] = combos
+    # levier : points de part de TamCar en plus sur les voitures (flotte avec les 6 véhicules de tiers minimum)
+    levier = {}
+    for p in (0.7, 0.8, 0.9, 1.0):
+        def f_ebe(d, p=p):
+            return min(SIM.resultats(base, SIM.simuler(base, p, ess=3, conf=3, delta_part=d))["ebe"])
+        def f_net(d, p=p):
+            r = SIM.resultats(base, SIM.simuler(base, p, ess=3, conf=3, delta_part=d))
+            return min(r["net"][1], r["net"][2])
+        def f_mois(d, p=p):
+            return 1 if SIM.chaque_mois(base, SIM.simuler(base, p, ess=3, conf=3, delta_part=d)) else -1
+        res = {}
+        for nom, f in (("ebe", f_ebe), ("net", f_net), ("chaque_mois", f_mois)):
+            d = 0.0
+            while d <= 0.15 and f(d) < 0:
+                d += 0.0025
+            res[nom] = round(d, 4) if d <= 0.15 else None
+        levier[f"{int(p * 100)}"] = res
+    out["levier_part"] = levier
+    # le conducteur paie la cotisation TamAssur EN PLUS de son versement (méthode du plan v6) : la cotisation n'est plus à la charge de TamCar
+    b2 = SIM.Base.from_dict(base.to_dict())
+    b2.rec = [r - o for r, o in zip(b2.rec, [0] * 37)]
+    b2.occ = [0] * 37
+    b2.h = dict(b2.h, B103=0)
+    sans = {}
+    for p in (0.7, 1.0):
+        s_ = SIM.simuler(b2, p, ess=3, conf=3)
+        r_ = SIM.resultats(b2, s_)
+        r_["chaque_mois"] = SIM.chaque_mois(b2, s_)
+        sans[f"{int(p * 100)}"] = r_
+    out["tamassur_par_conducteur"] = sans
     out["date"] = DATE
     return out
 
@@ -140,7 +174,7 @@ def tableaux(base):
 def feuille_seuils(wb, T):
     ws = wb.create_sheet("Seuils", 1)
     put(ws, "A1", "TamCar — Seuils de pilotage : que devient l'entreprise si les chauffeurs ne font qu'une partie des planchers ? (FCFA)", f_title)
-    put(ws, "A2", (f"Valeurs FIGÉES au {DATE}, calculées avec les hypothèses de la feuille Hypothèses (décisions du 2026-10-18) par le moteur simulation_v2.py, "
+    put(ws, "A2", (f"Valeurs FIGÉES au {DATE}, calculées avec les hypothèses de la feuille Hypothèses (décisions du 2026-10-18 et du 2026-10-20) par le moteur simulation_v2.py, "
                    "contrôlé contre le classeur lui-même (écart nul). Si les hypothèses changent, relancer projections_v2.py. "
                    "Le taux d'atteinte est réglable en direct : feuille Hypothèses, ligne 94."), f_note)
     titres = ["Taux d'atteinte des planchers", "Excédent brut an 1", "an 2", "an 3", "Résultat net an 1", "an 2", "an 3",
@@ -196,10 +230,11 @@ def feuille_seuils(wb, T):
         rr += 1
     rr += 1
     notes = [
-        "Lecture : « 70 % des planchers » ne veut pas dire « au vert ». À 70 %, la caisse reste positive 3 ans (la levée de 15 M absorbe l'écart) mais l'excédent d'exploitation est négatif.",
-        "Les recettes sont celles des planchers de Mayeul : tout volume au-dessus d'un plancher s'ajoute. Le risque principal est la vacance des véhicules et le non-recouvrement des dettes.",
-        "Hypothèse à confirmer : un tricycle ou une moto de tiers rapporte 25 % du volume plancher à TamCar (même partage 30/20/5/5 que les voitures).",
-        "Non modélisés : exposition de la garantie TamAssur (250 000 F par année de cotisation), supervision au-delà de 20 véhicules, amortissement de l'apport en nature (22,5 M), frais FeexPay.",
+        "Lecture : « 70 % des planchers » ne veut pas dire « au vert ». Avec les 6 véhicules de tiers, la caisse reste positive 3 ans à 70 % (la levée de 15 M absorbe l'écart), mais l'excédent d'exploitation est négatif ; sans eux, la caisse devient négative.",
+        "Les recettes sont celles des planchers corrigés le 2026-10-20 (objectif du jour tout compris ÷ 60 %) : tout volume au-dessus d'un plancher s'ajoute. Le risque principal est la vacance des véhicules et le non-recouvrement des dettes.",
+        "La cotisation TamAssur (1 000 F par jour et par véhicule sous contrat) est comprise dans l'objectif du jour : elle est financée par la part de TamCar (déduite des recettes, elle ne baisse pas quand le taux d'atteinte baisse). Le manque au rachat NSIA à l'ouverture du premier palier est compté (29 000 F par moto à 12 mois, 48 000 F par autre véhicule à 24 mois : estimations à confirmer par NSIA).",
+        "Hypothèse à confirmer : un tricycle ou une moto de tiers rapporte 25 % du volume plancher à TamCar (même partage 30/20/5/5 que les voitures), moins la cotisation TamAssur.",
+        "Non modélisés : paliers de retrait de 36 mois et plus (supposés sans manque pour TamCar), supervision au-delà de 20 véhicules, amortissement de l'apport en nature (22,5 M), frais FeexPay.",
     ]
     for t in notes:
         put(ws, f"A{rr}", t, f_note)
@@ -213,7 +248,7 @@ def feuille_seuils(wb, T):
 
 def feuille_decisions(wb):
     ws = wb.create_sheet("Décisions v2", 2)
-    put(ws, "A1", "TamCar — Ce qui change entre le classeur v1 (2026-10-11) et le classeur v2 (2026-10-18)", f_title)
+    put(ws, "A1", "TamCar — Ce qui change entre le classeur v1 (2026-10-11) et le classeur v2 (2026-10-18, corrigé le 2026-10-20)", f_title)
     entete(ws, 3, ["Décision", "Date", "Avant (v1)", "Après (v2)", "Où dans le classeur"])
     lignes = [
         ("Fonds de rachat ramené de 10 % à 5 % ; les 5 points retirés vont à TamCar", "2026-10-18",
@@ -229,14 +264,20 @@ def feuille_decisions(wb):
         ("Taux d'atteinte des planchers, levier de pilotage", "2026-10-18",
          "Planchers atteints à 100 % seulement", "Réglable (100 % par défaut) ; la feuille Seuils fige les résultats de 100 % à 50 %", "Hypothèses B94 ; feuille Seuils"),
         ("Objectif quotidien « tout compris » pour les chauffeurs (moto 3 500 F : versement 2 500 F + cotisation TamAssur 1 000 F)", "2026-10-15",
-         "Versement de 2 500 F pour la moto", "Sans effet sur la caisse : la cotisation de 1 000 F est reversée à NSIA ; la garantie TamAssur de 250 000 F par an n'est pas modélisée", "Hypothèses B75, B80 (inchangés)"),
+         "Versement de 2 500 F pour la moto", "Objectif du jour de 3 500 F tout compris (versement 2 500 F + TamAssur 1 000 F) ; voir la correction du 2026-10-20 ci-dessous", "Hypothèses B75, B80"),
+        ("Planchers de recettes corrigés : objectif du jour tout compris ÷ 60 % (le conducteur a déjà pris ses 40 %)", "2026-10-20",
+         "Tricycle 8 333 F, moto 4 167 F, Essentiel 12 000 F, Confort 15 000 F (versement ÷ 60 %)", "Tricycle 10 000 F, moto 5 850 F, Essentiel 13 700 F, Confort 16 700 F (VIP aligné sur le Confort)", "Hypothèses B45, B46, B60, B61, B75"),
+        ("La cotisation TamAssur (1 000 F par jour et par véhicule) est comprise dans l'objectif du jour : elle est financée par la part de TamCar, plus par le conducteur en plus de son versement", "2026-10-20",
+         "Cotisation reversée à NSIA sans effet sur la caisse (le conducteur la paie en plus du versement) ; seul le coût des postes vacants est compté", "Cotisation déduite des recettes de chaque véhicule sous contrat (voitures, tricycle, moto pendant ses 12 mois) ; fixe, elle ne baisse pas avec le taux d'atteinte", "Hypothèses B103 ; Mensuel lignes 98 à 102 ; recettes lignes 58 à 61"),
+        ("Épargne garantie TamAssur par paliers annuels alignés sur la durée du contrat (moto 12 mois : 250 000 F ; autres 24 mois : 500 000 F puis 250 000 F par année)", "2026-10-20",
+         "Manque au rachat NSIA non modélisé", "Manque estimé à l'ouverture du premier palier : 29 000 F par moto (12 mois), 48 000 F par autre véhicule (24 mois) ; paliers suivants supposés sans manque", "Hypothèses B104, B105 ; Mensuel lignes 103 à 105"),
     ]
     for i, (a, b, c, d, e) in enumerate(lignes):
         r = 4 + i
         for col, v in zip("ABCDE", (a, b, c, d, e)):
             put(ws, f"{col}{r}", v, f_norm, wrap=True)
         ws.row_dimensions[r].height = 48
-    put(ws, "A13", "Le classeur v1 est conservé tel quel dans archives/2026-10-11_classeur_resultat_complet_v1.", f_note)
+    put(ws, f"A{5 + len(lignes)}", "Le classeur v1 est conservé tel quel dans archives/2026-10-11_classeur_resultat_complet_v1 ; le classeur v2 du 2026-10-18 (avant les planchers corrigés) dans archives/2026-10-20_plan_v6_planchers_precedents.", f_note)
     for col, w in zip("ABCDE", (62, 18, 52, 62, 36)):
         ws.column_dimensions[col].width = w
 

@@ -31,12 +31,7 @@ def tr(*cells, cls=''):
 
 # ------------------------------------------------------------------ chiffres
 E, C, VT, VM, J = M.PLANCHER_ESS, M.PLANCHER_CONF, M.VOL_TRI, M.VOL_MOTO, M.JOURS
-PART = {
-    'moto': M.VERS_MOTO * J,
-    'tri': VT * J * M.PART_TRICYCLE,
-    'ess': E * J * M.PART_VOITURE,
-    'conf': C * J * M.PART_VOITURE,
-}
+PART = M.PART_NETTE_MENS            # part de TamCar par mois, aux planchers, nette de la cotisation TamAssur (1 000 F par jour et par véhicule sous contrat)
 TRI_MENS = M.PRIX_TRICYCLE * (1 - M.ACOMPTE_PCT) / M.MENS_TRICYCLE
 ACHAT_TRI, ACHAT_MOTOS = M.PRIX_TRICYCLE, M.PRIX_MOTO * M.N_MOTO
 MISE_DEPART = (M.ACOMPTE_TRICYCLE + M.MOTOS_COMPTANT + M.annuel(48)[1] + M.annuel(49)[1] + M.annuel(50)[1] + M.annuel(51)[1]
@@ -64,7 +59,7 @@ def remp(ancien, nouveau):
     debut = debut.replace(ancien, nouveau)
 
 
-remp('Document établi le 1er octobre 2026.', 'Document établi le 18 octobre 2026 (version 6).')
+remp('Document établi le 1er octobre 2026.', 'Document établi le 20 octobre 2026 (version 6, planchers corrigés).')
 remp("""<b>2 pôles</b>
         <strong>Cotonou &amp; Grand Nokoué, Parakou</strong>
         <small>lancement progressif</small>""",
@@ -123,7 +118,7 @@ p4 = f'''<!-- ============================================================ 4 · 
       {tr('Gestion du véhicule (5 %)', 50, 50, 0)}
       {tr('Part propriétaire', 0, 300, 0)}
       {tr('Total pour TamCar', '<strong>250</strong>', '<strong>550</strong>', '<strong>200</strong>', cls='cle')}
-      {tr('Aux planchers, par mois<small>Essentiel · Confort | tricycle · moto</small>', f"{n(PART['ess'])} · {n(PART['conf'])}", f"{n(PART['tri'])} · {n(PART['moto'])}", '20 % du volume')}
+      {tr('Aux planchers, par mois, nets de TamAssur<small>Essentiel · Confort | tricycle · moto</small>', f"{n(PART['ess'])} · {n(PART['conf'])}", f"{n(PART['tri'])} · {n(PART['moto'])}", '20 % du volume')}
     </tbody>
   </table>
 
@@ -149,11 +144,11 @@ p4 = f'''<!-- ============================================================ 4 · 
         <thead><tr><th>Par jour</th><th>Essentiel</th><th>Confort</th><th>Tricycle</th><th>Moto</th></tr></thead>
         <tbody>
           {tr('Plancher', n(E), n(C), n(VT), n(VM))}
-          {tr('Versement (60 %)', n(M.VERS_ESS), n(M.VERS_CONF), n(M.VERS_TRI), n(M.VERS_MOTO))}
-          {tr('Objectif<small>TamAssur compris</small>', n(M.VERS_ESS + 1000), n(M.VERS_CONF + 1000), n(M.VERS_TRI + 1000), n(M.VERS_MOTO + 1000), cls='cle')}
+          {tr('Versement', n(M.VERS_ESS), n(M.VERS_CONF), n(M.VERS_TRI), n(M.VERS_MOTO))}
+          {tr('Objectif (60 %)<small>TamAssur compris</small>', n(M.OBJ_ESS), n(M.OBJ_CONF), n(M.OBJ_TRI), n(M.OBJ_MOTO), cls='cle')}
         </tbody>
       </table>
-      <p class="note">Le plancher est un montant de courses réalisées, avant carburant et avant la part de TamCar ; celui de la moto est du même ordre que les recettes d’un zémidjan (2 000 à 6 000 F par jour avant carburant).</p>
+      <p class="note">Le plancher est un montant de courses réalisées, avant carburant et avant la part de TamCar ; le conducteur garde 40 % et doit atteindre un objectif égal à 60 % du plancher, cotisation TamAssur de 1 000 F comprise. Celui de la moto se situe en haut de la fourchette des recettes d’un zémidjan (2 000 à 6 000 F par jour avant carburant).</p>
     </div>
   </div>
 
@@ -203,16 +198,16 @@ p5 = f'''<!-- ============================================================ 5 · 
   <div class="h-serif">Ce que rapporte chaque véhicule, planchers atteints</div>
   <table class="tbl serre" style="margin-top:8px">
     <colgroup><col style="width:25%"><col style="width:12%"><col style="width:12%"><col style="width:15%"><col style="width:19%"><col style="width:17%"></colgroup>
-    <thead><tr><th>Véhicule</th><th>Plancher par jour</th><th>Versement par jour</th><th>Part de TamCar par mois</th><th>Capital engagé</th><th>Récupération</th></tr></thead>
+    <thead><tr><th>Véhicule</th><th>Plancher par jour</th><th>Objectif par jour</th><th>Part nette de TamCar par mois</th><th>Capital engagé</th><th>Récupération</th></tr></thead>
     <tbody>
-      {ligne_veh('Moto', 'de TamCar · cédée à 12 mois', VM, M.VERS_MOTO, PART['moto'], f'{n(M.PRIX_MOTO)} comptant', f'{D1(M.PRIX_MOTO / PART["moto"])} mois')}
-      {ligne_veh('Tricycle', 'de TamCar · cédé à 36 mois', VT, M.VERS_TRI, PART['tri'], f'{n(M.PRIX_TRICYCLE)} (30 % + {M.MENS_TRICYCLE} mois)', f'{D1(M.PRIX_TRICYCLE / PART["tri"])} mois')}
-      {ligne_veh('Voiture Essentiel', 'Afrik Group ou tiers · 36 mois', E, M.VERS_ESS, PART['ess'], 'aucun', f'{n(M.FRAIS_ENTREE)} F d’entrée')}
-      {ligne_veh('Voiture Confort', 'Afrik Group ou tiers · 48 mois', C, M.VERS_CONF, PART['conf'], 'aucun', f'{n(M.FRAIS_ENTREE)} F d’entrée')}
+      {ligne_veh('Moto', 'de TamCar · cédée à 12 mois', VM, M.OBJ_MOTO, PART['moto'], f'{n(M.PRIX_MOTO)} comptant', f'{D1(M.PRIX_MOTO / PART["moto"])} mois')}
+      {ligne_veh('Tricycle', 'de TamCar · cédé à 36 mois', VT, M.OBJ_TRI, PART['tri'], f'{n(M.PRIX_TRICYCLE)} (30 % + {M.MENS_TRICYCLE} mois)', f'{D1(M.PRIX_TRICYCLE / PART["tri"])} mois')}
+      {ligne_veh('Voiture Essentiel', 'Afrik Group ou tiers · 36 mois', E, M.OBJ_ESS, PART['ess'], 'aucun', f'{n(M.FRAIS_ENTREE)} F d’entrée')}
+      {ligne_veh('Voiture Confort', 'Afrik Group ou tiers · 48 mois', C, M.OBJ_CONF, PART['conf'], 'aucun', f'{n(M.FRAIS_ENTREE)} F d’entrée')}
     </tbody>
   </table>
 
-  <p class="note" style="margin-top:6px">Un tricycle qui atteint son plancher fait {n(VT * J)} F de courses par mois ; {n(PART['tri'])} F reviennent à TamCar (55 %) et couvrent la mensualité d’achat de {n(TRI_MENS)} F dès {pct(100 * TRI_MENS / PART['tri'])} du plancher. Une moto rembourse son prix en {D1(M.PRIX_MOTO / PART['moto'])} mois ; cédée au bout de 12 mois, elle ne rapporte plus que {n(VM * J * 0.2)} F par mois (20 % du volume).</p>
+  <p class="note" style="margin-top:6px">Un tricycle qui atteint son plancher fait {n(VT * J)} F de courses par mois ; {n(PART['tri'])} F nets de TamAssur reviennent à TamCar (55 % du volume moins la cotisation) et couvrent la mensualité d’achat de {n(TRI_MENS)} F dès {pct(100 * M.SEUIL_MENS_TRI)} du plancher. Une moto rembourse son prix en {D1(M.PRIX_MOTO / PART['moto'])} mois ; cédée au bout de 12 mois, elle ne rapporte plus que {n(VM * J * 0.2)} F par mois (20 % du volume).</p>
 
   <div class="duo">
     <div class="tile vert">
@@ -234,10 +229,10 @@ p5 = f'''<!-- ============================================================ 5 · 
     <tbody>
       {tr('Planchers atteints', n(M.VALEUR['moto@100']), n(M.VALEUR['tri@100']), n(M.VALEUR['ess@100']), n(M.VALEUR['conf@100']))}
       {tr('Planchers versés à 70 %', n(M.VALEUR['moto@70']), n(M.VALEUR['tri@70']), n(M.VALEUR['ess@70']), n(M.VALEUR['conf@70']))}
-      {tr('Nombre minimal à 70 %<small>excédent et trésorerie positifs chaque mois</small>', MIN['moto@70'], MIN['tri@70'], MIN['ess@70'], MIN['conf@70'], cls='cle')}
+      {tr('Nombre minimal à 70 %<small>excédent et trésorerie positifs chaque mois</small>', *['—' if MIN[k] is None else MIN[k] for k in ('moto@70', 'tri@70', 'ess@70', 'conf@70')], cls='cle')}
     </tbody>
   </table>
-  <p class="note">Valeur nette de la part du responsable des opérations (3 %) et des postes vacants. Une voiture de tiers qui ne roule pas coûte {n(M.FRAIS_ENTREE)} F d’entrée : le risque est borné, et les voitures sont le levier le plus efficace du plan.</p>
+  <p class="note">Valeur nette de la cotisation TamAssur (1 000 F par jour), de la part du responsable des opérations (3 %) et des postes vacants. Une voiture de tiers qui ne roule pas coûte {n(M.FRAIS_ENTREE)} F d’entrée : le risque est borné, et les voitures sont le levier le plus efficace du plan.</p>
 
   <div class="pn"><b><!--PN--></b> sur <!--TOTAL--></div>
 </section>
@@ -338,7 +333,7 @@ p7 = f'''<!-- ============================================================ 7 · 
     <thead><tr><th>Planchers atteints · 36 mois (FCFA)</th><th>Flotte de départ · 15 véhicules</th><th>Flotte recrutée · + {NT} voitures de tiers</th></tr></thead>
     <tbody>
       {tr('Levée de fonds', n(M.LEVEE), n(M.LEVEE))}
-      {tr('Revenus de TamCar (courses et versements)', n(REVENUS_S), n(REVENUS_T))}
+      {tr('Revenus de TamCar (courses et versements, nets de TamAssur)', n(REVENUS_S), n(REVENUS_T))}
       {tr('Achat des véhicules de TamCar', n(ACHAT_TRI + ACHAT_MOTOS), n(ACHAT_TRI + ACHAT_MOTOS))}
       {tr('Investissements de démarrage', n(M.DEMARRAGE), n(M.DEMARRAGE))}
       {tr('Charges d’exploitation cumulées', n(M.phase_gen(1, 36, False)['ch'] * 36), n(M.CHARGES_36))}
@@ -351,7 +346,7 @@ p7 = f'''<!-- ============================================================ 7 · 
 
   <div class="h-serif">Trésorerie cumulée, mois par mois</div>
   <div class="schema" style="margin-top:6px; padding:4px 8px">{{{{chart:tresorerie}}}}</div>
-  <p class="note">Flotte recrutée : planchers atteints, puis versés à 80 %, 70 % et 60 %. La trésorerie reste positive à chaque niveau.</p>
+  <p class="note">Flotte recrutée : planchers atteints, puis versés à 80 %, 70 % et 60 %. La trésorerie reste positive jusqu’à {pct(100 * SEUIL_T['caisse'])} des planchers.</p>
 
   <div class="h-serif">Quand les planchers ne sont pas tous versés</div>
   <table class="tbl serre" style="margin-top:8px">
@@ -365,7 +360,7 @@ p7 = f'''<!-- ============================================================ 7 · 
   </table>
 
   <div class="callout" style="margin-top:9px">
-    <strong>Lecture.</strong> Résultats du modèle à hypothèses données, ni revenus garantis ni promesse de rendement. La caisse tient presque partout, la levée absorbant les écarts :
+    <strong>Lecture.</strong> Résultats du modèle à hypothèses données, ni revenus garantis ni promesse de rendement. La caisse tient dans la flotte recrutée jusqu’à {pct(100 * SEUIL_T['caisse'])} des planchers, la levée absorbant les écarts :
     la vraie mesure est l’excédent d’exploitation, positif dès {pct(100 * SEUIL_S['ebe'])} des planchers (flotte de départ) ou {pct(100 * SEUIL_T['ebe'])} (avec les voitures de tiers).
   </div>
 
@@ -478,7 +473,7 @@ p9 = f'''<!-- ============================================================ 9 · 
       <tr><td>Voitures : Afrik Group et recrutement</td><td>Afrik Group, associé de TamCar, met neuf voitures à disposition par contrat partenaire ; au moins six voitures de tiers sont recrutées (deux au mois 6, six au mois 11), pour {n(M.FRAIS_ENTREE)} F d’entrée chacune.</td></tr>
       <tr><td>Commissions en espèces</td><td>Commission débitée automatiquement du compte du conducteur ; mise en ligne bloquée au-delà de 5 000 F de dette jusqu’à la recharge Mobile Money ; suspension automatique d’une dette prolongée.</td></tr>
       <tr><td>Casse, vol, détournement</td><td>Assurance, inspections, tracker GPS certifié ANATT, réserve de propriété écrite et publiée au RCCM.</td></tr>
-      <tr><td>Engagement TamAssur</td><td>TamCar garantit 250 000 F par année de cotisation : l’écart avec la valeur de rachat du contrat NSIA est un risque porté par TamCar, non chiffré. Confirmation écrite de NSIA avant le lancement, réserve dédiée.</td></tr>
+      <tr><td>Engagement TamAssur</td><td>TamCar garantit 250 000 F par année de contrat, par paliers (moto 12 mois ; autres véhicules 24 mois, puis chaque année jusqu’au terme) : l’écart avec la valeur de rachat du contrat NSIA est un risque porté par TamCar, chiffré au premier palier (estimations). Confirmation écrite de NSIA avant le lancement, réserve dédiée.</td></tr>
       <tr><td>Concurrence, réglementation</td><td>Prix annoncé sans hausse dynamique, TamAssur et cession du véhicule ; autorisation et trackers de l’ANATT, conformité OHADA, fiscalité chiffrée sans exonération.</td></tr>
       <tr><td>Panne, équipe restreinte</td><td>Suivi de disponibilité, paiement en espèces maintenu en secours, développeur rémunéré dès le mois 13, procédures documentées.</td></tr>
     </tbody>
@@ -516,7 +511,7 @@ p9 = f'''<!-- ============================================================ 9 · 
     <div class="tile violet">
       <div class="ico">{{{{ico:users}}}}</div>
       <h4>Les voitures de tiers comblent les creux</h4>
-      <p>À 70 % des planchers, il faut {MIN['ess@70']} Essentiel ou {MIN['conf@70']} Confort de tiers pour un excédent et une trésorerie positifs chaque mois, contre {MIN['tri@70']} tricycles ou {MIN['moto@70']} motos.</p>
+      <p>À 70 % des planchers, il faut {MIN['ess@70']} Essentiel ou {MIN['conf@70']} Confort de tiers pour un excédent et une trésorerie positifs chaque mois, contre {MIN['tri@70']} tricycles ; aucun nombre de motos ne suffit.</p>
     </div>
   </div>
 
@@ -544,13 +539,14 @@ p10 = f'''<!-- ============================================================ 10 �
     <div class="st"><i>Janvier 2031</i><b>Cession des Confort</b>Fin du premier cycle de la flotte.</div>
   </div>
 
-  <div class="h-serif">Où en est TamCar au 18 octobre 2026</div>
+  <div class="h-serif">Où en est TamCar au 20 octobre 2026</div>
   <div class="duo">
     <div class="card" style="border-top:3px solid var(--vert)">
       <div class="eyebrow vert">{{{{ico:check}}}} Déjà en place</div>
       <ul class="liste">
         <li>La plateforme : passagers (web installable, APK Android), conducteurs, back-office TamCar Office.</li>
-        <li>L’objectif quotidien « tout compris » et l’épargne TamAssur, codés dans l’application.</li>
+        <li>L’objectif quotidien « tout compris » et l’épargne TamAssur par paliers, codés dans l’application.</li>
+        <li>L’espace des propriétaires partenaires (gains, relevés, demandes de versement, fiche du véhicule).</li>
         <li>Une grille de prix sans majoration dynamique, relevée le 30 septembre 2026.</li>
         <li>Les conditions d’utilisation et la politique de confidentialité.</li>
         <li>Un forfait de 1 500 000 F avec l’expert-comptable, commissaire aux apports.</li>

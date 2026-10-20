@@ -53,8 +53,8 @@ def D1(v):
 
 def val(g, p):
     """Gain mensuel net d'un véhicule de plus (flotte recrutée), régime établi (mois 20)."""
-    a = M.SIM.simuler(M.BASE, p, ess=M.N_ESS_T, conf=M.N_CONF_T)
-    b = M.SIM.simuler(M.BASE, p, ess=M.N_ESS_T + (g == 'ess'), conf=M.N_CONF_T + (g == 'conf'), tri=int(g == 'tri'), moto=int(g == 'moto'))
+    a = M.SIM.simuler(M.BASE_SANS_NSIA, p, ess=M.N_ESS_T, conf=M.N_CONF_T)
+    b = M.SIM.simuler(M.BASE_SANS_NSIA, p, ess=M.N_ESS_T + (g == 'ess'), conf=M.N_CONF_T + (g == 'conf'), tri=int(g == 'tri'), moto=int(g == 'moto'))
     return b['flux'][20] - a['flux'][20]
 
 
@@ -63,8 +63,9 @@ NOM = {'ess': 'Essentiel', 'conf': 'Confort', 'tri': 'Tricycle', 'moto': 'Moto'}
 
 
 def recettes_par_mois(g, p=1.0):
+    """Part de TamCar sur un véhicule de tiers, nette de la cotisation TamAssur (fixe, hors taux d'atteinte)."""
     share = M.PART_VOITURE if g in ('ess', 'conf') else 0.25
-    return PLAN[g] * M.JOURS * p * share
+    return PLAN[g] * M.JOURS * p * share - M.COTIS * M.JOURS
 
 
 def charges_par_mois(g, p=1.0):
@@ -350,7 +351,7 @@ pages.append(f'''<!-- ==========================================================
     <div class="cols2" style="margin-top:6px">
       <p style="text-align:left">
         Le calendrier initial situait la formalisation et la préparation du projet au troisième trimestre 2026, puis le lancement au quatrième
-        trimestre de la même année. Au 18 octobre 2026, l’état d’avancement de chaque action est établi ci-dessous et le lancement est
+        trimestre de la même année. Au 20 octobre 2026, l’état d’avancement de chaque action est établi ci-dessous et le lancement est
         fixé à janvier 2027.
       </p>
       <p style="text-align:left">
@@ -361,13 +362,14 @@ pages.append(f'''<!-- ==========================================================
     </div>
   </div>
 
-  <div class="rule-label ajout" style="margin-top:16px">État d’avancement au 18 octobre 2026 · d’après ce que contient déjà le plan</div>
+  <div class="rule-label ajout" style="margin-top:16px">État d’avancement au 20 octobre 2026 · d’après ce que contient déjà le plan</div>
   <div class="row c-1-1 stretch" style="margin-top:8px">
     <div class="card ajout">
       <div class="eyebrow vert">{{{{ico:shield}}}} Déjà en place</div>
       <ul class="liste" style="margin-top:6px">
         <li>La plateforme : passagers (web installable, APK Android), chauffeurs, back-office (4.1).</li>
-        <li>Le versement quotidien, l’objectif tout compris et l’épargne TamAssur garantie par TamCar, programmés et testés.</li>
+        <li>Le versement quotidien, l’objectif tout compris et l’épargne TamAssur garantie par TamCar (par paliers annuels), programmés et testés.</li>
+        <li>L’espace des propriétaires partenaires : gains en direct, relevé mensuel par véhicule, demande de versement avec facture normalisée et retenue d’AIB, fiche numérique du véhicule (assurance, visite technique, suspension automatique en cas d’échéance dépassée) et règlement du fonds de rachat en fin de contrat.</li>
         <li>Une grille de prix sans majoration dynamique, relevée le 30 septembre 2026 (3.4).</li>
         <li>Les conditions générales et la politique de confidentialité, à jour.</li>
         <li>Un forfait de 1 500 000 FCFA avec le commissaire aux apports (2.3).</li>
@@ -423,7 +425,7 @@ pages.append(f'''<!-- ==========================================================
     <div class="cols2" style="margin-top:6px">
       <p style="text-align:left">
         Avec des véhicules qui ne lui appartiennent pas, TamCar augmente ses recettes bien plus que ses charges. Une voiture Essentiel de propriétaire tiers lui rapporte
-        <strong>{n(recettes_par_mois('ess'))} F par mois</strong> (25 % de {n(M.PLANCHER_ESS * M.JOURS)} F de courses) et lui coûte {n(charges_par_mois('ess'))} F
+        <strong>{n(recettes_par_mois('ess'))} F par mois</strong> (25 % de {n(M.PLANCHER_ESS * M.JOURS)} F de courses, moins {n(M.COTIS * M.JOURS)} F de cotisation TamAssur) et lui coûte {n(charges_par_mois('ess'))} F
         (responsable des opérations à 3 % et vacance d’un poste) : <strong>{D1(recettes_par_mois('ess') / charges_par_mois('ess'))} F de recettes pour 1 F de charges</strong>.
       </p>
       <p style="text-align:left">
@@ -444,7 +446,7 @@ pages.append(f'''<!-- ==========================================================
       {ligne_veh('moto')}
     </tbody>
   </table>
-  <div class="src">Hypothèse à confirmer : un tricycle ou une moto de tiers rapporte 25 % du volume plancher à TamCar, comme une voiture. Les charges sont la part du responsable des opérations (3 % du volume) et le coût d’un poste vacant ({n(M.h('B81') / 12 * M.h('B82') * M.h('B80'))} F par mois). Chaque véhicule coûte aussi {n(M.FRAIS_ENTREE)} F d’entrée, une fois.</div>
+  <div class="src">Hypothèse à confirmer : un tricycle ou une moto de tiers rapporte 25 % du volume plancher à TamCar, comme une voiture, moins la cotisation TamAssur de {n(M.COTIS)} F par jour (comprise dans l’objectif du conducteur, financée par la part de TamCar). Les charges sont la part du responsable des opérations (3 % du volume) et le coût d’un poste vacant ({n(M.h('B81') / 12 * M.h('B82') * M.h('B80'))} F par mois). Chaque véhicule coûte aussi {n(M.FRAIS_ENTREE)} F d’entrée, une fois.</div>
 
   <div class="h-serif" style="margin-top:14px">Si le véhicule est moins encaissé que prévu · résultat mensuel net (en FCFA)</div>
   <table class="tbl ajout" style="margin-top:8px">
@@ -454,7 +456,7 @@ pages.append(f'''<!-- ==========================================================
       {lignes_activite}
     </tbody>
   </table>
-  <div class="src">Même sans aucun versement, un véhicule de tiers ne coûte à TamCar que {n(abs(val('ess', 0.0)))} F par mois (le poste vacant) : le risque est borné par les {n(M.FRAIS_ENTREE)} F d’entrée et ce coût.</div>
+  <div class="src">Même sans aucun versement, un véhicule de tiers coûte à TamCar {n(abs(val('ess', 0.0)))} F par mois (la cotisation TamAssur et le poste vacant), plus le manque éventuel au rachat NSIA ({n(M.NSIA_24)} F, une fois) : le risque est borné par les {n(M.FRAIS_ENTREE)} F d’entrée et ce coût, tant que le véhicule n’est pas retiré.</div>
 
   <div class="pn"><b><!--PN--></b> sur <!--TOTAL--></div>
 </section>
@@ -491,19 +493,19 @@ pages.append(f'''<!-- ==========================================================
     <colgroup><col style="width:28%"><col style="width:18%"><col style="width:18%"><col style="width:18%"><col style="width:18%"></colgroup>
     <thead><tr><th>Taux d’atteinte des planchers</th><th>Motos</th><th>Tricycles</th><th>Essentiel</th><th>Confort</th></tr></thead>
     <tbody>
-      {''.join(tr(f'<strong>{p} %</strong>', *[MIN[f"{g}@{p}"] for g in ('moto', 'tri', 'ess', 'conf')]) for p in (100, 90, 80, 70))}
+      {''.join(tr(f'<strong>{p} %</strong>', *[('—' if MIN[f"{g}@{p}"] is None else MIN[f"{g}@{p}"]) for g in ('moto', 'tri', 'ess', 'conf')]) for p in (100, 90, 80, 70))}
     </tbody>
   </table>
   <div class="src">Nombre minimal de véhicules d’un seul type pour que l’excédent d’exploitation et le flux de caisse restent positifs chaque mois à partir du mois 13, les charges annuelles étant mises en réserve chaque mois.</div>
 
   <div class="row c-1-1 stretch ajout" style="margin-top:12px">
     <div class="callout vert">
-      <strong>Ce que cela règle.</strong> À 70 % des planchers, trois Essentiel et trois Confort de plus portent l’excédent d’exploitation de l’année 2 de {mm(R70_S['ebe'][1])} à {mm(R70['ebe'][1])}
-      et rendent l’excédent positif chaque mois. Il faudrait neuf tricycles ou dix-huit motos pour le même effet.
+      <strong>Ce que cela règle.</strong> À 70 % des planchers, trois Essentiel et trois Confort de plus portent l’excédent d’exploitation de l’année 2 de {mm(R70_S['ebe'][1])} à {mm(R70['ebe'][1])} :
+      cela ne suffit plus à le rendre positif ({'—' if MIN['ess@70'] is None else MIN['ess@70']} Essentiel ou {'—' if MIN['conf@70'] is None else MIN['conf@70']} Confort seraient nécessaires, à lui seul) ; à partir de {M.pct(100 * M.seuils('avec_tiers')['ebe'], 0)} des planchers, il l’est. Aucun nombre de motos n’y suffit : la cotisation TamAssur dépasse leur part.
     </div>
     <div class="callout rouille">
       <strong>Ce que cela suppose.</strong> Des propriétaires et des conducteurs à recruter (Parakou a montré la difficulté) ; le tracker GPS, l’assurance et l’entretien à la charge du propriétaire ;
-      un second responsable des opérations au-delà de 5 M F de volume mensuel ; une exposition TamAssur par conducteur (250 000 F garantis par année de cotisation).
+      un second responsable des opérations au-delà de 5 M F de volume mensuel ; une exposition TamAssur par conducteur (250 000 F garantis par année de contrat, par paliers ; manque au rachat chiffré au premier palier).
     </div>
   </div>
 

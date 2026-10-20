@@ -12,15 +12,10 @@ n, pct = M.n, M.pct
 def D1(v):
     return f"{v:.1f}".replace('.', ',')
 
-PART = {
-    'moto': M.VERS_MOTO * M.JOURS,
-    'tri': M.VOL_TRI * M.JOURS * M.PART_TRICYCLE,
-    'ess': M.PLANCHER_ESS * M.JOURS * M.PART_VOITURE,
-    'conf': M.PLANCHER_CONF * M.JOURS * M.PART_VOITURE,
-}
+PART = M.PART_NETTE_MENS            # part de TamCar par mois, aux planchers, nette de la cotisation TamAssur
 TRI_MENS = M.PRIX_TRICYCLE * (1 - M.ACOMPTE_PCT) / M.MENS_TRICYCLE
-COTIS = 1000
-OBJ = {'moto': M.VERS_MOTO + COTIS, 'tri': M.VERS_TRI + COTIS, 'ess': M.VERS_ESS + COTIS, 'conf': M.VERS_CONF + COTIS}
+COTIS = M.COTIS
+OBJ = {'moto': M.OBJ_MOTO, 'tri': M.OBJ_TRI, 'ess': M.OBJ_ESS, 'conf': M.OBJ_CONF}
 NT = M.N_ESS_T + M.N_CONF_T
 PRIX_FLOTTE = M.PRIX_TRICYCLE + M.N_MOTO * M.PRIX_MOTO
 
@@ -72,7 +67,7 @@ pages.append(f'''<!-- ==========================================================
     <div class="tile violet">
       <div class="ico">{{{{ico:wallet}}}}</div>
       <h4>3 · Le versement minimum</h4>
-      <p>Chaque jour, le conducteur doit atteindre son objectif : à défaut, la différence est prélevée sur son portefeuille. Les motos de TamCar rapportent au moins {n(M.VERS_MOTO)} F par jour.</p>
+      <p>Chaque jour, le conducteur doit atteindre son objectif (60 % du plancher, cotisation TamAssur comprise) : à défaut, la différence est prélevée sur son portefeuille. Une moto de TamCar rapporte au moins {n(M.VERS_MOTO)} F nets par jour.</p>
     </div>
     <div class="tile vert">
       <div class="ico">{{{{ico:calendar}}}}</div>
@@ -119,8 +114,8 @@ pages.append(f'''<!-- ==========================================================
         aux chauffeurs et aux partenaires.
       </p>
       <p>
-        <span class="modif">Le conducteur d’un véhicule sous contrat verse chaque jour 60 % d’un montant de recettes minimal, le <strong>plancher</strong>
-        du véhicule</span> : cela correspond à la part du propriétaire, du fonds de cession et de TamCar (30 + 5 + 25). Les 40 % restants sont à lui. Plus
+        <span class="modif">Le conducteur d’un véhicule sous contrat doit chaque jour atteindre un objectif égal à 60 % d’un montant de recettes minimal, le <strong>plancher</strong>
+        du véhicule</span> : cela correspond à la part du propriétaire, du fonds de cession et de TamCar (30 + 5 + 25). Les 40 % restants sont à lui. La cotisation TamAssur est comprise dans cet objectif. Plus
         il réalise de courses dans l’application, plus la part de TamCar augmente ; le plancher garantit le minimum.
       </p>
     </div>
@@ -178,12 +173,12 @@ pages.append(f'''<!-- ==========================================================
       <tr><td>Part de gestion du véhicule (5 %)</td><td>50</td><td class="tam">50</td><td>0</td></tr>
       <tr><td>Part propriétaire</td><td>0<small>revient au propriétaire</small></td><td class="tam">300</td><td>0</td></tr>
       <tr><td><strong>Total pour TamCar</strong></td><td><strong>250</strong></td><td class="tam"><strong>550</strong></td><td><strong>200</strong></td></tr>
-      <tr><td>Aux planchers, par mois<small>Essentiel · Confort · tricycle · moto</small></td><td>{n(PART['ess'])} · {n(PART['conf'])}</td><td class="tam">{n(PART['tri'])} · {n(PART['moto'])}</td><td>20 % du volume</td></tr>
+      <tr><td>Aux planchers, par mois, nets de la cotisation TamAssur<small>Essentiel · Confort · tricycle · moto</small></td><td>{n(PART['ess'])} · {n(PART['conf'])}</td><td class="tam">{n(PART['tri'])} · {n(PART['moto'])}</td><td>20 % du volume</td></tr>
     </tbody>
   </table>
   <div class="src ajout-in">
-    Plancher de recettes par jour : Essentiel {n(M.PLANCHER_ESS)} F, Confort {n(M.PLANCHER_CONF)} F, tricycle {n(M.VOL_TRI)} F, moto {n(M.VOL_MOTO)} F, 26 jours par mois. Sur les motos de TamCar, le versement minimum
-    ({n(M.VERS_MOTO)} F par jour) est encaissé en entier. Après la cession, TamCar ne garde que 20 %.
+    Plancher de recettes par jour : Essentiel {n(M.PLANCHER_ESS)} F, Confort {n(M.PLANCHER_CONF)} F, tricycle {n(M.VOL_TRI)} F, moto {n(M.VOL_MOTO)} F, 26 jours par mois. Sur les motos de TamCar, l’objectif
+    ({n(M.OBJ_MOTO)} F par jour, dont {n(M.COTIS)} F de TamAssur) est encaissé en entier. La cotisation TamAssur ({n(M.COTIS)} F par jour et par véhicule sous contrat) est financée par la part de TamCar : elle est déduite des montants ci-dessus. Après la cession, TamCar ne garde que 20 %.
   </div>
 
   <div class="h-serif" style="margin-top:16px">6.3 · Première source de revenus : les commissions et les versements</div>
@@ -221,7 +216,7 @@ pages.append(f'''<!-- ==========================================================
       <tr><td>Voiture Confort</td><td>{n(M.VERS_CONF)}</td><td>{n(COTIS)}</td><td><strong>{n(OBJ['conf'])}</strong></td><td>834</td></tr>
     </tbody>
   </table>
-  <div class="src ajout-in">La cotisation TamAssur est comprise dans l’objectif : si la part de TamCar est inférieure, la différence est prélevée et l’épargne du jour est quand même créditée. Elle est reversée à NSIA : elle n’est pas un revenu de TamCar.</div>
+  <div class="src ajout-in">La cotisation TamAssur est comprise dans l’objectif : si la part de TamCar est inférieure, la différence est prélevée et l’épargne du jour est quand même créditée. TamCar la verse à NSIA : c’est une charge, financée sur sa part (elle est déduite de ses revenus dans le plan).</div>
 
   <div class="rule-label ajout" style="margin-top:12px">Exemple : une course de 1 000 F payée en espèces</div>
   <div class="row c-3 stretch ajout" style="margin-top:8px">
@@ -299,12 +294,12 @@ pages.append(f'''<!-- ==========================================================
   <div class="h-serif ajout" style="margin-top:14px">Un tricycle qui atteint son plancher</div>
   <div class="row c-3 ajout" style="margin-top:8px">
     <div class="kpi"><b>{n(M.VOL_TRI * M.JOURS)} F</b><span>de courses par mois</span><small>{n(M.VOL_TRI)} F par jour, 26 jours</small></div>
-    <div class="kpi"><b>{n(PART['tri'])} F</b><span>reviennent à TamCar</span><small>55 % : plateforme, gestion, propriétaire</small></div>
-    <div class="kpi"><b>{n(TRI_MENS)} F</b><span>de mensualité d’achat</span><small>couverte dès {pct(100 * TRI_MENS / PART['tri'], 0)} du plancher</small></div>
+    <div class="kpi"><b>{n(PART['tri'])} F</b><span>reviennent à TamCar</span><small>55 % : plateforme, gestion, propriétaire, moins {n(M.COTIS * M.JOURS)} F de TamAssur</small></div>
+    <div class="kpi"><b>{n(TRI_MENS)} F</b><span>de mensualité d’achat</span><small>couverte dès {pct(100 * M.SEUIL_MENS_TRI, 0)} du plancher</small></div>
   </div>
   <div class="h-serif ajout" style="margin-top:12px">Une moto qui atteint son plancher</div>
   <div class="row c-3 ajout" style="margin-top:8px">
-    <div class="kpi"><b>{n(M.VERS_MOTO * M.JOURS)} F</b><span>de versement par mois</span><small>{n(M.VERS_MOTO)} F par jour, 26 jours</small></div>
+    <div class="kpi"><b>{n(M.VERS_MOTO * M.JOURS)} F</b><span>de versement net par mois</span><small>{n(M.VERS_MOTO)} F par jour, 26 jours (objectif de {n(M.OBJ_MOTO)} F moins TamAssur)</small></div>
     <div class="kpi"><b>{D1(M.PRIX_MOTO / (M.VERS_MOTO * M.JOURS))} mois</b><span>pour rembourser le prix</span><small>{n(M.PRIX_MOTO)} F comptant</small></div>
     <div class="kpi"><b>{n(M.VOL_MOTO * M.JOURS * 0.2)} F</b><span>par mois après la cession</span><small>12 mois, puis 20 % du volume</small></div>
   </div>
@@ -339,9 +334,9 @@ pages.append(f'''<!-- ==========================================================
         revenus du plan.
       </p>
       <p>
-        <span class="modif">TamAssur est financé par la cotisation du conducteur (1 000 F par jour, reversée à NSIA) ; TamCar garantit au conducteur
-        250 000 F par année de cotisation. Cet engagement et les partenariats financiers font l’objet d’accords formalisés et des
-        vérifications juridiques et réglementaires nécessaires ; ils ne figurent pas dans les prévisions de revenus.</span>
+        <span class="modif">La cotisation TamAssur ({n(M.COTIS)} F par jour) est comprise dans l’objectif du conducteur ; TamCar la règle à NSIA et la finance sur sa part (elle est déduite des revenus du plan).
+        TamCar garantit au conducteur 250 000 F par année de contrat, par paliers jusqu’au terme du contrat ; le manque au rachat est chiffré au premier palier. Cet engagement et les partenariats financiers font l’objet d’accords formalisés et des
+        vérifications juridiques et réglementaires nécessaires ; les partenariats financiers ne figurent pas dans les prévisions de revenus.</span>
       </p>
     </div>
   </div>
