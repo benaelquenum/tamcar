@@ -143,6 +143,16 @@ export async function rejectDealerPayoutAction(formData: FormData) {
   revalidatePath('/admin/dealers');
 }
 
+/** Valide le compte de paiement enregistré par le partenaire : ses demandes de versement partent ensuite sur ce compte. */
+export async function validateDealerAccountAction(formData: FormData) {
+  const dealerId = String(formData.get('dealer_id') || '');
+  if (!dealerId) throw new Error('Partenaire requis');
+  const supabase = createServerSupabase();
+  const { error } = await supabase.rpc('admin_validate_dealer_account', { p_dealer: dealerId });
+  if (error) throw new Error(error.message);
+  revalidatePath('/admin/dealers');
+}
+
 /** Situation fiscale du partenaire : identifiant fiscal (IFU) et, au besoin, exonération d'AIB constatée (motif obligatoire). */
 export async function setDealerTaxAction(formData: FormData) {
   const dealerId = String(formData.get('dealer_id') || '');

@@ -1,5 +1,5 @@
 import { createServerSupabase } from '@/lib/supabase-server';
-import { archiveDealer, payDealerWalletAction, rejectDealerPayoutAction, setDealerTaxAction, settleDealerPayoutAction } from './actions';
+import { archiveDealer, payDealerWalletAction, rejectDealerPayoutAction, setDealerTaxAction, settleDealerPayoutAction, validateDealerAccountAction } from './actions';
 import { ConfirmSubmit } from '@/components/ConfirmSubmit';
 import { CreateDealerForm } from './CreateDealerForm';
 import { ResetPasswordControl } from '../drivers/ResetPasswordControl';
@@ -59,7 +59,16 @@ type PayoutRequestRow = {
   decided_at: string | null;
 };
 
-type TaxRow = { id: string; ifu: string | null; aib_exempt: boolean; aib_exempt_reason: string | null };
+type TaxRow = {
+  id: string;
+  ifu: string | null;
+  aib_exempt: boolean;
+  aib_exempt_reason: string | null;
+  payout_method: 'mobile_money' | 'virement' | null;
+  payout_provider: string | null;
+  payout_account: string | null;
+  payout_account_status: 'none' | 'pending' | 'validated';
+};
 
 const REQUEST_STATUS: Record<PayoutRequestRow['status'], string> = {
   requested: 'En attente',
@@ -90,12 +99,13 @@ export default async function AdminDealersPage() {
     supabase.from('dealer_admin_view').select('*').order('registered_at', { ascending: false }),
     supabase.rpc('admin_dealer_wallets'),
     supabase.rpc('admin_dealer_payout_requests', { p_status: 'all' }),
-    supabase.from('dealer_partners').select('id, ifu, aib_exempt, aib_exempt_reason'),
+    supabase.from('dealer_partners').select('id, ifu, aib_exempt, aib_exempt_reason, payout_method, payout_provider, payout_account, payout_account_status'),
   ]);
   const requests = (reqData ?? []) as PayoutRequestRow[];
   const pendingRequests = requests.filter((r) => r.status === 'requested');
   const recentRequests = requests.filter((r) => r.status !== 'requested').slice(0, 8);
   const taxById = new Map(((taxData ?? []) as TaxRow[]).map((t) => [t.id, t]));
+  const pendingAccounts = ((taxData ?? []) as TaxRow[]).filter((t) => t.payout_account_status === 'pending');
   const list = (data ?? []) as DealerRow[];
   const wallets = ((walletsData ?? []) as WalletRow[]).filter((w) => !w.archived);
   const totalDue = wallets.reduce((sum, w) => sum + Math.max(0, w.balance_fcfa), 0);
@@ -114,6 +124,45 @@ export default async function AdminDealersPage() {
 
       <CreateDealerForm />
 
+      {/* ---------- Comptes de paiement à valider ---------- */}
+      {pendingAccounts.length > 0 && (
+        <section className="mb-2xl">
+          <h2 className="mb-sm text-lg font-bold text-neutral-900">Comptes de paiement à valider</h2>
+          <p className="mb-md rounded-md bg-neutral-100 p-md text-xs leading-relaxed text-neutral-600">
+            Le partenaire enregistre lui-même le compte qui recevra ses versements. Vérifiez-le auprès de lui (appel ou message) avant de le valider : tant qu&apos;il n&apos;est pas
+            validé, aucune demande de versement n&apos;est possible, et tout changement de compte le remet en attente.
+          </p>
+          <ul className="space-y-sm">
+            {pendingAccounts.map((t) => {
+              const d = list.find((x) => x.dealer_id === t.id);
+              return (
+                <li key={t.id} className="flex flex-wrap items-center justify-between gap-md rounded-xl border border-warning/40 bg-white p-lg shadow-sm">
+                  <div className="min-w-0">
+                    <p className="text-sm font-extrabold text-neutral-900">
+                      {d?.company_name ?? 'Partenaire'} <span className="font-normal text-neutral-500">· {d?.full_name}</span>
+                    </p>
+                    <p className="text-xs text-neutral-600">
+                      {t.payout_method === 'virement' ? 'Virement bancaire' : `Mobile Money ${String(t.payout_provider ?? '').toUpperCase()}`} :{' '}
+                      <strong className="text-neutral-900">{t.payout_account}</strong>
+                      {d?.phone && ` · contact ${d.phone}`}
+                    </p>
+                  </div>
+                  <form action={validateDealerAccountAction}>
+                    <input type="hidden" name="dealer_id" value={t.id} />
+                    <ConfirmSubmit
+                      message={`Valider ce compte de paiement pour ${d?.company_name ?? 'ce partenaire'} ?`}
+                      className="rounded-md bg-neutral-800 px-md py-xs text-xs font-bold text-white hover:bg-neutral-900"
+                    >
+                      Valider le compte
+                    </ConfirmSubmit>
+                  </form>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
       {/* ---------- Demandes de versement ---------- */}
       {(pendingRequests.length > 0 || recentRequests.length > 0) && (
         <section className="mb-2xl">
@@ -124,7 +173,7 @@ export default async function AdminDealersPage() {
             </p>
           </div>
           <p className="mb-md rounded-md bg-neutral-100 p-md text-xs leading-relaxed text-neutral-600">
-            Le partenaire demande lui-même le versement de sa part disponible (un mois après la première course de ses véhicules). Le montant
+            Le partenaire demande lui-même le versement de sa part disponible dans les 5 premiers jours de chaque mois (un mois après la première course de ses véhicules), avec le n° de sa facture normalisée. Le montant
             est déjà réservé sur son portefeuille. Vous réglez le <strong>montant net</strong> hors application (Mobile Money, virement), puis vous
             cliquez sur « Marquer réglé » en indiquant la référence et le n° de la facture normalisée, qui est exigé. L&apos;AIB retenu reste chez
             TamCar et se reverse à l&apos;administration fiscale ; les frais de transaction sont à la charge du partenaire.

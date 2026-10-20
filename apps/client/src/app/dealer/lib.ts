@@ -69,9 +69,14 @@ export type DealerPayoutOverview = {
   wallet_fcfa: number;
   available_fcfa: number;
   pending_fcfa: number;
+  month_to_date_fcfa: number;
+  requestable_fcfa: number;
   first_ride_at: string | null;
   eligible_from: string | null;
   eligible: boolean;
+  window_days: number;
+  window_open: boolean;
+  next_window_start: string;
   min_fcfa: number;
   ifu: string | null;
   aib_exempt: boolean;
@@ -79,6 +84,10 @@ export type DealerPayoutOverview = {
   fee_permille: number;
   fee_bank_fcfa: number;
   wait_months: number;
+  payout_method: 'mobile_money' | 'virement' | null;
+  payout_provider: string | null;
+  payout_account: string | null;
+  account_status: 'none' | 'pending' | 'validated';
 };
 
 export type DealerPayoutQuote = {

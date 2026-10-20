@@ -161,8 +161,8 @@ export default async function DealerDashboard({
             </p>
           )}
           <p className="mt-md text-[11px] leading-relaxed text-neutral-500">
-            Ce solde augmente à chaque course terminée sur vos véhicules. Vous pouvez en demander le versement à tout moment, un mois après la
-            première course de vos véhicules.
+            Ce solde augmente à chaque course terminée sur vos véhicules. Vous pouvez en demander le versement dans les premiers jours de chaque mois
+            ({payoutOverview ? `du 1er au ${payoutOverview.window_days}` : 'du 1er au 5'}), un mois après la première course de vos véhicules.
           </p>
           {payoutOverview && (
             <PayoutPanel overview={payoutOverview} requests={payoutRequests} readOnly={Boolean(preview) && profile.role === 'admin'} />

@@ -436,14 +436,15 @@ export const GUIDE_SECTIONS: GuideSection[] = [
       { type: 'h3', text: 'Traiter une demande de versement' },
       {
         type: 'p',
-        text: 'Le solde de chaque partenaire (sa **part disponible**) augmente à chaque course terminée sur ses véhicules. Il en **demande lui-même le versement**, depuis son espace, à tout moment, un mois après la première course de ses véhicules. Le montant est aussitôt réservé sur son portefeuille et une alerte vous prévient.',
+        text: 'Le solde de chaque partenaire (sa **part disponible**) augmente à chaque course terminée sur ses véhicules. Il en **demande lui-même le versement**, depuis son espace, **dans les 5 premiers jours de chaque mois**, un mois après la première course de ses véhicules, pour les sommes acquises à la fin du mois écoulé et avec le numéro de sa **facture normalisée**. Le montant est aussitôt réservé sur son portefeuille et une alerte vous prévient. Avant sa première demande, il enregistre son compte de paiement et vous le **validez**.',
       },
       {
         type: 'steps',
         items: [
+          'Dans « Comptes de paiement à valider », vérifier le compte enregistré par le partenaire (idéalement par un appel) puis cliquer sur **Valider le compte** : sans cela, il ne peut rien demander ; tout changement de compte le remet en attente.',
           'Dans « Demandes de versement », lire la demande : montant demandé, **AIB retenu**, **frais de transaction** (à la charge du partenaire) et **montant net à envoyer**, ainsi que le numéro Mobile Money ou les coordonnées bancaires.',
           'Envoyer le montant net par Mobile Money ou virement, hors application.',
-          'Saisir la **référence du règlement** et le **n° de la facture normalisée** (obligatoire : sans lui, le règlement est refusé), puis cliquer sur **Marquer réglé**. Le partenaire est prévenu.',
+          'Saisir la **référence du règlement** (le n° de la facture normalisée, fourni par le partenaire à sa demande, est repris automatiquement), puis cliquer sur **Marquer réglé**. Le partenaire est prévenu.',
           'Pour **refuser** une demande, saisir le motif : le montant redevient disponible pour le partenaire.',
         ],
       },
@@ -577,7 +578,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
           ['Priorité de proximité', 'Comment une course s’ouvre autour du client : les chauffeurs les plus proches la voient d’abord, les autres après un délai. « Priorité active » à 0 remet l’ancien fonctionnement.'],
           ['Prime d’approche', 'Prime versée au chauffeur qui vient de loin chercher le client : distance gratuite, tarif au kilomètre, plafond par course.'],
           ['Maintien en flotte (abandonné)', 'Ancien prélèvement mensuel de 3 points du volume sur le fonds de rachat, arrêté depuis la clé du plan d’affaires v6 : les réglages restent à 0. TamCar finance les frais d’entrée (30 000 F par véhicule : inspection, habillage, kit chauffeur), les senteurs, les gadgets et les forfaits internet sur sa propre part.'],
-          ['Versements aux partenaires véhicule et AIB', 'Délai avant la première demande (1 mois), montant minimal, frais de transaction (Mobile Money en ‰, virement en forfait) et taux d’AIB retenu (3 % avec IFU, 5 % sans).'],
+          ['Versements aux partenaires véhicule et AIB', 'Délai avant la première demande (1 mois), jours d’ouverture du mois (1er au 5), montant minimal, frais de transaction (Mobile Money en ‰, virement en forfait) et taux d’AIB retenu (3 % avec IFU, 5 % sans).'],
           ['Forfaits internet', 'Les règles du forfait internet hebdomadaire offert aux meilleurs chauffeurs (part des éligibles, minimum et maximum de bénéficiaires, jours d’objectif, note). Le classement est dans l’onglet **Forfaits internet**.'],
           ['Produits de senteur (abandonné)', 'Ancien prélèvement mensuel sur le fonds de rachat : laissé à 0, TamCar les finance sur sa part.'],
           ['Annulation par le client', 'Les frais appliqués quand le client annule alors que le chauffeur est arrivé ou tout proche.'],
