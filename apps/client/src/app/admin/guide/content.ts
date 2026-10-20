@@ -94,7 +94,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
           ['Retrouver une course', '**Courses**.'],
           ['Créer une location VIP', '**Locations VIP** → « Créer une location ».'],
           ['Nommer un responsable ville ou régler sa commission', '**Responsables ville**.'],
-          ['Suivre les avances de démarrage des partenaires', '**ADR**.'],
+          ['Traiter la demande de versement d’un partenaire', '**Partenaires véhicule** → « Demandes de versement » : payer le montant net, puis **Marquer réglé** avec la référence et le n° de facture normalisée.'],
           ['Créer un code promo', '**Promos** → « Créer un code ».'],
           ['Offrir les forfaits internet de la semaine aux meilleurs chauffeurs', '**Forfaits internet** : choisir la semaine, vérifier le classement, **Valider la semaine**, télécharger le fichier pour l’opérateur, puis **Marquer comme activés**.'],
           ['Offrir les gadgets du semestre aux meilleurs chauffeurs et clients', '**Gadgets** : choisir le tour, vérifier le classement, **Valider le classement**, puis suivre la remise des cadeaux.'],
@@ -126,7 +126,6 @@ export const GUIDE_SECTIONS: GuideSection[] = [
           '**Chauffeurs** : chauffeurs actifs, note moyenne, candidatures en attente, argent cumulé des chauffeurs, et le top 5 des gains du mois.',
           '**Clients et portefeuilles** : nombre de clients, nouveaux de la semaine, crédit clients cumulé, monnaie rendue par les chauffeurs.',
           '**Opérations** : courses actives, annulées sur 24 h, courses bloquées, SOS ouverts.',
-          '**ADR** : avances de démarrage versées par les partenaires, remboursées, en cours.',
         ],
       },
       { type: 'h3', text: 'Ce que vous pouvez y faire' },
@@ -406,16 +405,10 @@ export const GUIDE_SECTIONS: GuideSection[] = [
         items: [
           'Cliquer sur le rendez-vous : le dossier s’ouvre avec les **documents attendus** à présenter.',
           'Recevoir le candidat et vérifier ses documents.',
-          '**Approuver** : le formulaire demande les informations du véhicule (marque, modèle, couleur, catégorie), des observations, et — pour un véhicule de partenaire — si l’**avance de démarrage (ADR) de 100 000 F** a bien été versée. Le chauffeur est alors créé ; ses identifiants s’affichent.',
+          '**Approuver** : le formulaire demande les informations du véhicule (marque, modèle, couleur, catégorie) et des observations. Le chauffeur est alors créé ; ses identifiants s’affichent.',
           '**Refuser après entretien** : saisir la raison (3 caractères au moins).',
           '**Marquer no-show** : le candidat ne s’est pas présenté.',
         ],
-      },
-      {
-        type: 'note',
-        tone: 'warn',
-        title: 'ADR : ne cocher que si l’argent est reçu',
-        text: 'La case ADR ne se coche que si le partenaire a effectivement remis les 100 000 F. Cette somme est une dette de TamCar envers le partenaire, remboursée plus tard : ce n’est pas un revenu.',
       },
     ],
   },
@@ -435,23 +428,34 @@ export const GUIDE_SECTIONS: GuideSection[] = [
       {
         type: 'steps',
         items: [
-          'Remplir le formulaire : **téléphone**, **email**, **nom complet du contact**, **raison sociale** (obligatoire), RCCM et **part du partenaire en %** (25 % proposé par défaut).',
+          'Remplir le formulaire : **téléphone**, **email**, **nom complet du contact**, **raison sociale** (obligatoire), RCCM et **part du partenaire en %** (30 % proposé par défaut).',
           'Cliquer pour enregistrer : un encadré affiche l’email et le mot de passe temporaire, avec un bouton **Copier le message à envoyer** qui prépare le message prêt à transmettre.',
           'Le partenaire se connecte avec ces identifiants et suit ses véhicules et son solde.',
         ],
       },
-      { type: 'h3', text: 'Verser sa part à un partenaire' },
+      { type: 'h3', text: 'Traiter une demande de versement' },
       {
         type: 'p',
-        text: 'Le solde de chaque partenaire augmente à chaque course terminée sur ses véhicules. Vous le réglez **hors application** (Mobile Money, virement), puis vous l’enregistrez ici : le montant est débité de son portefeuille et apparaît dans son espace.',
+        text: 'Le solde de chaque partenaire (sa **part disponible**) augmente à chaque course terminée sur ses véhicules. Il en **demande lui-même le versement**, depuis son espace, à tout moment, un mois après la première course de ses véhicules. Le montant est aussitôt réservé sur son portefeuille et une alerte vous prévient.',
       },
       {
         type: 'steps',
         items: [
-          'Dans « Versements aux partenaires », repérer le partenaire et son solde.',
-          'Payer le partenaire par Mobile Money ou virement.',
-          'Saisir le montant versé et une note (ex. « MoMo du 05/01 »), puis cliquer sur **Enregistrer le versement**.',
+          'Dans « Demandes de versement », lire la demande : montant demandé, **AIB retenu**, **frais de transaction** (à la charge du partenaire) et **montant net à envoyer**, ainsi que le numéro Mobile Money ou les coordonnées bancaires.',
+          'Envoyer le montant net par Mobile Money ou virement, hors application.',
+          'Saisir la **référence du règlement** et le **n° de la facture normalisée** (obligatoire : sans lui, le règlement est refusé), puis cliquer sur **Marquer réglé**. Le partenaire est prévenu.',
+          'Pour **refuser** une demande, saisir le motif : le montant redevient disponible pour le partenaire.',
         ],
+      },
+      {
+        type: 'note',
+        tone: 'warn',
+        title: 'AIB et frais de transaction',
+        text: 'Chaque versement fait l’objet d’une facture normalisée. TamCar retient l’**AIB** sur la somme versée : 3 % si le partenaire a un identifiant fiscal unique (IFU), 5 % sinon, 0 si vous constatez une exonération (motif obligatoire). Renseignez l’IFU dans « Fiscalité (IFU, AIB) » sur la ligne du partenaire. L’AIB retenu reste chez TamCar et se reverse à l’administration fiscale ; la comptabilité le range sur le compte 447. Les frais de transaction sont à la charge du partenaire, calculés d’après les réglages « Versements aux partenaires véhicule et AIB » (page Bonus et réglages).',
+      },
+      {
+        type: 'p',
+        text: 'Le formulaire « Enregistrer un versement exceptionnel » règle un partenaire **hors demande** : il ne retient pas d’AIB et n’exige pas de facture. À n’utiliser qu’en dernier recours.',
       },
       {
         type: 'p',
@@ -473,26 +477,6 @@ export const GUIDE_SECTIONS: GuideSection[] = [
         tone: 'warn',
         title: 'Confidentialité',
         text: 'Les chiffres de la politique partenaire sont confidentiels : ils ne sont jamais publiés sur le site. Ne les communiquez qu’au moyen du bouton « Recevoir la proposition » du simulateur.',
-      },
-    ],
-  },
-  {
-    id: 'adr',
-    group: 'Partenaires',
-    title: 'ADR',
-    path: '/admin/dealer-advances',
-    blocks: [
-      {
-        type: 'p',
-        text: 'Les **avances de démarrage** : à la signature de son contrat, un partenaire véhicule remet 100 000 F à TamCar. C’est une avance, pas un revenu : elle est remboursée au partenaire.',
-      },
-      {
-        type: 'ul',
-        items: [
-          'Pour chaque avance : **montant**, date de versement, date d’**activation** (arrivée du premier chauffeur sur ses véhicules), **échéance** de remboursement (12 mois après) et cumul déjà remboursé.',
-          'Le remboursement se fait **automatiquement**, par prélèvement sur la part « fonds de rachat » des courses de ses véhicules.',
-          'En cas de fin de contrat, le bouton **Résilier (prorata temporis)** clôture l’avance après saisie de la raison.',
-        ],
       },
     ],
   },
@@ -592,9 +576,10 @@ export const GUIDE_SECTIONS: GuideSection[] = [
           ['Bonus', 'Le pourcentage de sa part que TamCar reverse au chauffeur sur le volume au-dessus de l’objectif (50 % aujourd’hui).'],
           ['Priorité de proximité', 'Comment une course s’ouvre autour du client : les chauffeurs les plus proches la voient d’abord, les autres après un délai. « Priorité active » à 0 remet l’ancien fonctionnement.'],
           ['Prime d’approche', 'Prime versée au chauffeur qui vient de loin chercher le client : distance gratuite, tarif au kilomètre, plafond par course.'],
-          ['Maintien en flotte', 'Prélèvement mensuel (3 % du volume du mois, soit 30 ‰) sur le fonds de rachat des chauffeurs en formule Cession, pour tous les véhicules (voitures, tricycle, motos). Il finance les frais d’entrée d’une voiture (30 000 F avancés par TamCar : inspection, habillage, kit chauffeur ; aucune avance n’est demandée au partenaire), les produits de senteur, les gadgets et les forfaits internet des meilleurs.'],
+          ['Maintien en flotte (abandonné)', 'Ancien prélèvement mensuel de 3 points du volume sur le fonds de rachat, arrêté depuis la clé du plan d’affaires v6 : les réglages restent à 0. TamCar finance les frais d’entrée (30 000 F par véhicule : inspection, habillage, kit chauffeur), les senteurs, les gadgets et les forfaits internet sur sa propre part.'],
+          ['Versements aux partenaires véhicule et AIB', 'Délai avant la première demande (1 mois), montant minimal, frais de transaction (Mobile Money en ‰, virement en forfait) et taux d’AIB retenu (3 % avec IFU, 5 % sans).'],
           ['Forfaits internet', 'Les règles du forfait internet hebdomadaire offert aux meilleurs chauffeurs (part des éligibles, minimum et maximum de bénéficiaires, jours d’objectif, note). Le classement est dans l’onglet **Forfaits internet**.'],
-          ['Produits de senteur', 'Ancien prélèvement mensuel, remplacé par le maintien en flotte : laissé à 0.'],
+          ['Produits de senteur (abandonné)', 'Ancien prélèvement mensuel sur le fonds de rachat : laissé à 0, TamCar les finance sur sa part.'],
           ['Annulation par le client', 'Les frais appliqués quand le client annule alors que le chauffeur est arrivé ou tout proche.'],
           ['TamAssur : cotisation quotidienne', 'Le montant prélevé chaque jour ouvré sur le chauffeur pour son épargne (1 000 F pour tous les véhicules).'],
           ['TamAssur : durée avant retrait', 'Le nombre de mois de cotisation avant que le chauffeur puisse demander son épargne (moto 12, tricycle et voitures 24).'],
@@ -661,7 +646,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
     blocks: [
       {
         type: 'p',
-        text: 'Pour aider les chauffeurs et en attirer de nouveaux, TamCar offre chaque semaine un **forfait internet** aux meilleurs chauffeurs. Le forfait est activé par un opérateur partenaire à partir d’un fichier de numéros ; il coûte environ 1 000 F par bénéficiaire et par semaine. Le budget est financé par le prélèvement « maintien en flotte » sur le fonds de rachat.',
+        text: 'Pour aider les chauffeurs et en attirer de nouveaux, TamCar offre chaque semaine un **forfait internet** aux meilleurs chauffeurs. Le forfait est activé par un opérateur partenaire à partir d’un fichier de numéros ; il coûte environ 1 000 F par bénéficiaire et par semaine. Le budget est financé par TamCar sur sa propre part de chaque course.',
       },
       {
         type: 'table',
@@ -873,7 +858,6 @@ export const GUIDE_SECTIONS: GuideSection[] = [
           ['Chaque nuit, 00 h 10 (lundi–samedi, pour la veille)', 'Clôture du **versement quotidien** des chauffeurs en formule Cession : le manque éventuel sur l’objectif est prélevé sur leur portefeuille Revenus, et l’épargne du jour est créditée (versements hors application compris).'],
           ['Chaque jour, 5 h', '**Sauvegarde** des données.'],
           ['Chaque soir, 20 h', '**TamPass** : création des courses du lendemain, déjà affectées au chauffeur titulaire de chaque abonnement.'],
-          ['Dernier jour du mois, 22 h 50', 'Prélèvement **maintien en flotte** sur le fonds de rachat des chauffeurs en formule Cession (voitures), sur le volume du mois.'],
           ['Toutes les 2 minutes', 'Vérification des **retraits chauffeur** partis chez FeexPay : confirmés → payés ; échoués → chauffeur recrédité ; sans réponse après 30 minutes → signalés à l’équipe.'],
           ['En continu', 'Le **classement des gadgets** (meilleurs chauffeurs et clients du semestre) se recalcule à chaque ouverture de la page Gadgets ; seule la validation est manuelle.'],
           ['En continu', '**Suspension** d’un chauffeur dont la dette atteint 5 000 F, **réactivation** dès qu’elle repasse sous ce seuil.'],
@@ -909,7 +893,7 @@ export const GUIDE_SECTIONS: GuideSection[] = [
           ['Versement', 'Le minimum que la part de TamCar doit atteindre chaque jour pour un chauffeur en Cession.'],
           ['Strike', 'Une faute prouvée du chauffeur, comptée sur sa fiche.'],
           ['KYC', 'La vérification d’identité du chauffeur (permis, pièce d’identité).'],
-          ['ADR', 'Avance de démarrage remise par un partenaire véhicule, remboursée plus tard.'],
+          ['AIB', 'Acompte sur impôt assis sur les bénéfices : TamCar le retient sur chaque versement à un partenaire (3 % avec identifiant fiscal, 5 % sans) et le reverse à l’administration fiscale.'],
         ],
       },
       {

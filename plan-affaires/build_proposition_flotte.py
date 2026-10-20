@@ -5,9 +5,9 @@ Sortie : ../TamCar_proposition_flotte_AfricGroup.html et .pdf (à la racine du d
 
 Tous les chiffres viennent du modèle ci-dessous (aux planchers de recettes, 26 jours par mois) :
   - part course du propriétaire : 30 % du volume, versée chaque mois ;
-  - rachat : 7 % du volume la 1re année, 8 % ensuite, versé à la cession du véhicule au chauffeur ;
-  - maintien en flotte : 3 % du volume, prélevés chaque mois sur le fonds de rachat (frais d'entrée de 30 000 F avancés par TamCar,
-    produits de senteur, gadgets et forfaits internet des meilleurs chauffeurs) ; plus aucune avance de démarrage demandée (décision du 11/10/2026) ;
+  - fonds de rachat : 5 % du volume, versé à la cession du véhicule au chauffeur, sans aucun prélèvement ;
+  - frais d'entrée de 30 000 F, senteurs, gadgets et forfaits internet : financés par TamCar sur sa propre part ; plus aucune avance de
+    démarrage demandée (clé du plan d'affaires v6, 19/10/2026 ; la version du 11/10/2026 est archivée) ;
   - les charges du propriétaire (assurance, entretien, visite technique…) ne sont PAS modélisées : elles
     lui appartiennent ; le « coût de revient » conseillé les englobe avec le prix d'achat.
   - VIP : mêmes prévisions de recettes que le Confort (15 000 F par jour), durée de 5 ans.
@@ -25,14 +25,13 @@ CHROME = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
 # ----- À ajuster ici -----------------------------------------------------------------------------
 SOCIETE = "Afric Group Consulting"
 DESTINATAIRE = "M. Ouedraogo"
-DATE = "11 octobre 2026"
+DATE = "19 octobre 2026"
 SIGNATAIRE = "Térence Quenum"
 EMAIL = "terencebeniraphael@gmail.com"   # pas encore d'adresse TamCar
 
 JOURS_AN = 312            # 26 jours actifs par mois
 PART_COURSE = 0.30
-RACHAT_AN1, RACHAT_AN2 = 0.07, 0.08
-PRELEVEMENT = 0.03        # maintien en flotte : 3 % du volume, prélevé sur le fonds de rachat
+RACHAT = 0.05             # fonds de rachat : 5 % du volume, versé à la cession, sans prélèvement
 FRAIS_ENTREE = 30_000     # inspection 10 000 + habillage 10 000 + kit chauffeur 10 000, avancés par TamCar
 
 # nom, nombre, plancher de recettes/jour, durée (ans), coût de revient conseillé (achat + charges du propriétaire)
@@ -78,8 +77,7 @@ def voitures(cat):
 def calc(c, facteur=1.0):
     vol_an = c["plancher"] * JOURS_AN * facteur
     cash = PART_COURSE * vol_an * c["ans"]
-    rachat = sum((RACHAT_AN1 if a == 0 else RACHAT_AN2) * vol_an for a in range(c["ans"]))
-    rachat_net = rachat - PRELEVEMENT * vol_an * c["ans"]
+    rachat_net = RACHAT * vol_an * c["ans"]
     total = cash + rachat_net
     marge = total - c["budget"]
     return dict(cash_mois=PART_COURSE * c["plancher"] * facteur * 26, cash=cash, rachat_net=rachat_net, total=total,
@@ -277,7 +275,7 @@ html = f"""<!doctype html>
       <tr><th>Recettes minimales du véhicule, par jour</th><td class="n">{f(E['plancher'])}{NBSP}F</td><td class="n">{f(C['plancher'])}{NBSP}F</td><td class="n">{f(V['plancher'])}{NBSP}F</td></tr>
       <tr><th>Votre part en cash, par mois <small>30{NBSP}% du volume, 26 jours actifs</small></th>
           <td class="n">{f(rE['cash_mois'])}{NBSP}F</td><td class="n">{f(rC['cash_mois'])}{NBSP}F</td><td class="n">{f(rV['cash_mois'])}{NBSP}F</td></tr>
-      <tr><th>Fonds de rachat, versé à la cession <small>7{NBSP}% puis 8{NBSP}% du volume, net du maintien en flotte</small></th>
+      <tr><th>Fonds de rachat, versé à la cession <small>5{NBSP}% du volume, sans prélèvement</small></th>
           <td class="n">{f(arrondi_k(rE['rachat_net']))}{NBSP}F</td><td class="n">{f(arrondi_k(rC['rachat_net']))}{NBSP}F</td><td class="n">{f(arrondi_k(rV['rachat_net']))}{NBSP}F</td></tr>
       <tr class="total"><th>Total encaissé sur la durée du contrat <small>avant vos propres charges</small></th>
           <td class="n">{m(rE['total'])}</td><td class="n">{m(rC['total'])}</td><td class="n">{m(rV['total'])}</td></tr>
@@ -299,10 +297,10 @@ html = f"""<!doctype html>
   </div>
 
   <div class="deux">
-    <div class="bloc or"><b>Maintien en flotte : 3{NBSP}% du volume, sans avance de votre part.</b>
+    <div class="bloc or"><b>Aucune avance de votre part, aucun prélèvement sur votre fonds de rachat.</b>
       TamCar avance les <b>frais d’entrée</b> de chaque véhicule ({f(FRAIS_ENTREE)}{NBSP}F : inspection, habillage TamCar, kit chauffeur) et finance, toute l’année, les <b>produits de senteur</b>
       remis aux chauffeurs toutes les deux semaines, ainsi que les <b>gadgets et forfaits internet offerts aux meilleurs chauffeurs</b>, qui fidélisent les conducteurs et soignent le service.
-      Ces dépenses sont couvertes par un prélèvement mensuel de 3{NBSP}% du volume sur le <b>fonds de rachat</b>, déjà déduit des chiffres ci-dessus ; TamCar vous en rend compte chaque année.</div>
+      Ces dépenses sont prises sur la propre part de TamCar : votre part de {int(PART_COURSE * 100)}{NBSP}% et votre fonds de rachat de {int(RACHAT * 100)}{NBSP}% restent entiers.</div>
   </div>
 
   <footer>

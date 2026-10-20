@@ -5,6 +5,7 @@ import { createServerSupabase } from '@/lib/supabase-server';
 import { AlertTriangleIcon } from '@/components/Icon';
 import { LiveAmount } from './LiveAmount';
 import { LiveRefresh } from './LiveRefresh';
+import { PayoutPanel } from './PayoutPanel';
 import {
   CAT_LABEL,
   VEHICLE_STATUS_LABEL,
@@ -15,6 +16,8 @@ import {
   previousMonth,
   type DealerDay,
   type DealerPayout,
+  type DealerPayoutOverview,
+  type DealerPayoutRequest,
   type DealerRecent,
   type DealerSummary,
   type DealerVehicle,
@@ -34,13 +37,15 @@ export default async function DealerDashboard({
   const preview = previewParam(searchParams.as);
   const who = { p_dealer_id: preview };
 
-  const [{ data: sData }, { data: vData }, { data: dData }, { data: rData }, { data: pData }] =
+  const [{ data: sData }, { data: vData }, { data: dData }, { data: rData }, { data: pData }, { data: oData }, { data: qData }] =
     await Promise.all([
       supabase.rpc('dealer_my_summary', who),
       supabase.rpc('dealer_my_vehicles', who),
       supabase.rpc('dealer_my_daily', who),
       supabase.rpc('dealer_my_recent', { ...who, p_limit: 8 }),
       supabase.rpc('dealer_my_payouts', { ...who, p_limit: 5 }),
+      supabase.rpc('dealer_payout_overview', who),
+      supabase.rpc('dealer_my_payout_requests', { ...who, p_limit: 8 }),
     ]);
 
   const s = ((sData ?? []) as DealerSummary[])[0];
@@ -60,6 +65,8 @@ export default async function DealerDashboard({
   const days = (dData ?? []) as DealerDay[];
   const recent = (rData ?? []) as DealerRecent[];
   const payouts = (pData ?? []) as DealerPayout[];
+  const payoutOverview = ((oData ?? []) as DealerPayoutOverview[])[0] ?? null;
+  const payoutRequests = (qData ?? []) as DealerPayoutRequest[];
 
   const isSunday = new Date(`${s.today}T12:00:00Z`).getUTCDay() === 0;
   const prevMonth = previousMonth(s.month_start);
@@ -138,7 +145,7 @@ export default async function DealerDashboard({
 
         <div className="rounded-2xl bg-white p-lg shadow-sm ring-1 ring-neutral-200">
           <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
-            {s.wallet_fcfa < 0 ? 'Solde à régler à TamCar' : 'Portefeuille à percevoir'}
+            {s.wallet_fcfa < 0 ? 'Solde à régler à TamCar' : 'Part disponible'}
           </p>
           <p className={`mt-xs text-3xl font-extrabold ${s.wallet_fcfa < 0 ? 'text-error' : 'text-neutral-900'}`}>
             {s.wallet_fcfa < 0 ? `${fmt(Math.abs(s.wallet_fcfa))} F` : <LiveAmount value={s.wallet_fcfa} />}
@@ -154,8 +161,12 @@ export default async function DealerDashboard({
             </p>
           )}
           <p className="mt-md text-[11px] leading-relaxed text-neutral-500">
-            Ce solde augmente à chaque course terminée sur vos véhicules. Les versements sont enregistrés par l’équipe TamCar.
+            Ce solde augmente à chaque course terminée sur vos véhicules. Vous pouvez en demander le versement à tout moment, un mois après la
+            première course de vos véhicules.
           </p>
+          {payoutOverview && (
+            <PayoutPanel overview={payoutOverview} requests={payoutRequests} readOnly={Boolean(preview) && profile.role === 'admin'} />
+          )}
           {payouts.length > 0 && (
             <ul className="mt-md space-y-xs border-t border-neutral-100 pt-md">
               <li className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">Derniers versements</li>
@@ -236,40 +247,21 @@ export default async function DealerDashboard({
         )}
       </section>
 
-      {/* Fonds de rachat et avance de démarrage */}
-      {(s.fund_fcfa > 0 || s.adr_amount_fcfa !== null) && (
-        <section className="grid gap-md sm:grid-cols-2">
-          {s.fund_fcfa > 0 && (
-            <div className="rounded-xl bg-white p-lg shadow-sm ring-1 ring-neutral-200">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
-                Fonds de rachat constitué sur vos véhicules
-              </p>
-              <p className="mt-xs text-2xl font-extrabold text-neutral-900" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                {fmt(s.fund_fcfa)} F
-              </p>
-              <p className="mt-sm text-[11px] leading-relaxed text-neutral-500">
-                Il s’ajoute à votre part de chaque course et vous revient à la cession du véhicule au chauffeur, à la fin du contrat.
-              </p>
-            </div>
-          )}
-          {s.adr_amount_fcfa !== null && (
-            <div className="rounded-xl bg-white p-lg shadow-sm ring-1 ring-neutral-200">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
-                Avance de démarrage remboursable
-              </p>
-              <p className="mt-xs text-2xl font-extrabold text-neutral-900" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                {fmt(s.adr_amount_fcfa)} F
-              </p>
-              <p className="mt-sm text-[11px] leading-relaxed text-neutral-500">
-                {s.adr_status === 'refunded' && 'Remboursée.'}
-                {s.adr_status === 'pending_activation' &&
-                  'Remboursable 12 mois après la mise en service de votre premier véhicule.'}
-                {s.adr_status === 'active' &&
-                  `Remboursement prévu le ${s.adr_refund_target ? new Date(`${s.adr_refund_target}T00:00:00Z`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }) : 'à la date anniversaire des 12 mois'}.`}
-                {s.adr_status === 'forfeited' && 'Contrat clôturé : voir avec TamCar.'}
-              </p>
-            </div>
-          )}
+      {/* Fonds de rachat */}
+      {s.fund_fcfa > 0 && (
+        <section>
+          <div className="rounded-xl bg-white p-lg shadow-sm ring-1 ring-neutral-200">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+              Fonds de rachat constitué sur vos véhicules
+            </p>
+            <p className="mt-xs text-2xl font-extrabold text-neutral-900" style={{ fontVariantNumeric: 'tabular-nums' }}>
+              {fmt(s.fund_fcfa)} F
+            </p>
+            <p className="mt-sm text-[11px] leading-relaxed text-neutral-500">
+              Il s’ajoute à votre part de chaque course et vous revient à la cession du véhicule au chauffeur, à la fin du contrat. Il n’est pas
+              disponible avant.
+            </p>
+          </div>
         </section>
       )}
 

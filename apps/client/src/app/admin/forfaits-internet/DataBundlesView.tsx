@@ -131,7 +131,7 @@ export function DataBundlesView({
           <p className="text-lg font-extrabold text-neutral-900" style={{ fontVariantNumeric: 'tabular-nums' }}>
             {fmt(winners * cost)} F
           </p>
-          <p className="text-xs text-neutral-500">{winners} × {fmt(cost)} F · financé par le prélèvement « maintien en flotte »</p>
+          <p className="text-xs text-neutral-500">{winners} × {fmt(cost)} F · financé par TamCar sur sa part</p>
         </div>
       </section>
 

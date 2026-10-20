@@ -1484,7 +1484,7 @@ function CompletionRequestModal({
   const priceDelta = typeof recomputedPrice === 'number' ? recomputedPrice - originalPrice : 0;
   const newPrice = recomputedPrice ?? originalPrice;
   const newDriverCash = Math.floor(newPrice * 0.40);
-  const newRachat = Math.floor(newPrice * 0.10);
+  const newRachat = Math.floor(newPrice * 0.05);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-neutral-900/75 backdrop-blur-sm sm:items-center">

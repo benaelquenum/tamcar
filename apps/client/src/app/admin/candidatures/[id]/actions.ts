@@ -57,31 +57,7 @@ export async function approveAppointment(formData: FormData) {
   });
   if (error) throw new Error(error.message);
 
-  // Créer l'ADR pour ce partenaire véhicule (formule Cession uniquement)
-  const adrPaid = String(formData.get('adr_paid') || '') === 'on';
-  if (adrPaid) {
-    const { data: app } = await supabase
-      .from('driver_appointments')
-      .select('profile_id, application_type')
-      .eq('id', id)
-      .single();
-    if (app?.application_type === 'cession' && app.profile_id) {
-      const { data: dealer } = await supabase
-        .from('dealer_partners')
-        .select('id')
-        .eq('profile_id', app.profile_id)
-        .single();
-      if (dealer?.id) {
-        await supabase.rpc('create_dealer_advance', {
-          p_dealer_partner_id: dealer.id,
-          p_amount_fcfa: 100000,
-        });
-      }
-    }
-  }
-
   revalidatePath('/admin/candidatures');
-  revalidatePath('/admin/dealer-advances');
   redirect('/admin/candidatures');
 }
 

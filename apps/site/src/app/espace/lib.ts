@@ -63,6 +63,57 @@ export type DealerRecent = {
 
 export type DealerPayout = { paid_at: string; amount_fcfa: number; note: string | null };
 
+/** Situation des versements : part disponible, ouverture des demandes, AIB et frais (fonction dealer_payout_overview). */
+export type DealerPayoutOverview = {
+  dealer_id: string;
+  wallet_fcfa: number;
+  available_fcfa: number;
+  pending_fcfa: number;
+  first_ride_at: string | null;
+  eligible_from: string | null;
+  eligible: boolean;
+  min_fcfa: number;
+  ifu: string | null;
+  aib_exempt: boolean;
+  aib_rate_permille: number;
+  fee_permille: number;
+  fee_bank_fcfa: number;
+  wait_months: number;
+};
+
+export type DealerPayoutQuote = {
+  amount_fcfa: number;
+  aib_permille: number;
+  aib_fcfa: number;
+  fee_fcfa: number;
+  net_fcfa: number;
+};
+
+export type DealerPayoutRequest = {
+  id: string;
+  requested_at: string;
+  amount_fcfa: number;
+  aib_permille: number;
+  aib_fcfa: number;
+  fee_fcfa: number;
+  net_fcfa: number;
+  method: 'mobile_money' | 'virement';
+  provider: string | null;
+  account: string;
+  invoice_number: string | null;
+  status: 'requested' | 'paid' | 'rejected' | 'cancelled';
+  reference: string | null;
+  reason: string | null;
+  decided_at: string | null;
+};
+
+export const PAYOUT_STATUS_LABEL: Record<DealerPayoutRequest['status'], string> = {
+  requested: 'En attente',
+  paid: 'Versé',
+  rejected: 'Refusé',
+  cancelled: 'Annulé',
+};
+
 export const CAT_LABEL: Record<string, string> = {
   moto: 'Moto',
   tricycle: 'Tricycle',

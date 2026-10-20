@@ -194,33 +194,6 @@ export function ApproveDriverForm({ app }: Props) {
           />
         </FieldSet>
 
-        {/* ADR — cession uniquement */}
-        {!isProprietaire && (
-          <FieldSet legend="Avance de Démarrage Remboursable (ADR) — cession uniquement" wide>
-            <label className="flex items-start gap-md rounded-lg bg-warning/10 p-md">
-              <input
-                type="checkbox"
-                name="adr_paid"
-                defaultChecked
-                className="mt-xs h-4 w-4 flex-none accent-primary-500"
-              />
-              <div>
-                <p className="text-sm font-bold text-neutral-900">
-                  ADR de 100 000 F versée par le partenaire véhicule
-                </p>
-                <p className="mt-xs text-[11px] text-neutral-600">
-                  Le partenaire véhicule remet 100 000 F cash / Mobile Money à la signature.
-                  Cette ADR sera automatiquement remboursée sur son wallet à M+12 via le split
-                  du fonds rachat (30% année 1, 20% année 2).
-                </p>
-                <p className="mt-xs text-[11px] font-semibold text-warning">
-                  Coche uniquement si le versement est effectif.
-                </p>
-              </div>
-            </label>
-          </FieldSet>
-        )}
-
         {error && (
           <div className="rounded-md bg-error/10 p-md text-sm text-error md:col-span-2">
             {error}

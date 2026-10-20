@@ -9,3 +9,5 @@ Rien n'est écrasé : chaque version remplacée est rangée ici, la nouvelle ver
 | `2026-10-11_contrat_partenaire_vehicule/` | Projet de contrat de partenariat du 11 octobre (docx, pdf, générateur) : fonds de rachat 7 % puis 8 %, maintien en flotte de 3 points | `TamCar_contrat_partenariat_vehicule.{docx,pdf}` (racine), générateur `plan-affaires/build_contrat_partenariat.js` |
 
 Le résumé v5 sert de gabarit aux pages 1 à 3 du résumé v6 : `plan-affaires/resume_base_v5.html`.
+| `2026-10-19_contrat_partenariat_genere/` | Projet du 19 octobre généré par script (pdf et générateur). Le générateur est archivé : il écrirait par-dessus le Word du fondateur | Word du fondateur du 20 octobre |
+| `2026-10-20_contrat_partenariat_version_fondateur/` | Copie du Word du fondateur au 20 octobre, avant corrections | `TamCar_contrat_partenariat_vehicule_corrige.{docx,pdf}` (racine) |

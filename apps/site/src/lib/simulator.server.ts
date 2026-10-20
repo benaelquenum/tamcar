@@ -7,18 +7,17 @@ import { type CategoryId, type SimLine, type SimOutput, type SimRequest } from '
 //
 // Aux recettes minimales prévues au contrat, 26 jours actifs par mois :
 //   - part course : 30 % du volume, versée chaque mois ;
-//   - rachat : 7 % du volume la 1re année, 8 % ensuite, versé à la cession du véhicule au chauffeur ;
-//   - maintien en flotte : 3 % du volume, prélevés chaque mois sur ce fonds de rachat, pour TOUS les véhicules
-//     (frais d'entrée de 30 000 F avancés par TamCar, senteurs, gadgets et forfaits internet des meilleurs) ;
-//     aucune avance de démarrage n'est demandée au propriétaire (décisions du 11/10/2026).
+//   - fonds de rachat : 5 % du volume, versé à la cession du véhicule au chauffeur, sans aucun prélèvement ;
+//   - les frais d'entrée de 30 000 F, les senteurs, les gadgets et les forfaits internet sont financés par TamCar sur sa
+//     propre part ; aucune avance de démarrage n'est demandée au propriétaire (clé du plan d'affaires v6, 19/10/2026).
 // Les charges du propriétaire (achat, assurance, entretien…) ne sont PAS modélisées : il peut les saisir pour
 // obtenir son rendement. À tenir alignées avec plan-affaires/build_proposition_flotte.py.
 
 type Category = { label: string; floor: number; months: number; note?: string };
 
 const CATEGORIES: Record<CategoryId, Category> = {
-  moto: { label: 'Moto', floor: 4_500, months: 12 },
-  tricycle: { label: 'Tricycle', floor: 8_500, months: 24 },
+  moto: { label: 'Moto', floor: 4_167, months: 12 },
+  tricycle: { label: 'Tricycle', floor: 8_333, months: 36 },
   essentiel: { label: 'Voiture Essentiel', floor: 12_000, months: 36 },
   confort: { label: 'Voiture Confort', floor: 15_000, months: 48 },
   vip: {
@@ -31,9 +30,7 @@ const CATEGORIES: Record<CategoryId, Category> = {
 
 const DAYS_PER_MONTH = 26;
 const PART_COURSE = 0.3;
-const RACHAT_YEAR1 = 0.07;
-const RACHAT_NEXT = 0.08;
-const UPKEEP = 0.03; // maintien en flotte : 3 % du volume, prélevé sur le fonds de rachat
+const RACHAT = 0.05; // fonds de rachat : 5 % du volume, versé au propriétaire à la cession
 
 export const KNOWN_CATEGORIES = Object.keys(CATEGORIES) as CategoryId[];
 
@@ -42,9 +39,7 @@ function line(id: CategoryId, qty: number, factor: number, cost: number | null):
   const monthlyVolume = cat.floor * DAYS_PER_MONTH * factor;
   const cashPerMonth = PART_COURSE * monthlyVolume;
   const cash = cashPerMonth * cat.months;
-  let fund = 0;
-  for (let m = 0; m < cat.months; m++) fund += (m < 12 ? RACHAT_YEAR1 : RACHAT_NEXT) * monthlyVolume;
-  const fundNet = Math.max(0, fund - UPKEEP * monthlyVolume * cat.months);
+  const fundNet = RACHAT * monthlyVolume * cat.months;
   const total = cash + fundNet;
   const years = cat.months / 12;
   const hasCost = cost !== null && cost > 0;
@@ -78,7 +73,7 @@ export function simulateFleet(req: SimRequest): SimOutput {
 
   const notes = [
     `Simulation indicative aux recettes minimales prévues au contrat (${DAYS_PER_MONTH} jours actifs par mois), multipliées par le rythme choisi.`,
-    `Part en cash : ${Math.round(PART_COURSE * 100)} % du volume ; fonds de rachat : ${Math.round(RACHAT_YEAR1 * 100)} % la première année puis ${Math.round(RACHAT_NEXT * 100)} %, versé à la cession, net du maintien en flotte (${Math.round(UPKEEP * 100)} % du volume, prélevé sur le fonds).`,
+    `Part en cash : ${Math.round(PART_COURSE * 100)} % du volume ; fonds de rachat : ${Math.round(RACHAT * 100)} % du volume, versé à la cession, sans prélèvement.`,
     'Aucune avance de démarrage : TamCar avance les frais d’entrée du véhicule (inspection, habillage, kit chauffeur).',
     'Vos propres charges ne sont pas incluses. Ni garantie de rendement, ni engagement avant la signature d’un contrat.',
   ];

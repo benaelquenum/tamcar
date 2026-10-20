@@ -37,7 +37,7 @@ async function createDealerImpl(formData: FormData): Promise<{ email: string; pa
   const full_name = String(formData.get('full_name') || '').trim();
   const company_name = String(formData.get('company_name') || '').trim();
   const rccm = String(formData.get('rccm') || '').trim();
-  const share_pct = parseFloat(String(formData.get('share_pct') || '25'));
+  const share_pct = parseFloat(String(formData.get('share_pct') || '30'));
 
   if (!full_name || !company_name) throw new Error('Nom et raison sociale obligatoires');
   if (!phone_raw && !email_raw) throw new Error('Téléphone ou email obligatoire');
@@ -113,5 +113,50 @@ export async function payDealerWalletAction(formData: FormData) {
   });
   if (error) throw new Error(error.message);
 
+  revalidatePath('/admin/dealers');
+}
+
+/** Règle une demande de versement : le partenaire a été payé (virement ou Mobile Money, hors application). Le n° de facture normalisée est exigé. */
+export async function settleDealerPayoutAction(formData: FormData) {
+  const id = String(formData.get('id') || '');
+  const reference = String(formData.get('reference') || '').trim() || null;
+  const invoice = String(formData.get('invoice_number') || '').trim() || null;
+  if (!id) throw new Error('Demande requise');
+  const supabase = createServerSupabase();
+  const { error } = await supabase.rpc('admin_settle_dealer_payout', {
+    p_id: id,
+    p_reference: reference,
+    p_invoice_number: invoice,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath('/admin/dealers');
+}
+
+/** Refuse une demande de versement : le montant redevient disponible pour le partenaire. */
+export async function rejectDealerPayoutAction(formData: FormData) {
+  const id = String(formData.get('id') || '');
+  const reason = String(formData.get('reason') || '').trim() || null;
+  if (!id) throw new Error('Demande requise');
+  const supabase = createServerSupabase();
+  const { error } = await supabase.rpc('admin_reject_dealer_payout', { p_id: id, p_reason: reason });
+  if (error) throw new Error(error.message);
+  revalidatePath('/admin/dealers');
+}
+
+/** Situation fiscale du partenaire : identifiant fiscal (IFU) et, au besoin, exonération d'AIB constatée (motif obligatoire). */
+export async function setDealerTaxAction(formData: FormData) {
+  const dealerId = String(formData.get('dealer_id') || '');
+  const ifu = String(formData.get('ifu') || '').trim() || null;
+  const exempt = formData.get('aib_exempt') === 'on';
+  const reason = String(formData.get('reason') || '').trim() || null;
+  if (!dealerId) throw new Error('Partenaire requis');
+  const supabase = createServerSupabase();
+  const { error } = await supabase.rpc('admin_set_dealer_tax', {
+    p_dealer: dealerId,
+    p_ifu: ifu,
+    p_aib_exempt: exempt,
+    p_reason: reason,
+  });
+  if (error) throw new Error(error.message);
   revalidatePath('/admin/dealers');
 }

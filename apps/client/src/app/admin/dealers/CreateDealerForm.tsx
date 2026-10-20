@@ -77,7 +77,7 @@ export function CreateDealerForm() {
         <Field label="Nom complet du contact *" name="full_name" required />
         <Field label="Raison sociale *" name="company_name" required />
         <Field label="RCCM" name="rccm" />
-        <Field label="Part partenaire véhicule (%)" name="share_pct" type="number" step="0.5" defaultValue="25" />
+        <Field label="Part partenaire véhicule (%)" name="share_pct" type="number" step="0.5" defaultValue="30" />
         <div className="md:col-span-2">
           <SubmitButton />
         </div>

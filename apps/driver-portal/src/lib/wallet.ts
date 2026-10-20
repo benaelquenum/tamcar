@@ -29,6 +29,7 @@ export type WalletTxType =
   | 'ops_commission'
   | 'senteur_fee'
   | 'fleet_upkeep_fee'
+  | 'aib_withholding'
   | 'ops_payout'
   | 'adjustment';
 
@@ -123,6 +124,7 @@ const TX_LABEL: Record<WalletTxType, string> = {
   ops_commission: 'Commission responsable opérations',
   senteur_fee: 'Produits de senteur',
   fleet_upkeep_fee: 'Maintien en flotte (fonds de rachat)',
+  aib_withholding: 'AIB retenu sur versement',
   ops_payout: 'Règlement responsable opérations',
   tamassur_withdrawal: 'Retrait épargne TamAssur',
   goodwill_credit: 'Crédit d\'excuse',

@@ -22,7 +22,6 @@ const NAV: { href: string; label: string; exact?: boolean; badge?: keyof AdminCo
   { href: '/admin/vehicles', label: 'Véhicules' },
   { href: '/admin/locations', label: 'Locations VIP' },
   { href: '/admin/candidatures', label: 'Rendez-vous' },
-  { href: '/admin/dealer-advances', label: 'ADR' },
   { href: '/admin/ops', label: 'Responsables ville' },
   { href: '/admin/dettes', label: 'Dettes chauffeur', badge: 'debts' },
   { href: '/admin/bonus', label: 'Bonus chauffeur' },
