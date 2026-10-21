@@ -140,6 +140,12 @@
   .comp-logo.yango { background: #FF0033; color: #FFF; }
   .comp-logo.rmob { background: #0055A5; color: #FFF; }
   .comp-logo.fu { background: #F2B705; color: #1E293B; }
+  .comp-grid .card { padding: 2.8mm 3.2mm; }
+  .comp-grid .card h3 { margin-bottom: 1mm; font-size: 11.5pt; }
+  .comp-grid .comp-logo { margin-bottom: 1.5mm; }
+  .comp-grid .card p.small { font-size: 8pt; line-height: 1.32; }
+  .comp-logo.inas { background: #0F766E; color: #FFF; }
+  .comp-logo.indrive { background: #1E293B; color: #C1F11D; }
 
   .cat-card {
     background: #FFFFFF; border: 2px solid var(--line);
@@ -473,7 +479,7 @@
   </p>
 
   <h2>Les concurrents en place — leurs faiblesses</h2>
-  <div class="grid-3" style="grid-template-columns: repeat(2, 1fr);">
+  <div class="grid-3 comp-grid">
     <div class="card">
       <div class="comp-logo gozem">GOZEM</div>
       <h3>Leader régional</h3>
@@ -496,16 +502,29 @@
       <strong>Faiblesse</strong> : notoriété faible, flotte réduite, matching aléatoire.</p>
     </div>
     <div class="card">
+      <div class="comp-logo inas">INAS TRAVEL</div>
+      <h3>Application généraliste</h3>
+      <p class="small muted">Lancée en juin 2026 : course, location, livraison, tourisme.
+      <strong>Faiblesse</strong> : prix de course courte <strong>supérieurs de 85 %</strong> à ceux de TamCar
+      (octobre 2026), aucun accès à la propriété du véhicule.</p>
+    </div>
+    <div class="card">
+      <div class="comp-logo indrive">inDrive</div>
+      <h3>Plateforme internationale</h3>
+      <p class="small muted">Le passager propose son prix, le chauffeur accepte ou refuse.
+      <strong>Faiblesse</strong> : prix <strong>jamais annoncé à l'avance</strong> ;
+      seule la moto est proposée à Cotonou (octobre 2026).</p>
+    </div>
+    <div class="card">
       <div class="comp-logo fu">4U · FOR YOU</div>
       <h3>Application locale</h3>
-      <p class="small muted">Transport, livraison et services du quotidien à Cotonou et Abomey-Calavi.
-      <strong>Faiblesse</strong> : prix <strong>de 8 à 71 % plus élevés que TamCar</strong>
-      (relevé en application du 21 octobre 2026), audience modeste, aucune offre de véhicule
-      ni d'accès à la propriété annoncée pour le chauffeur.</p>
+      <p class="small muted">Transport, livraison et services à Cotonou et Abomey-Calavi.
+      <strong>Faiblesse</strong> : prix <strong>de 8 à 71 % plus élevés</strong> que TamCar
+      (21 octobre 2026), audience modeste, aucun accès à la propriété du véhicule.</p>
     </div>
   </div>
 
-  <h2>Le trou de marché — la promesse TamCar</h2>
+  <h2 style="margin-top:6mm;">Le trou de marché — la promesse TamCar</h2>
   <div style="background:var(--blue-light); padding:6mm; border-radius:4mm; border-left:4px solid var(--blue); margin-bottom:5mm;">
     <div style="font-size:15pt; font-weight:700; color:var(--blue-dark); font-style:italic; text-align:center;">
       « Le VTC qui respecte le Béninois — client comme chauffeur. »

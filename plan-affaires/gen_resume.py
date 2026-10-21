@@ -84,8 +84,9 @@ remp("""Transparence tarifaire, prévisibilité de la relation avec les conducte
 
 # 4U (For You) : relevé en application du fondateur, 21 octobre 2026, 5,6 km / 14 min (plan 3.4.6)
 remp("""<p class="note">Zémidjan traditionnel : 300, 350 et 400 F selon les offres relevées.</p>""",
-     """<p class="note">Zémidjan traditionnel : 300, 350 et 400 F selon les offres relevées. 4U (For You), relevé en application du 21 octobre 2026
-    sur 5,6 km : moto 478, tricycle 867, voiture ordinaire 1 267, confort 1 837 et VIP 2 900 F ; TamCar, sur le même trajet : 400, 800, 950, 1 250 et 1 700 F.</p>""")
+     """<p class="note">Zémidjan traditionnel : 300, 350 et 400 F selon les offres relevées. Autres acteurs, relevés en octobre 2026 : INAS Travel (lancée en juin 2026),
+    course courte à 925 F en voiture ordinaire contre 500 F pour TamCar (−46 %), 1 300 F contre 700 F en climatisée ; inDrive, où le passager propose son prix, limité à la moto
+    à Cotonou ; 4U (For You), sur 5,6 km le 21 octobre : moto 478, tricycle 867, voiture ordinaire 1 267, confort 1 837 et VIP 2 900 F, contre 400, 800, 950, 1 250 et 1 700 F pour TamCar.</p>""")
 remp("""face à Gozem, moins cher de 8 à 38 %.</p>""",
      """face à Gozem, moins cher de 8 à 38 % ; face à 4U, de 8 à 41 %.</p>""")
 
