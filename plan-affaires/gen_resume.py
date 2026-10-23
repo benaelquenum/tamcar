@@ -580,7 +580,7 @@ p10 = f'''<!-- ============================================================ 10 �
       <span class="pill">15 000 000 FCFA</span>
       <h2 style="font-size:19px; margin:8px 0 6px">Un investissement en numéraire, <em>pour 40 % du capital.</em></h2>
       <p style="font-size:10.4px; margin-top:6px">
-        L’investisseur verse 15 000 000 F pour <strong>40 %</strong> ; la structure du fondateur détient <strong>60 %</strong> par l’apport en nature de la plateforme.
+        L’investisseur verse 15 000 000 F pour <strong>40 %</strong> ; BENAEL, société du fondateur, détient <strong>60 %</strong> par l’apport en nature de la plateforme.
         Cette répartition suppose une plateforme évaluée à 22 500 000 F : la valeur totale des apports est de 37 500 000 F.
       </p>
       <p style="font-size:10.4px">

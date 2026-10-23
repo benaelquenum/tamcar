@@ -85,7 +85,7 @@ html = f'''<!-- ============================================================ 02 
   <div class="sec-head"><span class="num">02</span><h1>Présentation générale du projet <small>(suite)</small></h1></div>
 
   <div class="h-serif" style="margin-top:14px">2.10 · Valorisation de la plateforme et répartition du capital</div>
-  <p class="intro">La répartition proposée, <strong>60 % pour la structure du fondateur</strong> et <strong>40 % pour l’investisseur</strong>, suppose que l’apport en nature de la plateforme soit évalué à un montant suffisant. Cette page montre le calcul et ce qui le justifie.</p>
+  <p class="intro">La répartition proposée, <strong>60 % pour BENAEL, société du fondateur</strong> et <strong>40 % pour l’investisseur</strong>, suppose que l’apport en nature de la plateforme soit évalué à un montant suffisant. Cette page montre le calcul et ce qui le justifie.</p>
 
   <div class="row c-3" style="margin-top:8px">
     <div class="kpi"><b>{n(INVEST)} F</b><span>versés en numéraire</span><small>par l’investisseur, pour 40 % des parts</small></div>
@@ -96,14 +96,14 @@ html = f'''<!-- ============================================================ 02 
   <div class="rule-label" style="margin-top:16px">Trois méthodes d’évaluation</div>
   <table class="tbl" style="margin-top:8px">
     <colgroup><col style="width:58%"><col style="width:21%"><col style="width:21%"></colgroup>
-    <thead><tr><th>Méthode</th><th>Valeur de la plateforme</th><th>Part du fondateur si retenue</th></tr></thead>
+    <thead><tr><th>Méthode</th><th>Valeur de la plateforme</th><th>Part de BENAEL si retenue</th></tr></thead>
     <tbody>
       {lignes_m}
     </tbody>
   </table>
 
   <div class="callout" style="margin-top:12px">
-    <strong>Lecture.</strong> Part du fondateur = valeur ÷ (valeur + 15 000 000 F). La valeur nécessaire pour 60 % ({n(APPORT)} F) représente
+    <strong>Lecture.</strong> Part de BENAEL = valeur ÷ (valeur + 15 000 000 F). La valeur nécessaire pour 60 % ({n(APPORT)} F) représente
     <strong>{pct(100 * APPORT / A, 0)} du coût historique</strong> : le fondateur a travaillé environ <strong>{n(HEURES)} heures</strong> sur la plateforme, soit {n(A)} F au tarif retenu.
     Elle dépasse le coût de reproduction ({n(B)} F) et reste sous la valeur d’usage ({n(CVAL)} F).
   </div>
@@ -123,8 +123,7 @@ html = f'''<!-- ============================================================ 02 
 
   <div class="row c-1-1 stretch" style="margin-top:12px">
     <div class="callout">
-      <strong>Dépenses et valeur.</strong> Les 4 000 000 F cités en 2.1 sont les dépenses engagées en numéraire. Les {n(HEURES)} heures du fondateur n’ont pas été payées : elles
-      font la valeur de l’apport, avec la marque et le savoir-faire.
+      <strong>Dépenses et valeur.</strong> Les 4 000 000 F cités en 2.1 sont les dépenses engagées en numéraire. Les {n(HEURES)} heures du fondateur n’ont pas été payées : elles font la valeur de l’apport, avec la marque et le savoir-faire. Le fondateur les cède à BENAEL, qui apporte la plateforme (liste fermée en annexe du dossier d’évaluation).
     </div>
     <div class="callout violet">
       <strong>Un commissaire aux apports tranche.</strong> Il est désigné lorsque l’apport dépasse 5 000 000 F ou la moitié du capital (art. 312 de l’Acte uniforme) : ici, les deux.
