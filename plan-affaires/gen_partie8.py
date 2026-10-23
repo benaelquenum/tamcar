@@ -175,7 +175,7 @@ pages.append(f'''<!-- ==========================================================
   <div class="h-serif" style="margin-top:14px">8.3 · Les charges d’exploitation mensuelles</div>
   <p class="intro">Montants mensuels en FCFA. « Variable » signifie qu’ils suivent le volume de courses. Les rémunérations sont indiquées en brut.</p>
 
-  <table class="tbl txt" style="margin-top:10px">
+  <table class="tbl txt serre" style="margin-top:10px">
     <colgroup><col style="width:32%"><col style="width:22%"><col style="width:12%"><col style="width:34%"></colgroup>
     <thead><tr><th>Poste</th><th>Montant</th><th>Nature</th><th>Début et remarque</th></tr></thead>
     <tbody>
@@ -198,8 +198,8 @@ pages.append(f'''<!-- ==========================================================
       {tr('Assurance, droit taxi, visite technique de TamCar', f'75 000 par an par tricycle ; 50 000 par an par moto', 'Fixe', 'Jusqu’à la cession du véhicule au conducteur')}
       {tr('Tracker GPS certifié ANATT de TamCar', '139 000 en année 1, puis 89 000 par an (tricycle)', 'Fixe', 'À la mise en service puis chaque anniversaire (8.4) ; motos cédées à 12 mois : pas de renouvellement')}
       {tr('Épargne NSIA (TamAssur) : postes vacants', f'environ {n(VAC_AN)} par an', 'Variable', 'Cotisation NSIA avancée pendant la vacance d’un poste (25 % de départs, 21 jours)')}
-      {tr('Épargne NSIA (TamAssur) : manque au rachat', f'{n(M.NSIA_12)} par moto ; {n(M.NSIA_24)} par autre véhicule', 'Une fois par véhicule', 'À l’ouverture du premier palier de retrait (12 mois pour une moto, 24 mois pour les autres) : estimations à confirmer par une simulation écrite de NSIA')}
-      {tr('Cotisation TamAssur des véhicules sous contrat', f'{n(M.COTIS)} par jour et par véhicule', 'Déduite des recettes', 'Comprise dans l’objectif du conducteur, versée à NSIA par TamCar et financée sur sa part : elle n’est pas dans les charges ci-dessus mais déduite des revenus (7.2)')}
+      {tr('Épargne NSIA (TamAssur) : manque au rachat', f'{n(M.NSIA_12)} par moto ; {n(M.NSIA_24)} par autre véhicule', 'Une fois par véhicule', 'À l’ouverture du premier palier (12 mois pour une moto, 24 mois pour les autres) ; estimations à confirmer par une simulation écrite de NSIA')}
+      {tr('Cotisation TamAssur des véhicules sous contrat', f'{n(M.COTIS)} par jour et par véhicule', 'Déduite des recettes', 'Comprise dans l’objectif du conducteur, versée à NSIA par TamCar sur sa part : déduite des revenus (7.2), non comptée ci-dessus')}
     </tbody>
   </table>
 

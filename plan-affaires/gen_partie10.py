@@ -362,7 +362,17 @@ pages.append(f'''<!-- ==========================================================
     </div>
   </div>
 
-  <div class="rule-label ajout" style="margin-top:16px">État d’avancement au 20 octobre 2026 · d’après ce que contient déjà le plan</div>
+  <div class="pn"><b><!--PN--></b> sur <!--TOTAL--></div>
+</section>
+''')
+
+# p.5 bis — 10.8 état d'avancement (page séparée : la page précédente débordait et coupait les puces du bas)
+pages.append(f'''<!-- ============================================================ 10 · p.5 bis · 10.8 état d'avancement -->
+<section class="page" data-filigrane="TamCar">
+  <div class="sec-head"><span class="num">10</span><h1>Feuille de route et calendrier de déploiement <small>(suite)</small></h1></div>
+
+  <div class="h-serif" style="margin-top:14px">10.8 · État d’avancement et calendrier retenu <small>(suite)</small></div>
+  <div class="rule-label ajout" style="margin-top:14px">État d’avancement au 20 octobre 2026 · d’après ce que contient déjà le plan</div>
   <div class="row c-1-1 stretch" style="margin-top:8px">
     <div class="card ajout">
       <div class="eyebrow vert">{{{{ico:shield}}}} Déjà en place</div>
