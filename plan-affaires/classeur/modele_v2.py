@@ -65,6 +65,9 @@ def construire(dest=V2, surcharges=None, source=V1):
     note(71, "30 % propriétaire (TamCar) + 20 % plateforme + 5 % fonds de rachat qui revient à TamCar ; l'autre moitié du fonds (5 %) est le fonds du conducteur")
     note(72, "Idem : 55 %")
 
+    # ------------------------------------------------------------------ Hypothèses : spots vidéo par IA dans le marketing de lancement (2026-10-23)
+    note(27, "Comprend la création de spots vidéo par IA (Higgsfield) : pilote 39 200 F (forfait Plus, 49 $, 1 mois), puis 309 600 F au plus (forfait Ultra, 3 × 129 $) si le pilote convainc, dollar à 800 F ; le solde couvre la photo et le sponsoring ; la diffusion payante n'est pas budgétée")
+
     # ------------------------------------------------------------------ Hypothèses : tricycle cédé à 24 mois (décision du 2026-10-21)
     H["B74"] = 24
     note(74, "Terence (2026-10-21) : 2 ans pour le tricycle (garantie TamAssur de 500 000 F à 24 mois, qui est aussi le terme) ; assurance et tracker payés à l'achat puis au 1er anniversaire seulement ; 20 % de commission ensuite")

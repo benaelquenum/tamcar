@@ -525,12 +525,12 @@ page(f'''
 
   <div class="rule-label" style="margin-top:14px">Coûts et ressources dans le plan</div>
   <div class="row c-4" style="margin-top:8px">
-    <div class="kpi"><b>18 750 F</b><span>par mois</span><small>Supabase, offre Pro (25 USD)</small></div>
-    <div class="kpi"><b>15 000 F</b><span>par mois</span><small>Vercel, offre Pro (20 USD), au lancement commercial</small></div>
-    <div class="kpi"><b>75 000 F</b><span>par mois</span><small>enveloppe d’infrastructure du plan (8.3), dont 41 250 F pour cartes, SMS, WhatsApp et nom de domaine</small></div>
+    <div class="kpi"><b>20 000 F</b><span>par mois</span><small>Supabase, offre Pro (25 USD)</small></div>
+    <div class="kpi"><b>16 000 F</b><span>par mois</span><small>Vercel, offre Pro (20 USD), au lancement commercial</small></div>
+    <div class="kpi"><b>75 000 F</b><span>par mois</span><small>enveloppe d’infrastructure du plan (8.3), dont 39 000 F pour cartes, SMS, WhatsApp et nom de domaine</small></div>
     <div class="kpi"><b>200 000 F</b><span>par mois, dès le mois 13</span><small>développeur salarié (5.4)</small></div>
   </div>
-  <div class="src">Taux retenu : 1 USD = 750 F. Outil de développement assisté : 75 000 F par mois, du mois 1 au mois 12 (8.3). Vercel est gratuit pendant le développement.</div>
+  <div class="src">Taux retenu : 1 USD = 800 F. Outil de développement assisté : 75 000 F par mois, du mois 1 au mois 12 (8.3). Vercel est gratuit pendant le développement.</div>
   <div class="rnote">Le budget d’infrastructure de 75 000 F par mois est l’hypothèse du plan ; je n’ai pas les factures Supabase et Vercel pour la confronter à la réalité.</div>
 ''', nom='p.9 · 11.9')
 

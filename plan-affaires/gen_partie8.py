@@ -130,7 +130,7 @@ pages.append(f'''<!-- ==========================================================
       {tr('Juriste : contrats', '<div style="text-align:right">' + n(M.h('B24')) + '</div>', 'Mois 0', 'Contrats chauffeurs, cession, partenaires')}
       {tr('Bureau de Cotonou : caution et aménagement', '<div style="text-align:right">' + n(M.h('B25')) + '</div>', 'Mois 0', 'Accueil, dossiers, chauffeurs')}
       {tr('Matériel informatique et mobilier', '<div style="text-align:right">' + n(M.h('B26')) + '</div>', 'Mois 0', 'Postes, imprimante, mobilier')}
-      {tr('Marketing de lancement : photo, vidéo, sponsoring', '<div style="text-align:right">' + n(M.h('B27')) + '</div>', 'Mois 0', 'Seul marketing budgété en investissement')}
+      {tr('Marketing de lancement : photo, vidéo, sponsoring', '<div style="text-align:right">' + n(M.h('B27')) + '</div>', 'Mois 0', 'Seul marketing budgété en investissement. Comprend la création de spots vidéo par IA (Higgsfield) : 39 200 F pour le pilote (forfait Plus, 1 mois), 309 600 F au plus si le pilote convainc (forfait Ultra, 3 mois), dollar à 800 F ; le solde couvre la photo et le sponsoring')}
       {tr('Graphisme', '<div style="text-align:right">' + n(M.h('B28')) + '</div>', 'Mois 0', 'Supports de communication')}
       {tr('<strong>Total</strong>', '<div style="text-align:right"><strong>' + n(M.DEMARRAGE) + '</strong></div>', '', 'Payé au mois 0')}
     </tbody>
