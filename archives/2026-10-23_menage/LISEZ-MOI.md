@@ -10,3 +10,9 @@ Classeurs budget d'avant le plan d'affaires v5/v6, rangés ici sans rien supprim
 | `TamCar_budget_tricycles_24mois.xlsx` | 29 septembre 2026 | Budget à 10 tricycles | `TamCar_resultat_complet_v2.xlsx` |
 | `TamCar_charges_flotte.xlsx` | 3 octobre 2026 | Modèle de charges de la flotte du plan v5 | `TamCar_resultat_complet_v2.xlsx` |
 | `TamCar_charges_recettes_caisse.xlsx` | 3 octobre 2026 | Charges, recettes et caisse du plan v5 | `TamCar_resultat_complet_v2.xlsx` |
+
+## Ajout du 23 octobre 2026 (racine)
+
+| Emplacement d'origine | Rangé dans | Pourquoi | Remplacé par |
+|---|---|---|---|
+| `TamCar_actionnaires.xlsx` | `racine/TamCar_actionnaires.xlsx` | Tableur de l'ancien modèle d'actionnariat (partenaires véhicule actionnaires, avance de démarrage, fondateur à 20 M = 2 000 parts, 66,7 %) | À reconstruire sur le plan v6 (BENAEL 60 %, investisseur 40 %) |
