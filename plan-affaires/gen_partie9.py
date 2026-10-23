@@ -15,6 +15,10 @@ NT = M.N_ESS_T + M.N_CONF_T
 CUM6 = M.ligne(87)[6] + M.ligne(88)[6]
 R = {(p, t): M.res(p, t) for p in (1.0, 0.9, 0.8, 0.7, 0.6, 0.5) for t in (True, False)}
 POINT_BAS_T = min(M.serie_caisse(1.0, True))
+DL_0_100 = M.demarrage_lent(0.0, 1.0)            # démarrage lent : 0 % des planchers les trois premiers mois, puis planchers atteints
+DL_0_70 = M.demarrage_lent(0.0, 0.7)
+DL_0_80_S = M.demarrage_lent(0.0, 0.8, 3, False)
+COUT_DL_0, COUT_DL_50 = M.cout_demarrage_lent(0.0), M.cout_demarrage_lent(0.5)
 VEH_TAMCAR = M.PRIX_TRICYCLE + M.N_MOTO * M.PRIX_MOTO
 TRACKERS = sum(M.annuel(50)[i] + M.annuel(51)[i] for i in (1, 2, 3))
 PATENTE = M.h('B50') + M.h('B51') * 12 * M.h('B37')
@@ -150,7 +154,7 @@ pages.append(f'''<!-- ==========================================================
 
   <div class="h-serif ajout" style="margin-top:14px">Ce que coûtent les principaux risques dans le modèle</div>
   <p class="intro">Trésorerie avec 15 M FCFA de levée, planchers atteints et flotte recrutée sauf mention. Un point bas négatif se lit comme un besoin de financement en plus de la levée.</p>
-  <table class="tbl ajout" style="margin-top:6px">
+  <table class="tbl ajout serre" style="margin-top:6px">
     <colgroup><col style="width:46%"><col style="width:18%"><col style="width:18%"><col style="width:18%"></colgroup>
     <thead><tr><th>Événement</th><th>Point bas de la caisse</th><th>Caisse au mois 36</th><th>Excédent brut, an 2</th></tr></thead>
     <tbody>
@@ -161,6 +165,9 @@ pages.append(f'''<!-- ==========================================================
       {ligne_ev('Planchers versés à 70 %', 'flotte de départ', R[(0.7, False)])}
       {ligne_ev('Planchers versés à 50 %', 'flotte recrutée', R[(0.5, True)])}
       {ligne_ev('Planchers versés à 50 %', 'flotte de départ', R[(0.5, False)])}
+      {ligne_ev('Démarrage lent : 0 % des planchers les trois premiers mois', 'puis planchers atteints, flotte recrutée', DL_0_100)}
+      {ligne_ev('Démarrage lent : 0 % des planchers les trois premiers mois', 'puis 70 % des planchers, flotte recrutée', DL_0_70)}
+      {ligne_ev('Démarrage lent : 0 % des planchers les trois premiers mois', 'puis 80 % des planchers, flotte de départ', DL_0_80_S)}
       {ligne_ev('Les neuf voitures d’Afrik Group ne viennent pas', 'avec les six voitures de tiers', HD['sans_voitures_afrik'])}
       {ligne_ev('Aucune voiture', 'tricycle et cinq motos seuls', HD['sans_voitures'])}
       {ligne_ev('Levée de 10 M', 'même flotte', HD['levee_10M'])}
@@ -177,6 +184,11 @@ pages.append(f'''<!-- ==========================================================
       <strong>Les deux conditions du plan.</strong> Les neuf voitures d’Afrik Group (sans elles, la trésorerie devient négative au mois {HD['sans_voitures']['premier_mois_negatif']})
       et l’encaissement des versements. Les voitures de tiers abaissent de {round(100 * (SEUIL_S['ebe'] - SEUIL_T['ebe']))} points le seuil d’excédent et de {round(100 * (SEUIL_S['net'] - SEUIL_T['net']))} points celui du résultat.
     </div>
+  </div>
+  <div class="callout violet ajout" style="margin-top:10px">
+    <strong>Un démarrage lent.</strong> Le modèle applique le taux d’encaissement dès le mois 1. Trois mois à 0 % des planchers font perdre {str(round(COUT_DL_0 / 1e6, 1)).replace('.', ',')} M de caisse
+    ({str(round(COUT_DL_50 / 1e6, 1)).replace('.', ',')} M à 50 %), que la levée absorbe ; le risque vient de sa combinaison avec des planchers durablement bas ou sans voitures de tiers.
+    <strong>Mesures proposées :</strong> voitures de tiers signées avant le lancement ; sous 50 % des planchers au mois 3, gel du marketing de lancement non engagé et des dépenses non essentielles.
   </div>
   <div class="src">Les coûts d’un second responsable des opérations, de la garantie TamAssur aux paliers de 36 mois et au-delà et de l’amortissement de l’apport en nature ne sont pas dans ces chiffres.</div>
 

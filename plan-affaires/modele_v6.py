@@ -254,6 +254,28 @@ def serie_caisse(p, tiers=True):
     return SIM.simuler(BASE, p, **kw)["caisse"]
 
 
+def serie_demarrage_lent(p1, p2, duree=3, tiers=True):
+    """Démarrage lent : taux d'atteinte p1 les `duree` premiers mois, puis p2 (le plan applique un taux unique dès le mois 1).
+    Chaque mois ne dépend que de son propre taux : on raccorde les deux séries mois par mois et on recalcule la caisse."""
+    a, b = serie(p1, tiers), serie(p2, tiers)
+    s = {k: [a[k][m] if m <= duree else b[k][m] for m in range(37)] for k in ("rec", "ch", "ebe", "flux", "nsia")}
+    caisse = [SIM.LEVEE - BASE.ch[0]]
+    for m in range(1, 37):
+        caisse.append(caisse[-1] + s["flux"][m])
+    s["caisse"] = caisse
+    return s
+
+
+def demarrage_lent(p1, p2, duree=3, tiers=True):
+    """Résultats (comme res) d'un démarrage lent."""
+    return SIM.resultats(BASE, serie_demarrage_lent(p1, p2, duree, tiers))
+
+
+def cout_demarrage_lent(p1, duree=3, tiers=True):
+    """Trésorerie perdue au mois 36 par un démarrage à p1 pendant `duree` mois, puis planchers atteints."""
+    return serie_caisse(1.0, tiers)[36] - serie_demarrage_lent(p1, 1.0, duree, tiers)["caisse"][36]
+
+
 # ------------------------------------------------------------------ valeur d'usage (2.10) : revenus de TamCar sur 36 mois, actualisés à 20 %, flotte actuelle sans véhicule de tiers
 def valeur_usage():
     s = SIM.simuler(BASE, 1.0)

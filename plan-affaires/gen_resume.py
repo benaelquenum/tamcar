@@ -488,7 +488,7 @@ p9 = f'''<!-- ============================================================ 9 · 
   </table>
 
   <div class="h-serif">Ce que coûtent les principaux risques</div>
-  <p class="intro" style="margin-top:6px">Avec 15 M F de levée ; un point bas négatif se lit comme un besoin de financement en plus de la levée.</p>
+  <p class="intro" style="margin-top:6px">Avec 15 M F de levée ; un point bas négatif se lit comme un besoin de financement en plus de la levée. Trois mois à 0 % des planchers au démarrage coûtent {str(round(M.cout_demarrage_lent(0.0) / 1e6, 1)).replace('.', ',')} M de trésorerie ; la levée les absorbe.</p>
   <table class="tbl serre" style="margin-top:8px">
     <colgroup><col style="width:46%"><col style="width:18%"><col style="width:18%"><col style="width:18%"></colgroup>
     <thead><tr><th>Événement</th><th>Point bas de la caisse</th><th>Caisse au mois 36</th><th>Excédent, année 2</th></tr></thead>
@@ -498,6 +498,8 @@ p9 = f'''<!-- ============================================================ 9 · 
       {ligne_risque('Planchers versés à 70 % (flotte recrutée)', S(0.7))}
       {ligne_risque('Planchers versés à 70 % (flotte de départ)', S(0.7, False))}
       {ligne_risque('Planchers versés à 50 % (flotte de départ)', S(0.5, False))}
+      {ligne_risque('Démarrage lent : 0 % trois mois, puis 100 % (flotte recrutée)', M.demarrage_lent(0.0, 1.0))}
+      {ligne_risque('Démarrage lent : 0 % trois mois, puis 70 % (flotte recrutée)', M.demarrage_lent(0.0, 0.7))}
       {ligne_risque('Levée de 5 M, aucun véhicule acheté par TamCar', HD['levee_5M_sans_vehicule'])}
       {ligne_risque('Les neuf voitures d’Afrik Group ne viennent pas', HD['sans_voitures_afrik'])}
       {ligne_risque('Aucune voiture (tricycle et cinq motos seuls)', HD['sans_voitures'])}
