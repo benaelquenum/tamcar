@@ -108,8 +108,13 @@ export function buildSimpleCar(): THREE.BufferGeometry {
 }
 
 export type World = {
-  /** Met à jour lumières, couleurs, circulation et ciel : `night` 0 (jour) → 1 (nuit), `xc` position du véhicule suivi. */
-  update: (night: number, xc: number) => void;
+  /** Groupe qui contient tout le décor (rue, maisons, lampadaires, lumières) : `root.visible = false` le masque. */
+  root: THREE.Group;
+  /**
+   * Met à jour lumières, couleurs, circulation et ciel : `night` 0 (jour) → 1 (nuit), `xc` position du véhicule suivi.
+   * `traffic` (par défaut `xc`) fait avancer la circulation en sens inverse indépendamment du véhicule (film : il peut s'arrêter).
+   */
+  update: (night: number, xc: number, traffic?: number) => void;
   /** À appeler quand la taille (ou le rapport largeur/hauteur) de la zone change. */
   layout: (aspect: number) => void;
   /** Matière des poteaux (panneaux, affiches). */
@@ -132,6 +137,9 @@ export function createWorld(
   const dummy = new THREE.Object3D();
   const maxAniso = Math.min(4, renderer.capabilities.getMaxAnisotropy());
   const dimTargets: THREE.MeshBasicMaterial[] = [];
+  // Tout le décor est rangé dans un groupe : on peut le masquer d'un coup (scène d'intérieur du film des partenaires)
+  const root = new THREE.Group();
+  scene.add(root);
 
   scene.fog = new THREE.Fog('#E9D9BF', 26, 175);
 
@@ -146,7 +154,7 @@ export function createWorld(
 
   /* ------------------------------------------------------------------ lumières */
   const hemi = new THREE.HemisphereLight('#E8EEF8', '#B58A63', 1.1);
-  scene.add(hemi);
+  root.add(hemi);
   const sunLight = new THREE.DirectionalLight('#FFF0D2', 2.0);
   sunLight.castShadow = true;
   sunLight.shadow.mapSize.set(1024, 1024);
@@ -160,7 +168,7 @@ export function createWorld(
   sc.updateProjectionMatrix();
   sunLight.shadow.bias = -0.0004;
   sunLight.shadow.normalBias = 0.05;
-  scene.add(sunLight, sunLight.target);
+  root.add(sunLight, sunLight.target);
 
   /* ------------------------------------------------------------------ sol (terre rouge), chaussée, trottoirs */
   const earthTex = track(
@@ -183,7 +191,7 @@ export function createWorld(
   ground.rotation.x = -Math.PI / 2;
   ground.position.set((X0 + X1) / 2, -0.02, -150);
   ground.receiveShadow = true;
-  scene.add(ground);
+  root.add(ground);
 
   const asphaltTex = track(
     canvasTexture(128, 128, (g) => {
@@ -203,7 +211,7 @@ export function createWorld(
   road.rotation.x = -Math.PI / 2;
   road.position.set((X0 + X1) / 2, 0, 0);
   road.receiveShadow = true;
-  scene.add(road);
+  root.add(road);
 
   // Bordures peintes en noir et blanc, comme sur les carrefours
   const curbTex = track(
@@ -222,7 +230,7 @@ export function createWorld(
     const m = new THREE.Mesh(curbGeo, curbMat);
     m.position.set((X0 + X1) / 2, 0.09, z);
     m.receiveShadow = true;
-    scene.add(m);
+    root.add(m);
   });
 
   // Marquage blanc : tirets au milieu, lignes continues sur les bords
@@ -234,12 +242,12 @@ export function createWorld(
     dummy.updateMatrix();
     dashes.setMatrixAt(i, dummy.matrix);
   }
-  scene.add(dashes);
+  root.add(dashes);
   const edgeGeo = track(new THREE.BoxGeometry(X1 - X0, 0.02, 0.12));
   [-3.2, 3.2].forEach((z) => {
     const e = new THREE.Mesh(edgeGeo, lineMat);
     e.position.set((X0 + X1) / 2, 0.02, z);
-    scene.add(e);
+    root.add(e);
   });
 
   /* ------------------------------------------------------------------ maisons basses (un seul objet par matière) */
@@ -423,16 +431,16 @@ export function createWorld(
   const city = new THREE.Mesh(track(merged(wallParts)), wallMat);
   city.castShadow = true;
   city.receiveShadow = true;
-  scene.add(city);
+  root.add(city);
   const roofMat = track(new THREE.MeshLambertMaterial({ vertexColors: true }));
   const roofs = new THREE.Mesh(track(merged(roofParts)), roofMat);
   roofs.castShadow = true;
-  scene.add(roofs);
+  root.add(roofs);
   const awningMat = track(new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }));
-  scene.add(new THREE.Mesh(track(merged(awningParts)), awningMat));
+  root.add(new THREE.Mesh(track(merged(awningParts)), awningMat));
   const signMat = track(new THREE.MeshBasicMaterial({ map: signAtlas, color: '#ffffff', toneMapped: false }));
   dimTargets.push(signMat);
-  scene.add(new THREE.Mesh(track(merged(signParts)), signMat));
+  root.add(new THREE.Mesh(track(merged(signParts)), signMat));
 
   /* ------------------------------------------------------------------ kiosques, parasols, personnages, motos garées */
   const kioskGeo = track(
@@ -452,7 +460,7 @@ export function createWorld(
     kiosks.setMatrixAt(i, dummy.matrix);
   }
   kiosks.castShadow = true;
-  scene.add(kiosks);
+  root.add(kiosks);
 
   const parasolGeo = track(
     merged([
@@ -474,7 +482,7 @@ export function createWorld(
     parasols.setColorAt(i, new THREE.Color(PARASOL[Math.floor(pRnd() * PARASOL.length)]));
   }
   dummy.scale.setScalar(1);
-  scene.add(parasols);
+  root.add(parasols);
 
   // Personnages debout devant les étals
   const CLOTH = ['#E53935', '#FDD835', '#1E88E5', '#43A047', '#FB8C00', '#8E24AA', '#F5F5F5', '#00ACC1'];
@@ -492,7 +500,7 @@ export function createWorld(
     bodies.setColorAt(i, new THREE.Color(CLOTH[Math.floor(hRnd() * CLOTH.length)]));
   }
   dummy.scale.setScalar(1);
-  scene.add(bodies, heads);
+  root.add(bodies, heads);
 
   const motoMat = track(new THREE.MeshLambertMaterial({ vertexColors: true }));
   const PARK_N = 38;
@@ -504,7 +512,7 @@ export function createWorld(
     dummy.updateMatrix();
     parked.setMatrixAt(i, dummy.matrix);
   }
-  scene.add(parked);
+  root.add(parked);
 
   // Circulation en sens inverse : zémidjans et voitures, au rythme du défilement
   const ZEM_N = 26;
@@ -520,7 +528,7 @@ export function createWorld(
   type Onc = { x0: number; z: number; speed: number };
   const oncZ: Onc[] = Array.from({ length: ZEM_N }, () => ({ x0: oRnd() * SPAN, z: -1.0 - oRnd() * 2.0, speed: 0.45 + oRnd() * 0.5 }));
   const oncC: Onc[] = Array.from({ length: OCAR_N }, () => ({ x0: oRnd() * SPAN, z: -1.9 - oRnd() * 0.6, speed: 0.6 + oRnd() * 0.5 }));
-  scene.add(zems, ocars, onLights);
+  root.add(zems, ocars, onLights);
 
   /* ------------------------------------------------------------------ palmiers */
   const palmParts: THREE.BufferGeometry[] = [];
@@ -559,7 +567,7 @@ export function createWorld(
   }
   dummy.scale.setScalar(1);
   palms.castShadow = true;
-  scene.add(palms);
+  root.add(palms);
 
   /* ------------------------------------------------------------------ poteaux électriques et fils */
   const wireMat = track(new THREE.LineBasicMaterial({ color: '#1A1A1A' }));
@@ -578,7 +586,7 @@ export function createWorld(
     dummy.updateMatrix();
     crossArms.setMatrixAt(i, dummy.matrix);
   });
-  scene.add(woodPoles, crossArms);
+  root.add(woodPoles, crossArms);
   const wirePts: number[] = [];
   for (let i = 0; i < poleXs.length - 1; i++) {
     for (const dz of [-0.8, 0, 0.8]) {
@@ -596,7 +604,7 @@ export function createWorld(
   }
   const wireGeo = track(new THREE.BufferGeometry());
   wireGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(wirePts), 3));
-  scene.add(new THREE.LineSegments(wireGeo, wireMat));
+  root.add(new THREE.LineSegments(wireGeo, wireMat));
 
   /* ------------------------------------------------------------------ lampadaires (éclairage orangé) */
   const lamps: { x: number; z: number; dir: number }[] = [];
@@ -640,7 +648,7 @@ export function createWorld(
     pools.setMatrixAt(i, dummy.matrix);
   });
   dummy.rotation.set(0, 0, 0);
-  scene.add(poles, arms, heads2, halos, pools);
+  root.add(poles, arms, heads2, halos, pools);
 
   /* ------------------------------------------------------------------ ciel : astres et étoiles fixés à la caméra */
   const sky = new THREE.Group();
@@ -671,10 +679,10 @@ export function createWorld(
   };
 
   /* ------------------------------------------------------------------ mise à jour */
-  const update = (night: number, xc: number) => {
+  const update = (night: number, xc: number, traffic = xc) => {
     // Circulation en sens inverse : leur position dépend du trajet parcouru
     oncZ.forEach((on, i) => {
-      const x = X0 + ((((on.x0 - on.speed * xc) % SPAN) + SPAN) % SPAN);
+      const x = X0 + ((((on.x0 - on.speed * traffic) % SPAN) + SPAN) % SPAN);
       dummy.position.set(x, 0, on.z);
       dummy.rotation.set(0, Math.PI, 0);
       dummy.updateMatrix();
@@ -685,7 +693,7 @@ export function createWorld(
       onLights.setMatrixAt(i, dummy.matrix);
     });
     oncC.forEach((on, i) => {
-      const x = X0 + ((((on.x0 - on.speed * xc) % SPAN) + SPAN) % SPAN);
+      const x = X0 + ((((on.x0 - on.speed * traffic) % SPAN) + SPAN) % SPAN);
       dummy.position.set(x, 0, on.z);
       dummy.rotation.set(0, Math.PI, 0);
       dummy.updateMatrix();
@@ -744,12 +752,13 @@ export function createWorld(
     [-2, 2].forEach((dx) => {
       const post = new THREE.Mesh(track(new THREE.CylinderGeometry(0.09, 0.09, y - 1.4, 8)), poleMat);
       post.position.set(x + dx, (y - 1.4) / 2, -8.5);
-      scene.add(post);
+      root.add(post);
     });
-    scene.add(frame, panel);
+    root.add(frame, panel);
   };
 
   return {
+    root,
     update,
     layout,
     poleMat,
