@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import { Reveal } from '@/components/anim/Reveal';
 import { Road } from '@/components/anim/Road';
+import { RoadJourney } from '@/components/anim/RoadJourney';
 import { CLIENT_APP_URL } from '@/lib/config';
 
 export const metadata: Metadata = {
@@ -20,6 +21,9 @@ const FEATURES = [
   { t: 'Payer comme vous voulez', d: 'Espèces, crédit TamCar ou Mobile Money.' },
   { t: 'Le corridor Cotonou ↔ Porto-Novo', d: 'Un prix fixe pour la route entre les deux villes.' },
 ];
+
+// Les six promesses jouées sur la route (prix, chauffeur, suivi, nuit, SOS, corridor), dans l'ordre du trajet.
+const JOURNEY = [1, 2, 3, 4, 5, 8].map((i) => FEATURES[i]);
 
 export default function ClientsPage() {
   return (
@@ -51,6 +55,9 @@ export default function ClientsPage() {
           </div>
         </div>
       </section>
+
+      {/* La route : un véhicule roule quand on défile, six promesses se jouent en chemin (voir RoadJourney) */}
+      <RoadJourney steps={JOURNEY.map((f) => ({ title: f.t, text: f.d }))} appUrl={CLIENT_APP_URL} />
 
       <section className="bg-neutral-100 py-4xl">
         <div className="mx-auto max-w-6xl px-lg">

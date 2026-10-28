@@ -297,3 +297,23 @@ body {
     transform: none;
   }
 }
+
+/* Route du client (page Clients) : repères de chapitre et ondes du bouton SOS */
+.tc-journey-dot {
+  background: currentColor;
+  opacity: 0.28;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.tc-journey-dot[data-on='1'] {
+  opacity: 1;
+  transform: scaleX(1.5);
+}
+@keyframes tc-sos-ring {
+  0% { transform: scale(0.9); opacity: 0.55; }
+  100% { transform: scale(2.3); opacity: 0; }
+}
+.tc-sos-ring {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: tc-sos-ring 1.8s ease-out infinite;
+}
