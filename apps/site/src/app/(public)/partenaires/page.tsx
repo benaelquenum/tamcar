@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Reveal } from '@/components/anim/Reveal';
 import { Road } from '@/components/anim/Road';
+import { FilmPlayer } from '@/components/anim/FilmPlayer';
 import { PartnerJourney } from '@/components/anim/PartnerJourney';
 import { Wheel } from '@/components/anim/Wheel';
 import { PROPOSAL_MAILTO } from '@/lib/config';
@@ -129,6 +130,19 @@ export default function PartnersPage() {
           <p className="mt-md text-sm text-neutral-400">
             Pour toutes les voitures : essence (ni diesel à filtre à particules, ni hybride rechargeable, ni électrique), boîte classique, deux roues motrices, papiers en règle, inspection d’entrée par TamCar.
           </p>
+        </div>
+      </section>
+
+      {/* Le film « Votre véhicule. Notre organisation. » (42 s) : voir FilmPlayer. Aucun chiffre de politique partenaire. */}
+      <section className="bg-neutral-100 py-4xl" id="film">
+        <div className="mx-auto max-w-6xl px-lg">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary-600">En 42 secondes</p>
+          <h2 className="mt-sm max-w-2xl text-3xl font-extrabold leading-tight text-neutral-900 sm:text-4xl">
+            Votre véhicule. Notre organisation. <span className="text-primary-600">Une mobilité de confiance.</span>
+          </h2>
+          <div className="mt-2xl">
+            <FilmPlayer ctaHref={PROPOSAL_MAILTO} />
+          </div>
         </div>
       </section>
 
