@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { clamp01, lerp, smooth } from './journey-shared';
+import { clamp01, frameFor, lerp, smooth } from './journey-shared';
 import { buildSimpleCar, canvasTexture, createWorld, skyColors, type Disposable } from './world3d';
 import { createCar } from './car3d';
 import { createPerson } from './people3d';
@@ -47,9 +47,9 @@ const STREET: Key[] = [
 ];
 /** Plans de caméra du bureau (repère de la pièce). */
 const OFFICE: Key[] = [
-  { t: 24, pos: [-1.9, 1.55, 3.7], look: [-0.2, 1.0, -0.4] },
-  { t: 29, pos: [0.1, 1.5, 3.2], look: [0.0, 1.02, -0.4] },
-  { t: 34, pos: [1.5, 1.45, 3.0], look: [0.1, 1.0, -0.4] },
+  { t: 24, pos: [-1.9, 1.55, 3.9], look: [-0.2, 1.0, -0.4] },
+  { t: 29, pos: [0.1, 1.5, 3.9], look: [0.0, 1.02, -0.4] },
+  { t: 34, pos: [1.5, 1.45, 3.8], look: [0.1, 1.0, -0.4] },
 ];
 
 /** Interpolation d'Hermite à vitesse continue entre les plans (pas d'à-coup aux changements de plan). */
@@ -290,7 +290,7 @@ export default function FilmScene3D({ registerDraw, onFail, onResize }: { regist
       sizes.aspect = w / h;
       camera.aspect = sizes.aspect;
       // Le bas de l'image porte le texte : on remonte la scène (le véhicule reste au-dessus du bandeau de texte)
-      camera.setViewOffset(w, h, 0, Math.round(h * (sizes.aspect < 1.2 ? 0.17 : 0.15)), w, h);
+      camera.setViewOffset(w, h, 0, Math.round(h * (sizes.aspect < 1.2 ? 0.08 : 0.15)), w, h);
       camera.updateProjectionMatrix();
       world.layout(sizes.aspect);
     };
@@ -367,14 +367,14 @@ export default function FilmScene3D({ registerDraw, onFail, onResize }: { regist
       office.update(t);
 
       // Caméra
-      const aspect = sizes.aspect;
-      const narrow = clamp01((1.15 - aspect) * 1.1);
+      const fr = frameFor(sizes.aspect, FOV);
       if (inOffice) {
+        // Pièce fermée : la caméra ne peut pas reculer, on élargit seulement le champ (téléphone en hauteur)
         const p = along(OFFICE, t, 'pos');
         const l = along(OFFICE, t, 'look');
         look.set(l[0], l[1], l[2]).add(OFFICE_ORIGIN);
         pos.set(p[0], p[1], p[2]).add(OFFICE_ORIGIN);
-        const fov = FOV + narrow * 26;
+        const fov = FOV + fr.narrow * 34;
         if (Math.abs(camera.fov - fov) > 0.01) {
           camera.fov = fov;
           camera.updateProjectionMatrix();
@@ -382,12 +382,12 @@ export default function FilmScene3D({ registerDraw, onFail, onResize }: { regist
       } else {
         const p = along(STREET, t, 'pos');
         const l = along(STREET, t, 'look');
-        const kk = Math.max(0.2, Math.min(1, aspect / 1.3));
+        const kk = fr.kk;
         look.set(cx + l[0] * kk, l[1], l[2]);
         pos.set(cx + p[0] * (0.4 + 0.6 * kk), p[1], p[2]);
-        pos.sub(look).multiplyScalar(1 + narrow * 0.85).add(look);
-        if (Math.abs(camera.fov - FOV) > 0.01) {
-          camera.fov = FOV;
+        pos.sub(look).multiplyScalar(fr.zoom).add(look);
+        if (Math.abs(camera.fov - fr.fov) > 0.01) {
+          camera.fov = fr.fov;
           camera.updateProjectionMatrix();
         }
       }

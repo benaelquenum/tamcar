@@ -335,7 +335,7 @@ export function FilmPlayer({ ctaHref }: { ctaHref: string }) {
     <div ref={wrapRef}>
       <div
         ref={stageRef}
-        className="relative isolate h-[min(80svh,660px)] w-full overflow-hidden rounded-3xl bg-[#0B1A3A] shadow-2xl ring-1 ring-black/10 md:h-auto md:aspect-video"
+        className="relative isolate aspect-[3/4] max-h-[78svh] w-full overflow-hidden rounded-3xl bg-[#0B1A3A] shadow-2xl ring-1 ring-black/10 sm:aspect-[4/3] md:aspect-video md:max-h-none"
       >
         {is3d && Scene ? <Scene registerDraw={registerDraw} onFail={onFail} onResize={sync} /> : <FilmLite ref={lite} />}
         <FilmOverlays ref={overlays} ctaHref={ctaHref} onReplay={replay} />

@@ -76,6 +76,17 @@ export const partnerNight = (p: number) => (p < 0.15 ? lerp(0.62, 0, smooth(p / 
 export const PARTNER_CFG: JourneyCfg = { steps: PARTNER_STEPS, night: partnerNight };
 
 /**
+ * Cadrage des scènes 3D selon la forme de l'écran. Les plans de caméra sont écrits pour un écran large. Sur un téléphone
+ * tenu en hauteur, le champ de vision horizontal devient minuscule (le véhicule est rogné, l'image paraît « zoomée »).
+ * On élargit alors le champ vertical (`fov`, degrés) et on recule la caméra (`zoom` = facteur de recul sur sa distance au
+ * point visé) ; `kk` réduit les décalages latéraux des plans. Aucun changement dès que l'écran est plus large que haut.
+ */
+export function frameFor(aspect: number, baseFov: number) {
+  const narrow = clamp01((1.3 - aspect) / 0.85); // 0 à partir de 1,3 ; 1 à 0,45 (téléphone en hauteur)
+  return { narrow, fov: baseFov + narrow * 22, zoom: 1 + narrow, kk: Math.max(0.35, Math.min(1, aspect / 1.3)) };
+}
+
+/**
  * La 3D n'est tentée que sur un appareil qui s'y prête : pas de « réduire les animations », pas
  * d'économie de données ni de connexion 2G, assez de mémoire et de cœurs, WebGL disponible.
  */

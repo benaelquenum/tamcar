@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { useJourneyFrame } from './JourneyShell';
 import { HUD_H, HUD_W } from './JourneyHud';
 import { HudPanelsPartner, updatePartnerHud } from './JourneyHudPartner';
-import { PARTNER_STEPS, TOTAL, clamp01, lerp, partnerNight, smooth, stepWin, travelAt } from './journey-shared';
+import { PARTNER_STEPS, TOTAL, clamp01, frameFor, lerp, partnerNight, smooth, stepWin, travelAt } from './journey-shared';
 import { buildMoto, buildSimpleCar, buildTricycle, canvasTexture, createWorld, skyColors, type Disposable } from './world3d';
 import { createCar } from './car3d';
 import { FLEET_MAX, fleetStore } from './partner-fleet';
@@ -447,11 +447,15 @@ export default function PartnerScene3D({ onFail }: { onFail: () => void }) {
 
       // Caméra : plan du chapitre, décalé par rapport au véhicule (plus loin sur un écran étroit)
       const c = camAt(p);
-      const zoom = 1 + Math.max(0, Math.min(0.9, (1.15 - sizes.aspect) * 1.1));
-      const kk = Math.max(0.2, Math.min(1, sizes.aspect / 1.3));
+      const fr = frameFor(sizes.aspect, FOV);
+      const kk = fr.kk;
       const look = new THREE.Vector3(xc + c.look[0] * kk, c.look[1], c.look[2]);
       const pos = new THREE.Vector3(xc + c.pos[0] * (0.4 + 0.6 * kk), c.pos[1], c.pos[2]);
-      pos.sub(look).multiplyScalar(zoom).add(look);
+      pos.sub(look).multiplyScalar(fr.zoom).add(look);
+      if (Math.abs(camera.fov - fr.fov) > 0.01) {
+        camera.fov = fr.fov;
+        camera.updateProjectionMatrix();
+      }
       camera.position.copy(pos);
       camera.lookAt(look);
       camera.updateMatrixWorld();

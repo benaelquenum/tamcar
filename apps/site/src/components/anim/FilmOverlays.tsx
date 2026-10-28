@@ -135,12 +135,14 @@ export const FilmOverlays = forwardRef<OverlayApi, { ctaHref: string; onReplay: 
         if (c) {
           const o = pulse(t, 12.8, 13.4, T_BOARD - 0.2, T_BOARDED);
           if (o > 0.01) {
-            const cw = w < 430 ? 200 : 240;
+            const phone = w < 520;
+            const cw = phone ? Math.min(w - 16, 232) : 240;
             c.style.width = `${cw}px`;
             if (!cardH.current) cardH.current = c.offsetHeight || 150;
             const dp: AnchorPoint = a?.driver ?? { x: w * 0.4, y: h * 0.55, ok: true };
-            const x = Math.min(w - cw - 8, Math.max(8, dp.x - cw * 0.78));
-            const y = Math.min(h * 0.46, Math.max(8, dp.y - cardH.current - 26));
+            // Sur téléphone la carte reste en haut, sous le bouton : elle ne cache ni le chauffeur ni le véhicule
+            const x = phone ? (w - cw) / 2 : Math.min(w - cw - 8, Math.max(8, dp.x - cw * 0.78));
+            const y = phone ? 52 : Math.min(h * 0.46, Math.max(8, dp.y - cardH.current - 26));
             c.style.transform = `translate(${x.toFixed(1)}px, ${(y + (1 - o) * 8).toFixed(1)}px)`;
           }
           c.style.opacity = String(o);
@@ -299,7 +301,7 @@ export const FilmOverlays = forwardRef<OverlayApi, { ctaHref: string; onReplay: 
               </span>
               <span className="min-w-0">
                 <span className="block text-sm font-extrabold leading-tight">{r.t}</span>
-                <span className="block text-[11px] leading-tight text-white/70">{r.d}</span>
+                <span className="hidden text-[11px] leading-tight text-white/70 sm:block">{r.d}</span>
               </span>
             </div>
           ))}
