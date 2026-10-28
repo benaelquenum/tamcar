@@ -10,13 +10,17 @@ import { TERMS_VERSION } from '@/lib/terms';
  * Sign In — chauffeur existant, email + password.
  * Refuse si le user n'a pas le rôle 'driver' ou 'admin'.
  */
+const BAD_LOGIN =
+  'Identifiant ou mot de passe incorrect. Si votre numéro est lié à plusieurs comptes, utilisez votre email.';
+
 export async function signInAction(formData: FormData) {
-  const email = String(formData.get('email') || '').trim().toLowerCase();
+  // Identifiant : numéro de téléphone OU email (l'ancien champ « email » reste accepté)
+  const identifier = String(formData.get('identifier') || formData.get('email') || '').trim();
   const password = String(formData.get('password') || '');
   const next = String(formData.get('next') || '/');
 
-  if (!email || !email.includes('@')) {
-    redirect('/login?error=' + encodeURIComponent('Email invalide'));
+  if (!identifier) {
+    redirect('/login?error=' + encodeURIComponent('Saisissez votre numéro de téléphone ou votre email'));
   }
   if (!password || password.length < 6) {
     redirect(
@@ -26,6 +30,22 @@ export async function signInAction(formData: FormData) {
   }
 
   const supabase = createServerSupabase();
+
+  let email = identifier.toLowerCase();
+  if (!identifier.includes('@')) {
+    const phone = formatBeninPhone(identifier);
+    if (!phone) {
+      redirect(
+        '/login?error=' + encodeURIComponent('Numéro invalide. Format attendu : 01 67 59 18 17'),
+      );
+    }
+    const { data: found } = await supabase.rpc('driver_login_email', { p_phone: phone });
+    if (typeof found !== 'string' || !found) {
+      redirect('/login?error=' + encodeURIComponent(BAD_LOGIN));
+    }
+    email = found;
+  }
+
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
@@ -36,7 +56,7 @@ export async function signInAction(formData: FormData) {
     console.error('[driver-portal signInAction] Supabase error', error);
     redirect(
       '/login?error=' +
-        encodeURIComponent(error.message || 'Email ou mot de passe incorrect'),
+        encodeURIComponent(/invalid login credentials/i.test(error.message) ? BAD_LOGIN : error.message || BAD_LOGIN),
     );
   }
 

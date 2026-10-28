@@ -20,6 +20,7 @@ import { SUPPORT_PHONE, SUPPORT_PHONE_DISPLAY } from '@/lib/support';
 import { titleCaseName } from '@/lib/name';
 import { AddStopModal } from './AddStopModal';
 import { NightSharePrompt } from './NightSharePrompt';
+import { DriverEndNotice, type RideEndInfo } from './DriverEndNotice';
 import { StopsListClient } from './StopsListClient';
 import { isAccurateEnough, SmoothingBuffer, getAccuratePosition } from '@/lib/geo-precision';
 import { useWakeLock } from '@/lib/useWakeLock';
@@ -1116,6 +1117,26 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
     })();
   }, [ride.id, ride.status]);
 
+  // Course terminée par le CHAUFFEUR (le client n'a pas pu le faire) : le client doit
+  // le savoir, voir le prix et pouvoir contester pendant le délai fixé côté serveur.
+  const [endInfo, setEndInfo] = useState<RideEndInfo | null>(null);
+  const [endInfoLoaded, setEndInfoLoaded] = useState(false);
+  const [endNoticeDone, setEndNoticeDone] = useState(false);
+  useEffect(() => {
+    if (ride.status !== 'completed') {
+      setEndInfoLoaded(false);
+      return;
+    }
+    let alive = true;
+    void supabaseBrowser.rpc('ride_end_info', { p_ride_id: ride.id }).then(({ data }) => {
+      if (!alive) return;
+      setEndInfo((data as RideEndInfo | null) ?? null);
+      setEndInfoLoaded(true);
+    });
+    return () => { alive = false; };
+  }, [ride.id, ride.status]);
+  const endNoticeOpen = ride.status === 'completed' && endInfoLoaded && Boolean(endInfo?.can_contest) && !endNoticeDone;
+
   // Itinéraire tracé + ETA, recalculés quand le chauffeur bouge (le tracé
   // suit s'il dévie). matched/arrived : chauffeur → départ. in_progress :
   // (position chauffeur ou départ) → destination.
@@ -1269,6 +1290,19 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
             .filter((s) => s.status !== 'cancelled')
             .map((s, i) => ({ lat: s.lat, lng: s.lng, label: i + 1 }))}
           pickupPulse={isWaiting}
+          driverLabel={
+            hasDriver && (ride.status === 'matched' || ride.status === 'arrived')
+              ? [
+                  titleCaseName(firstNameOf(ride.driver_full_name)) || null,
+                  ride.status === 'arrived' ? 'est arrivé' : durationToPickup != null ? `~${Math.round(durationToPickup)} min` : null,
+                ].filter(Boolean).join(' · ') || null
+              : null
+          }
+          dropoffLabel={
+            ride.status === 'in_progress' && (remainingMin ?? ride.duration_min) != null
+              ? `Arrivée ~${Math.max(1, Math.round((remainingMin ?? ride.duration_min) as number))} min`
+              : null
+          }
           autoFit={isWaiting}
           follow={ride.status === 'in_progress' ? (effectiveDriverCoord ?? myLocation) : null}
           navHeading={navHeading}
@@ -1326,8 +1360,8 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
         <div className="pointer-events-auto ml-auto mr-sm">
           <SupportCallButton rideId={ride.id} />
         </div>
-        <div className="pointer-events-auto flex items-center gap-xs rounded-full bg-white/95 px-md py-xs shadow-lg ring-1 ring-neutral-200 backdrop-blur">
-          <Logo className="h-5 w-auto" />
+        <div className="pointer-events-auto flex items-center gap-xs rounded-full bg-white/95 px-lg py-xs shadow-lg ring-1 ring-neutral-200 backdrop-blur">
+          <Logo className="h-8 w-auto" />
         </div>
       </header>
 
@@ -1370,7 +1404,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
           ) : (
           <>
           {/* Badge statut */}
-          <div className={`mx-lg mt-xs mb-md rounded-xl ${meta.color} p-md text-white shadow-md`}>
+          <div className={`mx-lg mt-xs rounded-xl ${meta.color} text-white shadow-md ${ride.status === 'in_progress' ? 'mb-sm p-sm' : 'mb-md p-md'}`}>
             <div className="flex items-center gap-md">
               {isWaiting && (
                 <span className="relative grid h-3 w-3 flex-none place-items-center">
@@ -1379,7 +1413,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                 </span>
               )}
               <div className="flex-1">
-                <p className="text-lg font-extrabold leading-tight">{statusTitle}</p>
+                <p className={`font-extrabold leading-tight ${ride.status === 'in_progress' ? 'text-base' : 'text-lg'}`}>{statusTitle}</p>
                 {(countdownLabel ?? statusSub) && (
                   <p className="text-xs text-white/90" style={{ fontVariantNumeric: 'tabular-nums' }}>
                     {countdownLabel ?? statusSub}
@@ -1474,7 +1508,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                       </span>
                     )}
                   </p>
-                  {photoVerified && (
+                  {photoVerified && ride.status !== 'in_progress' && (
                     <p className="mt-0.5 inline-flex items-center gap-xs text-[10px] font-semibold text-primary-700">
                       <CheckIcon className="h-3 w-3" strokeWidth={3} />
                       Photo vérifiée par TamCar
@@ -1495,7 +1529,7 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
               </div>
 
               {/* Surclassement : un véhicule de catégorie supérieure prend la course, au prix commandé. */}
-              {isUpgrade(ride.requested_category, ride.vehicle_category) && (
+              {ride.status !== 'in_progress' && isUpgrade(ride.requested_category, ride.vehicle_category) && (
                 <div className="mt-sm flex items-start gap-xs rounded-lg bg-primary-50 px-sm py-xs text-xs text-primary-700 ring-1 ring-primary-300">
                   <SparkleIcon className="mt-0.5 h-4 w-4 flex-none text-gold-500" />
                   <p>
@@ -1542,11 +1576,13 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                 )}
               </div>
 
-              {/* Talkie-walkie : maintenir pour parler, lecture auto en face */}
-              <RideTalkie
-                rideId={ride.id}
-                active={['matched', 'arrived', 'in_progress'].includes(ride.status)}
-              />
+              {/* Talkie-walkie : maintenir pour parler, lecture auto en face (masqué pendant la course pour alléger la fiche) */}
+              {ride.status !== 'in_progress' && (
+                <RideTalkie
+                  rideId={ride.id}
+                  active={['matched', 'arrived', 'in_progress'].includes(ride.status)}
+                />
+              )}
               {ride.status === 'matched' && distanceToPickup != null && (
                 <div className="mt-sm flex justify-between text-xs text-neutral-600">
                   <span style={{ fontVariantNumeric: 'tabular-nums' }}>
@@ -1584,8 +1620,49 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                 <span className="ml-xs text-xs font-medium text-neutral-600">FCFA</span>
               </span>
             </div>
-            {/* Bouton "Ajouter un arrêt" — visible pendant la course, max 2 */}
-            {['matched', 'arrived', 'in_progress'].includes(ride.status) && stops.filter((s) => s.status !== 'cancelled').length < MAX_STOPS && (
+            {/* Pendant la course : fiche allégée — « Terminer » juste sous le prix, puis arrêt et partage côte à côte. */}
+            {ride.status === 'in_progress' && ride.started_at && (
+              <button
+                type="button"
+                onClick={handleCompleteRide}
+                disabled={completing}
+                className="mb-sm w-full rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-md text-sm font-bold text-white shadow-glow disabled:opacity-50"
+              >
+                {completing ? '…' : t('ride.finish')}
+              </button>
+            )}
+            {ride.status === 'in_progress' && completeError && (
+              <p className="mb-sm text-center text-xs text-error">{completeError}</p>
+            )}
+            {ride.status === 'in_progress' && (
+              <div className="mb-sm grid grid-cols-2 gap-sm">
+                {stops.filter((s) => s.status !== 'cancelled').length < MAX_STOPS && (
+                  <button
+                    type="button"
+                    onClick={() => setAddStopOpen(true)}
+                    className="flex items-center justify-center gap-xs rounded-xl border border-primary-300 bg-primary-50/50 py-sm text-xs font-semibold text-primary-700 hover:bg-primary-50"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+                      <line x1="12" y1="5" x2="12" y2="19" />
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                    {t('ride.add_stop')}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => void handleShareTracking()}
+                  disabled={sharing}
+                  className="flex items-center justify-center gap-xs rounded-xl border border-primary-300 bg-white py-sm text-xs font-semibold text-primary-700 hover:bg-primary-50 disabled:opacity-50"
+                >
+                  <ShareIcon className="h-3.5 w-3.5" />
+                  {sharing ? '…' : 'Partager le suivi'}
+                </button>
+              </div>
+            )}
+
+            {/* Bouton "Ajouter un arrêt" — avant la course, max 2 */}
+            {['matched', 'arrived'].includes(ride.status) && stops.filter((s) => s.status !== 'cancelled').length < MAX_STOPS && (
               <button
                 type="button"
                 onClick={() => setAddStopOpen(true)}
@@ -1644,28 +1721,12 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
               onChanged={() => { void refetchStops(); void refetchDetails(); }}
             />
 
-            {/* Bouton "terminer" — visible UNIQUEMENT si la course a réellement démarré
-                (status='in_progress' ET started_at existe). Sinon le chauffeur n'a pas encore
-                cliqué "Client à bord — démarrer la course". */}
-            {ride.status === 'in_progress' && ride.started_at && (
-              <button
-                type="button"
-                onClick={handleCompleteRide}
-                disabled={completing}
-                className="w-full rounded-xl bg-gradient-to-r from-primary-500 to-primary-700 py-md text-sm font-bold text-white shadow-glow disabled:opacity-50"
-              >
-                {completing ? '…' : t('ride.finish')}
-              </button>
-            )}
-            {completeError && (
-              <p className="mt-xs text-center text-xs text-error">{completeError}</p>
-            )}
             <NightSharePrompt
               rideId={ride.id}
               active={['requested', 'matched', 'arrived', 'in_progress'].includes(ride.status)}
               onShare={handleShareTracking}
             />
-            {['requested', 'matched', 'arrived', 'in_progress'].includes(ride.status) && (
+            {['requested', 'matched', 'arrived'].includes(ride.status) && (
               <button
                 type="button"
                 onClick={() => void handleShareTracking()}
@@ -1715,6 +1776,15 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
                 <CheckIcon className="mr-xs inline h-4 w-4" strokeWidth={3} />
                 Course terminée
               </div>
+            )}
+            {ride.status === 'completed' && endInfo?.can_contest && endNoticeDone && (
+              <button
+                type="button"
+                onClick={() => setEndNoticeDone(false)}
+                className="mt-sm w-full rounded-xl border-2 border-neutral-200 py-sm text-xs font-bold text-neutral-600 hover:border-error hover:text-error"
+              >
+                Contester la fin de course
+              </button>
             )}
           </div>
           </>
@@ -2106,7 +2176,18 @@ export function RideView({ initialRide }: { initialRide: RideForView }) {
       {/* Notation obligatoire : dès que la course est terminée, la modale
           s'affiche automatiquement en mode mandatory (impossible à fermer).
           Le client note → redirect automatique vers la home après 1,1 s. */}
-      {ride.status === 'completed' && ride.driver_id && hasRated === false && (
+      {endNoticeOpen && endInfo && (
+        <DriverEndNotice
+          rideId={ride.id}
+          info={endInfo}
+          onDone={(contested) => {
+            setEndNoticeDone(true);
+            if (contested) setEndInfo((prev) => (prev ? { ...prev, can_contest: false, contested_at: new Date().toISOString() } : prev));
+          }}
+        />
+      )}
+
+      {ride.status === 'completed' && ride.driver_id && hasRated === false && endInfoLoaded && !endNoticeOpen && (
         <RatingModal
           open={true}
           onClose={() => undefined}

@@ -191,6 +191,10 @@ type Props = {
    */
   recenterOn?: [number, number] | null;
   recenterKey?: number;
+  /** Bulle au-dessus du véhicule suivi (ex. « Kossi · 4 min »). */
+  driverLabel?: string | null;
+  /** Pastille au-dessus du pin de destination (ex. « Arrivée ~12 min »). */
+  dropoffLabel?: string | null;
 };
 
 export function Map({
@@ -218,6 +222,8 @@ export function Map({
   onBearingChange,
   recenterOn = null,
   recenterKey,
+  driverLabel = null,
+  dropoffLabel = null,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -235,6 +241,7 @@ export function Map({
   onBearingRef.current = onBearingChange;
   const pickupMarkerRef = useRef<maplibregl.Marker | null>(null);
   const dropoffMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const dropoffLabelElRef = useRef<HTMLDivElement | null>(null);
   const candidateMarkerRef = useRef<maplibregl.Marker | null>(null);
   const driverMarkersRef = useRef<Map<string, maplibregl.Marker>>(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -366,11 +373,29 @@ export function Map({
     dropoffMarkerRef.current?.remove();
     dropoffMarkerRef.current = null;
     if (dropoff) {
-      dropoffMarkerRef.current = new GL.Marker({ element: makePinEl(DEST_PIN_SVG), anchor: 'bottom' })
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;line-height:0';
+      const chip = document.createElement('div');
+      chip.className = 'tc-map-label tc-dest-label';
+      chip.style.display = 'none';
+      dropoffLabelElRef.current = chip;
+      wrap.appendChild(chip);
+      wrap.appendChild(makePinEl(DEST_PIN_SVG));
+      dropoffMarkerRef.current = new GL.Marker({ element: wrap, anchor: 'bottom' })
         .setLngLat(dropoff)
         .addTo(mapRef.current);
+    } else {
+      dropoffLabelElRef.current = null;
     }
   }, [dropoff]);
+
+  // Pastille de destination : temps restant ou distance, mise à jour sans recréer le pin.
+  useEffect(() => {
+    const chip = dropoffLabelElRef.current;
+    if (!chip) return;
+    chip.textContent = dropoffLabel ?? '';
+    chip.style.display = dropoffLabel ? 'block' : 'none';
+  }, [dropoffLabel, dropoff]);
 
   // Marqueurs d'escale (pins violets numérotés).
   useEffect(() => {
@@ -612,6 +637,26 @@ export function Map({
     // L'animation est annulée au démontage (effet ci-dessous) ou remplacée par
     // la suivante.
   }, [assignedDriver]);
+
+  // Bulle au-dessus du véhicule suivi (nom du chauffeur, temps avant son arrivée…).
+  // Elle est posée sur le marqueur lui-même, hors de la couche qui pivote : elle reste lisible.
+  useEffect(() => {
+    const marker = assignedMarkerRef.current;
+    if (!marker) return;
+    const el = marker.getElement();
+    let chip = el.querySelector('.tc-veh-label') as HTMLElement | null;
+    if (!driverLabel) {
+      if (chip) chip.style.display = 'none';
+      return;
+    }
+    if (!chip) {
+      chip = document.createElement('div');
+      chip.className = 'tc-map-label tc-veh-label';
+      el.appendChild(chip);
+    }
+    chip.textContent = driverLabel;
+    chip.style.display = 'block';
+  }, [driverLabel, assignedDriver]);
 
   useEffect(
     () => () => {

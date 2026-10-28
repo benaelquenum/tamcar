@@ -13,6 +13,7 @@ const NAV: { href: string; label: string; exact?: boolean; badge?: keyof AdminCo
   { href: '/admin', label: 'Tableau de bord', exact: true },
   { href: '/admin/sos', label: 'SOS', badge: 'sos_active' },
   { href: '/admin/rides', label: 'Courses' },
+  { href: '/admin/fins-de-course', label: 'Fins de course', badge: 'ride_ends' },
   { href: '/admin/tampass', label: 'TamPass' },
   { href: '/admin/drivers', label: 'Chauffeurs' },
   { href: '/admin/carte', label: 'Carte en direct' },
@@ -42,7 +43,7 @@ export function AdminSidebar({ fullName }: { fullName: string }) {
   // recouvriraient une barre supérieure). À partir de 768 px, barre latérale fixe comme avant.
   const [open, setOpen] = useState(false);
   useEffect(() => setOpen(false), [pathname]);
-  const todo = (counts.sos_active || 0) + (counts.debts || 0) + (counts.tamassur || 0);
+  const todo = (counts.sos_active || 0) + (counts.debts || 0) + (counts.tamassur || 0) + (counts.ride_ends || 0);
 
   return (
     <>

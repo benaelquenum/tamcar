@@ -192,6 +192,8 @@ export default function CommandePage() {
     final_price_fcfa: number;
   } | null>(null);
   const [promoChecking, setPromoChecking] = useState(false);
+  // Le code promo est facultatif : replié par défaut pour raccourcir le récapitulatif.
+  const [promoOpen, setPromoOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Course pour un proche : le passager n'est pas le titulaire du compte
@@ -971,8 +973,19 @@ export default function CommandePage() {
           <p className="mt-xs text-[10px] text-neutral-400">{t('commande.payment_momo_soon')}</p>
         </section>
 
-        {/* Code promo, facultatif */}
+        {/* Code promo, facultatif : replié tant qu'on n'en a pas besoin */}
         <section>
+          {!promoOpen && !promoCode && !promoPreview ? (
+            <button
+              type="button"
+              onClick={() => setPromoOpen(true)}
+              className="inline-flex items-center gap-xs text-xs font-bold text-primary-600"
+            >
+              <PlusIcon className="h-3.5 w-3.5" />
+              J&apos;ai un code promo
+            </button>
+          ) : (
+          <>
           <p className="text-xs font-semibold uppercase tracking-wide text-neutral-600">
             {t('commande.promo_optional')}
           </p>
@@ -1012,6 +1025,8 @@ export default function CommandePage() {
                 {promoReasonLabel(promoPreview.reason)}
               </p>
             )
+          )}
+          </>
           )}
         </section>
 
@@ -1082,35 +1097,18 @@ export default function CommandePage() {
 
         {/* Pour qui */}
         <section>
-          <p className="text-xs font-semibold uppercase tracking-wide text-neutral-600">
-            Pour qui est cette course ?
-          </p>
-          <div className="mt-sm grid grid-cols-2 gap-sm">
-            <button
-              type="button"
-              onClick={() => setForWhom('me')}
-              className={`rounded-xl border-2 p-md text-left transition ${
-                forWhom === 'me'
-                  ? 'border-primary-500 bg-primary-50'
-                  : 'border-neutral-200 bg-white hover:border-primary-300'
-              }`}
-            >
-              <p className="text-sm font-bold text-neutral-900">Pour moi</p>
-              <p className="text-[10px] text-neutral-600">Je suis le passager</p>
-            </button>
-            <button
-              type="button"
-              onClick={() => setForWhom('other')}
-              className={`rounded-xl border-2 p-md text-left transition ${
-                forWhom === 'other'
-                  ? 'border-primary-500 bg-primary-50'
-                  : 'border-neutral-200 bg-white hover:border-primary-300'
-              }`}
-            >
-              <p className="text-sm font-bold text-neutral-900">Pour un proche</p>
-              <p className="text-[10px] text-neutral-600">Quelqu&apos;un d&apos;autre voyage</p>
-            </button>
-          </div>
+          <label className="flex cursor-pointer items-center gap-sm rounded-xl border border-neutral-200 bg-white p-md">
+            <input
+              type="checkbox"
+              checked={forWhom === 'other'}
+              onChange={(e) => setForWhom(e.target.checked ? 'other' : 'me')}
+              className="h-4 w-4 rounded border-neutral-300"
+            />
+            <span className="flex-1 text-sm font-semibold text-neutral-900">
+              Cette course est pour un proche{' '}
+              <span className="font-normal text-neutral-500">(quelqu&apos;un d&apos;autre voyage)</span>
+            </span>
+          </label>
           {forWhom === 'other' && (
             <div className="mt-sm space-y-sm rounded-xl bg-primary-50/60 p-md ring-1 ring-primary-100">
               <label className="block">

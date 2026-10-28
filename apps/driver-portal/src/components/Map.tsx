@@ -88,6 +88,19 @@ const DEST_PIN_SVG =
   '<rect x="4.75" y="3" width="2.75" height="2" fill="#DC2626"/><rect x="10.25" y="3" width="2.75" height="2" fill="#DC2626"/>' +
   '<rect x="2" y="5" width="2.75" height="2" fill="#DC2626"/><rect x="7.5" y="5" width="2.75" height="2" fill="#DC2626"/></g></svg>';
 
+/** Pin surmonté d'une pastille d'information (masquée tant qu'elle est vide) ; `chipRef` reçoit la pastille. */
+function pinWithLabel(svg: string, chipRef: { current: HTMLDivElement | null }): HTMLDivElement {
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;line-height:0';
+  const chip = document.createElement('div');
+  chip.className = 'tc-map-label tc-dest-label';
+  chip.style.display = 'none';
+  chipRef.current = chip;
+  wrap.appendChild(chip);
+  wrap.appendChild(makePinEl(svg));
+  return wrap;
+}
+
 function makePinEl(svg: string): HTMLDivElement {
   const el = document.createElement('div');
   el.style.lineHeight = '0';
@@ -167,6 +180,10 @@ type Props = {
   autoFit?: boolean;
   /** Anime le pin pickup (cercles pulse) — actif pendant la recherche d'un chauffeur */
   pickupPulse?: boolean;
+  /** Pastille au-dessus du pin de départ (ex. « 4 min · 1,2 km »). */
+  pickupLabel?: string | null;
+  /** Pastille au-dessus du pin de destination. */
+  dropoffLabel?: string | null;
   /** Position du chauffeur lui-même → pion « moi » (pastille bleue + halo). */
   selfLocation?: [number, number] | null;
   /** Catégorie du véhicule du chauffeur (silhouette du pion « moi »). */
@@ -212,6 +229,8 @@ export function Map({
   assignedDriver,
   autoFit = true,
   pickupPulse = false,
+  pickupLabel = null,
+  dropoffLabel = null,
   selfLocation,
   selfCategory,
   selfColor,
@@ -241,6 +260,8 @@ export function Map({
   onBearingRef.current = onBearingChange;
   const pickupMarkerRef = useRef<maplibregl.Marker | null>(null);
   const dropoffMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const pickupLabelElRef = useRef<HTMLDivElement | null>(null);
+  const dropoffLabelElRef = useRef<HTMLDivElement | null>(null);
   const candidateMarkerRef = useRef<maplibregl.Marker | null>(null);
   const driverMarkersRef = useRef<Map<string, maplibregl.Marker>>(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -365,7 +386,7 @@ export function Map({
         .setLngLat(pickup)
         .addTo(mapRef.current);
     } else {
-      pickupMarkerRef.current = new GL.Marker({ element: makePinEl(DEPART_PIN_SVG), anchor: 'bottom' })
+      pickupMarkerRef.current = new GL.Marker({ element: pinWithLabel(DEPART_PIN_SVG, pickupLabelElRef), anchor: 'bottom' })
         .setLngLat(pickup)
         .addTo(mapRef.current);
     }
@@ -377,11 +398,27 @@ export function Map({
     dropoffMarkerRef.current?.remove();
     dropoffMarkerRef.current = null;
     if (dropoff) {
-      dropoffMarkerRef.current = new GL.Marker({ element: makePinEl(DEST_PIN_SVG), anchor: 'bottom' })
+      dropoffMarkerRef.current = new GL.Marker({ element: pinWithLabel(DEST_PIN_SVG, dropoffLabelElRef), anchor: 'bottom' })
         .setLngLat(dropoff)
         .addTo(mapRef.current);
+    } else {
+      dropoffLabelElRef.current = null;
     }
   }, [dropoff]);
+
+  // Pastilles au-dessus des pins : temps et distance restants vers la cible, sans recréer les pins.
+  useEffect(() => {
+    const chip = pickupLabelElRef.current;
+    if (!chip) return;
+    chip.textContent = pickupLabel ?? '';
+    chip.style.display = pickupLabel ? 'block' : 'none';
+  }, [pickupLabel, pickup, pickupPulse]);
+  useEffect(() => {
+    const chip = dropoffLabelElRef.current;
+    if (!chip) return;
+    chip.textContent = dropoffLabel ?? '';
+    chip.style.display = dropoffLabel ? 'block' : 'none';
+  }, [dropoffLabel, dropoff]);
 
   // Marqueurs d'escale (pins violets numérotés).
   useEffect(() => {

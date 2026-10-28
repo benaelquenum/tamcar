@@ -4,24 +4,60 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { formatBeninPhone } from '@/lib/phone';
 import { createServerSupabase } from '@/lib/supabase-server';
+import { createAdminSupabase } from '@/lib/supabase-admin';
 import { TERMS_APP, TERMS_VERSION } from '@/lib/terms';
 
 /**
  * Sign IN — utilisateur existant, email + password
  */
+const BAD_LOGIN =
+  'Identifiant ou mot de passe incorrect. Si votre numéro est lié à plusieurs comptes, utilisez votre email.';
+
+/**
+ * Retrouve l'email d'un compte à partir d'un numéro de téléphone (la session s'ouvre ensuite
+ * avec le mot de passe, sans SMS). La recherche passe par la clé de service, côté serveur
+ * uniquement : l'email n'est jamais renvoyé au navigateur.
+ */
+async function emailForPhone(phone: string): Promise<string | null> {
+  try {
+    const { data } = await createAdminSupabase().rpc('_login_email_for_phone', {
+      p_phone: phone,
+      p_driver_only: false,
+    });
+    return typeof data === 'string' && data ? data : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function signInAction(formData: FormData) {
-  const email = String(formData.get('email') || '').trim().toLowerCase();
+  // Identifiant : numéro de téléphone OU email (l'ancien champ « email » reste accepté)
+  const identifier = String(formData.get('identifier') || formData.get('email') || '').trim();
   const password = String(formData.get('password') || '');
   const next = String(formData.get('next') || '/');
 
-  if (!email || !email.includes('@')) {
-    redirect('/login?error=' + encodeURIComponent('Email invalide'));
+  if (!identifier) {
+    redirect('/login?error=' + encodeURIComponent('Saisissez votre numéro de téléphone ou votre email'));
   }
   if (!password || password.length < 6) {
     redirect(
       '/login?tab=signin&error=' +
         encodeURIComponent('Mot de passe requis (min 6 caractères)'),
     );
+  }
+
+  let email = identifier.toLowerCase();
+  if (!identifier.includes('@')) {
+    const phone = formatBeninPhone(identifier);
+    if (!phone) {
+      redirect(
+        '/login?tab=signin&error=' +
+          encodeURIComponent('Numéro invalide. Format attendu : 01 67 59 18 17'),
+      );
+    }
+    const found = await emailForPhone(phone);
+    if (!found) redirect('/login?tab=signin&error=' + encodeURIComponent(BAD_LOGIN));
+    email = found;
   }
 
   const supabase = createServerSupabase();
@@ -35,7 +71,7 @@ export async function signInAction(formData: FormData) {
     console.error('[signInAction] Supabase error', error);
     redirect(
       '/login?tab=signin&error=' +
-        encodeURIComponent(error.message || 'Email ou mot de passe incorrect'),
+        encodeURIComponent(/invalid login credentials/i.test(error.message) ? BAD_LOGIN : error.message || BAD_LOGIN),
     );
   }
 

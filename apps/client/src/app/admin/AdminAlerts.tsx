@@ -14,9 +14,10 @@ export type AdminCounts = {
   debts_suspended: number; // chauffeurs actuellement suspendus pour dette
   tamassur: number; // demandes de retrait d'épargne TamAssur à traiter
   disputes: number; // litiges à examiner par un humain
+  ride_ends: number; // fins de course par le chauffeur à examiner
 };
 
-const EMPTY: AdminCounts = { sos: 0, sos_active: 0, debts: 0, debts_suspended: 0, tamassur: 0, disputes: 0 };
+const EMPTY: AdminCounts = { sos: 0, sos_active: 0, debts: 0, debts_suspended: 0, tamassur: 0, disputes: 0, ride_ends: 0 };
 
 type Toast = {
   id: string;

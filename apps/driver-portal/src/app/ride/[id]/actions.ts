@@ -49,7 +49,3 @@ export async function markArrivedAction(
 export async function startRideAction(rideId: string): Promise<ActionResult> {
   return callTransition('driver_start_ride', rideId);
 }
-
-export async function completeRideAction(rideId: string): Promise<ActionResult> {
-  return callTransition('driver_complete_ride', rideId);
-}

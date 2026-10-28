@@ -715,8 +715,8 @@ export function DriverHome({ driverName, initialIsOnline, hasVehicle, debt, vehi
         >
           <span className="text-xl leading-none">←</span>
         </Link>
-        <div className="pointer-events-auto flex items-center gap-xs rounded-full bg-white/95 px-md py-xs shadow-lg ring-1 ring-neutral-200 backdrop-blur">
-          <Logo className="h-5 w-auto" />
+        <div className="pointer-events-auto flex items-center gap-xs rounded-full bg-white/95 px-lg py-xs shadow-lg ring-1 ring-neutral-200 backdrop-blur">
+          <Logo className="h-8 w-auto" />
           <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-900">
             Chauffeur
           </span>

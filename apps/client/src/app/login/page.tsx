@@ -139,13 +139,15 @@ function SignInForm({ error, next }: { error?: string; next: string }) {
   return (
     <form action={signInAction} className="mt-xl space-y-md">
       <input type="hidden" name="next" value={next} />
-      <Field label="Email">
+      <Field label="Téléphone ou email">
         <input
-          name="email"
-          type="email"
+          name="identifier"
+          type="text"
           required
-          autoComplete="email"
-          placeholder="vous@exemple.bj"
+          autoComplete="username"
+          autoCapitalize="none"
+          autoCorrect="off"
+          placeholder="01 67 59 18 17 ou vous@exemple.bj"
           className="w-full rounded-lg bg-neutral-100 px-lg py-md text-base text-neutral-900 ring-1 ring-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
         />
       </Field>

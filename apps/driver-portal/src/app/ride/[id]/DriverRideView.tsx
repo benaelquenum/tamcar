@@ -26,6 +26,7 @@ import { SUPPORT_PHONE, SUPPORT_PHONE_DISPLAY } from '@/lib/support';
 import { markArrivedAction, startRideAction, type ActionResult } from './actions';
 import { StopsPanel } from './StopsPanel';
 import { ReturnChangeModal } from './ReturnChangeModal';
+import { FinishRideModal, type FinishPreview } from './FinishRideModal';
 import { SupportCallButton } from '@/components/SupportCallButton';
 import { RideChat } from '@/components/RideChat';
 import { RideCall } from '@/components/RideCall';
@@ -693,6 +694,86 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
     return () => clearInterval(id);
   }, [ride.completion_auto_accept_at, ride.status, ride.id]);
 
+  // Fin de course par le chauffeur (le client ne peut pas terminer lui-même).
+  // L'aperçu et la fin réelle sont calculés par le serveur, sur la même logique.
+  const [finishPreview, setFinishPreview] = useState<FinishPreview | null>(null);
+  const [finishBusy, setFinishBusy] = useState(false);
+  const [finishErr, setFinishErr] = useState<string | null>(null);
+  const finishPosRef = useRef<{ lat: number; lng: number; accuracy: number | null; at: number } | null>(null);
+
+  const readFinishPosition = useCallback(async (): Promise<{ lat: number; lng: number; accuracy: number | null; at: number } | null> => {
+    if ('geolocation' in navigator) {
+      const p = await new Promise<GeolocationPosition | null>((resolve) => {
+        navigator.geolocation.getCurrentPosition(resolve, () => resolve(null), {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 5000,
+        });
+      });
+      if (p) return { lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy, at: Date.now() };
+    }
+    if (driverPos) return { lat: driverPos[1], lng: driverPos[0], accuracy: null, at: Date.now() };
+    return null;
+  }, [driverPos]);
+
+  async function openFinish() {
+    if (finishBusy) return;
+    setErr(null);
+    setFinishBusy(true);
+    const pos = await readFinishPosition();
+    if (!pos) {
+      setFinishBusy(false);
+      setErr('Position GPS indisponible : autorisez la localisation pour terminer la course.');
+      return;
+    }
+    finishPosRef.current = pos;
+    const { data, error } = await supabaseBrowser.rpc('ride_end_preview', {
+      p_ride_id: ride.id,
+      p_lat: pos.lat,
+      p_lng: pos.lng,
+    });
+    setFinishBusy(false);
+    if (error) {
+      setErr(error.message);
+      return;
+    }
+    setFinishErr(null);
+    setFinishPreview(data as FinishPreview);
+  }
+
+  async function confirmFinish(reasonCode: string | null, reasonText: string | null) {
+    if (finishBusy) return;
+    setFinishBusy(true);
+    setFinishErr(null);
+    // Position trop ancienne (modale restée ouverte) : on la reprend
+    let pos = finishPosRef.current;
+    if (!pos || Date.now() - pos.at > 45_000) {
+      pos = (await readFinishPosition()) ?? pos;
+      finishPosRef.current = pos;
+    }
+    if (!pos) {
+      setFinishBusy(false);
+      setFinishErr('Position GPS indisponible.');
+      return;
+    }
+    const { error } = await supabaseBrowser.rpc('driver_finish_ride', {
+      ride_id: ride.id,
+      actual_lat: pos.lat,
+      actual_lng: pos.lng,
+      p_accuracy_m: pos.accuracy != null ? Math.round(pos.accuracy) : null,
+      p_reason_code: reasonCode,
+      p_reason_text: reasonText,
+    });
+    setFinishBusy(false);
+    if (error) {
+      setFinishErr(error.message);
+      return;
+    }
+    setFinishPreview(null);
+    setRide((prev) => ({ ...prev, status: 'completed' }));
+    router.refresh();
+  }
+
   async function handleAcceptCompletion() {
     if (acceptingCompletion) return;
     setAcceptingCompletion(true);
@@ -816,9 +897,16 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
           onClick: () => transition(startRideAction),
         };
       case 'in_progress':
-        // C'est le CLIENT qui termine la course. Rien à afficher côté chauffeur
-        // (la CompletionRequestModal se déclenche seule via completion_requested_at).
-        return null;
+        // Le client termine normalement la course (la CompletionRequestModal se
+        // déclenche seule via completion_requested_at). Si le client ne peut pas,
+        // le chauffeur termine lui-même : position, durée et raison sont contrôlées
+        // par le serveur. Pas de bouton tant qu'une demande du client est en cours.
+        if (ride.completion_requested_at) return null;
+        return {
+          label: 'Terminer la course',
+          color: 'border-2 border-neutral-300 bg-white text-neutral-800',
+          onClick: openFinish,
+        };
       case 'completed':
         return {
           label: 'Terminée — retour à l\'accueil',
@@ -862,6 +950,16 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
             .filter((s) => s.status !== 'cancelled')
             .map((s, i) => ({ lat: s.lat, lng: s.lng, label: i + 1 }))}
           route={routeGeo}
+          pickupLabel={
+            ride.status !== 'in_progress' && distanceToTarget != null
+              ? `${durationToTarget != null ? `~${durationToTarget} min · ` : ''}${formatDistance(distanceToTarget)}`
+              : null
+          }
+          dropoffLabel={
+            ride.status === 'in_progress' && !nextStop && distanceToTarget != null
+              ? `${durationToTarget != null ? `~${durationToTarget} min · ` : ''}${formatDistance(distanceToTarget)}`
+              : null
+          }
           autoFit={false}
           follow={['matched', 'arrived', 'in_progress'].includes(ride.status) ? driverPos : null}
           navHeading={navHeading}
@@ -916,8 +1014,8 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
         <div className="pointer-events-auto ml-auto mr-sm">
           <SupportCallButton rideId={ride.id} />
         </div>
-        <div className="pointer-events-auto flex items-center gap-xs rounded-full bg-white/95 px-md py-xs shadow-lg ring-1 ring-neutral-200 backdrop-blur">
-          <Logo className="h-5 w-auto" />
+        <div className="pointer-events-auto flex items-center gap-xs rounded-full bg-white/95 px-lg py-xs shadow-lg ring-1 ring-neutral-200 backdrop-blur">
+          <Logo className="h-8 w-auto" />
           <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-900">
             Chauffeur
           </span>
@@ -1256,16 +1354,21 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
               <button
                 type="button"
                 onClick={nextAction.onClick}
-                disabled={pending}
+                disabled={pending || finishBusy}
                 className={`flex w-full items-center justify-center gap-sm rounded-xl py-md text-base font-bold shadow-md transition hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 ${nextAction.color}`}
               >
-                {pending ? '…' : (
+                {pending || finishBusy ? '…' : (
                   <>
-                    {ride.status === 'completed' ? <CheckIcon className="h-5 w-5" strokeWidth={3} /> : <ArrowRightIcon />}
+                    {ride.status === 'completed' || ride.status === 'in_progress' ? <CheckIcon className="h-5 w-5" strokeWidth={3} /> : <ArrowRightIcon />}
                     {nextAction.label}
                   </>
                 )}
               </button>
+            )}
+            {nextAction && ride.status === 'in_progress' && (
+              <p className="mt-xs text-center text-[11px] text-neutral-500">
+                Le client termine normalement la course. Utilisez ce bouton s’il ne peut pas le faire.
+              </p>
             )}
 
             {(ride.status === 'matched' || ride.status === 'arrived') && (
@@ -1431,6 +1534,17 @@ export function DriverRideView({ initialRide, myUserId }: { initialRide: DriverR
           remaining={completionRemaining}
           onAccept={handleAcceptCompletion}
           accepting={acceptingCompletion}
+        />
+      )}
+
+      {/* Fin de course par le chauffeur : aperçu serveur, raison si nécessaire */}
+      {finishPreview && ride.status === 'in_progress' && (
+        <FinishRideModal
+          preview={finishPreview}
+          busy={finishBusy}
+          error={finishErr}
+          onConfirm={confirmFinish}
+          onClose={() => { if (!finishBusy) setFinishPreview(null); }}
         />
       )}
 

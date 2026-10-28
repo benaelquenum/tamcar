@@ -160,3 +160,27 @@ body {
   0% { transform: scale(0.85); opacity: 0.75; }
   100% { transform: scale(3.2); opacity: 0; }
 }
+
+/* Bulles d information sur la carte (vehicule suivi, destination, cible de la course) */
+.tc-map-label {
+  pointer-events: none;
+  white-space: nowrap;
+  background: #fff;
+  color: #0f172a;
+  font: 700 11px/1.25 system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-variant-numeric: tabular-nums;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.28);
+}
+.tc-veh-label {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  transform: translateX(-50%);
+  margin-bottom: -6px;
+}
+.tc-dest-label {
+  margin-bottom: 3px;
+}

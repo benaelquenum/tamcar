@@ -107,7 +107,7 @@ export function PublicTrackView({
       {/* Header */}
       <header className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center justify-center p-md">
         <div className="pointer-events-auto flex items-center gap-sm rounded-full bg-white px-lg py-sm shadow-lg ring-1 ring-neutral-200">
-          <Logo className="h-6 w-auto" />
+          <Logo className="h-8 w-auto" />
           <span className="text-xs font-bold uppercase tracking-wider text-neutral-500">
             Suivi de course
           </span>
