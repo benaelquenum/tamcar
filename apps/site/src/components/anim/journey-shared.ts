@@ -38,8 +38,9 @@ export function mix(a: string, b: string, t: number): string {
   return `rgb(${Math.round(lerp(A[0], B[0], t))},${Math.round(lerp(A[1], B[1], t))},${Math.round(lerp(A[2], B[2], t))})`;
 }
 
-export const SKY_TOP: [string, string] = ['#7FBBFF', '#050A1E'];
-export const SKY_BOT: [string, string] = ['#EAF4FF', '#1C2C60'];
+// Jour poussiéreux (harmattan) : ciel pâle qui se fond dans une brume beige à l'horizon
+export const SKY_TOP: [string, string] = ['#8FB9E8', '#050A1E'];
+export const SKY_BOT: [string, string] = ['#F0E2C8', '#26213F'];
 
 /** Part de nuit (0 = plein jour, 1 = nuit) : le jour tombe entre 50 % et 60 % du trajet. */
 export const nightAt = (p: number) => smooth((p - 0.5) / 0.1);

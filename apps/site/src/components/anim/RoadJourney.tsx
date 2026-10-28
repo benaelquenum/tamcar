@@ -76,7 +76,8 @@ export function RoadJourney({ steps, appUrl }: { steps: JourneyStep[]; appUrl: s
   return (
     <div ref={wrapRef}>
       <JourneyShell steps={steps} appUrl={appUrl}>
-        {mode === '3d' && Scene3D ? <Scene3D onFail={() => setMode('2d')} /> : mode === '2d' ? <JourneyScene2D /> : null}
+        {/* La 2D sert d'attente pendant le chargement de la 3D (jamais de ciel vide), puis de repli */}
+        {mode === '3d' && Scene3D ? <Scene3D onFail={() => setMode('2d')} /> : <JourneyScene2D />}
       </JourneyShell>
     </div>
   );
