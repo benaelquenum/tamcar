@@ -1,10 +1,10 @@
 'use client';
 
 import { createContext, useContext, useEffect, useMemo, useRef } from 'react';
-import { HEADER_PX, RUNWAY_VH, SKY_TOP, clamp01, mix, nightAt, smooth, stepWin, STEPS, type JourneyStep } from './journey-shared';
+import { CLIENT_CFG, HEADER_PX, RUNWAY_VH, SKY_TOP, clamp01, mix, smooth, stepWin, type JourneyCfg, type JourneyStep } from './journey-shared';
 
 type Sub = (p: number) => void;
-type Ctx = { subscribe: (fn: Sub) => () => void };
+type Ctx = { subscribe: (fn: Sub) => () => void; redraw: () => void };
 
 const JourneyCtx = createContext<Ctx | null>(null);
 
@@ -19,17 +19,54 @@ export function useJourneyFrame(fn: (p: number) => void) {
   useEffect(() => ctx?.subscribe((p) => ref.current(p)), [ctx]);
 }
 
+/** Redemande un dessin à la progression actuelle (après une action du visiteur qui ne fait pas défiler la page). */
+export function useJourneyRedraw(): () => void {
+  const ctx = useContext(JourneyCtx);
+  return ctx?.redraw ?? (() => undefined);
+}
+
+export type JourneyTexts = {
+  eyebrow: string;
+  introTitle: string;
+  introText: string;
+  ctaHref: string;
+  ctaLabel: string;
+  ctaShort: string;
+};
+
+export const CLIENT_TEXTS: Omit<JourneyTexts, 'ctaHref'> = {
+  eyebrow: 'Votre course, du clic à l’arrivée',
+  introTitle: 'Montez à bord.',
+  introText: 'Faites défiler : la route avance avec vous.',
+  ctaLabel: 'Ouvrir l’application TamCar',
+  ctaShort: 'Ouvrir l’appli',
+};
+
 /**
  * Cadre commun des deux versions de la route (2D et 3D) : section collante, texte du chapitre en cours, repères,
  * appel à l'action final, et boucle de défilement (avec un peu d'inertie). La scène elle-même est donnée en
  * enfant : elle remplit la zone sous le texte et se dessine dans `useJourneyFrame`.
  */
-export function JourneyShell({ steps, appUrl, children }: { steps: JourneyStep[]; appUrl: string; children?: React.ReactNode }) {
+export function JourneyShell({
+  steps,
+  texts,
+  cfg = CLIENT_CFG,
+  children,
+  controls,
+}: {
+  steps: JourneyStep[];
+  texts: JourneyTexts;
+  cfg?: JourneyCfg;
+  children?: React.ReactNode;
+  /** Commandes du visiteur (boutons), posées au bas de la scène. */
+  controls?: React.ReactNode;
+}) {
   const rootRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const subs = useRef(new Set<Sub>());
   const last = useRef(-1);
 
+  const redrawRef = useRef<() => void>(() => undefined);
   const ctx = useMemo<Ctx>(
     () => ({
       subscribe: (fn) => {
@@ -39,6 +76,7 @@ export function JourneyShell({ steps, appUrl, children }: { steps: JourneyStep[]
           subs.current.delete(fn);
         };
       },
+      redraw: () => redrawRef.current(),
     }),
     [],
   );
@@ -53,13 +91,13 @@ export function JourneyShell({ steps, appUrl, children }: { steps: JourneyStep[]
     const cta = stage.querySelector<HTMLElement>('[data-cta]');
 
     const chrome = (p: number) => {
-      const night = nightAt(p);
+      const night = cfg.night(p);
       stage.style.backgroundColor = mix(SKY_TOP[0], SKY_TOP[1], night);
       stage.style.color = mix('#0F172A', '#F8FAFC', night);
       let best = 0;
       let bestV = -1;
-      STEPS.forEach((_, k) => {
-        const { v } = stepWin(p, k);
+      cfg.steps.forEach((_, k) => {
+        const { v } = stepWin(p, k, cfg.steps);
         if (v > bestV) {
           bestV = v;
           best = k;
@@ -78,7 +116,7 @@ export function JourneyShell({ steps, appUrl, children }: { steps: JourneyStep[]
         hint.style.visibility = hv > 0.01 ? 'visible' : 'hidden';
       }
       if (cta) {
-        const v6 = stepWin(p, 5).v;
+        const v6 = stepWin(p, cfg.steps.length - 1, cfg.steps).v;
         cta.style.opacity = String(v6);
         cta.style.visibility = v6 > 0.5 ? 'visible' : 'hidden';
       }
@@ -111,6 +149,11 @@ export function JourneyShell({ steps, appUrl, children }: { steps: JourneyStep[]
       kick();
     };
 
+    redrawRef.current = () => {
+      if (last.current < 0) return;
+      chrome(last.current);
+      subs.current.forEach((fn) => fn(last.current));
+    };
     kick();
     window.addEventListener('scroll', kick, { passive: true });
     window.addEventListener('resize', onResize);
@@ -119,11 +162,11 @@ export function JourneyShell({ steps, appUrl, children }: { steps: JourneyStep[]
       window.removeEventListener('resize', onResize);
       if (raf) cancelAnimationFrame(raf);
     };
-  }, []);
+  }, [cfg]);
 
   return (
     <JourneyCtx.Provider value={ctx}>
-      <div ref={rootRef} role="group" className="relative" style={{ height: `${RUNWAY_VH}vh` }} aria-label="Votre course, du clic à l’arrivée">
+      <div ref={rootRef} role="group" className="relative" style={{ height: `${RUNWAY_VH}vh` }} aria-label={texts.eyebrow}>
         <div
           ref={stageRef}
           className="sticky flex flex-col overflow-hidden"
@@ -131,11 +174,11 @@ export function JourneyShell({ steps, appUrl, children }: { steps: JourneyStep[]
         >
           {/* Texte du chapitre en cours : les six s'empilent au même endroit, un seul est visible */}
           <div className="relative z-10 mx-auto w-full max-w-2xl px-lg pt-lg text-center sm:pt-xl">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] opacity-70">Votre course, du clic à l’arrivée</p>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] opacity-70">{texts.eyebrow}</p>
             <div className="mt-sm grid">
               <div data-hint className="col-start-1 row-start-1" aria-hidden="true">
-                <h2 className="text-2xl font-extrabold leading-tight sm:text-3xl">Montez à bord.</h2>
-                <p className="mx-auto mt-sm max-w-xl text-base leading-relaxed opacity-85 sm:text-lg">Faites défiler : la route avance avec vous.</p>
+                <h2 className="text-2xl font-extrabold leading-tight sm:text-3xl">{texts.introTitle}</h2>
+                <p className="mx-auto mt-sm max-w-xl text-base leading-relaxed opacity-85 sm:text-lg">{texts.introText}</p>
               </div>
               {steps.map((s) => (
                 <div key={s.title} data-card className="col-start-1 row-start-1" style={{ opacity: 0, visibility: 'hidden' }} aria-hidden="true">
@@ -151,14 +194,15 @@ export function JourneyShell({ steps, appUrl, children }: { steps: JourneyStep[]
 
           {/* Repères : chapitre en cours, appel à l'action final */}
           <div className="pointer-events-none absolute inset-x-0 bottom-[14px] z-10 flex flex-col items-end gap-sm px-lg sm:items-center sm:px-0">
+            {controls}
             <a
               data-cta
-              href={appUrl}
+              href={texts.ctaHref}
               className="pointer-events-auto rounded-full bg-gradient-to-r from-primary-500 to-primary-700 px-xl py-sm text-sm font-bold text-white shadow-glow transition hover:brightness-110 sm:px-2xl sm:py-md sm:text-base"
               style={{ opacity: 0, visibility: 'hidden' }}
             >
-              <span className="sm:hidden">Ouvrir l’appli</span>
-              <span className="hidden sm:inline">Ouvrir l’application TamCar</span>
+              <span className="sm:hidden">{texts.ctaShort}</span>
+              <span className="hidden sm:inline">{texts.ctaLabel}</span>
             </a>
             <div className="flex gap-sm self-center" aria-hidden="true">
               {steps.map((s) => (

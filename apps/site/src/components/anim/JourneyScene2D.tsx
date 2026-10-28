@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useJourneyFrame } from './JourneyShell';
 import { HUD_H, HUD_W, HudPanels, updateHud } from './JourneyHud';
-import { SKY_BOT, SKY_TOP, TOTAL, lerp, mix, nightAt, travelAt } from './journey-shared';
+import { HudPanelsPartner, updatePartnerHud } from './JourneyHudPartner';
+import { SKY_BOT, SKY_TOP, TOTAL, lerp, mix, nightAt, partnerNight, travelAt } from './journey-shared';
 
 /**
  * Version 2D de la route : un seul SVG (villes en parallaxe, chaussée, véhicule de profil, panneaux). Légère et
@@ -57,7 +58,7 @@ const CURB: [string, string] = ['#CBD5E1', '#2B3A52'];
 const BODY: [string, string] = ['#2563EB', '#1D4ED8'];
 const GLASS: [string, string] = ['#CFE3FF', '#1B2F6B'];
 
-export default function JourneyScene2D() {
+export default function JourneyScene2D({ variant = 'clients' }: { variant?: 'clients' | 'partners' }) {
   const boxRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const drawRef = useRef<((p: number) => void) | null>(null);
@@ -132,7 +133,7 @@ export default function JourneyScene2D() {
     };
 
     const draw = (p: number) => {
-      const night = nightAt(p);
+      const night = variant === 'partners' ? partnerNight(p) : nightAt(p);
       const dist = TOTAL * travelAt(p);
 
       // Ciel, astres, étoiles
@@ -179,7 +180,7 @@ export default function JourneyScene2D() {
 
       // Panneaux d'information au-dessus du véhicule
       E.hud?.setAttribute('transform', `translate(${geo.hudX} ${geo.hudY})`);
-      if (E.hud) E.hudArrow?.setAttribute('opacity', String(0.4 * updateHud(E.hud, p)));
+      if (E.hud) E.hudArrow?.setAttribute('opacity', String(0.4 * (variant === 'partners' ? updatePartnerHud(E.hud, p) : updateHud(E.hud, p))));
     };
 
     layout();
@@ -197,7 +198,7 @@ export default function JourneyScene2D() {
       ro?.disconnect();
       window.removeEventListener('resize', onResize);
     };
-  }, []);
+  }, [variant]);
 
   const lamp = (i: number) => (
     <g key={i} transform={`translate(${i * 420} 0)`}>
@@ -268,7 +269,9 @@ export default function JourneyScene2D() {
         <rect x="-300" y={GROUND + 44} width="2400" height="10" fill="url(#jDash)" />
         <g data-j="lampG">{[0, 1, 2, 3, 4, 5].map(lamp)}</g>
 
-        {/* Panneaux de départ et d'arrivée */}
+        {/* Panneaux de départ et d'arrivée (route des clients seulement) */}
+        {variant === 'clients' && (
+        <>
         <g data-j="signStart" transform="translate(500 426)">
           <rect x="-4" y="-120" width="8" height="120" rx="3" fill="#64748B" />
           <rect x="-96" y="-168" width="192" height="58" rx="10" fill="#1D4ED8" stroke="#fff" strokeWidth="3" />
@@ -279,6 +282,8 @@ export default function JourneyScene2D() {
           <rect x="-110" y="-168" width="220" height="58" rx="10" fill="#15803D" stroke="#fff" strokeWidth="3" />
           <text x="0" y="-132" textAnchor="middle" fontSize="26" fontWeight="800" fill="#fff">Porto-Novo</text>
         </g>
+        </>
+        )}
 
         {/* Véhicule (vu de profil, vers la droite) : l'origine est au contact des roues, à l'arrière */}
         <g data-j="car" transform={`translate(160 ${GROUND})`}>
@@ -312,7 +317,7 @@ export default function JourneyScene2D() {
 
         {/* Panneaux d'information au-dessus du véhicule */}
         <g data-j="hud" transform="translate(220 118)">
-          <HudPanels />
+          {variant === 'partners' ? <HudPanelsPartner /> : <HudPanels />}
           <path data-j="hudArrow" d="M-9,0 h18 l-9,12 Z" fill="#0F172A" opacity="0" transform="translate(165 170)" />
         </g>
       </svg>

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ComponentType } from 'react';
 import { usePrefersReducedMotion } from './hooks';
-import { JourneyShell } from './JourneyShell';
+import { CLIENT_TEXTS, JourneyShell } from './JourneyShell';
 import JourneyScene2D from './JourneyScene2D';
 import { canUse3D, type JourneyStep } from './journey-shared';
 
@@ -75,7 +75,7 @@ export function RoadJourney({ steps, appUrl }: { steps: JourneyStep[]; appUrl: s
 
   return (
     <div ref={wrapRef}>
-      <JourneyShell steps={steps} appUrl={appUrl}>
+      <JourneyShell steps={steps} texts={{ ...CLIENT_TEXTS, ctaHref: appUrl }}>
         {/* La 2D sert d'attente pendant le chargement de la 3D (jamais de ciel vide), puis de repli */}
         {mode === '3d' && Scene3D ? <Scene3D onFail={() => setMode('2d')} /> : <JourneyScene2D />}
       </JourneyShell>

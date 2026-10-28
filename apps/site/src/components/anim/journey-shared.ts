@@ -49,13 +49,31 @@ export const nightAt = (p: number) => smooth((p - 0.5) / 0.1);
 export const travelAt = (p: number) => (p < 0.9 ? p : 0.9 + 0.1 * ((p - 0.9) / 0.1 - Math.pow((p - 0.9) / 0.1, 2) / 2));
 
 /** Avancement local (0 → 1) et visibilité (0 → 1, avec fondus d'entrée et de sortie) du chapitre k. */
-export function stepWin(p: number, k: number) {
-  const [a, b] = STEPS[k];
+export function stepWin(p: number, k: number, steps: [number, number][] = STEPS) {
+  const [a, b] = steps[k];
   const loc = clamp01((p - a) / (b - a));
-  const last = k === STEPS.length - 1;
+  const last = k === steps.length - 1;
   const v = Math.min(clamp01(loc / 0.14), last ? 1 : clamp01((1 - loc) / 0.14));
   return { loc, v: p < a ? 0 : v };
 }
+
+/** Réglages propres à chaque route : fenêtres des chapitres et part de nuit (0 = plein jour, 1 = nuit). */
+export type JourneyCfg = { steps: [number, number][]; night: (p: number) => number };
+
+export const CLIENT_CFG: JourneyCfg = { steps: STEPS, night: nightAt };
+
+/** Route des partenaires : fenêtres des six chapitres. */
+export const PARTNER_STEPS: [number, number][] = [
+  [0.04, 0.19],
+  [0.19, 0.35],
+  [0.35, 0.51],
+  [0.51, 0.66],
+  [0.66, 0.81],
+  [0.81, 1],
+];
+/** Une journée de travail du véhicule : aube bleutée, plein jour, puis le soir tombe sur la flotte. */
+export const partnerNight = (p: number) => (p < 0.15 ? lerp(0.62, 0, smooth(p / 0.15)) : p < 0.62 ? 0 : smooth((p - 0.62) / 0.3));
+export const PARTNER_CFG: JourneyCfg = { steps: PARTNER_STEPS, night: partnerNight };
 
 /**
  * La 3D n'est tentée que sur un appareil qui s'y prête : pas de « réduire les animations », pas

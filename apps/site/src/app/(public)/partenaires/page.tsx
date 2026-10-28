@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Reveal } from '@/components/anim/Reveal';
 import { Road } from '@/components/anim/Road';
+import { PartnerJourney } from '@/components/anim/PartnerJourney';
 import { Wheel } from '@/components/anim/Wheel';
 import { PROPOSAL_MAILTO } from '@/lib/config';
 import { PARTNER_FAQ, VEHICLE_PROFILES } from '@/lib/content';
@@ -16,6 +17,16 @@ const GUARANTEES = [
   { t: 'Un chauffeur engagé', d: 'Le chauffeur s’engage sur un niveau de recettes ; s’il ne le tient pas durablement, TamCar le remplace ou vous rend le véhicule.' },
   { t: 'Un chauffeur vérifié', d: 'Pièces contrôlées en personne, photo officielle prise et contrôlée par TamCar, badge « photo vérifiée » côté clients.' },
   { t: 'Des gains en direct', d: 'Votre part s’affiche à chaque course terminée, véhicule par véhicule, dans votre espace partenaire.' },
+];
+
+// Les six chapitres de la route « Une journée de votre véhicule » : le même contenu que les sections de la page, jamais un chiffre de politique.
+const JOURNEY = [
+  { title: 'Trois étapes, de votre message au départ.', text: 'Vous nous écrivez, nous chiffrons votre cas, vous décidez. Si la proposition vous convient, nous préparons le contrat, l’inspection d’entrée et la mise en service.' },
+  { title: 'Une inspection d’entrée', text: 'Avant la mise en service, TamCar inspecte votre véhicule : état général et papiers en règle.' },
+  { title: GUARANTEES[0].t, text: GUARANTEES[0].d },
+  { title: 'Un chauffeur vérifié et engagé', text: 'Pièces contrôlées en personne, photo officielle contrôlée par TamCar. Il s’engage sur un niveau de recettes ; s’il ne le tient pas durablement, TamCar le remplace ou vous rend le véhicule.' },
+  { title: GUARANTEES[3].t, text: GUARANTEES[3].d },
+  { title: 'Un contrat adapté à chaque véhicule', text: 'Moto, tricycle ou voiture, seul ou en flotte : cinq profils, une durée de contrat pour chacun.' },
 ];
 
 export default function PartnersPage() {
@@ -45,6 +56,9 @@ export default function PartnersPage() {
           </div>
         </div>
       </section>
+
+      {/* La route : on regarde le véhicule travailler du matin au soir (voir PartnerJourney) */}
+      <PartnerJourney steps={JOURNEY} proposalHref={PROPOSAL_MAILTO} />
 
       <section className="bg-neutral-100 py-4xl" id="proposition">
         <div className="mx-auto max-w-6xl px-lg">
