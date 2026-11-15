@@ -30,6 +30,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--prefix", "apps/site"],
       "port": 3005
+    },
+    {
+      "name": "tamcar-video-demo",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["video/demo/run-demo.mjs"],
+      "port": 3011
     }
   ]
 }

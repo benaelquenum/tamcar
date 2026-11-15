@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>TamCar — vidéo de présentation</title>
+<style>
+@font-face { font-family: 'Sora'; src: url('assets/Sora.woff2') format('woff2'); font-weight: 100 800; font-style: normal; }
+:root { --b9:#1E3A8A; --b7:#1D4ED8; --b5:#2563EB; --cyan:#06B6D4; --gold:#EAB308; --violet:#8B5CF6; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1920px; height: 1080px; overflow: hidden; background: #0b1d5c; font-family: 'Sora', system-ui, sans-serif; color: #fff; }
+#stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; perspective: 2400px; }
+#bg { position: absolute; inset: 0; background: linear-gradient(135deg, #1E3A8A 0%, #1D4ED8 48%, #2563EB 100%); }
+.blob { position: absolute; border-radius: 50%; filter: blur(110px); opacity: .55; will-change: transform; }
+#grid { position: absolute; inset: 0; opacity: .08; background-image: linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px); background-size: 64px 64px; mask-image: radial-gradient(ellipse at 50% 50%, #000 20%, transparent 75%); }
+
+/* ---------- intro ---------- */
+#intro { position: absolute; inset: 0; }
+#welcome { position: absolute; left: 0; top: 156px; width: 1920px; height: 768px; object-fit: cover; box-shadow: 0 30px 90px rgba(5, 15, 70, .55); }
+#introTag { position: absolute; left: 0; right: 0; bottom: 70px; text-align: center; font-size: 30px; font-weight: 600; letter-spacing: .32em; text-transform: uppercase; color: rgba(255,255,255,.88); }
+#brandTop { position: absolute; left: 96px; top: 34px; height: 92px; }
+
+/* ---------- texte ---------- */
+.copy { position: absolute; top: 0; width: 820px; height: 1080px; display: flex; flex-direction: column; justify-content: center; }
+.kicker { font-size: 24px; font-weight: 700; letter-spacing: .26em; text-transform: uppercase; color: #93C5FD; margin-bottom: 26px; display: flex; align-items: center; gap: 16px; }
+.kicker i { display: inline-block; width: 54px; height: 4px; border-radius: 4px; background: var(--cyan); }
+.title { font-size: 74px; line-height: 1.07; font-weight: 800; letter-spacing: -.018em; }
+.title .w { display: inline-block; will-change: transform, opacity; }
+.title em { font-style: normal; color: #7DD3FC; }
+.title em.g { color: #FDE047; }
+.sub { margin-top: 28px; font-size: 32px; line-height: 1.38; font-weight: 500; color: rgba(255,255,255,.88); max-width: 760px; }
+.bullets { margin-top: 34px; display: flex; flex-direction: column; gap: 18px; }
+.bullet { display: flex; align-items: center; gap: 18px; font-size: 31px; font-weight: 600; line-height: 1.25; }
+.bullet .ck { flex: none; width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,.16); border: 2px solid rgba(255,255,255,.55); display: grid; place-items: center; }
+.bullet .ck svg { width: 22px; height: 22px; }
+.chips { margin-top: 34px; display: flex; flex-wrap: wrap; gap: 14px; }
+.chip { font-size: 27px; font-weight: 700; padding: 11px 22px; border-radius: 999px; background: rgba(255,255,255,.14); border: 2px solid rgba(255,255,255,.5); backdrop-filter: blur(6px); }
+.chip.on { background: #fff; color: var(--b7); border-color: #fff; }
+
+/* ---------- smartphone ---------- */
+#phoneWrap { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; pointer-events: none; transform-style: preserve-3d; }
+#phone { position: absolute; width: 438px; height: 892px; left: 0; top: 0; margin-left: -219px; margin-top: -446px; border-radius: 68px;
+  background: linear-gradient(160deg, #1b2547 0%, #0a1126 40%, #131c3b 100%); padding: 24px;
+  box-shadow: 0 60px 120px rgba(2, 8, 40, .55), 0 0 0 2px rgba(255,255,255,.14) inset, 0 0 0 7px #05091a, 0 0 0 9px rgba(255,255,255,.10); }
+#phone:before { content: ''; position: absolute; right: -12px; top: 190px; width: 6px; height: 110px; border-radius: 4px; background: #0c1329; }
+#phone:after { content: ''; position: absolute; left: -12px; top: 150px; width: 6px; height: 70px; border-radius: 4px; background: #0c1329; box-shadow: 0 100px 0 #0c1329; }
+#screen { position: relative; width: 390px; height: 844px; border-radius: 46px; overflow: hidden; background: #fff; }
+.layer { position: absolute; left: 0; top: 0; width: 390px; will-change: opacity, transform; }
+.layer img { display: block; width: 390px; height: auto; }
+#cam { position: absolute; left: 50%; top: 5px; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; background: #05070f; box-shadow: 0 0 0 3px rgba(255,255,255,.07); z-index: 6; }
+#glare { position: absolute; inset: 0; z-index: 5; background: linear-gradient(115deg, rgba(255,255,255,.17) 0%, rgba(255,255,255,0) 32%, rgba(255,255,255,0) 100%); pointer-events: none; }
+.hl { position: absolute; z-index: 4; border-radius: 18px; border: 3px solid #22D3EE; box-shadow: 0 0 0 6px rgba(34, 211, 238, .22), 0 0 34px rgba(34, 211, 238, .55); opacity: 0; }
+.tap { position: absolute; z-index: 7; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; border: 4px solid rgba(37, 99, 235, .9); background: rgba(37, 99, 235, .22); opacity: 0; }
+
+/* ---------- badges flottants ---------- */
+.badge { position: absolute; z-index: 20; font-size: 27px; font-weight: 700; color: var(--b9); background: #fff; padding: 14px 26px; border-radius: 999px; box-shadow: 0 18px 50px rgba(3, 10, 60, .35); white-space: nowrap; opacity: 0; display: flex; align-items: center; gap: 12px; }
+.badge b { display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: #10B981; box-shadow: 0 0 0 6px rgba(16,185,129,.2); }
+
+/* ---------- final ---------- */
+#outro { position: absolute; inset: 0; opacity: 0; }
+#outro .logo { position: absolute; left: 150px; top: 130px; width: 520px; }
+#outro .slogan { position: absolute; left: 150px; top: 390px; font-size: 62px; font-weight: 800; line-height: 1.1; letter-spacing: -.015em; width: 900px; }
+#outro .slogan em { font-style: normal; color: #7DD3FC; }
+#outro .where { position: absolute; left: 150px; top: 600px; font-size: 32px; font-weight: 600; color: rgba(255,255,255,.9); }
+#outro .url { position: absolute; left: 150px; top: 662px; font-size: 58px; font-weight: 800; color: #FDE047; letter-spacing: .01em; }
+#outro .who { position: absolute; left: 150px; top: 780px; display: flex; gap: 14px; }
+#car { position: absolute; width: 1000px; left: 840px; top: 120px; filter: drop-shadow(0 40px 50px rgba(2, 8, 50, .45)); }
+#cats { position: absolute; left: 840px; right: 70px; bottom: 56px; display: flex; justify-content: space-between; gap: 20px; align-items: flex-end; }
+#cats .c { text-align: center; font-size: 22px; font-weight: 700; color: rgba(255,255,255,.9); }
+#cats img { display: block; height: 140px; width: auto; margin: 0 auto 8px; filter: drop-shadow(0 14px 18px rgba(2,8,50,.4)); }
+
+#dots { position: absolute; left: 0; right: 0; bottom: 30px; display: flex; justify-content: center; gap: 12px; z-index: 30; }
+#dots i { width: 12px; height: 12px; border-radius: 50%; background: rgba(255,255,255,.3); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="bg"></div>
+  <div class="blob" id="b1"></div><div class="blob" id="b2"></div><div class="blob" id="b3"></div>
+  <div id="grid"></div>
+
+  <div id="intro">
+    <img id="welcome" src="assets/welcome.png" alt="">
+    <img id="brandTop" src="assets/logo-white.png" alt="">
+    <div id="introTag">Présentation de l’application</div>
+  </div>
+
+  <div id="copies"></div>
+
+  <div id="phoneWrap">
+    <div id="phone"><div id="screen"><div id="cam"></div><div id="glare"></div></div></div>
+  </div>
+  <div id="badges"></div>
+
+  <div id="outro">
+    <img class="logo" src="assets/logo-white.png" alt="">
+    <div class="slogan">Ta course est claire,<br><em>ta course éclair.</em></div>
+    <div class="where">Cotonou · Porto-Novo · Bénin</div>
+    <div class="url">tamcar.app</div>
+    <div class="who"><span class="chip">Clients</span><span class="chip">Chauffeurs</span><span class="chip">Partenaires</span></div>
+    <img id="car" src="assets/car.png" alt="">
+    <div id="cats"></div>
+  </div>
+  <div id="dots"></div>
+</div>
+<script src="compo.js"></script>
+</body>
+</html>

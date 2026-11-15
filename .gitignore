@@ -74,3 +74,9 @@ coverage/
 assets/benin.pmtiles
 assets/pmtiles.exe
 assets/verif-categories.png
+
+# ---------- Video de presentation : captures et rendus generes ----------
+video/demo/shots/
+video/demo/requests.log
+video/out/
+video/node_modules/
